@@ -24,7 +24,8 @@ import {
   X,
   ExternalLink,
   CheckCircle,
-  MessageCircle
+  MessageCircle,
+  Facebook
 } from 'lucide-react';
 import { AdSenseUnit } from './components/AdSenseUnit';
 import { ResumeData, INITIAL_RESUME_DATA, TemplateType } from './types.ts';
@@ -883,35 +884,37 @@ export default function App() {
             transition={{ duration: 0.8, delay: 0.2 }}
             className="flex-1 w-full flex flex-col items-center justify-center"
           >
-            <motion.div 
-              animate={{ y: [0, -10, 0] }}
-              transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-              className="relative w-full max-w-md group"
-            >
-              <div className="absolute -inset-4 bg-primary-blue/20 rounded-3xl blur-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-              <div className="bg-white rounded-3xl shadow-[0_32px_64px_-16px_rgba(0,0,0,0.1)] p-8 border border-border-main relative overflow-hidden">
-                <div className="flex items-center gap-4 mb-8 border-b-2 border-soft-blue pb-6">
-                  <div className="w-14 h-14 bg-soft-blue rounded-2xl flex items-center justify-center text-primary-blue">
-                     <User size={24} />
-                  </div>
-                  <div>
-                    <div className="h-4 w-32 bg-deep-blue/10 rounded-full mb-2"></div>
-                    <div className="h-2 w-20 bg-primary-blue/30 rounded-full"></div>
-                  </div>
-                </div>
-                <div className="space-y-4">
-                  {[80, 95, 70, 100].map((w, i) => (
-                    <div key={i} className="h-1.5 bg-soft-blue rounded-full" style={{ width: `${w}%` }}></div>
+             <div className="flex flex-col items-center justify-center space-y-8 w-full">
+               <h2 className="text-3xl font-black text-deep-blue text-center mb-4">O que dizem os profissionais</h2>
+               
+               <div className="w-full max-w-lg space-y-6">
+                  {[
+                    {
+                      name: "Ana Silva",
+                      role: "Diretora de Marketing",
+                      testimonial: "A CV LAB transformou completamente meu currículo. A linguagem usada pela IA foi o divisor de águas para minha contratação."
+                    },
+                    {
+                      name: "Ricardo Mendes",
+                      role: "Engenheiro de Dados",
+                      testimonial: "Interface incrível, rápida e o resultado final é de um nível executivo que eu não conseguiria fazer sozinho no Word."
+                    }
+                  ].map((t, i) => (
+                    <div key={i} className="bg-white p-6 rounded-3xl border border-border-main shadow-sm hover:shadow-xl transition-shadow group">
+                      <div className="flex items-center gap-4 mb-4">
+                        <div className="w-12 h-12 rounded-full bg-soft-blue flex items-center justify-center text-primary-blue font-black text-lg">
+                          {t.name.charAt(0)}
+                        </div>
+                        <div>
+                          <div className="font-bold text-deep-blue">{t.name}</div>
+                          <div className="text-[10px] text-text-muted font-black uppercase tracking-widest">{t.role}</div>
+                        </div>
+                      </div>
+                      <p className="text-sm text-text-muted leading-relaxed italic">"{t.testimonial}"</p>
+                    </div>
                   ))}
-                  <div className="h-24 w-full bg-soft-blue/40 rounded-2xl border border-dashed border-primary-blue/20 mt-6"></div>
-                </div>
-                <div className="absolute top-4 right-4 animate-bounce">
-                  <div className="bg-primary-blue text-white p-2 rounded-lg shadow-lg">
-                    <CheckCircleIcon size={16} />
-                  </div>
-                </div>
-              </div>
-            </motion.div>
+               </div>
+             </div>
           </motion.div>
         </main>
         
@@ -988,6 +991,9 @@ export default function App() {
               <button onClick={() => setView('about')} className="hover:text-primary-blue transition-colors">Sobre Nós</button>
               <button onClick={() => setView('faq')} className="hover:text-primary-blue transition-colors">FAQ</button>
               <button onClick={() => setView('terms')} className="hover:text-primary-blue transition-colors">Termos e Condições</button>
+              <a href="https://www.facebook.com/share/18jr2KKfK1/" target="_blank" rel="noopener noreferrer" className="hover:text-primary-blue transition-colors">
+                <Facebook size={16} />
+              </a>
            </div>
            <Button onClick={() => setView('editor')} className="px-8 h-12 text-sm uppercase tracking-tight">Criar Currículo</Button>
            <p className="text-[10px] text-text-muted opacity-60">© 2026 CV LAB. Todos os direitos reservados.</p>
@@ -1024,32 +1030,105 @@ export default function App() {
           </button>
 
           {view === 'faq' && (
-            <div className="space-y-8 bg-white p-10 rounded-3xl shadow-2xl border border-border-main">
-              <h1 className="text-4xl font-black text-deep-blue tracking-tight">Perguntas Frequentes (FAQ)</h1>
-              <div className="space-y-6">
-                <div>
-                  <h3 className="text-lg font-bold text-primary-blue">Como a IA melhora meu currículo?</h3>
-                  <p className="text-sm text-text-main mt-2 leading-relaxed">Nossa integração com o Gemini da Google analisa seu texto base e o reescreve com linguagem executiva, focada em resultados e jargões corretos da sua área, tornando seu perfil mais atrativo aos recrutadores.</p>
-                </div>
-                <div>
-                  <h3 className="text-lg font-bold text-primary-blue">O download do PDF é gratuito?</h3>
-                  <p className="text-sm text-text-main mt-2 leading-relaxed">Sim! Você pode usar a ferramenta, editar e gerar seu PDF de currículo gratuitamente usando o recurso de impressão nativo.</p>
-                </div>
-                <div>
-                  <h3 className="text-lg font-bold text-primary-blue">Como funciona a Carta de Apresentação Premium?</h3>
-                  <p className="text-sm text-text-main mt-2 leading-relaxed">Ao custo de 1150 Kzs, o sistema fará uma análise profunda dos seus dados e criará uma carta de apresentação altamente customizada, no formato ideal para agradar recrutadores exigentes.</p>
-                </div>
+            <div className="space-y-12">
+              <div className="text-center space-y-4 mb-12">
+                <h1 className="text-5xl font-black text-deep-blue tracking-tight">Perguntas Frequentes</h1>
+                <p className="text-text-muted font-medium">Tudo o que você precisa saber para criar um currículo imbatível.</p>
+              </div>
+              
+              <div className="grid gap-6">
+                {[
+                  {
+                    q: "Como a Inteligência Artificial melhora meu currículo?",
+                    a: "Nossa IA, baseada no Google Gemini, analisa as suas experiências brutas e as reescreve utilizando verbos de ação e métricas de impacto. Ela ajusta o tom para ser mais executivo e garante que as palavras-chave certas para o seu setor estejam presentes, aumentando suas chances em sistemas de triagem automáticos (ATS)."
+                  },
+                  {
+                    q: "O download do currículo é realmente gratuito?",
+                    a: "Sim. A criação do currículo e a exportação para PDF são totalmente gratuitas. Nós acreditamos que a base da sua carreira não deve ter custos proibitivos. Oferecemos serviços premium opcionais, como a geração de cartas de apresentação personalizadas por IA."
+                  },
+                  {
+                    q: "Meus dados estão seguros?",
+                    a: "Absolutamente. Nós não armazenamos seus dados pessoais em servidores permanentes. As informações que você insere permanecem no seu navegador e são processadas apenas para gerar o documento. Recomendamos sempre não incluir números de documentos sensíveis como BI ou Passaporte, pois não são necessários em uma triagem inicial."
+                  },
+                  {
+                    q: "Posso criar mais de um currículo?",
+                    a: "Sim, você pode alternar entre diferentes templates e ajustar as informações à vontade. Cada vez que você gera um novo PDF, ele reflete as alterações atuais."
+                  },
+                  {
+                    q: "Como funciona o pagamento da Carta de Apresentação?",
+                    a: "Para gerar uma carta de apresentação premium, solicitamos um pagamento único de 1150 Kzs. Este valor cobre o processamento avançado de IA para criar um texto altamente persuasivo e formatado especificamente para a vaga que você deseja."
+                  },
+                  {
+                    q: "O currículo é compatível com sistemas ATS?",
+                    a: "Sim, nossos templates foram desenhados para serem lidos facilmente por sistemas de rastreamento de candidatos (ATS). Evitamos layouts excessivamente complexos que poderiam confundir os robôs de recrutamento."
+                  }
+                ].map((item, idx) => (
+                  <motion.div 
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: idx * 0.1 }}
+                    key={idx} 
+                    className="bg-white p-8 rounded-3xl shadow-sm border border-border-main hover:border-primary-blue/30 transition-colors group"
+                  >
+                    <h3 className="text-xl font-black text-deep-blue mb-3 group-hover:text-primary-blue transition-colors">{item.q}</h3>
+                    <p className="text-text-main leading-relaxed font-medium opacity-80">{item.a}</p>
+                  </motion.div>
+                ))}
               </div>
             </div>
           )}
 
           {view === 'about' && (
-            <div className="space-y-8 bg-white p-10 rounded-3xl shadow-2xl border border-border-main">
-              <h1 className="text-4xl font-black text-deep-blue tracking-tight">Sobre Nós</h1>
-              <div className="space-y-4 text-sm text-text-main leading-relaxed">
-                <p>Nascemos para resolver um problema claro: criar um currículo moderno e otimizado leva tempo, e o mercado é impaciente.</p>
-                <p>A <strong>CV LAB</strong> surge como uma plataforma de ponta para profissionais de sucesso (ou a caminho de o serem). Nós unimos design focado em UX com as melhores engines de Inteligência Artificial generativa do mercado.</p>
-                <p>Nossa missão é democratizar o acesso a materiais de candidatura padrão executivo. Chega de currículos no Word. Chega de sofrer para escrever descrições.</p>
+            <div className="space-y-16">
+              <div className="text-center space-y-4 mb-12">
+                <h1 className="text-5xl font-black text-deep-blue tracking-tight">Nossa Missão</h1>
+                <p className="text-text-muted font-medium italic">Elevando o padrão das candidaturas em Angola e no mundo.</p>
+              </div>
+
+              <div className="grid md:grid-cols-2 gap-12 items-center">
+                <div className="space-y-6">
+                  <div className="w-12 h-12 bg-primary-blue flex items-center justify-center rounded-2xl text-white shadow-xl shadow-primary-blue/20">
+                    <Briefcase size={24} />
+                  </div>
+                  <h2 className="text-3xl font-black text-deep-blue leading-tight">Chega de currículos genéricos em Word.</h2>
+                  <p className="text-text-main leading-relaxed font-medium opacity-90">
+                    A CV LAB nasceu da percepção de que muitos profissionais qualificados perdem oportunidades incríveis simplesmente porque não sabem 'se vender' no papel. 
+                    O mercado de trabalho evoluiu, mas a forma como as pessoas montam seus currículos permaneceu estagnada por décadas.
+                  </p>
+                  <p className="text-text-main leading-relaxed font-medium opacity-90">
+                    Nossa plataforma utiliza o que há de mais moderno em design de interface e processamento de linguagem natural para garantir que sua primeira impressão seja impecável.
+                  </p>
+                </div>
+                <div className="bg-soft-blue/50 p-8 rounded-[40px] border border-primary-blue/10 relative overflow-hidden group">
+                  <div className="absolute -top-10 -right-10 w-40 h-40 bg-primary-blue/5 rounded-full blur-3xl group-hover:bg-primary-blue/10 transition-colors"></div>
+                  <blockquote className="relative z-10 italic text-xl font-medium text-deep-blue/80">
+                    "O design não é apenas o que parece e o que se sente. O design é como funciona. E no currículo, o design deve funcionar para que você seja contratado."
+                  </blockquote>
+                </div>
+              </div>
+
+              <div className="grid sm:grid-cols-3 gap-8">
+                {[
+                  { label: "Design Premium", desc: "Templates criados por especialistas em UX para máxima legibilidade." },
+                  { label: "IA Integrada", desc: "Textos otimizados pelo Google Gemini para soar como um executivo sênior." },
+                  { label: "Foco no Candidato", desc: "Ferramenta gratuita e acessível para impulsionar talentos locais." }
+                ].map((stat, i) => (
+                  <div key={i} className="space-y-2 p-6 bg-white rounded-3xl border border-border-main shadow-sm">
+                    <h4 className="text-lg font-black text-primary-blue uppercase tracking-tight">{stat.label}</h4>
+                    <p className="text-sm text-text-muted font-medium">{stat.desc}</p>
+                  </div>
+                ))}
+              </div>
+
+              <div className="bg-deep-blue text-white p-12 rounded-[40px] text-center space-y-6 shadow-2xl relative overflow-hidden">
+                <div className="absolute top-0 left-0 w-full h-full bg-grid opacity-10"></div>
+                <h3 className="text-3xl font-black relative z-10">Pronto para dar o próximo passo?</h3>
+                <p className="text-white/70 max-w-xl mx-auto font-medium relative z-10">
+                  Junte-se a milhares de profissionais que já transformaram suas carreiras com a ajuda da CV LAB.
+                </p>
+                <div className="relative z-10 pt-4">
+                  <Button onClick={() => setView('editor')} className="bg-white text-primary-blue hover:bg-white/90 px-12 h-16 text-lg">Começar Agora</Button>
+                </div>
               </div>
             </div>
           )}

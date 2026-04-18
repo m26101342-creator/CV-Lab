@@ -36,6 +36,10 @@
 @layer base {
   body {
     @apply bg-bg-main text-text-main font-sans antialiased;
+    background-image: 
+      linear-gradient(to right, var(--color-border-main) 1px, transparent 1px),
+      linear-gradient(to bottom, var(--color-border-main) 1px, transparent 1px);
+    background-size: 40px 40px;
   }
 }
 
