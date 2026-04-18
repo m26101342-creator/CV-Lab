@@ -765,11 +765,13 @@ export default function App() {
     return (
       <div className="min-h-screen hero-gradient flex flex-col">
         <nav className="h-20 px-6 md:px-12 flex items-center justify-between glass sticky top-0 z-50">
-          <div className="text-xl md:text-2xl font-black text-primary-blue tracking-tighter flex items-center gap-2">
-            <div className="w-10 h-10 bg-primary-blue rounded-xl flex items-center justify-center text-white shadow-lg shadow-primary-blue/30 rotate-3">
-              <Plus size={20} />
-            </div>
-            CV LAB
+          <div className="cursor-pointer" onClick={() => setView('landing')}>
+            <img 
+              src="https://i.supaimg.com/6bc04951-8cbe-4706-9f0c-a01f9ea9a6c4/f7862e8c-46f6-4d82-a9e0-b9cb52c6fc4f.png" 
+              alt="CV LAB" 
+              className="h-10 md:h-12 w-auto object-contain"
+              referrerPolicy="no-referrer" 
+            />
           </div>
           <div className="hidden md:flex items-center gap-8 text-[10px] font-black tracking-widest text-text-muted uppercase">
             <button onClick={() => setView('about')} className="hover:text-primary-blue transition-colors">Sobre Nós</button>
@@ -852,21 +854,95 @@ export default function App() {
           />
         </div>
 
-        <section className="bg-white py-20 px-6 border-t border-border-main">
-          <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-16">
-            {[
-              { title: "Texto Otimizado", desc: "Nossa IA transforma rascunhos em conquistas profissionais marcantes.", icon: FileText },
-              { title: "Design Mobile-Ready", desc: "Edite seu currículo em qualquer dispositivo com interface fluida e moderna.", icon: Globe },
-              { title: "Toque Pessoal", desc: "Nada de modelos genéricos. Designs exclusivos que refletem sua identidade.", icon: FileText }
-            ].map((item, i) => (
-              <div key={i} className="flex flex-col gap-4">
-                <div className="w-12 h-12 bg-primary-blue text-white rounded-2xl flex items-center justify-center shadow-lg shadow-primary-blue/20">
-                  <item.icon size={24} />
+        <section className="bg-white py-32 px-6 border-t border-border-main overflow-hidden">
+          <div className="max-w-7xl mx-auto">
+            <div className="flex flex-col mb-16 gap-4">
+              <span className="text-primary-blue text-[10px] font-black uppercase tracking-[0.3em] block">Porquê Escolher o CV Lab?</span>
+              <h2 className="text-4xl md:text-5xl font-black text-deep-blue tracking-tighter max-w-2xl">
+                Ferramentas de <span className="text-primary-blue italic">elite</span> para a sua próxima grande oportunidade.
+              </h2>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
+              {/* Feature 1: Texto Otimizado - Bento Large */}
+              <motion.div 
+                whileHover={{ y: -5 }}
+                className="md:col-span-8 bg-soft-blue/30 rounded-[40px] p-10 md:p-14 border border-primary-blue/5 flex flex-col md:flex-row gap-12 items-center relative overflow-hidden group"
+              >
+                <div className="flex-1 space-y-6 relative z-10">
+                  <div className="w-16 h-16 bg-white text-primary-blue rounded-3xl flex items-center justify-center shadow-xl shadow-primary-blue/10 transform -rotate-6 group-hover:rotate-0 transition-transform duration-500">
+                    <FileText size={32} />
+                  </div>
+                  <h3 className="text-3xl font-black text-deep-blue tracking-tight">Texto Otimizado</h3>
+                  <p className="text-lg text-text-muted leading-relaxed font-medium max-w-sm">
+                    Nossa IA transforma rascunhos em conquistas profissionais marcantes através do Gemini.
+                  </p>
                 </div>
-                <h4 className="text-xl font-black text-deep-blue tracking-tight">{item.title}</h4>
-                <p className="text-sm text-text-muted leading-relaxed font-medium">{item.desc}</p>
-              </div>
-            ))}
+                <div className="flex-1 w-full relative h-[250px] md:h-auto">
+                   <div className="absolute inset-0 bg-white/40 backdrop-blur-sm rounded-3xl border border-white/60 p-6 shadow-2xl rotate-3 translate-y-8 group-hover:rotate-0 group-hover:translate-y-4 transition-all duration-700">
+                      <div className="space-y-3">
+                         <div className="h-2 w-full bg-primary-blue/10 rounded-full animate-pulse"></div>
+                         <div className="h-2 w-4/5 bg-primary-blue/10 rounded-full"></div>
+                         <div className="h-2 w-full bg-primary-blue/20 rounded-full"></div>
+                         <div className="h-2 w-2/3 bg-primary-blue/5 rounded-full"></div>
+                      </div>
+                      <div className="mt-8 pt-8 border-t border-primary-blue/10">
+                         <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-full bg-primary-blue"></div>
+                            <div className="h-4 w-24 bg-deep-blue/10 rounded-full"></div>
+                         </div>
+                      </div>
+                   </div>
+                </div>
+              </motion.div>
+
+              {/* Feature 2: Mobile Ready - Bento Tall */}
+              <motion.div 
+                whileHover={{ y: -5 }}
+                className="md:col-span-4 bg-deep-blue text-white rounded-[40px] p-10 flex flex-col justify-between relative overflow-hidden group border border-white/5"
+              >
+                <div className="space-y-6 relative z-10">
+                  <div className="w-16 h-16 bg-white/10 backdrop-blur-xl text-white rounded-3xl flex items-center justify-center border border-white/10 group-hover:scale-110 transition-transform duration-500">
+                    <Globe size={32} />
+                  </div>
+                  <h3 className="text-3xl font-black tracking-tight">Design Mobile-Ready</h3>
+                  <p className="text-lg opacity-70 leading-relaxed font-medium">
+                    Edite seu currículo em qualquer dispositivo com interface fluida.
+                  </p>
+                </div>
+                <div className="mt-12 flex justify-center">
+                   <div className="w-32 h-64 bg-white/5 border border-white/10 rounded-3xl p-3 relative transform rotate-12 group-hover:rotate-0 transition-transform duration-700">
+                      <div className="w-full h-full bg-white/5 rounded-2xl flex flex-col gap-2 p-3">
+                         {[1,2,3,4,5].map(i => <div key={i} className="h-1.5 w-full bg-white/10 rounded-full"></div>)}
+                      </div>
+                      <div className="absolute top-1 left-1/2 -translate-x-1/2 w-8 h-3 bg-deep-blue rounded-b-lg"></div>
+                   </div>
+                </div>
+              </motion.div>
+
+              {/* Feature 3: Toque Pessoal - Bento Wide */}
+              <motion.div 
+                whileHover={{ y: -5 }}
+                className="md:col-span-12 bg-white rounded-[40px] p-10 md:p-14 border border-border-main flex flex-col md:flex-row items-center gap-12 group shadow-[0_20px_50px_rgba(0,0,0,0.02)]"
+              >
+                <div className="flex-1 space-y-6">
+                  <div className="w-16 h-16 bg-primary-blue text-white rounded-3xl flex items-center justify-center shadow-xl shadow-primary-blue/20 group-hover:rotate-12 transition-transform duration-500">
+                    <Settings size={32} />
+                  </div>
+                  <h3 className="text-4xl font-black text-deep-blue tracking-tight">Toque Pessoal</h3>
+                  <p className="text-xl text-text-muted leading-relaxed font-medium max-w-xl">
+                    Nada de modelos genéricos. Designs exclusivos que refletem sua identidade e <span className="text-primary-blue font-black underline decoration-primary-blue/30 underline-offset-8">elevam o seu valor profissional.</span>
+                  </p>
+                </div>
+                <div className="flex-1 grid grid-cols-2 gap-4 w-full">
+                   {[1,2,3,4].map(i => (
+                     <div key={i} className={`h-24 rounded-2xl border-2 border-dashed border-primary-blue/10 bg-soft-blue/10 flex items-center justify-center text-primary-blue/30 scale-${100 - (i*2)}`}>
+                        <FileText size={24} />
+                     </div>
+                   ))}
+                </div>
+              </motion.div>
+            </div>
           </div>
         </section>
 
@@ -886,11 +962,13 @@ export default function App() {
     return (
       <div className="min-h-screen hero-gradient flex flex-col">
         <nav className="h-20 px-6 md:px-12 flex items-center justify-between glass sticky top-0 z-50">
-          <button onClick={() => setView('landing')} className="text-xl md:text-2xl font-black text-primary-blue tracking-tighter flex items-center gap-2">
-            <div className="w-10 h-10 bg-primary-blue rounded-xl flex items-center justify-center text-white shadow-lg shadow-primary-blue/30 rotate-3">
-              <Plus size={20} />
-            </div>
-            CV LAB
+          <button onClick={() => setView('landing')} className="flex items-center">
+            <img 
+              src="https://i.supaimg.com/6bc04951-8cbe-4706-9f0c-a01f9ea9a6c4/f7862e8c-46f6-4d82-a9e0-b9cb52c6fc4f.png" 
+              alt="CV LAB" 
+              className="h-10 md:h-12 w-auto object-contain"
+              referrerPolicy="no-referrer" 
+            />
           </button>
           <div className="hidden md:flex items-center gap-8 text-[10px] font-black tracking-widest text-text-muted uppercase">
             <button onClick={() => setView('about')} className="hover:text-primary-blue transition-colors focus:outline-none">Sobre Nós</button>
@@ -969,7 +1047,12 @@ export default function App() {
              <button onClick={() => setView('landing')} className="p-2 hover:bg-bg-main rounded-xl transition-colors text-text-muted">
                <ChevronLeft size={20} />
              </button>
-             <span className="text-[10px] font-black uppercase tracking-[0.2em] text-primary-blue hidden sm:inline">CV Lab Editor</span>
+             <img 
+               src="https://i.supaimg.com/6bc04951-8cbe-4706-9f0c-a01f9ea9a6c4/f7862e8c-46f6-4d82-a9e0-b9cb52c6fc4f.png" 
+               alt="CV LAB" 
+               className="h-6 w-auto object-contain hidden sm:inline"
+               referrerPolicy="no-referrer" 
+             />
           </div>
           <div className="flex items-center gap-2">
             <div className="px-3 py-1 bg-soft-blue text-primary-blue text-[9px] font-black rounded-full hidden md:block">STEP {activeStep + 1}/6</div>
@@ -1220,7 +1303,15 @@ export default function App() {
         {loading && (
           <div className="fixed inset-0 bg-white/60 backdrop-blur-md z-[100] flex flex-col items-center justify-center gap-6 print:hidden">
              <div className="w-16 h-16 border-4 border-primary-blue border-t-transparent rounded-full animate-spin shadow-2xl"></div>
-             <p className="font-black text-primary-blue text-[10px] tracking-[0.3em] uppercase animate-pulse">Inteligência CV LAB Ativada</p>
+             <div className="flex flex-col items-center gap-2">
+               <img 
+                 src="https://i.supaimg.com/6bc04951-8cbe-4706-9f0c-a01f9ea9a6c4/f7862e8c-46f6-4d82-a9e0-b9cb52c6fc4f.png" 
+                 alt="CV LAB" 
+                 className="h-12 w-auto object-contain brightness-0 invert"
+                 referrerPolicy="no-referrer" 
+               />
+               <p className="font-black text-primary-blue text-[10px] tracking-[0.3em] uppercase animate-pulse">Inteligência Artificial Ativada</p>
+             </div>
           </div>
         )}
 
