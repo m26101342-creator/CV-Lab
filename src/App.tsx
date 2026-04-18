@@ -619,6 +619,15 @@ export default function App() {
 
   const [template, setTemplate] = useState<TemplateType>('t1_executive');
   const [previewScale, setPreviewScale] = useState(1);
+  const [currentBanner, setCurrentBanner] = useState(0);
+
+  const banners = [
+    "https://i.supaimg.com/6bc04951-8cbe-4706-9f0c-a01f9ea9a6c4/d25d88cc-8de9-4afc-8385-0ed21b0e333b.png",
+    "https://i.supaimg.com/6bc04951-8cbe-4706-9f0c-a01f9ea9a6c4/4406a25d-b692-476b-955d-409d5a851e46.jpg"
+  ];
+
+  const nextBanner = () => setCurrentBanner((prev) => (prev + 1) % banners.length);
+  const prevBanner = () => setCurrentBanner((prev) => (prev - 1 + banners.length) % banners.length);
 
   useEffect(() => {
     const handleResize = () => {
@@ -637,6 +646,16 @@ export default function App() {
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
+
+  useEffect(() => {
+    let interval: any;
+    if (view === 'landing') {
+      interval = setInterval(() => {
+        nextBanner();
+      }, 4500);
+    }
+    return () => clearInterval(interval);
+  }, [view, currentBanner]);
 
   const handleDownloadPdf = async () => {
     const elementId = isCoverLetterMode ? 'cover-letter-content' : 'resume-content';
@@ -781,18 +800,62 @@ export default function App() {
           <Button variant="outline" onClick={() => setView('editor')} className="text-xs uppercase tracking-widest">Criar CV</Button>
         </nav>
 
-        {/* New Top Flyer Banner - Glued to Header */}
-        <div className="w-full">
-          <img 
-            src="https://i.supaimg.com/6bc04951-8cbe-4706-9f0c-a01f9ea9a6c4/d25d88cc-8de9-4afc-8385-0ed21b0e333b.png" 
-            alt="Flyer Institucional" 
-            className="w-full h-auto"
-            referrerPolicy="no-referrer"
-          />
-        </div>
+        {/* Animated Banner Carousel - Positioned after Header */}
+        <motion.div 
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8 }}
+          className="w-full relative group h-auto min-h-[100px]"
+        >
+          <div className="w-full relative overflow-hidden">
+            <AnimatePresence mode="wait">
+              <motion.img 
+                key={currentBanner}
+                src={banners[currentBanner]} 
+                alt={`Banner ${currentBanner + 1}`} 
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                transition={{ duration: 0.5 }}
+                className="w-full h-auto object-cover"
+                referrerPolicy="no-referrer"
+              />
+            </AnimatePresence>
+          </div>
+
+          {/* Navigation Arrows */}
+          <button 
+            onClick={prevBanner}
+            className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 md:w-12 md:h-12 bg-white/40 backdrop-blur-md hover:bg-white/60 text-deep-blue rounded-full flex items-center justify-center transition-all z-10 border border-white/20 shadow-lg"
+          >
+            <ChevronLeft size={24} />
+          </button>
+          <button 
+            onClick={nextBanner}
+            className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 md:w-12 md:h-12 bg-white/40 backdrop-blur-md hover:bg-white/60 text-deep-blue rounded-full flex items-center justify-center transition-all z-10 border border-white/20 shadow-lg"
+          >
+            <ChevronRight size={24} />
+          </button>
+
+          {/* Indicators */}
+          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
+            {banners.map((_, i) => (
+              <div 
+                key={i} 
+                className={`w-2 h-2 rounded-full transition-all ${currentBanner === i ? 'bg-primary-blue w-6' : 'bg-primary-blue/30'}`}
+              />
+            ))}
+          </div>
+        </motion.div>
 
         <main className="flex-1 flex flex-col md:flex-row items-center px-6 md:px-12 py-12 md:py-20 gap-16 max-w-7xl mx-auto w-full">
-          <div className="flex-1 flex flex-col gap-8">
+          <motion.div 
+            initial={{ opacity: 0, x: -50 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.8 }}
+            className="flex-1 flex flex-col gap-8"
+          >
             <h1 className="text-6xl md:text-8xl font-black text-deep-blue leading-[0.85] tracking-tighter">
               Crie um CV que <span className="text-primary-blue italic">abre portas.</span>
             </h1>
@@ -809,9 +872,15 @@ export default function App() {
                  </div>
               </div>
             </div>
-          </div>
+          </motion.div>
 
-          <div className="flex-1 w-full flex justify-center">
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.8 }}
+            whileInView={{ opacity: 1, scale: 1 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.8, delay: 0.2 }}
+            className="flex-1 w-full flex justify-center"
+          >
             <motion.div 
               animate={{ y: [0, -10, 0] }}
               transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
@@ -841,119 +910,72 @@ export default function App() {
                 </div>
               </div>
             </motion.div>
-          </div>
+          </motion.div>
         </main>
 
-        {/* Flyer Full Width Banner - Positioned after the Hero/Resume Vector - Full Bleed */}
-        <div className="w-full mb-12">
-          <img 
-            src="https://i.supaimg.com/6bc04951-8cbe-4706-9f0c-a01f9ea9a6c4/4406a25d-b692-476b-955d-409d5a851e46.jpg" 
-            alt="Flyer Promocional" 
-            className="w-full h-auto"
-            referrerPolicy="no-referrer"
-          />
-        </div>
-
-        <section className="bg-white py-32 px-6 border-t border-border-main overflow-hidden">
+        <section className="bg-white py-16 px-6 border-t border-border-main scroll-mt-20">
           <div className="max-w-7xl mx-auto">
-            <div className="flex flex-col mb-16 gap-4">
-              <span className="text-primary-blue text-[10px] font-black uppercase tracking-[0.3em] block">Porquê Escolher o CV Lab?</span>
-              <h2 className="text-4xl md:text-5xl font-black text-deep-blue tracking-tighter max-w-2xl">
-                Ferramentas de <span className="text-primary-blue italic">elite</span> para a sua próxima grande oportunidade.
-              </h2>
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
-              {/* Feature 1: Texto Otimizado - Bento Large */}
-              <motion.div 
-                whileHover={{ y: -5 }}
-                className="md:col-span-8 bg-soft-blue/30 rounded-[40px] p-10 md:p-14 border border-primary-blue/5 flex flex-col md:flex-row gap-12 items-center relative overflow-hidden group"
-              >
-                <div className="flex-1 space-y-6 relative z-10">
-                  <div className="w-16 h-16 bg-white text-primary-blue rounded-3xl flex items-center justify-center shadow-xl shadow-primary-blue/10 transform -rotate-6 group-hover:rotate-0 transition-transform duration-500">
-                    <FileText size={32} />
+            <motion.div 
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.8 }}
+              className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8"
+            >
+              {[
+                { 
+                  title: "Texto Otimizado", 
+                  desc: "Nossa IA transforma rascunhos em conquistas profissionais marcantes.", 
+                  icon: FileText,
+                  color: "bg-soft-blue text-primary-blue"
+                },
+                { 
+                  title: "Design Mobile-Ready", 
+                  desc: "Edite seu currículo em qualquer dispositivo com interface fluida e moderna.", 
+                  icon: Globe,
+                  color: "bg-deep-blue text-white"
+                },
+                { 
+                  title: "Toque Pessoal", 
+                  desc: "Nada de modelos genéricos. Designs exclusivos que refletem sua identidade.", 
+                  icon: Settings,
+                  color: "bg-primary-blue text-white"
+                }
+              ].map((item, i) => (
+                <motion.div 
+                  key={i}
+                  whileHover={{ y: -5 }}
+                  className="p-8 rounded-[32px] border border-border-main bg-white hover:shadow-[0_20px_40px_-12px_rgba(0,0,0,0.05)] transition-all group"
+                >
+                  <div className={`w-12 h-12 ${item.color} rounded-2xl flex items-center justify-center mb-6 shadow-sm group-hover:scale-110 transition-transform`}>
+                    <item.icon size={22} />
                   </div>
-                  <h3 className="text-3xl font-black text-deep-blue tracking-tight">Texto Otimizado</h3>
-                  <p className="text-lg text-text-muted leading-relaxed font-medium max-w-sm">
-                    Nossa IA transforma rascunhos em conquistas profissionais marcantes através do Gemini.
+                  <h3 className="text-xl font-black text-deep-blue tracking-tight mb-3">
+                    {item.title}
+                  </h3>
+                  <p className="text-sm text-text-muted leading-relaxed font-medium">
+                    {item.desc}
                   </p>
-                </div>
-                <div className="flex-1 w-full relative h-[250px] md:h-auto">
-                   <div className="absolute inset-0 bg-white/40 backdrop-blur-sm rounded-3xl border border-white/60 p-6 shadow-2xl rotate-3 translate-y-8 group-hover:rotate-0 group-hover:translate-y-4 transition-all duration-700">
-                      <div className="space-y-3">
-                         <div className="h-2 w-full bg-primary-blue/10 rounded-full animate-pulse"></div>
-                         <div className="h-2 w-4/5 bg-primary-blue/10 rounded-full"></div>
-                         <div className="h-2 w-full bg-primary-blue/20 rounded-full"></div>
-                         <div className="h-2 w-2/3 bg-primary-blue/5 rounded-full"></div>
-                      </div>
-                      <div className="mt-8 pt-8 border-t border-primary-blue/10">
-                         <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 rounded-full bg-primary-blue"></div>
-                            <div className="h-4 w-24 bg-deep-blue/10 rounded-full"></div>
-                         </div>
-                      </div>
-                   </div>
-                </div>
-              </motion.div>
-
-              {/* Feature 2: Mobile Ready - Bento Tall */}
-              <motion.div 
-                whileHover={{ y: -5 }}
-                className="md:col-span-4 bg-deep-blue text-white rounded-[40px] p-10 flex flex-col justify-between relative overflow-hidden group border border-white/5"
-              >
-                <div className="space-y-6 relative z-10">
-                  <div className="w-16 h-16 bg-white/10 backdrop-blur-xl text-white rounded-3xl flex items-center justify-center border border-white/10 group-hover:scale-110 transition-transform duration-500">
-                    <Globe size={32} />
-                  </div>
-                  <h3 className="text-3xl font-black tracking-tight">Design Mobile-Ready</h3>
-                  <p className="text-lg opacity-70 leading-relaxed font-medium">
-                    Edite seu currículo em qualquer dispositivo com interface fluida.
-                  </p>
-                </div>
-                <div className="mt-12 flex justify-center">
-                   <div className="w-32 h-64 bg-white/5 border border-white/10 rounded-3xl p-3 relative transform rotate-12 group-hover:rotate-0 transition-transform duration-700">
-                      <div className="w-full h-full bg-white/5 rounded-2xl flex flex-col gap-2 p-3">
-                         {[1,2,3,4,5].map(i => <div key={i} className="h-1.5 w-full bg-white/10 rounded-full"></div>)}
-                      </div>
-                      <div className="absolute top-1 left-1/2 -translate-x-1/2 w-8 h-3 bg-deep-blue rounded-b-lg"></div>
-                   </div>
-                </div>
-              </motion.div>
-
-              {/* Feature 3: Toque Pessoal - Bento Wide */}
-              <motion.div 
-                whileHover={{ y: -5 }}
-                className="md:col-span-12 bg-white rounded-[40px] p-10 md:p-14 border border-border-main flex flex-col md:flex-row items-center gap-12 group shadow-[0_20px_50px_rgba(0,0,0,0.02)]"
-              >
-                <div className="flex-1 space-y-6">
-                  <div className="w-16 h-16 bg-primary-blue text-white rounded-3xl flex items-center justify-center shadow-xl shadow-primary-blue/20 group-hover:rotate-12 transition-transform duration-500">
-                    <Settings size={32} />
-                  </div>
-                  <h3 className="text-4xl font-black text-deep-blue tracking-tight">Toque Pessoal</h3>
-                  <p className="text-xl text-text-muted leading-relaxed font-medium max-w-xl">
-                    Nada de modelos genéricos. Designs exclusivos que refletem sua identidade e <span className="text-primary-blue font-black underline decoration-primary-blue/30 underline-offset-8">elevam o seu valor profissional.</span>
-                  </p>
-                </div>
-                <div className="flex-1 grid grid-cols-2 gap-4 w-full">
-                   {[1,2,3,4].map(i => (
-                     <div key={i} className={`h-24 rounded-2xl border-2 border-dashed border-primary-blue/10 bg-soft-blue/10 flex items-center justify-center text-primary-blue/30 scale-${100 - (i*2)}`}>
-                        <FileText size={24} />
-                     </div>
-                   ))}
-                </div>
-              </motion.div>
-            </div>
+                </motion.div>
+              ))}
+            </motion.div>
           </div>
         </section>
 
-        <footer className="bg-bg-main py-12 border-t border-border-main text-center flex flex-col items-center gap-6">
+        <motion.footer 
+          initial={{ opacity: 0 }}
+          whileInView={{ opacity: 1 }}
+          viewport={{ once: true }}
+          transition={{ duration: 1 }}
+          className="bg-bg-main py-12 border-t border-border-main text-center flex flex-col items-center gap-6"
+        >
            <div className="flex flex-wrap justify-center items-center gap-6 text-xs font-bold text-text-muted uppercase tracking-widest">
               <button onClick={() => setView('about')} className="hover:text-primary-blue transition-colors">Sobre Nós</button>
               <button onClick={() => setView('faq')} className="hover:text-primary-blue transition-colors">FAQ</button>
               <button onClick={() => setView('terms')} className="hover:text-primary-blue transition-colors">Termos e Condições</button>
            </div>
            <p className="text-[10px] text-text-muted opacity-60">© 2026 CV LAB. Todos os direitos reservados.</p>
-        </footer>
+        </motion.footer>
       </div>
     );
   }
