@@ -22,7 +22,8 @@ import {
   MapPin,
   Globe,
   X,
-  ExternalLink
+  ExternalLink,
+  CheckCircle
 } from 'lucide-react';
 import { ResumeData, INITIAL_RESUME_DATA, TemplateType } from './types.ts';
 import { optimizeResumeText, generateCoverLetter } from './services/geminiService.ts';
@@ -778,12 +779,18 @@ export default function App() {
           <Button variant="outline" onClick={() => setView('editor')} className="text-xs uppercase tracking-widest">Criar CV</Button>
         </nav>
 
+        {/* New Top Flyer Banner - Glued to Header */}
+        <div className="w-full">
+          <img 
+            src="https://i.supaimg.com/6bc04951-8cbe-4706-9f0c-a01f9ea9a6c4/d25d88cc-8de9-4afc-8385-0ed21b0e333b.png" 
+            alt="Flyer Institucional" 
+            className="w-full h-auto"
+            referrerPolicy="no-referrer"
+          />
+        </div>
+
         <main className="flex-1 flex flex-col md:flex-row items-center px-6 md:px-12 py-12 md:py-20 gap-16 max-w-7xl mx-auto w-full">
           <div className="flex-1 flex flex-col gap-8">
-            <div className="inline-flex items-center gap-2 px-4 py-2 bg-soft-blue text-primary-blue text-[10px] font-black rounded-full w-fit tracking-widest border border-primary-blue/10 animate-pulse">
-              <CreditCard size={14} />
-              RESUME + COVER: 1150 KZS
-            </div>
             <h1 className="text-6xl md:text-8xl font-black text-deep-blue leading-[0.85] tracking-tighter">
               Crie um CV que <span className="text-primary-blue italic">abre portas.</span>
             </h1>
@@ -834,6 +841,16 @@ export default function App() {
             </motion.div>
           </div>
         </main>
+
+        {/* Flyer Full Width Banner - Positioned after the Hero/Resume Vector - Full Bleed */}
+        <div className="w-full mb-12">
+          <img 
+            src="https://i.supaimg.com/6bc04951-8cbe-4706-9f0c-a01f9ea9a6c4/4406a25d-b692-476b-955d-409d5a851e46.jpg" 
+            alt="Flyer Promocional" 
+            className="w-full h-auto"
+            referrerPolicy="no-referrer"
+          />
+        </div>
 
         <section className="bg-white py-20 px-6 border-t border-border-main">
           <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-16">
@@ -1123,38 +1140,44 @@ export default function App() {
               )}
 
               {activeStep === 4 && ( /* Design / Templates */
-                <div className="space-y-8">
+                <div className="space-y-6">
                   <div className="space-y-2">
                     <h3 className="text-sm font-black uppercase tracking-[0.2em] text-primary-blue">Catálogo de Modelos</h3>
-                    <p className="text-xs text-text-muted">Selecione o layout que melhor comunica sua autoridade profissional.</p>
+                    <p className="text-xs text-text-muted">Selecione o estilo visual que melhor representa sua carreira.</p>
                   </div>
-                  <div className="p-4 bg-bg-main rounded-2xl border border-border-main scrollbar-hide overflow-x-auto">
-                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-6 min-w-[500px]">
-                      {Object.entries(TEMPLATES).map(([id, t]) => (
-                        <button
-                          key={id}
-                          onClick={() => setTemplate(id as TemplateType)}
-                          className={`group relative flex flex-col items-center p-2 rounded-2xl border-2 transition-all duration-500 overflow-hidden ${template === id ? 'border-primary-blue bg-white shadow-2xl scale-[1.02]' : 'border-border-main hover:border-primary-blue/20 bg-white hover:shadow-xl'}`}
-                        >
-                           {template === id && (
-                             <div className="absolute top-3 right-3 z-10 w-6 h-6 bg-primary-blue text-white rounded-full flex items-center justify-center shadow-lg">
-                               <CheckCircleIcon size={12}/>
-                             </div>
-                           )}
-                           <div className="w-full flex justify-center mb-4 mt-2 overflow-hidden bg-bg-main border border-border-main rounded-xl transition-transform duration-500 group-hover:scale-[1.05]" style={{ aspectRatio: '1/1.41', padding: '0px' }}>
-                               <div className="w-full h-full relative origin-top overflow-hidden" style={{ transform: 'scale(0.12)', width: '833.3%' }}>
-                                   <div className="pointer-events-none origin-top">
-                                      <ResumeRenderer data={resumeData} templateId={id as TemplateType} />
-                                   </div>
-                               </div>
-                               <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                           </div>
-                           <div className="text-center pb-2">
-                             <span className="text-[10px] font-black uppercase tracking-widest block transition-colors group-hover:text-primary-blue" style={{ color: template === id ? '#0066FF' : '#64748B' }}>{t.name}</span>
-                           </div>
-                        </button>
-                      ))}
-                    </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {Object.entries(TEMPLATES).map(([id, t]) => (
+                      <button
+                        key={id}
+                        onClick={() => setTemplate(id as TemplateType)}
+                        className={`group relative flex items-center gap-4 p-4 rounded-2xl border-2 transition-all duration-300 ${template === id ? 'border-primary-blue bg-soft-blue/10 shadow-sm' : 'border-border-main hover:border-primary-blue/20 bg-white'}`}
+                      >
+                         <div 
+                           className="w-16 h-16 rounded-xl flex flex-col overflow-hidden shrink-0 border border-black/5 shadow-sm"
+                           style={{ background: t.colors.primary }}
+                         >
+                            <div className="h-4 w-full bg-white/20"></div>
+                            <div className="p-2 space-y-1">
+                               <div className="h-1 w-2/3 bg-white/40 rounded-full"></div>
+                               <div className="h-1 w-full bg-white/20 rounded-full"></div>
+                               <div className="h-1 w-full bg-white/20 rounded-full"></div>
+                            </div>
+                         </div>
+                         <div className="text-left flex-1 min-w-0">
+                           <span className="text-[11px] font-black uppercase tracking-widest block truncate" style={{ color: template === id ? '#0066FF' : '#334155' }}>
+                             {t.name}
+                           </span>
+                           <span className="text-[9px] text-text-muted font-bold uppercase tracking-tighter opacity-70">
+                             Layout {t.layout.split('-')[1]}
+                           </span>
+                         </div>
+                         {template === id ? (
+                           <CheckCircle size={20} className="text-primary-blue shrink-0" />
+                         ) : (
+                           <div className="w-5 h-5 rounded-full border-2 border-border-main group-hover:border-primary-blue/30 shrink-0"></div>
+                         )}
+                      </button>
+                    ))}
                   </div>
                 </div>
               )}
@@ -1203,18 +1226,10 @@ export default function App() {
 
         {/* Modal Close & Actions Header */}
         {showPreviewModal && (
-          <div className="fixed top-0 left-0 right-0 h-16 bg-white/95 backdrop-blur-md border-b border-border-main flex items-center justify-between px-4 md:px-8 print:hidden shadow-sm z-[60]">
+          <div className="fixed top-0 left-0 right-0 h-16 bg-white/95 backdrop-blur-md border-b border-border-main flex items-center justify-start px-4 md:px-8 print:hidden shadow-sm z-[60]">
              <button onClick={() => setShowPreviewModal(false)} className="flex items-center gap-2 text-xs font-bold text-text-muted hover:text-text-main transition-colors">
-               <X size={16}/> <span className="hidden sm:inline">Voltar ao Editor</span>
+               <X size={16}/> <span>Sair da Pré-visualização</span>
              </button>
-             <Button onClick={handleDownloadPdf} disabled={isDownloading} icon={Download} className="h-9 px-3 sm:px-8 text-[10px] sm:text-xs font-bold uppercase tracking-wider">
-               <span className="hidden sm:inline">
-                 {isDownloading ? (isCoverLetterMode ? 'Gerando...' : 'Gerando...') : (isCoverLetterMode ? 'Baixar Carta' : 'Baixar Currículo')}
-               </span>
-               <span className="sm:hidden">
-                 {isDownloading ? '...' : (isCoverLetterMode ? 'Carta' : 'C.V.')}
-               </span>
-             </Button>
           </div>
         )}
 
@@ -1255,6 +1270,30 @@ export default function App() {
           </div>
         </div>
       </main>
+
+      {/* WhatsApp Support Floating Button - Only on Landing Page */}
+      {view === 'landing' && (
+        <a 
+          href="https://wa.me/244954748806" 
+          target="_blank" 
+          rel="noopener noreferrer"
+          className="fixed bottom-6 right-6 z-[100] bg-[#25D366] text-white p-4 rounded-full shadow-[0_8px_30px_rgb(37,211,102,0.4)] hover:scale-110 active:scale-95 transition-all flex items-center gap-3 group print:hidden"
+        >
+          <span className="max-w-0 overflow-hidden whitespace-nowrap group-hover:max-w-xs transition-all duration-500 font-bold text-xs uppercase tracking-widest">Suporte WhatsApp</span>
+          <svg 
+            viewBox="0 0 24 24" 
+            width="24" 
+            height="24" 
+            stroke="currentColor" 
+            strokeWidth="2" 
+            fill="none" 
+            strokeLinecap="round" 
+            strokeLinejoin="round"
+          >
+            <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 1 1-7.6-7.6 8.38 8.38 0 0 1 3.8.9L22 4l-2 5z"></path>
+          </svg>
+        </a>
+      )}
     </div>
   );
 }
