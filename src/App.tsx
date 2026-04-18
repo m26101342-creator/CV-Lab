@@ -26,6 +26,7 @@ import {
   CheckCircle,
   MessageCircle
 } from 'lucide-react';
+import { AdSenseUnit } from './components/AdSenseUnit';
 import { ResumeData, INITIAL_RESUME_DATA, TemplateType } from './types.ts';
 import { optimizeResumeText, generateCoverLetter } from './services/geminiService.ts';
 import html2pdf from 'html2pdf.js';
@@ -974,6 +975,8 @@ export default function App() {
           </div>
         </section>
 
+        <AdSenseUnit />
+
         <motion.footer 
           initial={{ opacity: 0 }}
           whileInView={{ opacity: 1 }}
@@ -986,6 +989,7 @@ export default function App() {
               <button onClick={() => setView('faq')} className="hover:text-primary-blue transition-colors">FAQ</button>
               <button onClick={() => setView('terms')} className="hover:text-primary-blue transition-colors">Termos e Condições</button>
            </div>
+           <Button onClick={() => setView('editor')} className="px-8 h-12 text-sm uppercase tracking-tight">Criar Currículo</Button>
            <p className="text-[10px] text-text-muted opacity-60">© 2026 CV LAB. Todos os direitos reservados.</p>
         </motion.footer>
 
