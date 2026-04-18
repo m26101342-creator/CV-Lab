@@ -52,4 +52,4 @@ export const INITIAL_RESUME_DATA: ResumeData = {
   languages: [],
 };
 
-export type TemplateType = 'modern_blue' | 'dark_exec' | 'sage_green' | 'crimson' | 'purple_bold' | 'citrus' | 'minimal_bw';
+export type TemplateType = 'modern_blue' | 'dark_exec' | 'sage_green' | 'crimson' | 'purple_bold' | 'citrus' | 'minimal_bw' | 't1_executive' | 't2_geometric' | 't3_teal';

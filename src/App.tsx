@@ -178,6 +178,15 @@ const TEMPLATES = {
     soft: '#f4f4f5',
     lines: '#e4e4e7',
     layout: 'minimal-left'
+  },
+  t1_executive: {
+    font: 'font-sans', bg: 'bg-white', textMain: 'text-gray-800', primary: '#1B2A4A', accent: '#1B2A4A', soft: '#1B2A4A', lines: '#E5E7EB', layout: 'custom-t1'
+  },
+  t2_geometric: {
+    font: 'font-sans', bg: 'bg-white', textMain: 'text-gray-800', primary: '#1B2A4A', accent: '#1B2A4A', soft: '#F9FAFB', lines: '#F3F4F6', layout: 'custom-t2'
+  },
+  t3_teal: {
+    font: 'font-sans', bg: 'bg-white', textMain: 'text-gray-800', primary: '#0D4A45', accent: '#0D4A45', soft: '#F0FAF9', lines: '#D1FAF6', layout: 'custom-t3'
   }
 };
 
@@ -202,17 +211,231 @@ const ResumeRenderer = ({ data, templateId }: { data: ResumeData; templateId: Te
     </h3>
   );
 
+  const renderText = (str: string) => str ? str.replace(/\*/g, '') : '';
+
   return (
     <div className={`${tBg} ${tFont} ${tText} min-h-[1120px] shadow-2xl flex flex-col w-full max-w-[800px] mx-auto overflow-hidden`} id="resume-content">
       
       {/* Dynamic Layout Styles */}
+      {theme.layout === 'custom-t1' && (
+        <div className="t1">
+          <div className="t1-left">
+            <div className="t1-avatar-wrap">
+              <div className="t1-avatar">
+                {data.personalInfo.photo ? <img src={data.personalInfo.photo} referrerPolicy="no-referrer" alt="Profile" className="w-full h-full object-cover object-top" /> : (data.personalInfo.fullName ? data.personalInfo.fullName.charAt(0).toUpperCase() : 'CV')}
+              </div>
+            </div>
+            <div>
+              <div className="t1-section-title">Contacto</div>
+              {data.personalInfo.email && <div className="t1-contact-item"><span className="t1-contact-icon">✉</span><span className="t1-contact-text">{data.personalInfo.email}</span></div>}
+              {data.personalInfo.phone && <div className="t1-contact-item"><span className="t1-contact-icon">📞</span><span className="t1-contact-text">{data.personalInfo.phone}</span></div>}
+              {data.personalInfo.location && <div className="t1-contact-item"><span className="t1-contact-icon">📍</span><span className="t1-contact-text">{data.personalInfo.location}</span></div>}
+            </div>
+            
+            {data.education.length > 0 && (
+              <div>
+                <div className="t1-section-title" style={{marginTop: '16px'}}>Formação</div>
+                {data.education.map(e => (
+                  <div key={e.id} className="t1-edu-item">
+                    <div className="t1-edu-degree">{e.degree}</div>
+                    <div className="t1-edu-school">{e.institution}</div>
+                    <div className="t1-edu-year">{e.startDate} - {e.endDate}</div>
+                  </div>
+                ))}
+              </div>
+            )}
+            
+            {data.skills.length > 0 && (
+              <div>
+                <div className="t1-section-title" style={{marginTop: '16px'}}>Habilidades</div>
+                <div>
+                  {data.skills.map(s => (
+                     <span key={s.id} className="t1-skill-tag">{s.name}</span>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+          
+          <div className="t1-right">
+             <div className="t1-name">{data.personalInfo.fullName || "Seu Nome"}</div>
+             <div className="t1-title">{data.personalInfo.title || "Cargo Desejado"}</div>
+             <div className="t1-divider"></div>
+             {data.personalInfo.summary && <div className="t1-bio">{renderText(data.personalInfo.summary)}</div>}
+
+             {data.experience.length > 0 && (
+                <div className="t1-right-section">
+                  <div className="t1-right-title">Experiência Profissional</div>
+                  {data.experience.map(ex => (
+                    <div key={ex.id} className="t1-exp-item">
+                      <div className="t1-exp-dot"></div>
+                      <div className="t1-exp-body">
+                         <div className="t1-exp-role">{ex.position} | <span style={{color: '#6B7280', fontSize: '13px'}}>{ex.company}</span></div>
+                         <div className="t1-exp-period">{ex.startDate} - {ex.current ? "Presente" : ex.endDate}</div>
+                         <div className="t1-exp-desc">{renderText(ex.description)}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+             )}
+          </div>
+        </div>
+      )}
+
+      {theme.layout === 'custom-t2' && (
+        <div className="t2">
+          <div className="t2-bg-shapes">
+             <div className="t2-shape1"></div>
+             <div className="t2-shape2"></div>
+          </div>
+          <div className="t2-header">
+             <div className="t2-avatar">
+               {data.personalInfo.photo ? <img src={data.personalInfo.photo} referrerPolicy="no-referrer" alt="Profile" className="w-full h-full object-cover object-top" /> : (data.personalInfo.fullName ? data.personalInfo.fullName.charAt(0).toUpperCase() : 'CV')}
+             </div>
+             <div className="t2-header-text">
+                <div className="t2-name">{data.personalInfo.fullName || "Seu Nome"}</div>
+                <div className="t2-title">{data.personalInfo.title || "Cargo Desejado"}</div>
+                <div className="t2-divider"></div>
+                {data.personalInfo.summary && <div className="t2-bio">{renderText(data.personalInfo.summary)}</div>}
+             </div>
+          </div>
+          
+          <div className="t2-body">
+             <div className="t2-left">
+                <div className="t2-section">
+                   <div className="t2-section-title">Contato</div>
+                   {data.personalInfo.email && <div className="t2-contact-row"><span className="t2-contact-icon"><Mail size={14}/></span> <span className="t2-contact-text">{data.personalInfo.email}</span></div>}
+                   {data.personalInfo.phone && <div className="t2-contact-row"><span className="t2-contact-icon"><Phone size={14}/></span> <span className="t2-contact-text">{data.personalInfo.phone}</span></div>}
+                   {data.personalInfo.location && <div className="t2-contact-row"><span className="t2-contact-icon"><MapPin size={14}/></span> <span className="t2-contact-text">{data.personalInfo.location}</span></div>}
+                </div>
+                
+                {data.education.length > 0 && (
+                  <div className="t2-section">
+                     <div className="t2-section-title">Formação</div>
+                     {data.education.map(e => (
+                       <div key={e.id} className="t2-edu-item">
+                         <div className="t2-edu-degree">{e.degree}</div>
+                         <div className="t2-edu-school">{e.institution}</div>
+                         <div className="t2-edu-year">{e.startDate} - {e.endDate}</div>
+                       </div>
+                     ))}
+                  </div>
+                )}
+                
+                {data.skills.length > 0 && (
+                  <div className="t2-section">
+                     <div className="t2-section-title">Habilidades</div>
+                     {data.skills.map(s => (
+                       <div key={s.id} className="t2-skill-item">
+                          <div className="t2-skill-label">{s.name}</div>
+                       </div>
+                     ))}
+                  </div>
+                )}
+             </div>
+             
+             <div className="t2-right">
+                {data.experience.length > 0 && (
+                  <div className="t2-section">
+                     <div className="t2-section-title">Experiência</div>
+                     {data.experience.map(ex => (
+                        <div key={ex.id} className="t2-exp-item">
+                           <div className="t2-exp-header">
+                              <div className="t2-exp-company">{ex.company}</div>
+                              <div className="t2-exp-period">{ex.startDate} - {ex.current ? "Presente" : ex.endDate}</div>
+                           </div>
+                           <div className="t2-exp-role">{ex.position}</div>
+                           <div className="t2-exp-desc">{renderText(ex.description)}</div>
+                        </div>
+                     ))}
+                  </div>
+                )}
+             </div>
+          </div>
+        </div>
+      )}
+
+      {theme.layout === 'custom-t3' && (
+        <div className="t3">
+           <div className="t3-header">
+              <div className="t3-header-left">
+                 <div className="t3-avatar">
+                   {data.personalInfo.photo ? <img src={data.personalInfo.photo} referrerPolicy="no-referrer" alt="Profile" className="w-full h-full object-cover object-top" /> : (data.personalInfo.fullName ? data.personalInfo.fullName.charAt(0).toUpperCase() : 'CV')}
+                 </div>
+              </div>
+              <div className="t3-header-right">
+                 <div className="t3-name">{data.personalInfo.fullName || "Seu Nome"}</div>
+                 <div className="t3-title">{data.personalInfo.title || "Cargo Desejado"}</div>
+                 <div className="t3-divider"></div>
+                 {data.personalInfo.summary && <div className="t3-bio">{renderText(data.personalInfo.summary)}</div>}
+              </div>
+           </div>
+           
+           <div className="t3-body">
+              <div className="t3-left">
+                 <div className="t3-section">
+                   <div className="t3-section-title">Contato</div>
+                   {data.personalInfo.email && <div className="t3-contact-row"><span className="t3-contact-icon"><Mail size={12}/></span> <span className="t3-contact-text">{data.personalInfo.email}</span></div>}
+                   {data.personalInfo.phone && <div className="t3-contact-row"><span className="t3-contact-icon"><Phone size={12}/></span> <span className="t3-contact-text">{data.personalInfo.phone}</span></div>}
+                   {data.personalInfo.location && <div className="t3-contact-row"><span className="t3-contact-icon"><MapPin size={12}/></span> <span className="t3-contact-text">{data.personalInfo.location}</span></div>}
+                 </div>
+                 
+                 {data.education.length > 0 && (
+                   <div className="t3-section">
+                     <div className="t3-section-title">Educação</div>
+                     {data.education.map(e => (
+                       <div key={e.id} className="t3-edu-item">
+                          <div className="t3-edu-school">{e.institution}</div>
+                          <div className="t3-edu-degree">{e.degree}</div>
+                          <div className="t3-edu-year">{e.startDate} - {e.endDate}</div>
+                       </div>
+                     ))}
+                   </div>
+                 )}
+              </div>
+              
+              <div className="t3-right">
+                 {data.experience.length > 0 && (
+                   <div className="t3-section">
+                      <div className="t3-section-title">Experiência</div>
+                      {data.experience.map(ex => (
+                         <div key={ex.id} className="t3-exp-item">
+                           <div className="t3-exp-header">
+                              <div className="t3-exp-company">{ex.company}</div>
+                              <div className="t3-exp-period">{ex.startDate} - {ex.current ? "Presente" : ex.endDate}</div>
+                           </div>
+                           <div className="t3-exp-role">{ex.position}</div>
+                           <div className="t3-exp-desc">{renderText(ex.description)}</div>
+                         </div>
+                      ))}
+                   </div>
+                 )}
+                 
+                 {data.skills.length > 0 && (
+                   <div className="t3-section" style={{marginTop: '20px'}}>
+                      <div className="t3-section-title">Habilidades</div>
+                      {data.skills.map(s => (
+                         <div key={s.id} className="t3-skill-item">
+                            <div className="t3-skill-label">{s.name}</div>
+                            <div className="t3-skill-bar-bg">
+                               <div className="t3-skill-bar-fill" style={{ width: s.level === 'Expert' ? '100%' : s.level === 'Advanced' ? '75%' : s.level === 'Intermediate' ? '50%' : '25%' }}></div>
+                            </div>
+                         </div>
+                      ))}
+                   </div>
+                 )}
+              </div>
+           </div>
+        </div>
+      )}
+
       {theme.layout === 'sidebar-left' && (
         <div className="flex-1 flex flex-row">
           {/* Sidebar */}
           <div className="w-1/3 p-10 flex flex-col gap-8 border-r" style={{ backgroundColor: theme.soft, borderColor: theme.lines }}>
             <div className="flex flex-col items-center mb-4">
               {data.personalInfo.photo ? (
-                <img src={data.personalInfo.photo} referrerPolicy="no-referrer" alt="Profile" className="w-32 h-32 rounded-full object-cover mb-6 border-4 shadow-lg" style={{ borderColor: theme.primary }} />
+                <img src={data.personalInfo.photo} referrerPolicy="no-referrer" alt="Profile" className="w-28 h-28 rounded-full object-cover object-top mb-6 border-4 shadow-lg" style={{ borderColor: theme.primary }} />
               ) : null}
               <h1 className="text-3xl font-black uppercase tracking-tighter mb-1 text-center" style={{ color: theme.accent }}>{data.personalInfo.fullName || "Seu Nome"}</h1>
               <p className="font-bold tracking-widest uppercase text-[10px] mb-6 text-center" style={{ color: theme.primary }}>{data.personalInfo.title || "Cargo Desejado"}</p>
@@ -284,7 +507,7 @@ const ResumeRenderer = ({ data, templateId }: { data: ResumeData; templateId: Te
         <div className="flex-1 flex flex-col">
           <div className="pt-16 pb-12 px-12 relative flex flex-col items-center text-center" style={{ backgroundColor: templateId === 'dark_exec' ? '#0f172a' : theme.soft }}>
             {data.personalInfo.photo && (
-               <img src={data.personalInfo.photo} referrerPolicy="no-referrer" alt="Profile" className="w-32 h-32 rounded-full object-cover border-4 shadow-xl mb-6 relative z-10" style={{ borderColor: 'white' }} />
+               <img src={data.personalInfo.photo} referrerPolicy="no-referrer" alt="Profile" className="w-28 h-28 rounded-full object-cover object-top border-4 shadow-xl mb-6 relative z-10" style={{ borderColor: 'white' }} />
             )}
             <h1 className="text-4xl font-black uppercase tracking-widest mb-2 relative z-10" style={{ color: theme.accent }}>{data.personalInfo.fullName || "Seu Nome Completo"}</h1>
             <p className="font-bold tracking-[0.3em] uppercase text-xs mb-6 relative z-10" style={{ color: theme.primary }}>{data.personalInfo.title || "Seu Cargo"}</p>
@@ -299,7 +522,7 @@ const ResumeRenderer = ({ data, templateId }: { data: ResumeData; templateId: Te
               {data.personalInfo.summary && (
                 <div>
                   <SectionTitle>Perfil Profissional</SectionTitle>
-                  <p className="text-xs leading-relaxed text-justify font-medium">{data.personalInfo.summary}</p>
+                  <p className="text-xs leading-relaxed text-justify font-medium">{renderText(data.personalInfo.summary)}</p>
                 </div>
               )}
               <div>
@@ -312,7 +535,7 @@ const ResumeRenderer = ({ data, templateId }: { data: ResumeData; templateId: Te
                         <span className="text-[9px] font-black tracking-widest uppercase opacity-70">{ex.startDate} • {ex.current ? 'Presente' : ex.endDate}</span>
                       </div>
                       <p className="text-xs font-bold mb-3 uppercase tracking-wide" style={{ color: theme.primary }}>{ex.company}</p>
-                      <div className="text-xs leading-relaxed whitespace-pre-line text-justify">{ex.description}</div>
+                      <div className="text-xs leading-relaxed whitespace-pre-line text-justify">{renderText(ex.description)}</div>
                     </div>
                   ))}
                 </div>
@@ -356,7 +579,7 @@ const ResumeRenderer = ({ data, templateId }: { data: ResumeData; templateId: Te
                 <Contacts />
               </div>
               {data.personalInfo.photo && (
-                 <img src={data.personalInfo.photo} referrerPolicy="no-referrer" alt="Profile" className="w-28 h-28 object-cover rounded-2xl shadow-sm" style={{ border: `1px solid ${theme.lines}` }} />
+                 <img src={data.personalInfo.photo} referrerPolicy="no-referrer" alt="Profile" className="w-28 h-28 object-cover object-top rounded-2xl shadow-sm" style={{ border: `1px solid ${theme.lines}` }} />
               )}
             </div>
           </div>
@@ -393,7 +616,7 @@ const ResumeRenderer = ({ data, templateId }: { data: ResumeData; templateId: Te
               {data.personalInfo.summary && (
                 <div>
                   <SectionTitle>Resumo</SectionTitle>
-                  <p className="text-xs leading-relaxed text-justify font-medium">{data.personalInfo.summary}</p>
+                  <p className="text-xs leading-relaxed text-justify font-medium">{renderText(data.personalInfo.summary)}</p>
                 </div>
               )}
               <div>
@@ -406,7 +629,7 @@ const ResumeRenderer = ({ data, templateId }: { data: ResumeData; templateId: Te
                         <p className="text-xs font-bold uppercase tracking-wide" style={{ color: theme.primary }}>{ex.company}</p>
                       </div>
                       <span className="block text-[9px] font-black tracking-widest uppercase opacity-60 mb-3">{ex.startDate} • {ex.current ? 'Presente' : ex.endDate}</span>
-                      <div className="text-xs leading-relaxed whitespace-pre-line text-justify">{ex.description}</div>
+                      <div className="text-xs leading-relaxed whitespace-pre-line text-justify">{renderText(ex.description)}</div>
                     </div>
                   ))}
                 </div>
@@ -432,6 +655,7 @@ export default function App() {
   const [isCoverLetterMode, setIsCoverLetterMode] = useState(false);
   const [generatedLetter, setGeneratedLetter] = useState("");
   const [tempSkill, setTempSkill] = useState("");
+  const [showPreviewModal, setShowPreviewModal] = useState(false);
 
   const [template, setTemplate] = useState<TemplateType>('modern_blue');
 
@@ -707,15 +931,19 @@ export default function App() {
     <div className="min-h-screen bg-bg-main flex flex-col md:flex-row md:h-screen md:overflow-hidden print:bg-white print:h-auto print:overflow-visible">
       
       {/* Sidebar Editor */}
-      <aside className="w-full md:w-[420px] bg-white border-r border-border-main flex flex-col shadow-2xl z-30 print:hidden shrink-0">
-        <header className="p-6 border-b border-border-main flex items-center justify-between">
+      <aside className="w-full max-w-3xl mx-auto md:mx-0 md:w-[480px] bg-white border-r border-border-main flex flex-col shadow-2xl z-30 print:hidden shrink-0">
+        <header className="p-4 border-b border-border-main flex items-center justify-between sticky top-0 bg-white z-40 shadow-sm">
           <div className="flex items-center gap-3">
-            <button onClick={() => setView('landing')} className="p-2 hover:bg-bg-main rounded-xl transition-colors text-text-muted">
+             <button onClick={() => setView('landing')} className="p-2 hover:bg-bg-main rounded-xl transition-colors text-text-muted">
                <ChevronLeft size={20} />
-            </button>
-            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-primary-blue">CV Lab Editor</span>
+             </button>
+             <span className="text-[10px] font-black uppercase tracking-[0.2em] text-primary-blue hidden sm:inline">CV Lab Editor</span>
           </div>
-          <div className="px-3 py-1 bg-soft-blue text-primary-blue text-[9px] font-black rounded-full">STEP {activeStep + 1}/6</div>
+          <div className="flex items-center gap-2">
+            <div className="px-3 py-1 bg-soft-blue text-primary-blue text-[9px] font-black rounded-full hidden md:block">STEP {activeStep + 1}/6</div>
+            <Button variant="outline" className="h-9 px-4 text-xs font-bold" onClick={() => setShowPreviewModal(true)} icon={ExternalLink}>Pré-Visualizar</Button>
+            <Button className="h-9 px-4 text-xs font-bold hidden sm:flex" onClick={() => window.print()} icon={Download}>Baixar</Button>
+          </div>
         </header>
 
         <div className="flex-1 overflow-y-auto p-8 space-y-10 custom-scrollbar">
@@ -871,8 +1099,9 @@ export default function App() {
                    <div className="p-8 bg-primary-blue text-white rounded-3xl space-y-6 relative overflow-hidden shadow-2xl">
                       <div className="absolute -top-10 -right-10 w-32 h-32 bg-white/10 rounded-full blur-3xl"></div>
                       <h3 className="text-2xl font-black leading-tight">Currículo Pronto!</h3>
-                      <p className="text-sm opacity-80 font-medium">Você agora pode baixar seu arquivo PDF profissional ou elevar seu nível com uma carta de apresentação.</p>
-                      <Button className="w-full bg-white text-primary-blue hover:bg-white/95" onClick={() => window.print()} icon={Download}>Baixar Currículo</Button>
+                      <p className="text-sm opacity-80 font-medium text-balance">Você agora pode visualizar seu documento de maneira completa, baixá-lo ou gerar uma carta de apresentação.</p>
+                      <Button className="w-full bg-white text-primary-blue hover:bg-white/95" onClick={() => setShowPreviewModal(true)} icon={ExternalLink}>Ver Meu Currículo</Button>
+                      <Button variant="outline" className="w-full text-white border-white hover:bg-white/10" onClick={() => window.print()} icon={Download}>Baixar PDF</Button>
                    </div>
 
                    <div className="p-8 bg-white border-2 border-dashed border-primary-blue/30 rounded-3xl text-center space-y-4">
@@ -897,29 +1126,40 @@ export default function App() {
         </footer>
       </aside>
 
-      {/* Preview Section */}
-      <main className="flex-1 bg-bg-main overflow-y-auto w-full p-4 md:p-16 relative custom-scrollbar print:p-0 print:m-0 print:overflow-visible flex flex-col items-center">
+      {/* Preview Section - Transformed to Modal explicitly on request/mobile, hidden standard */}
+      <main className={`flex-1 overflow-y-auto w-full custom-scrollbar transition-all duration-300 print:flex print:bg-white print:p-0 print:m-0 print:overflow-visible flex-col items-center ${showPreviewModal ? 'fixed inset-0 z-50 bg-bg-main/95 backdrop-blur-md pt-20 pb-8 px-2 flex' : 'hidden md:flex bg-bg-main p-4 md:p-16 relative'}`}>
+        
         {loading && (
-          <div className="absolute inset-0 bg-white/60 backdrop-blur-md z-[100] flex flex-col items-center justify-center gap-6">
+          <div className="fixed inset-0 bg-white/60 backdrop-blur-md z-[100] flex flex-col items-center justify-center gap-6 print:hidden">
              <div className="w-16 h-16 border-4 border-primary-blue border-t-transparent rounded-full animate-spin shadow-2xl"></div>
              <p className="font-black text-primary-blue text-[10px] tracking-[0.3em] uppercase animate-pulse">Inteligência CV LAB Ativada</p>
           </div>
         )}
 
-        <div className="max-w-[800px] mx-auto origin-top transition-all duration-700 shadow-[0_50px_100px_-20px_rgba(0,0,0,0.15)] print:shadow-none mb-20 md:mb-0">
+        {/* Modal Close & Actions Header */}
+        {showPreviewModal && (
+          <div className="fixed top-0 left-0 right-0 h-16 bg-white/95 backdrop-blur-md border-b border-border-main flex items-center justify-between px-4 md:px-8 print:hidden shadow-sm z-[60]">
+             <button onClick={() => setShowPreviewModal(false)} className="flex items-center gap-2 text-xs font-bold text-text-muted hover:text-text-main transition-colors">
+               <X size={16}/> <span className="hidden sm:inline">Voltar ao Editor</span>
+             </button>
+             <Button onClick={() => window.print()} icon={Download} className="h-9 px-4 md:px-8 text-xs font-bold">Baixar Currículo</Button>
+          </div>
+        )}
+
+        <div className={`max-w-[800px] w-full mx-auto origin-top transition-all duration-700 print:shadow-none print:w-full ${showPreviewModal ? 'shadow-2xl' : 'shadow-[0_50px_100px_-20px_rgba(0,0,0,0.15)] mb-20 md:mb-0'}`}>
            <AnimatePresence mode="wait">
              {isCoverLetterMode ? (
                <motion.div 
                  key="letter"
                  initial={{ opacity: 0, y: 20 }}
                  animate={{ opacity: 1, y: 0 }}
-                 className="bg-white min-h-[1120px] p-20 shadow-2xl relative"
+                 className={`bg-white min-h-[1120px] p-10 md:p-20 relative ${showPreviewModal ? '' : 'shadow-2xl'}`}
                >
                  <button onClick={() => setIsCoverLetterMode(false)} className="absolute top-8 left-8 text-[10px] font-black uppercase text-primary-blue tracking-widest flex items-center gap-2 print:hidden">
                     <ChevronLeft size={14} /> Voltar ao Currículo
                  </button>
-                 <div className="max-w-prose mx-auto text-justify whitespace-pre-line text-lg leading-relaxed pt-12 text-text-main">
-                    {generatedLetter}
+                 <div className="max-w-prose mx-auto text-justify whitespace-pre-line text-sm md:text-lg leading-relaxed pt-12 text-text-main">
+                    {renderText(generatedLetter)}
                  </div>
                </motion.div>
              ) : (

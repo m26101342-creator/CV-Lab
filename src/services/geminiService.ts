@@ -21,7 +21,7 @@ export async function optimizeResumeText(text: string, type: 'summary' | 'experi
     Tipo de conteúdo: ${type}
     Texto original: "${text}"
     
-    Retorne apenas o texto otimizado, sem introduções ou explicações.
+    IMPORTANTE: Não utilize formatação markdown como negrito (**) ou listas com marcações de asterisco (*). Retorne apenas texto puro, sem introduções ou explicações.
   `;
 
   try {
@@ -31,10 +31,11 @@ export async function optimizeResumeText(text: string, type: 'summary' | 'experi
       contents: prompt,
     });
     
-    return response.text || text;
+    const cleanedText = (response.text || text).replace(/\*/g, '');
+    return cleanedText;
   } catch (error) {
     console.error("Error optimizing text with Gemini:", error);
-    return text;
+    return text.replace(/\*/g, '');
   }
 }
 
