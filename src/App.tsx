@@ -128,7 +128,7 @@ const ResumeRenderer = ({ data, templateId }: { data: ResumeData; templateId: Te
   const c = theme.colors;
 
   return (
-    <div className={`bg-white text-gray-800 min-h-[1123px] w-full mx-auto relative`} id="resume-content">
+    <div className={`bg-white min-h-[1123px] w-full mx-auto relative`} id="resume-content" style={{ color: '#1f2937' }}>
       
       {/* Dynamic Layout Styles */}
       {theme.layout === 'custom-t1' && (
@@ -373,26 +373,26 @@ const ResumeRenderer = ({ data, templateId }: { data: ResumeData; templateId: Te
                   </div>
                 )}
              </div>
-          </div>
-          <div className="w-[68%] p-14 flex flex-col gap-10 bg-white text-gray-800">
+           </div>
+           <div className="w-[68%] p-14 flex flex-col gap-10 bg-white" style={{ color: '#1f2937' }}>
              {data.personalInfo.summary && (
                <div>
-                  <h2 className="text-[28px] font-black mb-4 text-gray-900 leading-tight">Profile</h2>
-                  <p className="text-[14px] leading-[1.8] text-gray-700 text-justify font-serif">{renderText(data.personalInfo.summary)}</p>
+                  <h2 className="text-[28px] font-black mb-4 leading-tight" style={{ color: '#111827' }}>Profile</h2>
+                  <p className="text-[14px] leading-[1.8] text-justify font-serif" style={{ color: '#374151' }}>{renderText(data.personalInfo.summary)}</p>
                </div>
              )}
              {data.experience.length > 0 && (
                <div>
-                  <h2 className="text-[28px] font-black mb-6 text-gray-900 leading-tight">Experience</h2>
+                  <h2 className="text-[28px] font-black mb-6 leading-tight" style={{ color: '#111827' }}>Experience</h2>
                   <div className="flex flex-col gap-8">
                     {data.experience.map(ex => (
                       <div key={ex.id}>
-                         <h4 className="text-[15px] font-bold text-gray-800 mb-1">{ex.position}</h4>
+                         <h4 className="text-[15px] font-bold mb-1" style={{ color: '#1f2937' }}>{ex.position}</h4>
                          <div className="flex justify-between items-center mb-3">
-                            <span className="text-[13px] font-medium text-gray-600">{ex.company}</span>
-                            <span className="text-[12px] text-gray-500 font-bold">{ex.startDate} - {ex.current ? 'Present' : ex.endDate}</span>
+                            <span className="text-[13px] font-medium" style={{ color: '#4b5563' }}>{ex.company}</span>
+                            <span className="text-[12px] font-bold" style={{ color: '#6b7280' }}>{ex.startDate} - {ex.current ? 'Present' : ex.endDate}</span>
                          </div>
-                         <p className="text-[13px] text-gray-600 leading-[1.7] text-justify font-serif mt-1">{renderText(ex.description)}</p>
+                         <p className="text-[13px] leading-[1.7] text-justify font-serif mt-1" style={{ color: '#4b5563' }}>{renderText(ex.description)}</p>
                       </div>
                     ))}
                   </div>
@@ -400,23 +400,23 @@ const ResumeRenderer = ({ data, templateId }: { data: ResumeData; templateId: Te
              )}
              {data.skills.length > 0 && (
                <div>
-                  <h2 className="text-[28px] font-black mb-5 text-gray-900 leading-tight">Skills</h2>
-                  <p className="text-[13px] leading-[1.8] text-gray-700 font-serif">
+                  <h2 className="text-[28px] font-black mb-5 leading-tight" style={{ color: '#111827' }}>Skills</h2>
+                  <p className="text-[13px] leading-[1.8] font-serif" style={{ color: '#374151' }}>
                     {data.skills.map(s => s.name).join(', ')}
                   </p>
                </div>
              )}
              {data.education.length > 0 && (
                <div>
-                  <h2 className="text-[28px] font-black mb-5 text-gray-900 leading-tight">Education</h2>
+                  <h2 className="text-[28px] font-black mb-5 leading-tight" style={{ color: '#111827' }}>Education</h2>
                   <div className="flex flex-col gap-5">
                     {data.education.map(e => (
                       <div key={e.id}>
                          <div className="flex justify-between items-center mb-1">
-                            <h4 className="text-[14px] font-bold text-gray-800">{e.degree}</h4>
-                            <span className="text-[12px] text-gray-500 font-bold">{e.startDate} - {e.endDate}</span>
+                            <h4 className="text-[14px] font-bold" style={{ color: '#1f2937' }}>{e.degree}</h4>
+                            <span className="text-[12px] font-bold" style={{ color: '#6b7280' }}>{e.startDate} - {e.endDate}</span>
                          </div>
-                         <span className="text-[13px] font-medium text-gray-600">{e.institution}</span>
+                         <span className="text-[13px] font-medium" style={{ color: '#4b5563' }}>{e.institution}</span>
                       </div>
                     ))}
                   </div>
@@ -428,13 +428,13 @@ const ResumeRenderer = ({ data, templateId }: { data: ResumeData; templateId: Te
 
       {theme.layout === 'custom-t5' && (
         <div className="flex w-full min-h-[1123px] bg-white text-left font-sans overflow-hidden relative">
-           <div className="w-[35%] bg-gray-100 flex flex-col relative z-10 pt-16" style={{ backgroundColor: c.soft }}>
+           <div className="w-[35%] flex flex-col relative z-10 pt-16" style={{ backgroundColor: c.soft }}>
              <div className="bg-white h-56 w-full absolute top-0 left-0" style={{ borderBottomLeftRadius: '50%', borderBottomRightRadius: '50%', transform: 'scaleX(1.4)', transformOrigin: 'top center' }}></div>
              <div className="relative z-20 w-full flex flex-col items-center px-8">
                 {data.personalInfo.photo ? (
-                  <img src={data.personalInfo.photo} referrerPolicy="no-referrer" className="w-48 h-48 rounded-full object-cover object-top border-[6px] border-white shadow-sm mb-10" />
+                  <img src={data.personalInfo.photo} referrerPolicy="no-referrer" className="w-48 h-48 rounded-full object-cover object-top border-[6px] border-white mb-10" />
                 ) : (
-                  <div className="w-48 h-48 rounded-full border-[6px] border-white shadow-sm mb-10 bg-gray-200 flex items-center justify-center text-5xl font-black text-gray-500">{data.personalInfo.fullName.charAt(0)}</div>
+                  <div className="w-48 h-48 rounded-full border-[6px] border-white mb-10 flex items-center justify-center text-5xl font-black" style={{ backgroundColor: '#e5e7eb', color: '#6b7280' }}>{data.personalInfo.fullName.charAt(0)}</div>
                 )}
                 
                 <div className="w-full mb-10">
@@ -495,7 +495,7 @@ const ResumeRenderer = ({ data, templateId }: { data: ResumeData; templateId: Te
                       <h3 className="border rounded-[20px] px-5 py-1 text-[13px] font-bold shrink-0" style={{ borderColor: c.primary, color: c.primary }}>About Me</h3>
                       <div className="h-[2px] flex-1" style={{ backgroundColor: c.lines }}></div>
                    </div>
-                   <p className="text-[13px] leading-[1.8] text-justify font-medium text-gray-600">{renderText(data.personalInfo.summary)}</p>
+                   <p className="text-[13px] leading-[1.8] text-justify font-medium" style={{ color: '#4b5563' }}>{renderText(data.personalInfo.summary)}</p>
                 </div>
               )}
 
@@ -510,10 +510,10 @@ const ResumeRenderer = ({ data, templateId }: { data: ResumeData; templateId: Te
                        <div key={ex.id}>
                           <div className="font-black mb-1 text-[15px]" style={{ color: c.primary }}>{ex.company}</div>
                           <div className="flex justify-between items-center mb-3">
-                             <div className="text-[14px] font-bold text-gray-700">{ex.position}</div>
-                             <div className="text-[11px] font-black text-gray-500">{ex.startDate} - {ex.current ? 'Present' : ex.endDate}</div>
+                             <div className="text-[14px] font-bold" style={{ color: '#374151' }}>{ex.position}</div>
+                             <div className="text-[11px] font-black" style={{ color: '#6b7280' }}>{ex.startDate} - {ex.current ? 'Present' : ex.endDate}</div>
                           </div>
-                          <ul className="list-disc pl-4 text-[12px] leading-[1.6] text-gray-600">
+                          <ul className="list-disc pl-4 text-[12px] leading-[1.6]" style={{ color: '#4b5563' }}>
                              <li className="text-justify">{renderText(ex.description)}</li>
                           </ul>
                        </div>
@@ -1071,12 +1071,12 @@ export default function App() {
                  initial={{ opacity: 0, y: 20 }}
                  animate={{ opacity: 1, y: 0 }}
                  id="cover-letter-content"
-                 className={`bg-white min-h-[1120px] p-10 md:p-20 relative ${showPreviewModal ? '' : 'shadow-2xl'}`}
+                 className={`bg-white min-h-[1120px] p-10 md:p-20 relative`}
                >
                  <button onClick={() => setIsCoverLetterMode(false)} className="absolute top-8 left-8 text-[10px] font-black uppercase text-primary-blue tracking-widest flex items-center gap-2 print:hidden">
                     <ChevronLeft size={14} /> Voltar ao Currículo
                  </button>
-                 <div className="max-w-prose mx-auto text-justify whitespace-pre-line text-sm md:text-lg leading-relaxed pt-12 text-text-main">
+                 <div className="max-w-prose mx-auto text-justify whitespace-pre-line text-sm md:text-lg leading-relaxed pt-12" style={{ color: '#334155' }}>
                     {renderText(generatedLetter)}
                  </div>
                </motion.div>
