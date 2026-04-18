@@ -33,7 +33,7 @@ export interface ResumeData {
   skills: {
     id: string;
     name: string;
-    level: 'Basic' | 'Intermediate' | 'Advanced' | 'Expert';
+    level: 'Básico' | 'Intermédio' | 'Avançado' | 'Especialista';
   }[];
   languages: string[];
 }

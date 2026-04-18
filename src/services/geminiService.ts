@@ -15,8 +15,8 @@ function getAI() {
       apiKey = process.env.GEMINI_API_KEY;
     } 
     // @ts-ignore - import.meta.env is Vite specific
-    else if (import.meta.env && import.meta.env.VITE_GEMINI_API_KEY) {
-      apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+    else if ((import.meta as any).env && (import.meta as any).env.VITE_GEMINI_API_KEY) {
+      apiKey = (import.meta as any).env.VITE_GEMINI_API_KEY;
     }
     
     if (!apiKey) {

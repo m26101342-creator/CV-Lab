@@ -23,7 +23,8 @@ import {
   Globe,
   X,
   ExternalLink,
-  CheckCircle
+  CheckCircle,
+  MessageCircle
 } from 'lucide-react';
 import { ResumeData, INITIAL_RESUME_DATA, TemplateType } from './types.ts';
 import { optimizeResumeText, generateCoverLetter } from './services/geminiService.ts';
@@ -84,7 +85,7 @@ const TextArea = ({ label, value, onChange, placeholder, onOptimize, isOptimizin
           ) : (
             <Plus size={10} />
           )}
-          {isOptimizing ? 'OTIMIZANDO...' : 'OTIMIZAR IA'}
+          {isOptimizing ? 'OTIMIZANDO...' : 'OTIMIZAR COM IA'}
         </button>
       )}
     </div>
@@ -111,13 +112,13 @@ const TextArea = ({ label, value, onChange, placeholder, onOptimize, isOptimizin
 // --- Resumes & Templates Configuration ---
 
 const TEMPLATES: Record<TemplateType, { name: string; layout: string; colors: any }> = {
-  t1_executive: { name: 'Executive Dark', layout: 'custom-t1', colors: { primary: '#1B2A4A', text: '#4B5563', heading: '#1B2A4A', soft: '#1B2A4A', lines: '#E5E7EB' } },
-  t1_emerald: { name: 'Executive Emerald',  layout: 'custom-t1', colors: { primary: '#064E3B', text: '#4B5563', heading: '#064E3B', soft: '#064E3B', lines: '#E5E7EB' } },
-  t2_geometric: { name: 'Geometric Mod', layout: 'custom-t2', colors: { primary: '#1B2A4A', text: '#4B5563', heading: '#1B2A4A', soft: '#F9FAFB', lines: '#F3F4F6' } },
-  t2_burgundy: { name: 'Geometric Crimson',  layout: 'custom-t2', colors: { primary: '#7F1D1D', text: '#4B5563', heading: '#7F1D1D', soft: '#FEF2F2', lines: '#FEE2E2' } },
-  t3_teal: { name: 'Teal Bold', layout: 'custom-t3', colors: { primary: '#0D4A45', text: '#4B5563', heading: '#0D4A45', soft: '#F0FAF9', lines: '#D1FAF6', dark: '#082E2A' } },
-  t3_ocean: { name: 'Ocean Bold', layout: 'custom-t3', colors: { primary: '#0369A1', text: '#4B5563', heading: '#0369A1', soft: '#F0F9FF', lines: '#BAE6FD', dark: '#075985' } },
-  t4_barnabas: { name: 'Clean Sidebar', layout: 'custom-t4', colors: { primary: '#2D313A', text: '#3E4249', heading: '#333333', soft: '#2D313A', lines: '#E5E7EB' } },
+  t1_executive: { name: 'Executivo Dark', layout: 'custom-t1', colors: { primary: '#1B2A4A', text: '#4B5563', heading: '#1B2A4A', soft: '#1B2A4A', lines: '#E5E7EB' } },
+  t1_emerald: { name: 'Executivo Esmeralda',  layout: 'custom-t1', colors: { primary: '#064E3B', text: '#4B5563', heading: '#064E3B', soft: '#064E3B', lines: '#E5E7EB' } },
+  t2_geometric: { name: 'Geométrico Mod', layout: 'custom-t2', colors: { primary: '#1B2A4A', text: '#4B5563', heading: '#1B2A4A', soft: '#F9FAFB', lines: '#F3F4F6' } },
+  t2_burgundy: { name: 'Geométrico Carmesim',  layout: 'custom-t2', colors: { primary: '#7F1D1D', text: '#4B5563', heading: '#7F1D1D', soft: '#FEF2F2', lines: '#FEE2E2' } },
+  t3_teal: { name: 'Teal Arrojado', layout: 'custom-t3', colors: { primary: '#0D4A45', text: '#4B5563', heading: '#0D4A45', soft: '#F0FAF9', lines: '#D1FAF6', dark: '#082E2A' } },
+  t3_ocean: { name: 'Oceano Vibrante', layout: 'custom-t3', colors: { primary: '#0369A1', text: '#4B5563', heading: '#0369A1', soft: '#F0F9FF', lines: '#BAE6FD', dark: '#075985' } },
+  t4_barnabas: { name: 'Sidebar Limpa', layout: 'custom-t4', colors: { primary: '#2D313A', text: '#3E4249', heading: '#333333', soft: '#2D313A', lines: '#E5E7EB' } },
   t5_jonathan: { name: 'Jonathan Arches', layout: 'custom-t5', colors: { primary: '#4A4C53', text: '#555555', heading: '#222222', soft: '#F3F4F6', lines: '#D1D5DB' } }
 };
 
@@ -234,7 +235,7 @@ const ResumeRenderer = ({ data, templateId }: { data: ResumeData; templateId: Te
           <div className="t2-body">
              <div className="t2-left">
                 <div className="t2-section">
-                   <div className="t2-section-title">Contato</div>
+                   <div className="t2-section-title">Contacto</div>
                    {data.personalInfo.email && <div className="t2-contact-row"><span className="t2-contact-icon flex items-center"><Mail size={14}/></span> <span className="t2-contact-text">{data.personalInfo.email}</span></div>}
                    {data.personalInfo.phone && <div className="t2-contact-row"><span className="t2-contact-icon flex items-center"><Phone size={14}/></span> <span className="t2-contact-text">{data.personalInfo.phone}</span></div>}
                    {data.personalInfo.location && <div className="t2-contact-row"><span className="t2-contact-icon flex items-center"><MapPin size={14}/></span> <span className="t2-contact-text">{data.personalInfo.location}</span></div>}
@@ -268,7 +269,7 @@ const ResumeRenderer = ({ data, templateId }: { data: ResumeData; templateId: Te
              <div className="t2-right">
                 {data.experience.length > 0 && (
                   <div className="t2-section">
-                     <div className="t2-section-title">Experiência</div>
+                     <div className="t2-section-title">Experiência Profissional</div>
                      {data.experience.map(ex => (
                         <div key={ex.id} className="t2-exp-item">
                            <div className="t2-exp-header">
@@ -313,7 +314,7 @@ const ResumeRenderer = ({ data, templateId }: { data: ResumeData; templateId: Te
            <div className="t3-body">
               <div className="t3-left">
                  <div className="t3-section">
-                    <div className="t3-section-title text-center">Contato</div>
+                    <div className="t3-section-title text-center">Contacto</div>
                     {data.personalInfo.email && <div className="t3-contact-row"><span className="t3-contact-icon flex items-center"><Mail size={12}/></span> <span className="t3-contact-text">{data.personalInfo.email}</span></div>}
                     {data.personalInfo.phone && <div className="t3-contact-row"><span className="t3-contact-icon flex items-center"><Phone size={12}/></span> <span className="t3-contact-text">{data.personalInfo.phone}</span></div>}
                     {data.personalInfo.location && <div className="t3-contact-row"><span className="t3-contact-icon flex items-center"><MapPin size={12}/></span> <span className="t3-contact-text">{data.personalInfo.location}</span></div>}
@@ -321,7 +322,7 @@ const ResumeRenderer = ({ data, templateId }: { data: ResumeData; templateId: Te
                  
                  {data.education.length > 0 && (
                    <div className="t3-section">
-                     <div className="t3-section-title text-center">Educação</div>
+                     <div className="t3-section-title text-center">Formação</div>
                      {data.education.map(e => (
                        <div key={e.id} className="t3-edu-item">
                           <div className="t3-edu-school font-bold">{e.institution}</div>
@@ -336,7 +337,7 @@ const ResumeRenderer = ({ data, templateId }: { data: ResumeData; templateId: Te
               <div className="t3-right">
                  {data.experience.length > 0 && (
                    <div className="t3-section">
-                      <div className="t3-section-title text-center">Experiência</div>
+                      <div className="t3-section-title text-center">Experiência Profissional</div>
                       {data.experience.map(ex => (
                          <div key={ex.id} className="t3-exp-item pb-4 border-b border-gray-100 last:border-0 mb-4">
                             <div className="t3-exp-header mb-1">
@@ -358,7 +359,7 @@ const ResumeRenderer = ({ data, templateId }: { data: ResumeData; templateId: Te
                            <div key={s.id} className="t3-skill-item">
                               <div className="t3-skill-label font-medium">{s.name}</div>
                               <div className="t3-skill-bar-bg h-1.5 rounded-full">
-                                 <div className="t3-skill-bar-fill h-full rounded-full" style={{ width: s.level === 'Expert' ? '100%' : s.level === 'Advanced' ? '75%' : s.level === 'Intermediate' ? '50%' : '25%' }}></div>
+                                 <div className="t3-skill-bar-fill h-full rounded-full" style={{ width: s.level === 'Especialista' ? '100%' : s.level === 'Avançado' ? '75%' : s.level === 'Intermédio' ? '50%' : '25%' }}></div>
                               </div>
                            </div>
                         ))}
@@ -407,7 +408,7 @@ const ResumeRenderer = ({ data, templateId }: { data: ResumeData; templateId: Te
                    <p className="text-sm tracking-[0.2em] uppercase font-semibold text-white/70 mt-4">{data.personalInfo.title}</p>
                 </div>
                 <div>
-                   <h3 className="text-xl font-bold mb-5 pb-2 text-white border-b-2 border-white/20 inline-block pr-6">Contact</h3>
+                   <h3 className="text-xl font-bold mb-5 pb-2 text-white border-b-2 border-white/20 inline-block pr-6">Contacto</h3>
                    <div className="flex flex-col gap-4 text-[13px] opacity-90">
                      {data.personalInfo.email && <div className="flex items-center gap-3"><Mail size={16} className="opacity-70"/> {data.personalInfo.email}</div>}
                      {data.personalInfo.phone && <div className="flex items-center gap-3"><Phone size={16} className="opacity-70"/> {data.personalInfo.phone}</div>}
@@ -416,7 +417,7 @@ const ResumeRenderer = ({ data, templateId }: { data: ResumeData; templateId: Te
                 </div>
                 {data.languages && data.languages.length > 0 && (
                   <div>
-                     <h3 className="text-xl font-bold mb-5 pb-2 text-white border-b-2 border-white/20 inline-block pr-6">Languages</h3>
+                     <h3 className="text-xl font-bold mb-5 pb-2 text-white border-b-2 border-white/20 inline-block pr-6">Idiomas</h3>
                      <div className="flex flex-col gap-3 text-[13px] opacity-90">
                        {data.languages.map((l, i) => <div key={i} className="flex items-center gap-2">• {l}</div>)}
                      </div>
@@ -427,14 +428,14 @@ const ResumeRenderer = ({ data, templateId }: { data: ResumeData; templateId: Te
           <div className="w-[68%] p-14 flex flex-col gap-10 bg-white" style={{ color: '#1f2937' }}>
              {data.personalInfo.summary && (
                <div>
-                  <h2 className="text-[28px] font-black mb-4 leading-tight" style={{ color: '#111827' }}>Profile</h2>
+                  <h2 className="text-[28px] font-black mb-4 leading-tight" style={{ color: '#111827' }}>Perfil Profissional</h2>
                   <div className="w-12 h-1.5 bg-gray-200 mb-6 rounded-full"></div>
                   <p className="text-[14px] leading-[1.8] text-justify font-serif" style={{ color: '#374151' }}>{renderText(data.personalInfo.summary)}</p>
                </div>
              )}
              {data.experience.length > 0 && (
                <div>
-                  <h2 className="text-[28px] font-black mb-4 leading-tight" style={{ color: '#111827' }}>Experience</h2>
+                  <h2 className="text-[28px] font-black mb-4 leading-tight" style={{ color: '#111827' }}>Experiência Profissional</h2>
                   <div className="w-12 h-1.5 bg-gray-200 mb-8 rounded-full"></div>
                   <div className="flex flex-col gap-10">
                     {data.experience.map(ex => (
@@ -443,7 +444,7 @@ const ResumeRenderer = ({ data, templateId }: { data: ResumeData; templateId: Te
                          <h4 className="text-[16px] font-bold mb-1" style={{ color: '#1f2937' }}>{ex.position}</h4>
                          <div className="flex justify-between items-center mb-4">
                             <span className="text-[13px] font-bold tracking-tight uppercase" style={{ color: '#4b5563' }}>{ex.company}</span>
-                            <span className="text-[11px] font-black bg-gray-100 px-2 py-1 rounded" style={{ color: '#6b7280' }}>{ex.startDate} - {ex.current ? 'Present' : ex.endDate}</span>
+                            <span className="text-[11px] font-black bg-gray-100 px-2 py-1 rounded" style={{ color: '#6b7280' }}>{ex.startDate} - {ex.current ? "Presente" : ex.endDate}</span>
                          </div>
                          <p className="text-[13px] leading-[1.7] text-justify font-serif mt-1" style={{ color: '#4b5563' }}>{renderText(ex.description)}</p>
                       </div>
@@ -453,7 +454,7 @@ const ResumeRenderer = ({ data, templateId }: { data: ResumeData; templateId: Te
              )}
              {data.skills.length > 0 && (
                <div>
-                  <h2 className="text-[28px] font-black mb-4 leading-tight" style={{ color: '#111827' }}>Skills</h2>
+                  <h2 className="text-[28px] font-black mb-4 leading-tight" style={{ color: '#111827' }}>Habilidades</h2>
                   <div className="w-12 h-1.5 bg-gray-200 mb-6 rounded-full"></div>
                   <div className="flex flex-wrap gap-x-6 gap-y-2 text-[13px] leading-[1.8] font-serif" style={{ color: '#374151' }}>
                     {data.skills.map(s => <span key={s.id} className="flex items-center gap-2 font-bold">• {s.name}</span>)}
@@ -462,7 +463,7 @@ const ResumeRenderer = ({ data, templateId }: { data: ResumeData; templateId: Te
              )}
              {data.education.length > 0 && (
                <div>
-                  <h2 className="text-[28px] font-black mb-4 leading-tight" style={{ color: '#111827' }}>Education</h2>
+                  <h2 className="text-[28px] font-black mb-4 leading-tight" style={{ color: '#111827' }}>Formação</h2>
                   <div className="w-12 h-1.5 bg-gray-200 mb-6 rounded-full"></div>
                   <div className="flex flex-col gap-6">
                     {data.education.map(e => (
@@ -515,7 +516,7 @@ const ResumeRenderer = ({ data, templateId }: { data: ResumeData; templateId: Te
                 
                 <div className="w-full mb-10">
                   <div className="flex justify-center mb-5">
-                     <h3 className="border-2 rounded-[20px] px-6 py-1 text-[11px] font-bold text-center uppercase tracking-[0.15em] bg-white" style={{ borderColor: c.primary, color: c.primary }}>Contact</h3>
+                     <h3 className="border-2 rounded-[20px] px-6 py-1 text-[11px] font-bold text-center uppercase tracking-[0.15em] bg-white" style={{ borderColor: c.primary, color: c.primary }}>Contacto</h3>
                   </div>
                   <div className="flex flex-col gap-4 text-[13px] w-full px-2" style={{ color: c.text }}>
                      {data.personalInfo.phone && <div className="flex items-center gap-3"><Phone className="opacity-60" size={16}/> {data.personalInfo.phone}</div>}
@@ -527,7 +528,7 @@ const ResumeRenderer = ({ data, templateId }: { data: ResumeData; templateId: Te
                 {data.skills.length > 0 && (
                   <div className="w-full mb-10">
                     <div className="flex justify-center mb-5">
-                       <h3 className="border-2 rounded-[20px] px-6 py-1 text-[11px] font-bold text-center uppercase tracking-[0.15em] bg-white" style={{ borderColor: c.primary, color: c.primary }}>Skills</h3>
+                       <h3 className="border-2 rounded-[20px] px-6 py-1 text-[11px] font-bold text-center uppercase tracking-[0.15em] bg-white" style={{ borderColor: c.primary, color: c.primary }}>Habilidades</h3>
                     </div>
                     <ul className="flex flex-col gap-3 text-[13px] w-full px-4 list-disc pl-6" style={{ color: c.text }}>
                        {data.skills.map(s => (
@@ -540,7 +541,7 @@ const ResumeRenderer = ({ data, templateId }: { data: ResumeData; templateId: Te
                 {data.education.length > 0 && (
                   <div className="w-full mb-10">
                     <div className="flex justify-center mb-5">
-                       <h3 className="border-2 rounded-[20px] px-6 py-1 text-[11px] font-bold text-center uppercase tracking-[0.15em] bg-white" style={{ borderColor: c.primary, color: c.primary }}>Education</h3>
+                       <h3 className="border-2 rounded-[20px] px-6 py-1 text-[11px] font-bold text-center uppercase tracking-[0.15em] bg-white" style={{ borderColor: c.primary, color: c.primary }}>Formação</h3>
                     </div>
                     <div className="flex flex-col gap-5 text-[12px] w-full px-2" style={{ color: c.text }}>
                        {data.education.map(e => (
@@ -567,7 +568,7 @@ const ResumeRenderer = ({ data, templateId }: { data: ResumeData; templateId: Te
 
               {data.personalInfo.summary && (
                 <div>
-                   <h2 className="text-[20px] font-black uppercase tracking-[0.2em] mb-4" style={{ color: c.primary }}>Professional Profile</h2>
+                   <h2 className="text-[20px] font-black uppercase tracking-[0.2em] mb-4" style={{ color: c.primary }}>Perfil Profissional</h2>
                    <div className="w-full h-1 bg-gray-100 mb-6">
                       <div className="h-full w-20" style={{ backgroundColor: c.primary }}></div>
                    </div>
@@ -577,7 +578,7 @@ const ResumeRenderer = ({ data, templateId }: { data: ResumeData; templateId: Te
 
               {data.experience.length > 0 && (
                 <div>
-                   <h2 className="text-[20px] font-black uppercase tracking-[0.2em] mb-4" style={{ color: c.primary }}>Work Experience</h2>
+                   <h2 className="text-[20px] font-black uppercase tracking-[0.2em] mb-4" style={{ color: c.primary }}>Experiência Profissional</h2>
                    <div className="w-full h-1 bg-gray-100 mb-8 font-black">
                       <div className="h-full w-20" style={{ backgroundColor: c.primary }}></div>
                    </div>
@@ -586,7 +587,7 @@ const ResumeRenderer = ({ data, templateId }: { data: ResumeData; templateId: Te
                        <div key={ex.id}>
                           <div className="flex justify-between items-baseline mb-2">
                              <h4 className="text-[16px] font-black uppercase" style={{ color: '#1f2937' }}>{ex.position}</h4>
-                             <span className="text-[11px] font-bold px-3 py-1 bg-gray-100 rounded-full" style={{ color: '#6b7280' }}>{ex.startDate} - {ex.current ? "Present" : ex.endDate}</span>
+                             <span className="text-[11px] font-bold px-3 py-1 bg-gray-100 rounded-full" style={{ color: '#6b7280' }}>{ex.startDate} - {ex.current ? "Presente" : ex.endDate}</span>
                           </div>
                           <div className="text-[13px] font-bold mb-4 italic" style={{ color: c.primary }}>{ex.company}</div>
                           <p className="text-[13px] leading-relaxed text-justify" style={{ color: '#4b5563' }}>{renderText(ex.description)}</p>
@@ -694,7 +695,7 @@ export default function App() {
     { title: 'Perfil', icon: User },
     { title: 'Experiência', icon: Briefcase },
     { title: 'Educação', icon: GraduationCap },
-    { title: 'Skills', icon: Settings },
+    { title: 'Habilidades', icon: Settings },
     { title: 'Design', icon: FileText },
     { title: 'Finalizar', icon: CheckCircleIcon }
   ];
@@ -730,7 +731,7 @@ export default function App() {
     const id = Math.random().toString(36).substring(7);
     setResumeData(prev => ({
       ...prev,
-      skills: [...prev.skills, { id, name, level: 'Intermediate' }]
+      skills: [...prev.skills, { id, name, level: 'Intermédio' }]
     }));
   };
 
@@ -879,7 +880,7 @@ export default function App() {
             whileInView={{ opacity: 1, scale: 1 }}
             viewport={{ once: true }}
             transition={{ duration: 0.8, delay: 0.2 }}
-            className="flex-1 w-full flex justify-center"
+            className="flex-1 w-full flex flex-col items-center justify-center"
           >
             <motion.div 
               animate={{ y: [0, -10, 0] }}
@@ -912,6 +913,17 @@ export default function App() {
             </motion.div>
           </motion.div>
         </main>
+        
+        <motion.img
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.8, delay: 0.4 }}
+          src="https://i.supaimg.com/6bc04951-8cbe-4706-9f0c-a01f9ea9a6c4/646b44b0-23b8-462d-9e14-c75ff88d0244.png"
+          alt="Banner de Destaque"
+          className="w-full object-cover"
+          referrerPolicy="no-referrer"
+        />
 
         <section className="bg-white py-16 px-6 border-t border-border-main scroll-mt-20">
           <div className="max-w-7xl mx-auto">
@@ -976,6 +988,8 @@ export default function App() {
            </div>
            <p className="text-[10px] text-text-muted opacity-60">© 2026 CV LAB. Todos os direitos reservados.</p>
         </motion.footer>
+
+        {/* Floating WhatsApp Button - Already handled at landing page logic level or consolidate here if needed */}
       </div>
     );
   }
@@ -1077,7 +1091,7 @@ export default function App() {
              />
           </div>
           <div className="flex items-center gap-2">
-            <div className="px-3 py-1 bg-soft-blue text-primary-blue text-[9px] font-black rounded-full hidden md:block">STEP {activeStep + 1}/6</div>
+            <div className="px-3 py-1 bg-soft-blue text-primary-blue text-[9px] font-black rounded-full hidden md:block">PASSO {activeStep + 1}/6</div>
             <Button variant="outline" className="h-9 px-4 text-xs font-bold" onClick={() => setShowPreviewModal(true)} icon={ExternalLink}>Pré-Visualizar</Button>
             <Button className="h-9 px-4 text-xs font-bold hidden sm:flex" onClick={handleDownloadPdf} disabled={isDownloading} icon={Download}>{isDownloading ? 'Baixando...' : 'Baixar'}</Button>
           </div>
@@ -1100,49 +1114,57 @@ export default function App() {
               {activeStep === 0 && ( /* Personal info */
                 <div className="space-y-6">
                   {/* Enhanced Photo Upload UI */}
-                  <div className="flex items-center gap-6 p-6 bg-soft-blue/10 rounded-3xl border border-primary-blue/10 relative overflow-hidden group">
-                     <div className="absolute top-0 right-0 w-24 h-24 bg-primary-blue/5 rounded-full -mr-12 -mt-12 transition-transform group-hover:scale-110"></div>
-                     
-                     <div className="relative shrink-0">
-                       <div className={`w-24 h-24 rounded-2xl border-2 border-dashed border-primary-blue/30 overflow-hidden flex items-center justify-center transition-all ${resumeData.personalInfo.photo ? 'border-none' : 'bg-white shadow-inner'}`}>
-                          {resumeData.personalInfo.photo ? (
-                            <img src={resumeData.personalInfo.photo} className="w-full h-full object-cover" alt="Preview"/>
-                          ) : (
-                            <User size={32} className="text-primary-blue/40" />
-                          )}
+                  <div className="flex flex-col gap-4 p-6 bg-primary-blue/5 rounded-3xl border-2 border-dashed border-primary-blue/20 relative overflow-hidden group hover:border-primary-blue/40 transition-all">
+                     <div className="flex items-center gap-6">
+                       <div className="relative shrink-0">
+                         <div className={`w-28 h-28 rounded-2xl border-2 border-dashed border-primary-blue/30 overflow-hidden flex items-center justify-center transition-all bg-white shadow-inner group-hover:scale-105 ${resumeData.personalInfo.photo ? 'border-none' : ''}`}>
+                            {resumeData.personalInfo.photo ? (
+                              <img src={resumeData.personalInfo.photo} className="w-full h-full object-cover" alt="Preview"/>
+                            ) : (
+                              <div className="flex flex-col items-center gap-2">
+                                <User size={32} className="text-primary-blue/20" />
+                                <span className="text-[8px] font-black uppercase text-primary-blue/40">Sem Foto</span>
+                              </div>
+                            )}
+                         </div>
+                         <label className="absolute -bottom-3 -right-3 w-12 h-12 bg-primary-blue text-white rounded-2xl flex items-center justify-center cursor-pointer shadow-2xl hover:bg-deep-blue hover:scale-110 active:scale-95 transition-all border-4 border-white z-10">
+                           <Plus size={24} />
+                           <input 
+                             type="file" 
+                             accept="image/*"
+                             className="hidden"
+                             onChange={(e) => {
+                               const file = e.target.files?.[0];
+                               if (file) {
+                                 const reader = new FileReader();
+                                 reader.onloadend = () => {
+                                   updatePersonalInfo('photo', reader.result as string);
+                                 };
+                                 reader.readAsDataURL(file);
+                               }
+                             }}
+                           />
+                         </label>
                        </div>
-                       <label className="absolute -bottom-2 -right-2 w-10 h-10 bg-primary-blue text-white rounded-xl flex items-center justify-center cursor-pointer shadow-xl hover:bg-primary-blue/90 active:scale-90 transition-all border-4 border-white">
-                         <Plus size={20} />
-                         <input 
-                           type="file" 
-                           accept="image/*"
-                           className="hidden"
-                           onChange={(e) => {
-                             const file = e.target.files?.[0];
-                             if (file) {
-                               const reader = new FileReader();
-                               reader.onloadend = () => {
-                                 updatePersonalInfo('photo', reader.result as string);
-                               };
-                               reader.readAsDataURL(file);
-                             }
-                           }}
-                         />
-                       </label>
-                     </div>
 
-                     <div className="flex-1 space-y-2">
-                       <h4 className="text-sm font-black text-deep-blue uppercase tracking-tight">Foto Profissional</h4>
-                       <p className="text-[10px] text-text-muted font-medium leading-relaxed max-w-[180px]">
-                         {resumeData.personalInfo.photo 
-                           ? "Foto carregada! Você pode substituí-la ou removê-la a qualquer momento." 
-                           : "Sabia que currículos com foto têm 40% mais chances de serem abertos?"}
-                       </p>
-                       {resumeData.personalInfo.photo && (
-                         <button onClick={() => updatePersonalInfo('photo', '')} className="text-[9px] text-red-500 uppercase font-black tracking-widest hover:underline flex items-center gap-1 transition-colors">
-                           <Trash2 size={10}/> Remover Foto
-                         </button>
-                       )}
+                       <div className="flex-1 space-y-2">
+                         <h4 className="text-base font-black text-deep-blue uppercase tracking-tight">Foto no Currículo</h4>
+                         <p className="text-xs text-text-muted font-medium leading-relaxed">
+                           {resumeData.personalInfo.photo 
+                             ? "Excelente! Sua foto já está no currículo. Você pode ajustar o estilo abaixo." 
+                             : "Adicione uma foto profissional para aumentar sua credibilidade em até 40%."}
+                         </p>
+                         {!resumeData.personalInfo.photo && (
+                           <div className="flex items-center gap-2 text-primary-blue font-bold text-[10px] animate-pulse">
+                             <ChevronRight size={14} /> Clique no botão azul para enviar
+                           </div>
+                         )}
+                         {resumeData.personalInfo.photo && (
+                           <button onClick={() => updatePersonalInfo('photo', '')} className="text-[10px] text-red-500 uppercase font-black tracking-widest hover:text-red-600 flex items-center gap-1 transition-colors mt-2">
+                             <Trash2 size={12}/> Remover Foto
+                           </button>
+                         )}
+                       </div>
                      </div>
                   </div>
 
@@ -1253,7 +1275,7 @@ export default function App() {
                     <Button onClick={() => {
                       addSkill(tempSkill);
                       setTempSkill("");
-                    }}>Add</Button>
+                    }}>Adicionar</Button>
                   </div>
                   <div className="flex flex-wrap gap-2">
                     {resumeData.skills.map(s => (
@@ -1408,26 +1430,21 @@ export default function App() {
 
       {/* WhatsApp Support Floating Button - Only on Landing Page */}
       {view === 'landing' && (
-        <a 
-          href="https://wa.me/244954748806" 
-          target="_blank" 
+        <motion.a
+          href="https://wa.me/message/PMCAAS2LKZBSM1"
+          target="_blank"
           rel="noopener noreferrer"
-          className="fixed bottom-6 right-6 z-[100] bg-[#25D366] text-white p-4 rounded-full shadow-[0_8px_30px_rgb(37,211,102,0.4)] hover:scale-110 active:scale-95 transition-all flex items-center gap-3 group print:hidden"
+          initial={{ scale: 0, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          whileHover={{ scale: 1.1 }}
+          whileTap={{ scale: 0.9 }}
+          className="fixed bottom-8 right-8 z-[100] w-14 h-14 bg-primary-blue text-white rounded-full flex items-center justify-center shadow-2xl hover:shadow-primary-blue/40 transition-all cursor-pointer group"
         >
-          <span className="max-w-0 overflow-hidden whitespace-nowrap group-hover:max-w-xs transition-all duration-500 font-bold text-xs uppercase tracking-widest">Suporte WhatsApp</span>
-          <svg 
-            viewBox="0 0 24 24" 
-            width="24" 
-            height="24" 
-            stroke="currentColor" 
-            strokeWidth="2" 
-            fill="none" 
-            strokeLinecap="round" 
-            strokeLinejoin="round"
-          >
-            <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 1 1-7.6-7.6 8.38 8.38 0 0 1 3.8.9L22 4l-2 5z"></path>
-          </svg>
-        </a>
+          <MessageCircle size={28} fill="currentColor" />
+          <span className="absolute right-full mr-4 bg-white text-deep-blue text-[10px] font-black uppercase tracking-widest px-4 py-2 rounded-xl shadow-xl opacity-0 translate-x-4 pointer-events-none transition-all group-hover:opacity-100 group-hover:translate-x-0 hidden md:block whitespace-nowrap">
+            Suporte WhatsApp
+          </span>
+        </motion.a>
       )}
     </div>
   );
