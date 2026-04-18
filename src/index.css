@@ -1,0 +1,33 @@
+@import "tailwindcss";
+
+@theme {
+  --color-primary-blue: #0066FF;
+  --color-deep-blue: #0A192F;
+  --color-soft-blue: #F0F5FF;
+  --color-bg-main: #F8FAFC;
+  --color-text-main: #334155;
+  --color-text-muted: #64748B;
+  --color-border-main: #E2E8F0;
+
+  --font-sans: "Inter", "Helvetica Neue", Arial, sans-serif;
+  --font-display: "Outfit", "Inter", sans-serif;
+}
+
+@layer base {
+  body {
+    @apply bg-bg-main text-text-main font-sans antialiased;
+  }
+}
+
+/* Custom styles for high-end look */
+.glass {
+  @apply bg-white/70 backdrop-blur-md border border-white/20;
+}
+
+.card-shadow {
+  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.05);
+}
+
+.hero-gradient {
+  background: radial-gradient(circle at top right, var(--color-soft-blue) 0%, transparent 40%);
+}
