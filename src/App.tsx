@@ -759,7 +759,7 @@ export default function App() {
     const optimized = await optimizeResumeText(text, type);
     
     if (optimized === text) {
-      alert("A IA não conseguiu sugerir mudanças significativas para este texto. Tente adicionar mais detalhes.");
+      alert("A IA não conseguiu sugerir mudanças significativas. Verifique:\n1. Se o texto inserido tem detalhes suficientes.\n2. Se a chave da API (VITE_GEMINI_API_KEY) está configurada no seu ambiente de deploy.");
     } else {
       if (type === 'summary') updatePersonalInfo('summary', optimized);
       else if (type === 'experience' && index !== undefined) {
@@ -1099,29 +1099,51 @@ export default function App() {
 
               {activeStep === 0 && ( /* Personal info */
                 <div className="space-y-6">
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-[10px] font-black text-text-muted uppercase tracking-wider">Foto de Perfil (Opcional)</label>
-                    <input 
-                      type="file" 
-                      accept="image/*"
-                      onChange={(e) => {
-                        const file = e.target.files?.[0];
-                        if (file) {
-                          const reader = new FileReader();
-                          reader.onloadend = () => {
-                            updatePersonalInfo('photo', reader.result as string);
-                          };
-                          reader.readAsDataURL(file);
-                        }
-                      }}
-                      className="w-full text-xs file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-soft-blue file:text-primary-blue hover:file:bg-primary-blue/10 cursor-pointer text-text-muted"
-                    />
-                    {resumeData.personalInfo.photo && (
-                       <div className="mt-1 flex items-center justify-between">
-                         <div className="text-[10px] font-bold text-green-600 flex items-center gap-1"><CheckCircleIcon size={12}/> Foto adicionada.</div>
-                         <button onClick={() => updatePersonalInfo('photo', '')} className="text-[9px] text-red-500 uppercase font-black tracking-widest hover:underline">Remover</button>
+                  {/* Enhanced Photo Upload UI */}
+                  <div className="flex items-center gap-6 p-6 bg-soft-blue/10 rounded-3xl border border-primary-blue/10 relative overflow-hidden group">
+                     <div className="absolute top-0 right-0 w-24 h-24 bg-primary-blue/5 rounded-full -mr-12 -mt-12 transition-transform group-hover:scale-110"></div>
+                     
+                     <div className="relative shrink-0">
+                       <div className={`w-24 h-24 rounded-2xl border-2 border-dashed border-primary-blue/30 overflow-hidden flex items-center justify-center transition-all ${resumeData.personalInfo.photo ? 'border-none' : 'bg-white shadow-inner'}`}>
+                          {resumeData.personalInfo.photo ? (
+                            <img src={resumeData.personalInfo.photo} className="w-full h-full object-cover" alt="Preview"/>
+                          ) : (
+                            <User size={32} className="text-primary-blue/40" />
+                          )}
                        </div>
-                    )}
+                       <label className="absolute -bottom-2 -right-2 w-10 h-10 bg-primary-blue text-white rounded-xl flex items-center justify-center cursor-pointer shadow-xl hover:bg-primary-blue/90 active:scale-90 transition-all border-4 border-white">
+                         <Plus size={20} />
+                         <input 
+                           type="file" 
+                           accept="image/*"
+                           className="hidden"
+                           onChange={(e) => {
+                             const file = e.target.files?.[0];
+                             if (file) {
+                               const reader = new FileReader();
+                               reader.onloadend = () => {
+                                 updatePersonalInfo('photo', reader.result as string);
+                               };
+                               reader.readAsDataURL(file);
+                             }
+                           }}
+                         />
+                       </label>
+                     </div>
+
+                     <div className="flex-1 space-y-2">
+                       <h4 className="text-sm font-black text-deep-blue uppercase tracking-tight">Foto Profissional</h4>
+                       <p className="text-[10px] text-text-muted font-medium leading-relaxed max-w-[180px]">
+                         {resumeData.personalInfo.photo 
+                           ? "Foto carregada! Você pode substituí-la ou removê-la a qualquer momento." 
+                           : "Sabia que currículos com foto têm 40% mais chances de serem abertos?"}
+                       </p>
+                       {resumeData.personalInfo.photo && (
+                         <button onClick={() => updatePersonalInfo('photo', '')} className="text-[9px] text-red-500 uppercase font-black tracking-widest hover:underline flex items-center gap-1 transition-colors">
+                           <Trash2 size={10}/> Remover Foto
+                         </button>
+                       )}
+                     </div>
                   </div>
 
                   <div className="flex flex-col gap-3 p-4 bg-soft-blue/30 rounded-2xl border border-primary-blue/10">
@@ -1303,7 +1325,7 @@ export default function App() {
                       </div>
                       <h4 className="text-lg font-black text-deep-blue">Carta de Apresentação</h4>
                       <p className="text-xs text-text-muted font-medium">Gere uma carta personalizada para a vaga dos seus sonhos por apenas 1150 Kzs no total.</p>
-                      <Button variant="outline" className="w-full" onClick={handleCreateCoverLetter}>Gerar com Gemini IA</Button>
+                      <Button variant="outline" className="w-full" onClick={handleCreateCoverLetter}>Gerar Carta</Button>
                    </div>
                 </div>
               )}

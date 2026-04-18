@@ -5,16 +5,27 @@ let aiInstance: GoogleGenAI | null = null;
 
 function getAI() {
   if (!aiInstance) {
-    // Vite replaces 'process.env.GEMINI_API_KEY' with the literal value or undefined
-    const apiKey = typeof process !== 'undefined' && process.env.GEMINI_API_KEY 
-      ? process.env.GEMINI_API_KEY 
-      : "";
+    // Check various sources for API key:
+    // 1. process.env (Standard AI Studio environment)
+    // 2. import.meta.env.VITE_GEMINI_API_KEY (Standard Vite production build)
+    let apiKey = "";
     
-    if (!apiKey) {
-      console.warn("GEMINI_API_KEY is missing. Using fallback for demo.");
+    // @ts-ignore - process might not exist in browser
+    if (typeof process !== 'undefined' && process.env && process.env.GEMINI_API_KEY) {
+      apiKey = process.env.GEMINI_API_KEY;
+    } 
+    // @ts-ignore - import.meta.env is Vite specific
+    else if (import.meta.env && import.meta.env.VITE_GEMINI_API_KEY) {
+      apiKey = import.meta.env.VITE_GEMINI_API_KEY;
     }
     
-    aiInstance = new GoogleGenAI({ apiKey: apiKey || "AIzaSyANw7mUcHAXUsqL2H_YDZZEtk3A7Bl7hM0" });
+    if (!apiKey) {
+      console.warn("GEMINI_API_KEY is missing. AI features may not work outside the preview environment without configuration.");
+    }
+    
+    // Note: The fallback below is for demo purposes in safe environments. 
+    // In production, the key MUST be provided via environment variables.
+    aiInstance = new GoogleGenAI({ apiKey: apiKey || "" });
   }
   return aiInstance;
 }
