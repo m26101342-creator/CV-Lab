@@ -10,6 +10,8 @@ export interface ResumeData {
     title: string;
     summary: string;
     photo?: string;
+    photoStyle?: 'circle' | 'square';
+    photoSize?: number;
   };
   experience: {
     id: string;
@@ -45,6 +47,8 @@ export const INITIAL_RESUME_DATA: ResumeData = {
     website: '',
     title: '',
     summary: '',
+    photoStyle: 'circle',
+    photoSize: 100,
   },
   experience: [],
   education: [],

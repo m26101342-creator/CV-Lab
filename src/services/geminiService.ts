@@ -1,27 +1,38 @@
-import { GoogleGenAI } from "@google/genai";
+import { GoogleGenAI, ThinkingLevel } from "@google/genai";
 
-// Initialize lazily to prevent app crash on load if key is missing in Cloudflare
+// Initialize lazily to prevent app crash on load if key is missing
 let aiInstance: GoogleGenAI | null = null;
 
 function getAI() {
   if (!aiInstance) {
-    // Uses process.env.GEMINI_API_KEY (from Vite define) OR the fallback key provided
-    const apiKey = process.env.GEMINI_API_KEY || "AIzaSyANw7mUcHAXUsqL2H_YDZZEtk3A7Bl7hM0";
-    aiInstance = new GoogleGenAI({ apiKey });
+    // Vite replaces 'process.env.GEMINI_API_KEY' with the literal value or undefined
+    const apiKey = typeof process !== 'undefined' && process.env.GEMINI_API_KEY 
+      ? process.env.GEMINI_API_KEY 
+      : "";
+    
+    if (!apiKey) {
+      console.warn("GEMINI_API_KEY is missing. Using fallback for demo.");
+    }
+    
+    aiInstance = new GoogleGenAI({ apiKey: apiKey || "AIzaSyANw7mUcHAXUsqL2H_YDZZEtk3A7Bl7hM0" });
   }
   return aiInstance;
 }
 
 export async function optimizeResumeText(text: string, type: 'summary' | 'experience' | 'skills'): Promise<string> {
   const prompt = `
-    Como um especialista em RH e currículos profissionais, melhore o seguinte texto para um currículo.
-    O objetivo é torná-lo mais impactante, profissional e focado em resultados.
-    Use verbos de ação e linguagem corporativa moderna.
+    Você é um especialista em recrutamento (RH) e redator de currículos de alto nível.
+    Sua tarefa é reescrever o texto abaixo para torná-lo profissional, focado em resultados e dinâmico.
+    Use verbos de ação poderosos e métricas se houver. 
     
-    Tipo de conteúdo: ${type}
-    Texto original: "${text}"
+    TIPO DE CAMPO: ${type === 'summary' ? 'Resumo Profissional' : type === 'experience' ? 'Experiência Profissional' : 'Habilidades'}
+    TEXTO ORIGINAL: "${text}"
     
-    IMPORTANTE: Não utilize formatação markdown como negrito (**) ou listas com marcações de asterisco (*). Retorne apenas texto puro, sem introduções ou explicações.
+    REGRAS:
+    1. Retorne APENAS o texto otimizado.
+    2. Nunca use markdown (como **negrito**, listas com *, etc).
+    3. Mantenha o idioma em Português (PT-PT ou PT-BR).
+    4. Não adicione introduções como "Aqui está o texto:".
   `;
 
   try {
@@ -29,31 +40,37 @@ export async function optimizeResumeText(text: string, type: 'summary' | 'experi
     const response = await ai.models.generateContent({
       model: "gemini-3-flash-preview",
       contents: prompt,
+      config: {
+        thinkingConfig: { thinkingLevel: ThinkingLevel.LOW },
+        temperature: 0.7,
+        topP: 0.95,
+      }
     });
     
-    const cleanedText = (response.text || text).replace(/\*/g, '');
-    return cleanedText;
+    const result = response.text?.trim();
+    return result && result.length > 5 ? result.replace(/\*/g, '') : text;
   } catch (error) {
-    console.error("Error optimizing text with Gemini:", error);
-    return text.replace(/\*/g, '');
+    console.error("Erro na otimização Gemini:", error);
+    return text;
   }
 }
 
 export async function generateCoverLetter(resumeData: any, jobTitle: string): Promise<string> {
   const prompt = `
-    Crie uma carta de apresentação profissional e única para o cargo de "${jobTitle}".
-    Baseie-se nos seguintes dados do candidato:
-    Nome: ${resumeData.personalInfo.fullName}
-    Título: ${resumeData.personalInfo.title}
-    Resumo: ${resumeData.personalInfo.summary}
-    Experiência: ${JSON.stringify(resumeData.experience)}
+    Escreva uma carta de apresentação personalizada para o cargo: "${jobTitle}".
+    BASE DE DADOS DO CANDIDATO:
+    - Nome: ${resumeData.personalInfo.fullName}
+    - Título: ${resumeData.personalInfo.title}
+    - Resumo: ${resumeData.personalInfo.summary}
+    - Experiências: ${JSON.stringify(resumeData.experience.map((e: any) => ({ cargo: e.position, empresa: e.company })))}
     
-    A carta deve ser persuasiva, moderna e destacar as habilidades do candidato.
-    Mantenha um tom profissional mas com um toque pessoal e único.
-    Não use clichês genéricos.
-    IMPORTANTE: Não utilize formatação markdown como negrito (**) ou listas com marcações de asterisco (*). Retorne apenas texto puro com parágrafos.
+    ESTILO: Profissional, confiante, moderno e único.
+    DURAÇÃO: Máximo 3 parágrafos curtos.
     
-    Retorne apenas a carta de apresentação, formatada profissionalmente.
+    REGRAS:
+    1. Retorne APENAS a carta.
+    2. Sem markdown. Sem asteriscos.
+    3. Não use placeholders como "[Seu Telefone]". Use os dados fornecidos ou ignore se faltar.
   `;
 
   try {
@@ -61,13 +78,16 @@ export async function generateCoverLetter(resumeData: any, jobTitle: string): Pr
     const response = await ai.models.generateContent({
       model: "gemini-3-flash-preview",
       contents: prompt,
+      config: {
+        temperature: 0.8,
+        topP: 0.95
+      }
     });
     
-    // Sanitize output to remove any potential asterisks
-    const cleanedText = (response.text || "").replace(/\*/g, '');
-    return cleanedText || "Erro ao gerar a carta. Tente novamente.";
+    const result = response.text?.trim();
+    return result || "Sentimos muito, não foi possível gerar a carta agora. Tente novamente em instantes.";
   } catch (error) {
-    console.error("Error generating cover letter with Gemini:", error);
-    return "Erro ao gerar a carta. Verifique sua conexão.";
+    console.error("Erro ao gerar carta com Gemini:", error);
+    return "Ocorreu um erro técnico ao gerar sua carta. Verifique sua conexão.";
   }
 }

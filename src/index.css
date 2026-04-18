@@ -53,6 +53,21 @@
 }
 
 /* ══════════════════════════════════════════════
+   GLOBAL RENDERING & PDF FIXES
+══════════════════════════════════════════════ */
+#resume-content, #cover-letter-content {
+  overflow: hidden;
+  page-break-after: avoid;
+  page-break-before: avoid;
+  max-height: 297mm; /* Exact A4 height */
+}
+
+.t1-edu-item, .t1-exp-item, .t2-edu-item, .t2-exp-item, .t3-edu-item, .t3-exp-item, .t4-exp-item, .t5-exp-item {
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
+/* ══════════════════════════════════════════════
    TEMPLATE 1 — Executive Dark Sidebar
    (Using --primary, --text-main, etc.)
 ══════════════════════════════════════════════ */
