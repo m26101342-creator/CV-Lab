@@ -1,6 +1,16 @@
 import { GoogleGenAI } from "@google/genai";
 
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+// Initialize lazily to prevent app crash on load if key is missing in Cloudflare
+let aiInstance: GoogleGenAI | null = null;
+
+function getAI() {
+  if (!aiInstance) {
+    // Uses process.env.GEMINI_API_KEY (from Vite define) OR the fallback key provided
+    const apiKey = process.env.GEMINI_API_KEY || "AIzaSyANw7mUcHAXUsqL2H_YDZZEtk3A7Bl7hM0";
+    aiInstance = new GoogleGenAI({ apiKey });
+  }
+  return aiInstance;
+}
 
 export async function optimizeResumeText(text: string, type: 'summary' | 'experience' | 'skills'): Promise<string> {
   const prompt = `
@@ -15,6 +25,7 @@ export async function optimizeResumeText(text: string, type: 'summary' | 'experi
   `;
 
   try {
+    const ai = getAI();
     const response = await ai.models.generateContent({
       model: "gemini-3-flash-preview",
       contents: prompt,
@@ -39,17 +50,21 @@ export async function generateCoverLetter(resumeData: any, jobTitle: string): Pr
     A carta deve ser persuasiva, moderna e destacar as habilidades do candidato.
     Mantenha um tom profissional mas com um toque pessoal e único.
     Não use clichês genéricos.
+    IMPORTANTE: Não utilize formatação markdown como negrito (**) ou listas com marcações de asterisco (*). Retorne apenas texto puro com parágrafos.
     
     Retorne apenas a carta de apresentação, formatada profissionalmente.
   `;
 
   try {
+    const ai = getAI();
     const response = await ai.models.generateContent({
       model: "gemini-3-flash-preview",
       contents: prompt,
     });
     
-    return response.text || "Erro ao gerar a carta. Tente novamente.";
+    // Sanitize output to remove any potential asterisks
+    const cleanedText = (response.text || "").replace(/\*/g, '');
+    return cleanedText || "Erro ao gerar a carta. Tente novamente.";
   } catch (error) {
     console.error("Error generating cover letter with Gemini:", error);
     return "Erro ao gerar a carta. Verifique sua conexão.";

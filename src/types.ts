@@ -9,6 +9,7 @@ export interface ResumeData {
     website: string;
     title: string;
     summary: string;
+    photo?: string;
   };
   experience: {
     id: string;

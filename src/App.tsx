@@ -9,7 +9,6 @@ import {
   Plus, 
   Trash2, 
   Download, 
-  Sparkles, 
   ChevronRight, 
   ChevronLeft, 
   User, 
@@ -66,27 +65,44 @@ const Input = ({ label, value, onChange, placeholder, type = 'text', icon: Icon,
   </div>
 );
 
-const TextArea = ({ label, value, onChange, placeholder, onOptimize }: any) => (
-  <div className="flex flex-col gap-1.5 w-full">
+const TextArea = ({ label, value, onChange, placeholder, onOptimize, isOptimizing }: any) => (
+  <div className="flex flex-col gap-1.5 w-full relative">
     <div className="flex justify-between items-center px-1">
       {label && <label className="text-[10px] font-black text-text-muted uppercase tracking-wider">{label}</label>}
       {onOptimize && (
         <button 
           onClick={onOptimize}
-          className="text-[10px] font-black text-primary-blue flex items-center gap-1 hover:opacity-80 transition-opacity bg-soft-blue px-2 py-0.5 rounded"
+          disabled={isOptimizing}
+          className={`text-[10px] font-black text-primary-blue flex items-center gap-1 transition-all bg-soft-blue px-2 py-0.5 rounded border border-primary-blue/20 ${isOptimizing ? 'opacity-80 scale-95 cursor-wait' : 'hover:opacity-80'}`}
         >
-          <Sparkles size={10} />
-          OTIMIZAR IA
+          {isOptimizing ? (
+            <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: 'linear' }}>
+              <Plus size={10} />
+            </motion.div>
+          ) : (
+            <Plus size={10} />
+          )}
+          {isOptimizing ? 'OTIMIZANDO...' : 'OTIMIZAR IA'}
         </button>
       )}
     </div>
-    <textarea
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-      placeholder={placeholder}
-      rows={4}
-      className="w-full bg-white border border-border-main rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary-blue/20 focus:border-primary-blue transition-all resize-none"
-    />
+    <div className="relative">
+      <textarea
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+        disabled={isOptimizing}
+        rows={4}
+        className={`w-full bg-white border border-border-main rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary-blue/20 focus:border-primary-blue transition-all resize-none ${isOptimizing ? 'opacity-60' : ''}`}
+      />
+      {isOptimizing && (
+        <div className="absolute inset-0 bg-white/40 flex items-center justify-center rounded-xl backdrop-blur-[1px] animate-pulse">
+          <div className="w-1/2 h-1 bg-primary-blue/20 rounded-full overflow-hidden">
+             <motion.div className="h-full bg-primary-blue" initial={{ width: "0%" }} animate={{ width: "100%" }} transition={{ repeat: Infinity, duration: 1.5 }} />
+          </div>
+        </div>
+      )}
+    </div>
   </div>
 );
 
@@ -194,10 +210,13 @@ const ResumeRenderer = ({ data, templateId }: { data: ResumeData; templateId: Te
         <div className="flex-1 flex flex-row">
           {/* Sidebar */}
           <div className="w-1/3 p-10 flex flex-col gap-8 border-r" style={{ backgroundColor: theme.soft, borderColor: theme.lines }}>
-            <div>
-              <h1 className="text-3xl font-black uppercase tracking-tighter mb-1" style={{ color: theme.accent }}>{data.personalInfo.fullName || "Seu Nome"}</h1>
-              <p className="font-bold tracking-widest uppercase text-[10px] mb-6" style={{ color: theme.primary }}>{data.personalInfo.title || "Cargo Desejado"}</p>
-              <div className="flex flex-col gap-2 text-xs" style={{ color: theme.accent, opacity: 0.8 }}>
+            <div className="flex flex-col items-center mb-4">
+              {data.personalInfo.photo ? (
+                <img src={data.personalInfo.photo} referrerPolicy="no-referrer" alt="Profile" className="w-32 h-32 rounded-full object-cover mb-6 border-4 shadow-lg" style={{ borderColor: theme.primary }} />
+              ) : null}
+              <h1 className="text-3xl font-black uppercase tracking-tighter mb-1 text-center" style={{ color: theme.accent }}>{data.personalInfo.fullName || "Seu Nome"}</h1>
+              <p className="font-bold tracking-widest uppercase text-[10px] mb-6 text-center" style={{ color: theme.primary }}>{data.personalInfo.title || "Cargo Desejado"}</p>
+              <div className="flex flex-col gap-2 text-xs w-full" style={{ color: theme.accent, opacity: 0.8 }}>
                 {data.personalInfo.email && <div className="flex items-center gap-2"><Mail size={12}/> {data.personalInfo.email}</div>}
                 {data.personalInfo.phone && <div className="flex items-center gap-2"><Phone size={12}/> {data.personalInfo.phone}</div>}
                 {data.personalInfo.location && <div className="flex items-center gap-2"><MapPin size={12}/> {data.personalInfo.location}</div>}
@@ -263,10 +282,13 @@ const ResumeRenderer = ({ data, templateId }: { data: ResumeData; templateId: Te
 
       {theme.layout === 'top-header' && (
         <div className="flex-1 flex flex-col">
-          <div className="p-12 text-center" style={{ backgroundColor: templateId === 'dark_exec' ? '#0f172a' : theme.soft }}>
-            <h1 className="text-4xl font-black uppercase tracking-widest mb-2" style={{ color: theme.accent }}>{data.personalInfo.fullName || "Seu Nome Completo"}</h1>
-            <p className="font-bold tracking-[0.3em] uppercase text-xs mb-6" style={{ color: theme.primary }}>{data.personalInfo.title || "Seu Cargo"}</p>
-            <div className="flex flex-wrap justify-center gap-6 text-[10px] font-medium tracking-wider uppercase" style={{ color: theme.primary }}>
+          <div className="pt-16 pb-12 px-12 relative flex flex-col items-center text-center" style={{ backgroundColor: templateId === 'dark_exec' ? '#0f172a' : theme.soft }}>
+            {data.personalInfo.photo && (
+               <img src={data.personalInfo.photo} referrerPolicy="no-referrer" alt="Profile" className="w-32 h-32 rounded-full object-cover border-4 shadow-xl mb-6 relative z-10" style={{ borderColor: 'white' }} />
+            )}
+            <h1 className="text-4xl font-black uppercase tracking-widest mb-2 relative z-10" style={{ color: theme.accent }}>{data.personalInfo.fullName || "Seu Nome Completo"}</h1>
+            <p className="font-bold tracking-[0.3em] uppercase text-xs mb-6 relative z-10" style={{ color: theme.primary }}>{data.personalInfo.title || "Seu Cargo"}</p>
+            <div className="flex flex-wrap justify-center gap-6 text-[10px] font-medium tracking-wider uppercase relative z-10" style={{ color: theme.primary }}>
               {data.personalInfo.email && <div className="flex items-center gap-1.5"><Mail size={12}/> {data.personalInfo.email}</div>}
               {data.personalInfo.phone && <div className="flex items-center gap-1.5"><Phone size={12}/> {data.personalInfo.phone}</div>}
               {data.personalInfo.location && <div className="flex items-center gap-1.5"><MapPin size={12}/> {data.personalInfo.location}</div>}
@@ -327,9 +349,16 @@ const ResumeRenderer = ({ data, templateId }: { data: ResumeData; templateId: Te
       {theme.layout === 'minimal-left' && (
         <div className="flex-1 p-12 flex flex-col border-l-8" style={{ borderColor: theme.primary }}>
           <div className="pb-8 mb-8 border-b" style={{ borderColor: theme.lines }}>
-            <h1 className="text-5xl font-black uppercase tracking-tighter mb-2" style={{ color: theme.accent }}>{data.personalInfo.fullName || "Seu Nome Completo"}</h1>
-            <p className="font-bold tracking-[0.2em] uppercase text-sm mb-6" style={{ color: theme.primary }}>{data.personalInfo.title || "Seu Cargo"}</p>
-            <Contacts />
+            <div className="flex justify-between items-start gap-4">
+              <div>
+                <h1 className="text-5xl font-black uppercase tracking-tighter mb-2" style={{ color: theme.accent }}>{data.personalInfo.fullName || "Seu Nome Completo"}</h1>
+                <p className="font-bold tracking-[0.2em] uppercase text-sm mb-6" style={{ color: theme.primary }}>{data.personalInfo.title || "Seu Cargo"}</p>
+                <Contacts />
+              </div>
+              {data.personalInfo.photo && (
+                 <img src={data.personalInfo.photo} referrerPolicy="no-referrer" alt="Profile" className="w-28 h-28 object-cover rounded-2xl shadow-sm" style={{ border: `1px solid ${theme.lines}` }} />
+              )}
+            </div>
           </div>
           
           <div className="flex gap-12">
@@ -399,6 +428,7 @@ export default function App() {
   const [activeStep, setActiveStep] = useState(0);
   const [resumeData, setResumeData] = useState<ResumeData>(INITIAL_RESUME_DATA);
   const [loading, setLoading] = useState(false);
+  const [optimizingId, setOptimizingId] = useState<string | null>(null);
   const [isCoverLetterMode, setIsCoverLetterMode] = useState(false);
   const [generatedLetter, setGeneratedLetter] = useState("");
   const [tempSkill, setTempSkill] = useState("");
@@ -410,7 +440,7 @@ export default function App() {
     { title: 'Experiência', icon: Briefcase },
     { title: 'Educação', icon: GraduationCap },
     { title: 'Skills', icon: Settings },
-    { title: 'Design', icon: Sparkles },
+    { title: 'Design', icon: FileText },
     { title: 'Finalizar', icon: CheckCircleIcon }
   ];
 
@@ -458,14 +488,16 @@ export default function App() {
   };
 
   const handleOptimize = async (type: 'summary' | 'experience' | 'skills', index?: number) => {
-    setLoading(true);
+    const optId = type === 'experience' ? `exp-${index}` : type;
+    setOptimizingId(optId);
+
     let text = "";
     if (type === 'summary') text = resumeData.personalInfo.summary;
     else if (type === 'experience' && index !== undefined) text = resumeData.experience[index].description;
     
     if (!text) {
       alert("Por favor, digite algum texto antes de otimizar.");
-      setLoading(false);
+      setOptimizingId(null);
       return;
     }
 
@@ -477,7 +509,8 @@ export default function App() {
       newExp[index].description = optimized;
       setResumeData(p => ({ ...p, experience: newExp }));
     }
-    setLoading(false);
+    
+    setOptimizingId(null);
   };
 
   const handleCreateCoverLetter = async () => {
@@ -494,7 +527,7 @@ export default function App() {
         <nav className="h-20 px-6 md:px-12 flex items-center justify-between glass sticky top-0 z-50">
           <div className="text-xl md:text-2xl font-black text-primary-blue tracking-tighter flex items-center gap-2">
             <div className="w-10 h-10 bg-primary-blue rounded-xl flex items-center justify-center text-white shadow-lg shadow-primary-blue/30 rotate-3">
-              <Sparkles size={20} />
+              <Plus size={20} />
             </div>
             CV LAB
           </div>
@@ -555,7 +588,7 @@ export default function App() {
                 </div>
                 <div className="absolute top-4 right-4 animate-bounce">
                   <div className="bg-primary-blue text-white p-2 rounded-lg shadow-lg">
-                    <Sparkles size={16} />
+                    <CheckCircleIcon size={16} />
                   </div>
                 </div>
               </div>
@@ -566,7 +599,7 @@ export default function App() {
         <section className="bg-white py-20 px-6 border-t border-border-main">
           <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-16">
             {[
-              { title: "Texto Otimizado", desc: "Nossa IA transforma rascunhos em conquistas profissionais marcantes.", icon: Sparkles },
+              { title: "Texto Otimizado", desc: "Nossa IA transforma rascunhos em conquistas profissionais marcantes.", icon: FileText },
               { title: "Design Mobile-Ready", desc: "Edite seu currículo em qualquer dispositivo com interface fluida e moderna.", icon: Globe },
               { title: "Toque Pessoal", desc: "Nada de modelos genéricos. Designs exclusivos que refletem sua identidade.", icon: FileText }
             ].map((item, i) => (
@@ -599,7 +632,7 @@ export default function App() {
         <nav className="h-20 px-6 md:px-12 flex items-center justify-between glass sticky top-0 z-50">
           <button onClick={() => setView('landing')} className="text-xl md:text-2xl font-black text-primary-blue tracking-tighter flex items-center gap-2">
             <div className="w-10 h-10 bg-primary-blue rounded-xl flex items-center justify-center text-white shadow-lg shadow-primary-blue/30 rotate-3">
-              <Sparkles size={20} />
+              <Plus size={20} />
             </div>
             CV LAB
           </button>
@@ -701,6 +734,30 @@ export default function App() {
 
               {activeStep === 0 && ( /* Personal info */
                 <div className="space-y-6">
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-[10px] font-black text-text-muted uppercase tracking-wider">Foto de Perfil (Opcional)</label>
+                    <input 
+                      type="file" 
+                      accept="image/*"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          const reader = new FileReader();
+                          reader.onloadend = () => {
+                            updatePersonalInfo('photo', reader.result as string);
+                          };
+                          reader.readAsDataURL(file);
+                        }
+                      }}
+                      className="w-full text-xs file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-soft-blue file:text-primary-blue hover:file:bg-primary-blue/10 cursor-pointer text-text-muted"
+                    />
+                    {resumeData.personalInfo.photo && (
+                       <div className="mt-1 flex items-center justify-between">
+                         <div className="text-[10px] font-bold text-green-600 flex items-center gap-1"><CheckCircleIcon size={12}/> Foto adicionada.</div>
+                         <button onClick={() => updatePersonalInfo('photo', '')} className="text-[9px] text-red-500 uppercase font-black tracking-widest hover:underline">Remover</button>
+                       </div>
+                    )}
+                  </div>
                   <Input label="Nome Completo" value={resumeData.personalInfo.fullName} onChange={(v: string) => updatePersonalInfo('fullName', v)} placeholder="Ex: Ricardo Fernandes" icon={User} />
                   <Input label="Cargo Pretendido" value={resumeData.personalInfo.title} onChange={(v: string) => updatePersonalInfo('title', v)} placeholder="Ex: Diretor de Arte" icon={Briefcase} />
                   <div className="grid grid-cols-2 gap-4">
@@ -708,7 +765,7 @@ export default function App() {
                     <Input label="WhatsApp" value={resumeData.personalInfo.phone} onChange={(v: string) => updatePersonalInfo('phone', v)} placeholder="+244 9..." icon={Phone} />
                   </div>
                   <Input label="Localização" value={resumeData.personalInfo.location} onChange={(v: string) => updatePersonalInfo('location', v)} placeholder="Luanda, Angola" icon={MapPin} />
-                  <TextArea label="Resumo do Perfil" value={resumeData.personalInfo.summary} onChange={(v: string) => updatePersonalInfo('summary', v)} onOptimize={() => handleOptimize('summary')} placeholder="Conte sua história profissional..." />
+                  <TextArea label="Resumo do Perfil" value={resumeData.personalInfo.summary} onChange={(v: string) => updatePersonalInfo('summary', v)} onOptimize={() => handleOptimize('summary')} isOptimizing={optimizingId === 'summary'} placeholder="Conte sua história profissional..." />
                 </div>
               )}
 
@@ -735,7 +792,7 @@ export default function App() {
                       </div>
                       <TextArea label="Atribuições" value={ex.description} onChange={(v: string) => {
                          const n = [...resumeData.experience]; n[i].description = v; setResumeData(p => ({...p, experience: n}));
-                      }} onOptimize={() => handleOptimize('experience', i)} />
+                      }} onOptimize={() => handleOptimize('experience', i)} isOptimizing={optimizingId === `exp-${i}`} />
                     </div>
                   ))}
                   <Button variant="secondary" onClick={addExperience} className="w-full h-14" icon={Plus}>Adicionar Cargo</Button>
@@ -815,12 +872,12 @@ export default function App() {
                       <div className="absolute -top-10 -right-10 w-32 h-32 bg-white/10 rounded-full blur-3xl"></div>
                       <h3 className="text-2xl font-black leading-tight">Currículo Pronto!</h3>
                       <p className="text-sm opacity-80 font-medium">Você agora pode baixar seu arquivo PDF profissional ou elevar seu nível com uma carta de apresentação.</p>
-                      <Button className="w-full bg-white text-primary-blue hover:bg-white/95" onClick={() => window.print()} icon={Download}>Baixar PDF</Button>
+                      <Button className="w-full bg-white text-primary-blue hover:bg-white/95" onClick={() => window.print()} icon={Download}>Baixar Currículo</Button>
                    </div>
 
                    <div className="p-8 bg-white border-2 border-dashed border-primary-blue/30 rounded-3xl text-center space-y-4">
                       <div className="w-16 h-16 bg-soft-blue text-primary-blue rounded-2xl flex items-center justify-center mx-auto mb-2">
-                         <Sparkles size={32} />
+                         <FileText size={32} />
                       </div>
                       <h4 className="text-lg font-black text-deep-blue">Carta de Apresentação</h4>
                       <p className="text-xs text-text-muted font-medium">Gere uma carta personalizada para a vaga dos seus sonhos por apenas 1150 Kzs no total.</p>
