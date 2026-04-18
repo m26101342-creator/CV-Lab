@@ -26,6 +26,7 @@ import {
 } from 'lucide-react';
 import { ResumeData, INITIAL_RESUME_DATA, TemplateType } from './types.ts';
 import { optimizeResumeText, generateCoverLetter } from './services/geminiService.ts';
+import html2pdf from 'html2pdf.js';
 
 // --- UI Components ---
 
@@ -541,8 +542,34 @@ export default function App() {
   const [generatedLetter, setGeneratedLetter] = useState("");
   const [tempSkill, setTempSkill] = useState("");
   const [showPreviewModal, setShowPreviewModal] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
 
   const [template, setTemplate] = useState<TemplateType>('t1_executive');
+
+  const handleDownloadPdf = async () => {
+    const elementId = isCoverLetterMode ? 'cover-letter-content' : 'resume-content';
+    const element = document.getElementById(elementId);
+    if (!element) return;
+
+    setIsDownloading(true);
+    
+    // Configurações do html2pdf
+    const opt = {
+      margin:       0,
+      filename:     isCoverLetterMode ? 'Carta_Apresentacao.pdf' : 'Curriculo.pdf',
+      image:        { type: 'jpeg' as const, quality: 0.98 },
+      html2canvas:  { scale: 2, useCORS: true, logging: false },
+      jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' as const }
+    };
+
+    try {
+      await html2pdf().set(opt).from(element).save();
+    } catch (err) {
+      console.error("Erro ao gerar PDF:", err);
+    } finally {
+      setIsDownloading(false);
+    }
+  };
 
   const editorSteps = [
     { title: 'Perfil', icon: User },
@@ -827,7 +854,7 @@ export default function App() {
           <div className="flex items-center gap-2">
             <div className="px-3 py-1 bg-soft-blue text-primary-blue text-[9px] font-black rounded-full hidden md:block">STEP {activeStep + 1}/6</div>
             <Button variant="outline" className="h-9 px-4 text-xs font-bold" onClick={() => setShowPreviewModal(true)} icon={ExternalLink}>Pré-Visualizar</Button>
-            <Button className="h-9 px-4 text-xs font-bold hidden sm:flex" onClick={() => window.print()} icon={Download}>Baixar</Button>
+            <Button className="h-9 px-4 text-xs font-bold hidden sm:flex" onClick={handleDownloadPdf} disabled={isDownloading} icon={Download}>{isDownloading ? 'Baixando...' : 'Baixar'}</Button>
           </div>
         </header>
 
@@ -991,7 +1018,7 @@ export default function App() {
                       <h3 className="text-2xl font-black leading-tight">Currículo Pronto!</h3>
                       <p className="text-sm opacity-80 font-medium text-balance">Você agora pode visualizar seu documento de maneira completa, baixá-lo ou gerar uma carta de apresentação.</p>
                       <Button className="w-full bg-white text-primary-blue hover:bg-white/95" onClick={() => setShowPreviewModal(true)} icon={ExternalLink}>Pré-Visualizar</Button>
-                      <Button variant="outline" className="w-full text-white border-white hover:bg-white/10" onClick={() => window.print()} icon={Download}>Baixar Currículo</Button>
+                      <Button variant="outline" className="w-full text-white border-white hover:bg-white/10" onClick={handleDownloadPdf} disabled={isDownloading} icon={Download}>{isDownloading ? "Gerando PDF..." : "Baixar Currículo"}</Button>
                    </div>
 
                    <div className="p-8 bg-white border-2 border-dashed border-primary-blue/30 rounded-3xl text-center space-y-4">
@@ -1032,7 +1059,7 @@ export default function App() {
              <button onClick={() => setShowPreviewModal(false)} className="flex items-center gap-2 text-xs font-bold text-text-muted hover:text-text-main transition-colors">
                <X size={16}/> <span className="hidden sm:inline">Voltar ao Editor</span>
              </button>
-             <Button onClick={() => window.print()} icon={Download} className="h-9 px-4 md:px-8 text-xs font-bold">Baixar Currículo</Button>
+             <Button onClick={handleDownloadPdf} disabled={isDownloading} icon={Download} className="h-9 px-4 md:px-8 text-xs font-bold">{isDownloading ? 'Gerando...' : 'Baixar Currículo'}</Button>
           </div>
         )}
 
@@ -1043,6 +1070,7 @@ export default function App() {
                  key="letter"
                  initial={{ opacity: 0, y: 20 }}
                  animate={{ opacity: 1, y: 0 }}
+                 id="cover-letter-content"
                  className={`bg-white min-h-[1120px] p-10 md:p-20 relative ${showPreviewModal ? '' : 'shadow-2xl'}`}
                >
                  <button onClick={() => setIsCoverLetterMode(false)} className="absolute top-8 left-8 text-[10px] font-black uppercase text-primary-blue tracking-widest flex items-center gap-2 print:hidden">
