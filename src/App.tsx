@@ -41,11 +41,12 @@ const Button = ({ children, onClick, variant = 'primary', className = '', disabl
     secondary: "bg-soft-blue text-primary-blue hover:bg-soft-blue/80 h-12",
     outline: "border-2 border-primary-blue text-primary-blue hover:bg-soft-blue h-12",
     ghost: "text-text-muted hover:text-text-main hover:bg-bg-main h-12",
-    danger: "bg-red-50 text-red-600 hover:bg-red-100 h-12"
+    danger: "bg-red-50 text-red-600 hover:bg-red-100 h-12",
+    none: ""
   };
 
   return (
-    <button onClick={onClick} className={`${base} ${variants[variant]} ${className}`} disabled={disabled}>
+    <button onClick={onClick} className={`${base} ${variants[variant] || ''} ${className}`} disabled={disabled}>
       {Icon && <Icon size={18} />}
       {children}
     </button>
@@ -129,7 +130,7 @@ const ResumeRenderer = ({ data, templateId }: { data: ResumeData; templateId: Te
   const c = { ...theme.colors, primary: data.themeColor || theme.colors.primary };
 
   return (
-    <div className={`bg-white h-[1123px] w-[794px] relative overflow-hidden print:shadow-none`} id="resume-content" style={{ color: '#1f2937' }}>
+    <div className={`bg-white min-h-[1123px] w-[794px] relative overflow-visible print:shadow-none`} id="resume-content" style={{ color: '#1f2937' }}>
       
       {/* Dynamic Layout Styles */}
       {theme.layout === 'custom-t1' && (
@@ -412,7 +413,7 @@ const ResumeRenderer = ({ data, templateId }: { data: ResumeData; templateId: Te
       )}
 
       {theme.layout === 'custom-t4' && (
-        <div className="flex w-full min-h-[1123px] bg-white text-left font-sans overflow-hidden relative border border-gray-100">
+        <div className="flex w-full min-h-[1123px] bg-white text-left font-sans overflow-visible relative border border-gray-100">
           <div className="w-[32%] flex flex-col relative z-10" style={{ backgroundColor: c.primary, color: 'white' }}>
              {data.personalInfo.photo ? (
                <div className="w-full flex justify-center py-8">
@@ -475,7 +476,7 @@ const ResumeRenderer = ({ data, templateId }: { data: ResumeData; templateId: Te
                <div>
                   <h2 className="text-[28px] font-black mb-4 leading-tight" style={{ color: '#111827' }}>Perfil Profissional</h2>
                   <div className="w-12 h-1.5 bg-gray-200 mb-6 rounded-full"></div>
-                  <p className="text-[14px] leading-[1.8] text-justify font-serif" style={{ color: '#374151' }}>{renderText(data.personalInfo.summary)}</p>
+                  <p className="text-[14px] leading-[1.8] text-left font-serif" style={{ color: '#374151' }}>{renderText(data.personalInfo.summary)}</p>
                </div>
              )}
              {data.experience.length > 0 && (
@@ -491,7 +492,7 @@ const ResumeRenderer = ({ data, templateId }: { data: ResumeData; templateId: Te
                             <span className="text-[13px] font-bold tracking-tight uppercase" style={{ color: '#4b5563' }}>{ex.company}</span>
                             <span className="text-[11px] font-black bg-gray-100 px-2 py-1 rounded" style={{ color: '#6b7280' }}>{ex.startDate} - {ex.current ? "Presente" : ex.endDate}</span>
                          </div>
-                         <p className="text-[13px] leading-[1.7] text-justify font-serif mt-1" style={{ color: '#4b5563' }}>{renderText(ex.description)}</p>
+                         <p className="text-[13px] leading-[1.7] text-left font-serif mt-1" style={{ color: '#4b5563' }}>{renderText(ex.description)}</p>
                       </div>
                     ))}
                   </div>
@@ -528,7 +529,7 @@ const ResumeRenderer = ({ data, templateId }: { data: ResumeData; templateId: Te
       )}
 
       {theme.layout === 'custom-t5' && (
-        <div className="flex w-full min-h-[1123px] bg-[#FAFAFA] text-left font-sans overflow-hidden relative">
+        <div className="flex w-full min-h-[1123px] bg-[#FAFAFA] text-left font-sans overflow-visible relative">
            <div className="w-[34%] flex flex-col relative z-10 pt-16" style={{ backgroundColor: c.soft || '#F3F4F6' }}>
              <div className="bg-white h-64 w-full absolute top-0 left-0" style={{ borderBottomLeftRadius: '60%', borderBottomRightRadius: '60%', transform: 'scaleX(1.3)', transformOrigin: 'top center', boxShadow: '0 10px 30px rgba(0,0,0,0.02)' }}></div>
              <div className="relative z-20 w-full flex flex-col items-center px-10">
@@ -632,7 +633,7 @@ const ResumeRenderer = ({ data, templateId }: { data: ResumeData; templateId: Te
                 <div className="relative">
                    <div className="absolute -left-6 top-0 w-1.5 h-full rounded-r-lg" style={{ backgroundColor: c.primary }}></div>
                    <h2 className="text-[18px] font-black uppercase tracking-[0.15em] mb-4" style={{ color: '#111827' }}>Perfil Profissional</h2>
-                   <p className="text-[13px] leading-[1.8] text-justify text-gray-600 font-medium">{renderText(data.personalInfo.summary)}</p>
+                   <p className="text-[13px] leading-[1.8] text-left text-gray-600 font-medium">{renderText(data.personalInfo.summary)}</p>
                 </div>
               )}
 
@@ -649,7 +650,7 @@ const ResumeRenderer = ({ data, templateId }: { data: ResumeData; templateId: Te
                           <div className="text-[14px] font-bold mb-4 flex items-center gap-2" style={{ color: c.primary }}>
                              {ex.company}
                           </div>
-                          <p className="text-[13px] leading-[1.8] text-justify text-gray-600 font-medium pl-4 border-l-2" style={{borderColor: `${c.primary}20`}}>{renderText(ex.description)}</p>
+                          <p className="text-[13px] leading-[1.8] text-left text-gray-600 font-medium pl-4 border-l-2" style={{borderColor: `${c.primary}20`}}>{renderText(ex.description)}</p>
                        </div>
                      ))}
                    </div>
@@ -666,7 +667,7 @@ const ResumeRenderer = ({ data, templateId }: { data: ResumeData; templateId: Te
 // --- Main Application ---
 
 export default function App() {
-  const [view, setView] = useState<'landing' | 'editor' | 'faq' | 'about' | 'terms'>('landing');
+  const [view, setView] = useState<'landing' | 'editor' | 'faq' | 'about' | 'terms' | 'tips' | 'showcase'>('landing');
   const [activeStep, setActiveStep] = useState(0);
   const [resumeData, setResumeData] = useState<ResumeData>(() => {
     const saved = localStorage.getItem('cv_lab_data');
@@ -738,7 +739,7 @@ export default function App() {
 
     setIsDownloading(true);
     
-    // Configurações do html2pdf
+    // Configurações otimizadas para evitar elementos tortos e desalinhados
     const opt = {
       margin:       0,
       filename:     isCoverLetterMode ? 'Carta_Apresentacao.pdf' : `${resumeData.personalInfo.fullName.replace(/\s+/g, '_')}_Curriculo.pdf`,
@@ -746,14 +747,18 @@ export default function App() {
       html2canvas:  { 
         scale: 2, 
         useCORS: true, 
-        letterRendering: true,
+        letterRendering: false,
         scrollY: 0,
+        scrollX: 0,
         windowWidth: 794
       },
-      jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' as const }
+      jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' as const },
+      pagebreak:    { mode: ['css', 'legacy'] }
     };
 
     try {
+      // Forçamos o scroll para o topo antes da captura para evitar desalinhamento
+      window.scrollTo(0, 0);
       await html2pdf().set(opt).from(element).save();
     } catch (err) {
       console.error("Erro ao gerar PDF:", err);
@@ -768,12 +773,8 @@ export default function App() {
     { title: 'Educação', icon: GraduationCap },
     { title: 'Habilidades', icon: Settings },
     { title: 'Design', icon: FileText },
-    { title: 'Finalizar', icon: CheckCircleIcon }
+    { title: 'Finalizar', icon: CheckCircle }
   ];
-
-  function CheckCircleIcon(props: any) {
-    return <FileText {...props} />;
-  }
 
   const updatePersonalInfo = (field: string, value: any) => {
     setResumeData(prev => ({
@@ -899,6 +900,12 @@ export default function App() {
             />
           </div>
           <div className="hidden md:flex items-center gap-8 text-[10px] font-black tracking-widest text-text-muted uppercase">
+            <button onClick={() => setView('tips')} className="hover:text-primary-blue transition-colors focus:outline-none flex items-center gap-1.5">
+              Dicas <span className="text-[7px] bg-primary-blue text-white px-1 py-0.5 rounded-sm animate-pulse">Novo</span>
+            </button>
+            <button onClick={() => setView('showcase')} className="hover:text-primary-blue transition-colors focus:outline-none flex items-center gap-1.5">
+              Exemplos <span className="text-[7px] bg-deep-blue text-white px-1 py-0.5 rounded-sm">Novo</span>
+            </button>
             <button onClick={() => setView('about')} className="hover:text-primary-blue transition-colors focus:outline-none">Sobre Nós</button>
             <button onClick={() => setView('faq')} className="hover:text-primary-blue transition-colors focus:outline-none">FAQ</button>
             <button onClick={() => setView('terms')} className="hover:text-primary-blue transition-colors focus:outline-none">Termos</button>
@@ -1091,6 +1098,8 @@ export default function App() {
           className="bg-bg-main py-12 border-t border-border-main text-center flex flex-col items-center gap-6"
         >
            <div className="flex flex-wrap justify-center items-center gap-6 text-xs font-bold text-text-muted uppercase tracking-widest">
+              <button onClick={() => setView('tips')} className="hover:text-primary-blue transition-colors">Dicas</button>
+              <button onClick={() => setView('showcase')} className="hover:text-primary-blue transition-colors">Exemplos</button>
               <button onClick={() => setView('about')} className="hover:text-primary-blue transition-colors">Sobre Nós</button>
               <button onClick={() => setView('faq')} className="hover:text-primary-blue transition-colors">FAQ</button>
               <button onClick={() => setView('terms')} className="hover:text-primary-blue transition-colors">Termos e Condições</button>
@@ -1107,7 +1116,7 @@ export default function App() {
     );
   }
 
-  if (view === 'faq' || view === 'about' || view === 'terms') {
+  if (view === 'faq' || view === 'about' || view === 'terms' || view === 'tips' || view === 'showcase') {
     return (
       <div className="min-h-screen hero-gradient flex flex-col">
         <nav className="h-20 px-6 md:px-12 flex items-center justify-between glass sticky top-0 z-50">
@@ -1120,6 +1129,12 @@ export default function App() {
             />
           </button>
           <div className="hidden md:flex items-center gap-8 text-[10px] font-black tracking-widest text-text-muted uppercase">
+            <button onClick={() => setView('tips')} className="hover:text-primary-blue transition-colors focus:outline-none flex items-center gap-1.5">
+              Dicas <span className="text-[7px] bg-primary-blue text-white px-1 py-0.5 rounded-sm animate-pulse">Novo</span>
+            </button>
+            <button onClick={() => setView('showcase')} className="hover:text-primary-blue transition-colors focus:outline-none flex items-center gap-1.5">
+              Exemplos <span className="text-[7px] bg-deep-blue text-white px-1 py-0.5 rounded-sm">Novo</span>
+            </button>
             <button onClick={() => setView('about')} className="hover:text-primary-blue transition-colors focus:outline-none">Sobre Nós</button>
             <button onClick={() => setView('faq')} className="hover:text-primary-blue transition-colors focus:outline-none">FAQ</button>
             <button onClick={() => setView('terms')} className="hover:text-primary-blue transition-colors focus:outline-none">Termos</button>
@@ -1131,6 +1146,98 @@ export default function App() {
           <button onClick={() => setView('landing')} className="text-primary-blue text-xs font-bold uppercase tracking-widest flex items-center gap-2 mb-8 hover:opacity-80 transition-opacity">
             <ChevronLeft size={16} /> Voltar
           </button>
+
+          {view === 'tips' && (
+            <div className="space-y-12">
+              <div className="text-center space-y-4 mb-12">
+                <h1 className="text-5xl font-black text-deep-blue tracking-tight">Dicas de Especialistas</h1>
+                <p className="text-text-muted font-medium">Pequenos detalhes que fazem grandes diferenças no seu recrutamento.</p>
+              </div>
+
+              <div className="grid gap-8">
+                {[
+                  {
+                    title: "A Regra dos 6 Segundos",
+                    desc: "Recrutadores levam em média apenas 6 segundos para decidir se o seu currículo vale uma leitura completa. Use títulos claros e uma estrutura limpa.",
+                    icon: "⏱️"
+                  },
+                  {
+                    title: "Verbos de Ação",
+                    desc: "Evite frases como 'Responsável por...'. Use verbos fortes como 'Liderei', 'Implementei', 'Reduzi custos em 20%'.",
+                    icon: "🚀"
+                  },
+                  {
+                    title: "Quantifique suas Conquistas",
+                    desc: "Números saltam aos olhos. 'Gerenciei equipe' vs 'Gerenciei equipe de 15 pessoas e aumentamos a produtividade em 30%'.",
+                    icon: "📈"
+                  },
+                  {
+                    title: "Otimização para ATS",
+                    desc: "Muitas empresas usam softwares para filtrar currículos. Utilize palavras-chave específicas da sua área que aparecem no anúncio da vaga.",
+                    icon: "🔍"
+                  }
+                ].map((tip, idx) => (
+                  <motion.div 
+                    key={idx}
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: idx * 0.1 }}
+                    className="p-8 bg-white rounded-[32px] border border-border-main flex gap-6 items-start hover:shadow-xl transition-shadow group"
+                  >
+                    <div className="text-4xl">{tip.icon}</div>
+                    <div className="space-y-2">
+                       <h3 className="text-xl font-black text-deep-blue group-hover:text-primary-blue transition-colors">{tip.title}</h3>
+                       <p className="text-text-main font-medium leading-relaxed opacity-80">{tip.desc}</p>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+
+              <div className="bg-primary-blue p-10 rounded-[40px] text-white flex flex-col md:flex-row items-center gap-8 shadow-2xl shadow-primary-blue/20">
+                <div className="space-y-4 flex-1">
+                  <h3 className="text-2xl font-black">Quer uma análise personalizada?</h3>
+                  <p className="text-white/80 text-sm font-medium">Nossa IA pode revisar seu currículo atual e sugerir melhorias específicas para o seu perfil profissional.</p>
+                </div>
+                <Button onClick={() => setView('editor')} className="bg-white text-primary-blue hover:bg-white/90 shrink-0 h-14 px-8 uppercase tracking-widest text-xs">Começar Agora</Button>
+              </div>
+            </div>
+          )}
+
+          {view === 'showcase' && (
+            <div className="space-y-12">
+              <div className="text-center space-y-4 mb-12">
+                <h1 className="text-5xl font-black text-deep-blue tracking-tight">Galeria de Sucesso</h1>
+                <p className="text-text-muted font-medium">Inspire-se em currículos que já foram aprovados por grandes empresas.</p>
+              </div>
+
+              <div className="grid md:grid-cols-2 gap-8">
+                {[
+                  { name: "Modelo Executivo", desc: "Perfeito para cargos de gestão e liderança.", img: "https://picsum.photos/seed/resume1/600/800" },
+                  { name: "Modelo Criativo", desc: "Ideal para designers, publicidade e artes.", img: "https://picsum.photos/seed/resume2/600/800" },
+                  { name: "Modelo Minimalista", desc: "Foco total no conteúdo e experiências.", img: "https://picsum.photos/seed/resume3/600/800" },
+                  { name: "Modelo Académico", desc: "Estruturado para investigadores e professores.", img: "https://picsum.photos/seed/resume4/600/800" }
+                ].map((item, idx) => (
+                  <motion.div 
+                    key={idx}
+                    whileHover={{ scale: 1.02 }}
+                    className="bg-white rounded-[32px] border border-border-main overflow-hidden shadow-sm hover:shadow-2xl transition-all cursor-pointer group"
+                    onClick={() => setView('editor')}
+                  >
+                    <div className="aspect-[3/4] overflow-hidden relative">
+                      <img src={item.img} alt={item.name} className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-500" />
+                      <div className="absolute inset-0 bg-deep-blue/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                        <span className="bg-white text-primary-blue px-6 py-2 rounded-full font-black text-xs uppercase tracking-widest">Usar este Modelo</span>
+                      </div>
+                    </div>
+                    <div className="p-6">
+                      <h3 className="text-lg font-black text-deep-blue">{item.name}</h3>
+                      <p className="text-sm text-text-muted font-medium">{item.desc}</p>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {view === 'faq' && (
             <div className="space-y-12">
@@ -1283,6 +1390,41 @@ export default function App() {
           </div>
         </header>
 
+        {/* New Visual Stepper / Tabs */}
+        <div className="bg-bg-main/30 border-b border-border-main overflow-x-auto no-scrollbar">
+          <div className="flex px-4 py-3 min-w-max gap-1">
+            {editorSteps.map((step, idx) => {
+              const StepIcon = step.icon;
+              const isActive = activeStep === idx;
+              const isPast = activeStep > idx;
+              
+              return (
+                <button 
+                  key={idx}
+                  onClick={() => setActiveStep(idx)}
+                  className={`flex flex-col items-center gap-1.5 px-4 py-2 rounded-xl transition-all relative group
+                    ${isActive ? 'bg-white shadow-sm ring-1 ring-primary-blue/10' : 'hover:bg-white/50'}`}
+                >
+                  <div className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-300
+                    ${isActive ? 'bg-primary-blue text-white shadow-lg shadow-primary-blue/30 scale-110' : isPast ? 'bg-primary-blue/10 text-primary-blue' : 'bg-gray-100 text-gray-400'}`}>
+                    <StepIcon size={18} />
+                  </div>
+                  <span className={`text-[10px] font-black uppercase tracking-wider transition-colors
+                    ${isActive ? 'text-primary-blue' : 'text-text-muted group-hover:text-text-main'}`}>
+                    {step.title}
+                  </span>
+                  {isActive && (
+                    <motion.div 
+                      layoutId="active-step-indicator"
+                      className="absolute -bottom-3 left-1/4 right-1/4 h-0.5 bg-primary-blue rounded-full"
+                    />
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
         <div className="flex-1 overflow-y-auto p-8 space-y-10 custom-scrollbar">
           <AnimatePresence mode="wait">
             <motion.div
@@ -1399,20 +1541,26 @@ export default function App() {
                        <div className="p-2 bg-primary-blue rounded-xl">
                           <Plus size={20} className="animate-pulse" />
                        </div>
-                       <h4 className="font-black uppercase text-[11px] tracking-widest">Atalho Inteligente</h4>
+                       <h4 className="font-black uppercase text-[11px] tracking-widest text-white/90">Atalho Inteligente</h4>
                     </div>
-                    <p className="text-xs text-white/70 font-medium">Você preencheu o básico! Nossa IA pode gerar sugestões de Resumo e experiências fictícias com base no seu cargo para você apenas editar.</p>
+                    <p className="text-xs text-white/70 font-medium leading-relaxed">Otimize seu tempo! Nossa IA gera sugestões de alto impacto para seu resumo e histórico profissional baseado no seu cargo atual.</p>
                     <Button 
-                      className="w-full bg-white text-deep-blue hover:bg-white/90 h-10 text-[10px] relative overflow-hidden" 
+                      variant="none"
+                      className="w-full bg-white text-deep-blue hover:bg-white/90 h-11 text-[10px] font-black uppercase tracking-widest shadow-lg shadow-black/10 transition-all active:scale-95" 
                       onClick={handleAutoFill}
                       disabled={loading}
                     >
                       {loading ? (
                          <div className="flex items-center gap-2">
                            <div className="w-3 h-3 border-2 border-primary-blue border-t-transparent rounded-full animate-spin"></div>
-                           <span className="text-primary-blue">Analisando perfil e construindo histórico...</span>
+                           <span>Sincronizando Dados...</span>
                          </div>
-                      ) : 'Auto-completar Currículo com IA'}
+                      ) : (
+                        <div className="flex items-center gap-2">
+                          <Plus size={16} />
+                          <span>Gerar Sugestões Profissionais</span>
+                        </div>
+                      )}
                     </Button>
                   </div>
 
@@ -1642,15 +1790,15 @@ export default function App() {
                                 <FileText size={32} />
                              </div>
                              <h4 className="text-lg font-black text-deep-blue">Carta de Apresentação</h4>
-                             <p className="text-xs text-text-muted font-medium">Gere uma carta personalizada para a vaga dos seus sonhos por apenas 1150 Kzs no total.</p>
+                             <p className="text-xs text-text-muted font-medium leading-relaxed">Destaque sua candidatura! Gere uma carta estratégica e personalizada para a vaga dos seus sonhos por apenas 1150 Kzs.</p>
                              
-                             <Button className="w-full bg-white text-primary-blue border border-primary-blue hover:bg-primary-blue/10 relative overflow-hidden" onClick={handleCreateCoverLetter} disabled={loading}>
+                             <Button variant="none" className="w-full bg-primary-blue text-white hover:bg-deep-blue h-12 text-sm font-black uppercase tracking-widest shadow-xl shadow-primary-blue/20 transition-all rounded-2xl" onClick={handleCreateCoverLetter} disabled={loading}>
                                 {loading ? (
                                    <div className="flex items-center justify-center gap-2">
-                                      <div className="w-3 h-3 border-2 border-primary-blue border-t-transparent rounded-full animate-spin"></div>
-                                      <span>A gerar sua carta...</span>
+                                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                                      <span>A Redigir...</span>
                                    </div>
-                                ) : "Gerar com Inteligência Artificial"}
+                                ) : "Gerar Carta Premium"}
                              </Button>
                           </motion.div>
                         )}
@@ -1664,7 +1812,7 @@ export default function App() {
 
         <footer className="p-6 border-t border-border-main bg-white flex justify-between gap-4">
            <Button variant="ghost" disabled={activeStep === 0} onClick={() => setActiveStep(s => s - 1)}>Anterior</Button>
-           <Button disabled={activeStep === 5} onClick={() => setActiveStep(s => s + 1)} className="px-10">
+           <Button disabled={activeStep === 5} onClick={() => setActiveStep(s => s + 1)} className="px-10" icon={ChevronRight}>
              {activeStep === 5 ? 'Concluído' : 'Próximo'}
            </Button>
         </footer>
@@ -1718,14 +1866,54 @@ export default function App() {
                    initial={{ opacity: 0, y: 20 }}
                    animate={{ opacity: 1, y: 0 }}
                    id="cover-letter-content"
-                   className={`bg-white min-h-[1123px] w-[794px] p-10 md:p-20 relative`}
+                   className="bg-white min-h-[1123px] w-[794px] p-20 relative flex flex-col font-sans text-left shadow-2xl"
                  >
-                   <button data-html2canvas-ignore="true" onClick={() => setIsCoverLetterMode(false)} className="absolute top-8 left-8 text-[10px] font-black uppercase text-primary-blue tracking-widest flex items-center gap-2 print:hidden">
-                      <ChevronLeft size={14} /> Fechar Carta
-                   </button>
-                   <div className="max-w-prose mx-auto text-justify whitespace-pre-line text-sm md:text-lg leading-relaxed pt-12" style={{ color: '#334155' }}>
-                      {renderText(generatedLetter)}
-                   </div>
+                    <button data-html2canvas-ignore="true" onClick={() => setIsCoverLetterMode(false)} className="absolute top-8 left-8 text-[10px] font-black uppercase text-primary-blue tracking-widest flex items-center gap-2 print:hidden group bg-soft-blue px-4 py-2 rounded-full hover:bg-primary-blue hover:text-white transition-all">
+                       <ChevronLeft size={14} className="group-hover:-translate-x-1 transition-transform" /> Voltar ao Editor
+                    </button>
+
+                    {/* Minimalist Professional Header */}
+                    <div className="flex justify-between items-end border-b-4 border-primary-blue/5 pb-10 mb-12 mt-8">
+                      <div className="space-y-1">
+                        <h1 className="text-4xl font-black text-deep-blue tracking-tighter uppercase leading-none">
+                          {resumeData.personalInfo.fullName || 'Seu Nome'}
+                        </h1>
+                        <p className="text-primary-blue font-black tracking-[0.2em] text-[10px] uppercase">
+                          {resumeData.personalInfo.title || 'Seu Cargo'}
+                        </p>
+                      </div>
+                      <div className="text-right space-y-1 text-text-muted font-medium text-[11px]">
+                        <div className="flex items-center justify-end gap-2 text-primary-blue font-bold">
+                          <span>{resumeData.personalInfo.phone}</span>
+                          <span className="opacity-30">•</span>
+                          <span>{resumeData.personalInfo.email}</span>
+                        </div>
+                        <p className="uppercase tracking-wider opacity-60 font-black">{resumeData.personalInfo.location}</p>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-col gap-1 mb-12">
+                      <span className="text-primary-blue font-black text-[9px] uppercase tracking-[0.3em] mb-1">Data de Emissão</span>
+                      <div className="text-deep-blue text-sm font-bold">
+                        {new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })}
+                      </div>
+                    </div>
+                    
+                    <div className="flex-1 text-justify whitespace-pre-line text-[15px] leading-[1.8] text-slate-700 font-medium">
+                       {renderText(generatedLetter)}
+                    </div>
+
+                    <div className="mt-20 pt-16 border-t border-gray-100 flex justify-between items-center">
+                       <div className="text-left">
+                          <p className="text-xs text-text-muted uppercase tracking-widest mb-1">Atentamente,</p>
+                          <p className="text-lg font-black text-deep-blue tracking-tight underline decoration-primary-blue/30 decoration-4 underline-offset-8">
+                             {resumeData.personalInfo.fullName}
+                          </p>
+                       </div>
+                       <div className="w-24 h-24 bg-soft-blue/50 rounded-full flex items-center justify-center opacity-20 filter grayscale">
+                          <CheckCircle size={32} className="text-primary-blue" />
+                       </div>
+                    </div>
                  </motion.div>
                ) : (
                  <ResumeRenderer data={resumeData} templateId={template} />

@@ -44,6 +44,15 @@
 }
 
 /* Custom styles for high-end look */
+/* Utility Classes */
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+.custom-scrollbar::-webkit-scrollbar { width: 6px; }
+.custom-scrollbar::-webkit-scrollbar-track { background: #f1f1f1; }
+.custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+.custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
 .glass {
   @apply bg-white/70 backdrop-blur-md border border-white/20;
 }
@@ -77,48 +86,9 @@
    TEMPLATE 1 — Executive Dark Sidebar
    (Using --primary, --text-main, etc.)
 ══════════════════════════════════════════════ */
-.t1 { display: flex; min-height: 1123px; font-family: 'DM Sans', sans-serif; background: #fff; width: 100%; text-align: left; }
-
-.t1-left {
-  width: 250px; min-width: 250px;
-  background: var(--primary, #1B2A4A);
-  color: #fff; padding: 40px 24px;
-  display: flex; flex-direction: column; gap: 28px;
-}
-.t1-avatar-wrap { display: flex; justify-content: center; }
-.t1-avatar {
-  width: 100px; height: 100px; border-radius: 50%;
-  background: rgba(255,255,255,0.15);
-  display: flex; align-items: center; justify-content: center;
-  font-size: 32px; font-weight: 700; color: #fff;
-  border: 3px solid rgba(255,255,255,0.3);
-  font-family: 'Playfair Display', serif;
-  overflow: hidden;
-}
-.t1-avatar img { width: 100%; height: 100%; object-fit: cover; }
-
-.t1-section-title {
-  font-size: 10px; font-weight: 600; letter-spacing: 2px;
-  text-transform: uppercase; color: rgba(255,255,255,0.5);
-  border-bottom: 1px solid rgba(255,255,255,0.15);
-  padding-bottom: 6px; margin-bottom: 12px;
-}
-.t1-contact-item { display: flex; gap: 8px; align-items: flex-start; margin-bottom: 8px; }
-.t1-contact-icon { font-size: 12px; margin-top: 1px; opacity: 0.6; min-width: 14px; }
-.t1-contact-text { font-size: 12px; color: rgba(255,255,255,0.85); line-height: 1.4; word-break: break-all; }
-
-.t1-edu-item { margin-bottom: 14px; }
-.t1-edu-degree { font-size: 12px; font-weight: 600; color: #fff; }
-.t1-edu-school { font-size: 11px; color: rgba(255,255,255,0.65); margin-top: 2px; }
-.t1-edu-year { font-size: 11px; color: rgba(255,255,255,0.4); margin-top: 2px; }
-
-.t1-skill-tag {
-  display: inline-block; background: rgba(255,255,255,0.1);
-  color: rgba(255,255,255,0.9); font-size: 11px;
-  padding: 3px 8px; border-radius: 3px; margin: 3px 3px 0 0;
-}
-
-.t1-right { flex: 1; padding: 40px 36px; }
+.t1 { display: flex; align-items: stretch; min-height: 1123px; font-family: 'DM Sans', sans-serif; background: #fff; width: 100%; text-align: left; }
+.t1-left { width: 250px; min-width: 250px; background: var(--primary, #1B2A4A); color: #fff; padding: 40px 24px; display: flex; flex-direction: column; gap: 28px; min-height: 1123px; }
+.t1-right { flex: 1; padding: 40px 36px; min-height: 1123px; }
 
 .t1-name {
   font-family: 'Playfair Display', serif;
@@ -131,7 +101,7 @@
   margin-top: 8px; margin-bottom: 14px;
 }
 .t1-divider { height: 2px; background: var(--primary, #1B2A4A); width: 48px; margin-bottom: 14px; }
-.t1-bio { font-size: 13px; color: #4B5563; line-height: 1.65; margin-bottom: 28px; text-align: justify; }
+.t1-bio { font-size: 13px; color: #4B5563; line-height: 1.65; margin-bottom: 28px; text-align: left; }
 
 .t1-right-section { margin-bottom: 26px; }
 .t1-right-title {
@@ -150,7 +120,7 @@
 .t1-exp-role { font-size: 14px; font-weight: 700; color: var(--primary, #1B2A4A); }
 .t1-exp-company { font-size: 12px; color: #6B7280; margin-top: 1px; font-weight: bold; }
 .t1-exp-period { font-size: 11px; color: #9CA3AF; margin-top: 2px; font-style: italic; }
-.t1-exp-desc { font-size: 12px; color: #4B5563; margin-top: 6px; line-height: 1.6; text-align: justify; }
+.t1-exp-desc { font-size: 12px; color: #4B5563; margin-top: 6px; line-height: 1.6; text-align: left; }
 
 /* ══════════════════════════════════════════════
    TEMPLATE 2 — Modern Geometric
@@ -187,11 +157,11 @@
   letter-spacing: 4px; text-transform: uppercase; margin-bottom: 16px; display: block;
 }
 .t2-divider { display: none; }
-.t2-bio { font-size: 13px; color: #4B5563; line-height: 1.7; max-width: 600px; text-align: justify; font-weight: 500; }
+.t2-bio { font-size: 13px; color: #4B5563; line-height: 1.7; max-width: 600px; text-align: left; font-weight: 500; }
 
-.t2-body { display: flex; align-items: flex-start; }
-.t2-left { width: 250px; min-width: 250px; padding: 40px 32px; background: var(--soft, #F9FAFB); border-right: 1px solid #F3F4F6; min-height: 900px; }
-.t2-right { flex: 1; padding: 40px 48px; min-height: 900px; }
+.t2-body { display: flex; align-items: stretch; }
+.t2-left { width: 250px; min-width: 250px; padding: 40px 32px; background: var(--soft, #F9FAFB); border-right: 1px solid #F3F4F6; min-height: 1123px; }
+.t2-right { flex: 1; padding: 40px 48px; min-height: 1123px; }
 
 .t2-section { margin-bottom: 32px; }
 .t2-section-title {
@@ -219,13 +189,13 @@
 .t2-exp-company { font-size: 16px; font-weight: 800; color: var(--primary, #1B2A4A); font-family: 'Space Grotesk', sans-serif; }
 .t2-exp-period { font-size: 11px; font-weight: 700; color: #6B7280; text-transform: uppercase; letter-spacing: 1px; }
 .t2-exp-role { font-size: 13px; font-weight: 600; color: #4B5563; margin-bottom: 10px; padding-bottom: 10px; border-bottom: 1px dashed #E5E7EB; display: inline-block; width: 100%; }
-.t2-exp-desc { margin-top: 6px; font-size: 13px; color: #4B5563; line-height: 1.7; text-align: justify; font-weight: 500; }
+.t2-exp-desc { margin-top: 6px; font-size: 13px; color: #4B5563; line-height: 1.7; text-align: left; font-weight: 500; }
 
 
 /* ══════════════════════════════════════════════
    TEMPLATE 3 — Teal Bold
 ══════════════════════════════════════════════ */
-.t3 { display: block; min-height: 1123px; background: #fff; font-family: 'DM Sans', sans-serif; width: 100%; text-align: left; }
+.t3 { display: block; min-height: 1123px; background: #fff; font-family: 'DM Sans', sans-serif; width: 100%; text-align: left; overflow: visible; }
 
 .t3-header {
   background: var(--primary, #0D4A45); display: flex; gap: 0;
@@ -255,11 +225,11 @@
 }
 .t3-title { font-size: 14px; color: rgba(255,255,255,0.7); letter-spacing: 3px; text-transform: uppercase; font-weight: 600; margin-bottom: 16px; }
 .t3-divider { display: none; }
-.t3-bio { font-size: 13px; color: rgba(255,255,255,0.85); line-height: 1.7; max-width: 550px; text-align: justify; }
+.t3-bio { font-size: 13px; color: rgba(255,255,255,0.85); line-height: 1.7; max-width: 550px; text-align: left; }
 
-.t3-body { display: flex; align-items: flex-start; }
-.t3-left { width: 280px; min-width: 280px; padding: 36px 32px; background: var(--primary-soft, #F0FAF9); border-right: 2px solid var(--primary-light, #D1FAF6); min-height: 950px; }
-.t3-right { flex: 1; padding: 36px 48px; min-height: 950px; }
+.t3-body { display: flex; align-items: stretch; }
+.t3-left { width: 280px; min-width: 280px; padding: 36px 32px; background: var(--primary-soft, #F0FAF9); border-right: 2px solid var(--primary-light, #D1FAF6); min-height: 1123px; }
+.t3-right { flex: 1; padding: 36px 48px; min-height: 1123px; }
 
 .t3-section { margin-bottom: 28px; }
 .t3-section-title {
@@ -284,7 +254,7 @@
 .t3-exp-company { font-weight: 800; color: var(--primary, #0D4A45); font-family: 'Cormorant Garamond', serif; font-size: 19px; }
 .t3-exp-period { font-size: 11px; font-weight: 700; color: #6B7280; text-transform: uppercase; letter-spacing: 1px; }
 .t3-exp-role { font-size: 14px; font-weight: 700; color: #4B5563; }
-.t3-exp-desc { margin-top: 8px; font-size: 13px; color: #4B5563; line-height: 1.7; text-align: justify; font-weight: 500; }
+.t3-exp-desc { margin-top: 8px; font-size: 13px; color: #4B5563; line-height: 1.7; text-align: left; font-weight: 500; }
 
 .t3-skill-item { margin-bottom: 16px; }
 .t3-skill-label { font-size: 12px; color: #374151; margin-bottom: 6px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; }
