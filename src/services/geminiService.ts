@@ -102,3 +102,46 @@ export async function generateCoverLetter(resumeData: any, jobTitle: string): Pr
     return "Ocorreu um erro técnico ao gerar sua carta. Verifique sua conexão.";
   }
 }
+
+export async function generateFullResume(personalInfo: any): Promise<any> {
+  const prompt = `
+    Você é um assistente de carreira inteligente. 
+    Com base nas informações básicas do usuário abaixo, gere um rascunho completo de currículo.
+    
+    INFORMAÇÕES BÁSICAS:
+    - Nome: ${personalInfo.fullName}
+    - Cargo Pretendido: ${personalInfo.title}
+    - Localização: ${personalInfo.location || 'Não especificada'}
+    
+    TAREFA:
+    Gere um JSON com os seguintes campos:
+    - summary: Um parágrafo impactante.
+    - experience: Array de 2 objetos com { company, position, startDate, endDate, description }.
+    - education: Array de 1 objeto com { institution, degree, field, startDate, endDate }.
+    - skills: Array de 5 habilidades relevantes (apenas string).
+    - languages: Array de 2 idiomas relevantes (apenas string).
+    
+    REGRAS:
+    1. Retorne APENAS o JSON puro. Sem blocos de código (\`\`\`json).
+    2. Invente dados realistas baseados no cargo: "${personalInfo.title}".
+    3. Idioma: Português.
+  `;
+
+  try {
+    const ai = getAI();
+    const response = await ai.models.generateContent({
+      model: "gemini-3-flash-preview",
+      contents: prompt,
+      config: {
+        responseMimeType: "application/json",
+        temperature: 0.6
+      }
+    });
+    
+    const result = response.text?.trim() || "";
+    return JSON.parse(result);
+  } catch (error) {
+    console.error("Erro ao auto-completar currículo:", error);
+    throw error;
+  }
+}

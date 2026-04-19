@@ -35,7 +35,12 @@ export interface ResumeData {
     name: string;
     level: 'Básico' | 'Intermédio' | 'Avançado' | 'Especialista';
   }[];
-  languages: string[];
+  languages: {
+    id: string;
+    name: string;
+    level: 'Básico' | 'Intermédio' | 'Avançado' | 'Fluente' | 'Nativo';
+  }[];
+  themeColor?: string;
 }
 
 export const INITIAL_RESUME_DATA: ResumeData = {
@@ -54,6 +59,7 @@ export const INITIAL_RESUME_DATA: ResumeData = {
   education: [],
   skills: [],
   languages: [],
+  themeColor: '#0066FF',
 };
 
-export type TemplateType = 't1_executive' | 't1_emerald' | 't2_geometric' | 't2_burgundy' | 't3_teal' | 't3_ocean' | 't4_barnabas' | 't5_jonathan';
+export type TemplateType = 't1_executive' | 't2_geometric' | 't3_modern' | 't4_barnabas' | 't5_jonathan';

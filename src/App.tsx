@@ -29,7 +29,7 @@ import {
 } from 'lucide-react';
 import { AdSenseUnit } from './components/AdSenseUnit';
 import { ResumeData, INITIAL_RESUME_DATA, TemplateType } from './types.ts';
-import { optimizeResumeText, generateCoverLetter } from './services/geminiService.ts';
+import { optimizeResumeText, generateCoverLetter, generateFullResume } from './services/geminiService.ts';
 import html2pdf from 'html2pdf.js';
 
 // --- UI Components ---
@@ -114,14 +114,11 @@ const TextArea = ({ label, value, onChange, placeholder, onOptimize, isOptimizin
 // --- Resumes & Templates Configuration ---
 
 const TEMPLATES: Record<TemplateType, { name: string; layout: string; colors: any }> = {
-  t1_executive: { name: 'Executivo Dark', layout: 'custom-t1', colors: { primary: '#1B2A4A', text: '#4B5563', heading: '#1B2A4A', soft: '#1B2A4A', lines: '#E5E7EB' } },
-  t1_emerald: { name: 'Executivo Esmeralda',  layout: 'custom-t1', colors: { primary: '#064E3B', text: '#4B5563', heading: '#064E3B', soft: '#064E3B', lines: '#E5E7EB' } },
+  t1_executive: { name: 'Executivo Classic', layout: 'custom-t1', colors: { primary: '#1B2A4A', text: '#4B5563', heading: '#1B2A4A', soft: '#1B2A4A', lines: '#E5E7EB' } },
   t2_geometric: { name: 'Geométrico Mod', layout: 'custom-t2', colors: { primary: '#1B2A4A', text: '#4B5563', heading: '#1B2A4A', soft: '#F9FAFB', lines: '#F3F4F6' } },
-  t2_burgundy: { name: 'Geométrico Carmesim',  layout: 'custom-t2', colors: { primary: '#7F1D1D', text: '#4B5563', heading: '#7F1D1D', soft: '#FEF2F2', lines: '#FEE2E2' } },
-  t3_teal: { name: 'Teal Arrojado', layout: 'custom-t3', colors: { primary: '#0D4A45', text: '#4B5563', heading: '#0D4A45', soft: '#F0FAF9', lines: '#D1FAF6', dark: '#082E2A' } },
-  t3_ocean: { name: 'Oceano Vibrante', layout: 'custom-t3', colors: { primary: '#0369A1', text: '#4B5563', heading: '#0369A1', soft: '#F0F9FF', lines: '#BAE6FD', dark: '#075985' } },
+  t3_modern: { name: 'Moderno Vibrante', layout: 'custom-t3', colors: { primary: '#0369A1', text: '#4B5563', heading: '#0369A1', soft: '#F0F9FF', lines: '#BAE6FD', dark: '#075985' } },
   t4_barnabas: { name: 'Sidebar Limpa', layout: 'custom-t4', colors: { primary: '#2D313A', text: '#3E4249', heading: '#333333', soft: '#2D313A', lines: '#E5E7EB' } },
-  t5_jonathan: { name: 'Jonathan Arches', layout: 'custom-t5', colors: { primary: '#4A4C53', text: '#555555', heading: '#222222', soft: '#F3F4F6', lines: '#D1D5DB' } }
+  t5_jonathan: { name: 'Escritor Arches', layout: 'custom-t5', colors: { primary: '#4A4C53', text: '#555555', heading: '#222222', soft: '#F3F4F6', lines: '#D1D5DB' } }
 };
 
 // --- Helper to clean up Markdown / AI formatting ---
@@ -129,7 +126,7 @@ const renderText = (str: string) => str ? str.replace(/\*/g, '') : '';
 
 const ResumeRenderer = ({ data, templateId }: { data: ResumeData; templateId: TemplateType }) => {
   const theme = TEMPLATES[templateId] || TEMPLATES.t1_executive;
-  const c = theme.colors;
+  const c = { ...theme.colors, primary: data.themeColor || theme.colors.primary };
 
   return (
     <div className={`bg-white h-[1123px] w-[794px] relative overflow-hidden print:shadow-none`} id="resume-content" style={{ color: '#1f2937' }}>
@@ -181,6 +178,20 @@ const ResumeRenderer = ({ data, templateId }: { data: ResumeData; templateId: Te
                 </div>
               </div>
             )}
+
+            {data.languages && data.languages.length > 0 && (
+              <div>
+                <div className="t1-section-title" style={{ marginTop: '24px' }}>Idiomas</div>
+                <div className="flex flex-col gap-2">
+                  {data.languages.map(l => (
+                     <div key={l.id} className="flex justify-between items-center text-[12px]">
+                       <span className="font-bold text-gray-700">{l.name}</span>
+                       <span className="text-gray-500 italic">{l.level}</span>
+                     </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
           
           <div className="t1-right">
@@ -210,10 +221,6 @@ const ResumeRenderer = ({ data, templateId }: { data: ResumeData; templateId: Te
 
       {theme.layout === 'custom-t2' && (
         <div className="t2" style={{ '--primary': c.primary, '--soft': c.soft } as any}>
-          <div className="t2-bg-shapes">
-             <div className="t2-shape1"></div>
-             <div className="t2-shape2"></div>
-          </div>
           <div className="t2-header">
              <div 
                className="t2-avatar flex items-center justify-center overflow-hidden"
@@ -262,6 +269,18 @@ const ResumeRenderer = ({ data, templateId }: { data: ResumeData; templateId: Te
                      {data.skills.map(s => (
                        <div key={s.id} className="t2-skill-item">
                           <div className="t2-skill-label">{s.name}</div>
+                       </div>
+                     ))}
+                  </div>
+                )}
+                
+                {data.languages && data.languages.length > 0 && (
+                  <div className="t2-section">
+                     <div className="t2-section-title">Idiomas</div>
+                     {data.languages.map(l => (
+                       <div key={l.id} className="flex justify-between items-center mb-2 text-[12px]">
+                          <div className="font-semibold text-gray-800">{l.name}</div>
+                          <div className="font-medium text-gray-400">{l.level}</div>
                        </div>
                      ))}
                   </div>
@@ -368,6 +387,25 @@ const ResumeRenderer = ({ data, templateId }: { data: ResumeData; templateId: Te
                       </div>
                    </div>
                  )}
+
+                 {data.languages && data.languages.length > 0 && (
+                   <div className="t3-section" style={{marginTop: '20px'}}>
+                      <div className="t3-section-title text-center">Idiomas</div>
+                      <div className="grid grid-cols-1 gap-2">
+                        {data.languages.map(l => (
+                           <div key={l.id} className="t3-skill-item">
+                              <div className="flex justify-between items-center w-full mb-1">
+                                <div className="t3-skill-label font-medium">{l.name}</div>
+                                <div className="text-[10px] uppercase font-bold text-gray-500">{l.level}</div>
+                              </div>
+                              <div className="t3-skill-bar-bg h-1.5 rounded-full">
+                                 <div className="t3-skill-bar-fill h-full rounded-full" style={{ width: l.level === 'Nativo' ? '100%' : l.level === 'Fluente' ? '85%' : l.level === 'Avançado' ? '70%' : l.level === 'Intermédio' ? '50%' : '25%' }}></div>
+                              </div>
+                           </div>
+                        ))}
+                      </div>
+                   </div>
+                 )}
               </div>
            </div>
         </div>
@@ -421,7 +459,12 @@ const ResumeRenderer = ({ data, templateId }: { data: ResumeData; templateId: Te
                   <div>
                      <h3 className="text-xl font-bold mb-5 pb-2 text-white border-b-2 border-white/20 inline-block pr-6">Idiomas</h3>
                      <div className="flex flex-col gap-3 text-[13px] opacity-90">
-                       {data.languages.map((l, i) => <div key={i} className="flex items-center gap-2">• {l}</div>)}
+                       {data.languages.map(l => (
+                          <div key={l.id} className="flex flex-col gap-0.5">
+                             <div className="font-bold flex items-center gap-2">• {l.name}</div>
+                             <div className="pl-4 text-[11px] opacity-70 uppercase tracking-widest">{l.level}</div>
+                          </div>
+                       ))}
                      </div>
                   </div>
                 )}
@@ -485,31 +528,29 @@ const ResumeRenderer = ({ data, templateId }: { data: ResumeData; templateId: Te
       )}
 
       {theme.layout === 'custom-t5' && (
-        <div className="flex w-full min-h-[1123px] bg-white text-left font-sans overflow-hidden relative">
-           <div className="w-[35%] flex flex-col relative z-10 pt-16" style={{ backgroundColor: c.soft }}>
-             <div className="bg-white h-56 w-full absolute top-0 left-0" style={{ borderBottomLeftRadius: '50%', borderBottomRightRadius: '50%', transform: 'scaleX(1.4)', transformOrigin: 'top center' }}></div>
-             <div className="relative z-20 w-full flex flex-col items-center px-8">
+        <div className="flex w-full min-h-[1123px] bg-[#FAFAFA] text-left font-sans overflow-hidden relative">
+           <div className="w-[34%] flex flex-col relative z-10 pt-16" style={{ backgroundColor: c.soft || '#F3F4F6' }}>
+             <div className="bg-white h-64 w-full absolute top-0 left-0" style={{ borderBottomLeftRadius: '60%', borderBottomRightRadius: '60%', transform: 'scaleX(1.3)', transformOrigin: 'top center', boxShadow: '0 10px 30px rgba(0,0,0,0.02)' }}></div>
+             <div className="relative z-20 w-full flex flex-col items-center px-10">
                 {data.personalInfo.photo ? (
                   <img 
                     src={data.personalInfo.photo} 
                     referrerPolicy="no-referrer" 
-                    className="object-cover object-top border-[6px] border-white mb-10 shadow-xl" 
+                    className="object-cover object-top border-[5px] border-white mb-12 shadow-[0_20px_40px_-15px_rgba(0,0,0,0.15)] bg-white" 
                     style={{ 
-                      width: `${data.personalInfo.photoSize || 150}px`,
-                      height: `${data.personalInfo.photoSize || 150}px`,
-                      borderRadius: data.personalInfo.photoStyle === 'circle' ? '50%' : '16px'
+                      width: `${data.personalInfo.photoSize || 160}px`,
+                      height: `${data.personalInfo.photoSize || 160}px`,
+                      borderRadius: data.personalInfo.photoStyle === 'circle' ? '50%' : '24px'
                     }}
                   />
                 ) : (
                   <div 
-                    className="border-[6px] border-white mb-10 flex items-center justify-center font-black shadow-xl" 
+                    className="border-[5px] border-white mb-12 flex items-center justify-center font-black shadow-[0_20px_40px_-15px_rgba(0,0,0,0.15)] bg-gray-100 text-gray-400" 
                     style={{ 
-                      backgroundColor: '#e5e7eb', 
-                      color: '#6b7280',
-                      width: `${data.personalInfo.photoSize || 150}px`,
-                      height: `${data.personalInfo.photoSize || 150}px`,
-                      borderRadius: data.personalInfo.photoStyle === 'circle' ? '50%' : '16px',
-                      fontSize: `${(data.personalInfo.photoSize || 150) * 0.4}px`
+                      width: `${data.personalInfo.photoSize || 160}px`,
+                      height: `${data.personalInfo.photoSize || 160}px`,
+                      borderRadius: data.personalInfo.photoStyle === 'circle' ? '50%' : '24px',
+                      fontSize: `${(data.personalInfo.photoSize || 160) * 0.4}px`
                     }}
                   >
                     {data.personalInfo.fullName.charAt(0)}
@@ -517,24 +558,43 @@ const ResumeRenderer = ({ data, templateId }: { data: ResumeData; templateId: Te
                 )}
                 
                 <div className="w-full mb-10">
-                  <div className="flex justify-center mb-5">
-                     <h3 className="border-2 rounded-[20px] px-6 py-1 text-[11px] font-bold text-center uppercase tracking-[0.15em] bg-white" style={{ borderColor: c.primary, color: c.primary }}>Contacto</h3>
+                  <div className="mb-6 border-b-2 pb-2" style={{ borderColor: `${c.primary}40` }}>
+                     <h3 className="text-[12px] font-black uppercase tracking-[0.2em]" style={{ color: c.primary }}>Contacto</h3>
                   </div>
-                  <div className="flex flex-col gap-4 text-[13px] w-full px-2" style={{ color: c.text }}>
-                     {data.personalInfo.phone && <div className="flex items-center gap-3"><Phone className="opacity-60" size={16}/> {data.personalInfo.phone}</div>}
-                     {data.personalInfo.email && <div className="flex items-center gap-3"><Mail  className="opacity-60" size={16}/> {data.personalInfo.email}</div>}
-                     {data.personalInfo.location && <div className="flex items-center gap-3"><MapPin className="opacity-60" size={16}/> {data.personalInfo.location}</div>}
+                  <div className="flex flex-col gap-4 text-[13px] w-full font-medium" style={{ color: c.text }}>
+                     {data.personalInfo.phone && <div className="flex items-center gap-3"><Phone className="opacity-70" size={16} color={c.primary}/> <span>{data.personalInfo.phone}</span></div>}
+                     {data.personalInfo.email && <div className="flex items-center gap-3"><Mail className="opacity-70" size={16} color={c.primary}/> <span className="break-all">{data.personalInfo.email}</span></div>}
+                     {data.personalInfo.location && <div className="flex items-center gap-3"><MapPin className="opacity-70" size={16} color={c.primary}/> <span>{data.personalInfo.location}</span></div>}
                   </div>
                 </div>
 
                 {data.skills.length > 0 && (
                   <div className="w-full mb-10">
-                    <div className="flex justify-center mb-5">
-                       <h3 className="border-2 rounded-[20px] px-6 py-1 text-[11px] font-bold text-center uppercase tracking-[0.15em] bg-white" style={{ borderColor: c.primary, color: c.primary }}>Habilidades</h3>
+                    <div className="mb-6 border-b-2 pb-2" style={{ borderColor: `${c.primary}40` }}>
+                       <h3 className="text-[12px] font-black uppercase tracking-[0.2em]" style={{ color: c.primary }}>Habilidades</h3>
                     </div>
-                    <ul className="flex flex-col gap-3 text-[13px] w-full px-4 list-disc pl-6" style={{ color: c.text }}>
+                    <ul className="flex flex-col gap-3 text-[13px] w-full pl-2 space-y-1" style={{ color: c.text }}>
                        {data.skills.map(s => (
-                         <li key={s.id} className="font-semibold">{s.name}</li>
+                         <li key={s.id} className="font-semibold flex items-center gap-2">
+                           <div className="w-1.5 h-1.5 rounded-full" style={{backgroundColor: c.primary}}></div>
+                           {s.name}
+                         </li>
+                       ))}
+                    </ul>
+                  </div>
+                )}
+
+                {data.languages && data.languages.length > 0 && (
+                  <div className="w-full mb-10">
+                    <div className="mb-6 border-b-2 pb-2" style={{ borderColor: `${c.primary}40` }}>
+                       <h3 className="text-[12px] font-black uppercase tracking-[0.2em]" style={{ color: c.primary }}>Idiomas</h3>
+                    </div>
+                    <ul className="flex flex-col gap-3 text-[13px] w-full pl-2 space-y-1" style={{ color: c.text }}>
+                       {data.languages.map(l => (
+                         <li key={l.id} className="font-semibold flex items-center justify-between">
+                           <span className="flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full" style={{backgroundColor: c.primary}}></div> {l.name}</span>
+                           <span className="text-[10px] uppercase font-bold px-2 py-0.5 rounded-md" style={{backgroundColor: `${c.primary}15`, color: c.primary}}>{l.level}</span>
+                         </li>
                        ))}
                     </ul>
                   </div>
@@ -542,15 +602,15 @@ const ResumeRenderer = ({ data, templateId }: { data: ResumeData; templateId: Te
                 
                 {data.education.length > 0 && (
                   <div className="w-full mb-10">
-                    <div className="flex justify-center mb-5">
-                       <h3 className="border-2 rounded-[20px] px-6 py-1 text-[11px] font-bold text-center uppercase tracking-[0.15em] bg-white" style={{ borderColor: c.primary, color: c.primary }}>Formação</h3>
+                    <div className="mb-6 border-b-2 pb-2" style={{ borderColor: `${c.primary}40` }}>
+                       <h3 className="text-[12px] font-black uppercase tracking-[0.2em]" style={{ color: c.primary }}>Formação</h3>
                     </div>
-                    <div className="flex flex-col gap-5 text-[12px] w-full px-2" style={{ color: c.text }}>
+                    <div className="flex flex-col gap-6 w-full" style={{ color: c.text }}>
                        {data.education.map(e => (
-                         <div key={e.id}>
-                            <div className="font-black mb-1 text-[13px]" style={{ color: c.primary }}>{e.institution}</div>
-                            <div className="font-bold opacity-80">{e.startDate} - {e.endDate}</div>
-                            <div className="mt-1">{e.degree}</div>
+                         <div key={e.id} className="relative">
+                            <div className="font-black mb-1 text-[13px] leading-tight" style={{ color: c.primary }}>{e.institution}</div>
+                            <div className="font-medium text-[13px] text-gray-700">{e.degree}</div>
+                            <div className="text-[11px] font-bold opacity-60 mt-1 uppercase tracking-wider">{e.startDate} - {e.endDate}</div>
                          </div>
                        ))}
                     </div>
@@ -559,40 +619,37 @@ const ResumeRenderer = ({ data, templateId }: { data: ResumeData; templateId: Te
              </div>
            </div>
 
-           <div className="w-[65%] py-20 px-12 flex flex-col gap-10">
-              <div className="pb-4">
-                 <h1 className="text-[54px] uppercase font-light leading-[1.05] tracking-tight" style={{ color: c.primary }}>
+           <div className="w-[66%] py-20 px-14 flex flex-col gap-12 bg-white shadow-[-20px_0_40px_rgba(0,0,0,0.02)] relative z-10">
+              <div>
+                 <h1 className="text-[48px] uppercase font-black leading-[1] tracking-tighter" style={{ color: c.primary }}>
                    {data.personalInfo.fullName.split(' ')[0]} <br/>
-                   <span className="font-black">{data.personalInfo.fullName.split(' ').slice(1).join(' ')}</span>
+                   <span className="font-light tracking-normal text-gray-800">{data.personalInfo.fullName.split(' ').slice(1).join(' ')}</span>
                  </h1>
-                 <p className="text-[18px] uppercase tracking-[0.25em] font-bold mt-4" style={{ color: c.primary }}>{data.personalInfo.title}</p>
+                 <p className="text-[16px] uppercase tracking-[0.3em] font-black mt-6" style={{ color: c.primary }}>{data.personalInfo.title}</p>
               </div>
 
               {data.personalInfo.summary && (
-                <div>
-                   <h2 className="text-[20px] font-black uppercase tracking-[0.2em] mb-4" style={{ color: c.primary }}>Perfil Profissional</h2>
-                   <div className="w-full h-1 bg-gray-100 mb-6">
-                      <div className="h-full w-20" style={{ backgroundColor: c.primary }}></div>
-                   </div>
-                   <p className="text-[14px] leading-relaxed text-justify" style={{ color: '#4b5563' }}>{renderText(data.personalInfo.summary)}</p>
+                <div className="relative">
+                   <div className="absolute -left-6 top-0 w-1.5 h-full rounded-r-lg" style={{ backgroundColor: c.primary }}></div>
+                   <h2 className="text-[18px] font-black uppercase tracking-[0.15em] mb-4" style={{ color: '#111827' }}>Perfil Profissional</h2>
+                   <p className="text-[13px] leading-[1.8] text-justify text-gray-600 font-medium">{renderText(data.personalInfo.summary)}</p>
                 </div>
               )}
 
               {data.experience.length > 0 && (
                 <div>
-                   <h2 className="text-[20px] font-black uppercase tracking-[0.2em] mb-4" style={{ color: c.primary }}>Experiência Profissional</h2>
-                   <div className="w-full h-1 bg-gray-100 mb-8 font-black">
-                      <div className="h-full w-20" style={{ backgroundColor: c.primary }}></div>
-                   </div>
-                   <div className="flex flex-col gap-10">
+                   <h2 className="text-[18px] font-black uppercase tracking-[0.15em] mb-6 border-b pb-4" style={{ color: '#111827', borderColor: '#F3F4F6' }}>Experiência Profissional</h2>
+                   <div className="flex flex-col gap-8">
                      {data.experience.map(ex => (
                        <div key={ex.id}>
-                          <div className="flex justify-between items-baseline mb-2">
-                             <h4 className="text-[16px] font-black uppercase" style={{ color: '#1f2937' }}>{ex.position}</h4>
-                             <span className="text-[11px] font-bold px-3 py-1 bg-gray-100 rounded-full" style={{ color: '#6b7280' }}>{ex.startDate} - {ex.current ? "Presente" : ex.endDate}</span>
+                          <div className="flex justify-between items-baseline mb-1">
+                             <h4 className="text-[17px] font-black text-gray-900 tracking-tight">{ex.position}</h4>
+                             <span className="text-[11px] font-bold px-3 py-1 bg-gray-100 rounded-lg text-gray-500">{ex.startDate} - {ex.current ? "Presente" : ex.endDate}</span>
                           </div>
-                          <div className="text-[13px] font-bold mb-4 italic" style={{ color: c.primary }}>{ex.company}</div>
-                          <p className="text-[13px] leading-relaxed text-justify" style={{ color: '#4b5563' }}>{renderText(ex.description)}</p>
+                          <div className="text-[14px] font-bold mb-4 flex items-center gap-2" style={{ color: c.primary }}>
+                             {ex.company}
+                          </div>
+                          <p className="text-[13px] leading-[1.8] text-justify text-gray-600 font-medium pl-4 border-l-2" style={{borderColor: `${c.primary}20`}}>{renderText(ex.description)}</p>
                        </div>
                      ))}
                    </div>
@@ -611,16 +668,30 @@ const ResumeRenderer = ({ data, templateId }: { data: ResumeData; templateId: Te
 export default function App() {
   const [view, setView] = useState<'landing' | 'editor' | 'faq' | 'about' | 'terms'>('landing');
   const [activeStep, setActiveStep] = useState(0);
-  const [resumeData, setResumeData] = useState<ResumeData>(INITIAL_RESUME_DATA);
+  const [resumeData, setResumeData] = useState<ResumeData>(() => {
+    const saved = localStorage.getItem('cv_lab_data');
+    return saved ? JSON.parse(saved) : INITIAL_RESUME_DATA;
+  });
   const [loading, setLoading] = useState(false);
   const [optimizingId, setOptimizingId] = useState<string | null>(null);
   const [isCoverLetterMode, setIsCoverLetterMode] = useState(false);
   const [generatedLetter, setGeneratedLetter] = useState("");
   const [tempSkill, setTempSkill] = useState("");
+  const [tempLanguage, setTempLanguage] = useState("");
   const [showPreviewModal, setShowPreviewModal] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
 
-  const [template, setTemplate] = useState<TemplateType>('t1_executive');
+  const [template, setTemplate] = useState<TemplateType>(() => {
+    return (localStorage.getItem('cv_lab_template') as TemplateType) || 't1_executive';
+  });
+
+  useEffect(() => {
+    localStorage.setItem('cv_lab_data', JSON.stringify(resumeData));
+  }, [resumeData]);
+
+  useEffect(() => {
+    localStorage.setItem('cv_lab_template', template);
+  }, [template]);
   const [previewScale, setPreviewScale] = useState(1);
   const [currentBanner, setCurrentBanner] = useState(0);
 
@@ -671,17 +742,15 @@ export default function App() {
     const opt = {
       margin:       0,
       filename:     isCoverLetterMode ? 'Carta_Apresentacao.pdf' : `${resumeData.personalInfo.fullName.replace(/\s+/g, '_')}_Curriculo.pdf`,
-      image:        { type: 'jpeg' as const, quality: 0.98 },
+      image:        { type: 'jpeg' as const, quality: 1 },
       html2canvas:  { 
         scale: 2, 
         useCORS: true, 
         letterRendering: true,
-        scrollX: 0,
         scrollY: 0,
         windowWidth: 794
       },
-      jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' as const },
-      pagebreak:    { mode: ['avoid-all', 'css', 'legacy'] }
+      jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' as const }
     };
 
     try {
@@ -737,6 +806,15 @@ export default function App() {
     }));
   };
 
+  const addLanguage = (name: string) => {
+    if (!name.trim()) return;
+    const id = Math.random().toString(36).substring(7);
+    setResumeData(prev => ({
+      ...prev,
+      languages: [...prev.languages, { id, name, level: 'Fluente' }]
+    }));
+  };
+
   const addEducation = () => {
     const id = Math.random().toString(36).substring(7);
     setResumeData(prev => ({
@@ -783,6 +861,31 @@ export default function App() {
     setLoading(false);
   };
 
+  const handleAutoFill = async () => {
+    if (!resumeData.personalInfo.fullName || !resumeData.personalInfo.title) {
+      alert("Preencha seu Nome e Cargo Pretendido para usarmos como base.");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const data = await generateFullResume(resumeData.personalInfo);
+      setResumeData(prev => ({
+        ...prev,
+        personalInfo: { ...prev.personalInfo, summary: data.summary },
+        experience: data.experience.map((e: any) => ({ ...e, id: Math.random().toString(36).substring(7) })),
+        education: data.education.map((e: any) => ({ ...e, id: Math.random().toString(36).substring(7) })),
+        skills: data.skills.map((s: string) => ({ name: s, id: Math.random().toString(36).substring(7), level: 'Intermédio' })),
+        languages: (data.languages || []).map((s: string) => ({ name: s, id: Math.random().toString(36).substring(7), level: 'Fluente' }))
+      }));
+      alert("Currículo gerado com sucesso! Você pode ajustar os detalhes agora.");
+    } catch (err) {
+      alert("Erro ao auto-completar. Verifique sua conexão.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   if (view === 'landing') {
     return (
       <div className="min-h-screen hero-gradient flex flex-col">
@@ -796,9 +899,9 @@ export default function App() {
             />
           </div>
           <div className="hidden md:flex items-center gap-8 text-[10px] font-black tracking-widest text-text-muted uppercase">
-            <button onClick={() => setView('about')} className="hover:text-primary-blue transition-colors">Sobre Nós</button>
-            <button onClick={() => setView('faq')} className="hover:text-primary-blue transition-colors">FAQ</button>
-            <button onClick={() => setView('terms')} className="hover:text-primary-blue transition-colors">Termos</button>
+            <button onClick={() => setView('about')} className="hover:text-primary-blue transition-colors focus:outline-none">Sobre Nós</button>
+            <button onClick={() => setView('faq')} className="hover:text-primary-blue transition-colors focus:outline-none">FAQ</button>
+            <button onClick={() => setView('terms')} className="hover:text-primary-blue transition-colors focus:outline-none">Termos</button>
           </div>
           <Button variant="outline" onClick={() => setView('editor')} className="text-xs uppercase tracking-widest">Criar CV</Button>
         </nav>
@@ -1289,6 +1392,30 @@ export default function App() {
                     <Input label="WhatsApp" value={resumeData.personalInfo.phone} onChange={(v: string) => updatePersonalInfo('phone', v)} placeholder="+244 9..." icon={Phone} />
                   </div>
                   <Input label="Localização" value={resumeData.personalInfo.location} onChange={(v: string) => updatePersonalInfo('location', v)} placeholder="Luanda, Angola" icon={MapPin} />
+                  
+                  <div className="p-6 bg-deep-blue text-white rounded-3xl space-y-4 shadow-xl border border-white/10 relative overflow-hidden">
+                    <div className="absolute top-0 right-0 w-24 h-24 bg-primary-blue/20 rounded-full blur-2xl translate-x-12 -translate-y-12"></div>
+                    <div className="flex items-center gap-3">
+                       <div className="p-2 bg-primary-blue rounded-xl">
+                          <Plus size={20} className="animate-pulse" />
+                       </div>
+                       <h4 className="font-black uppercase text-[11px] tracking-widest">Atalho Inteligente</h4>
+                    </div>
+                    <p className="text-xs text-white/70 font-medium">Você preencheu o básico! Nossa IA pode gerar sugestões de Resumo e experiências fictícias com base no seu cargo para você apenas editar.</p>
+                    <Button 
+                      className="w-full bg-white text-deep-blue hover:bg-white/90 h-10 text-[10px] relative overflow-hidden" 
+                      onClick={handleAutoFill}
+                      disabled={loading}
+                    >
+                      {loading ? (
+                         <div className="flex items-center gap-2">
+                           <div className="w-3 h-3 border-2 border-primary-blue border-t-transparent rounded-full animate-spin"></div>
+                           <span className="text-primary-blue">Analisando perfil e construindo histórico...</span>
+                         </div>
+                      ) : 'Auto-completar Currículo com IA'}
+                    </Button>
+                  </div>
+
                   <TextArea label="Resumo do Perfil" value={resumeData.personalInfo.summary} onChange={(v: string) => updatePersonalInfo('summary', v)} onOptimize={() => handleOptimize('summary')} isOptimizing={optimizingId === 'summary'} placeholder="Conte sua história profissional..." />
                 </div>
               )}
@@ -1348,65 +1475,118 @@ export default function App() {
               )}
 
               {activeStep === 3 && ( /* Skills */
-                <div className="space-y-6">
-                  <div className="flex gap-2">
-                    <Input 
-                      placeholder="Adicionar Habilidade (ex: Marketing Digital)" 
-                      value={tempSkill}
-                      onChange={setTempSkill}
-                    />
-                    <Button onClick={() => {
-                      addSkill(tempSkill);
-                      setTempSkill("");
-                    }}>Adicionar</Button>
+                <div className="space-y-10">
+                  <div className="space-y-6">
+                    <h3 className="text-sm font-black uppercase tracking-[0.2em] text-primary-blue">Habilidades</h3>
+                    <div className="flex gap-2">
+                       <Input 
+                         placeholder="Ex: Marketing Digital" 
+                         value={tempSkill}
+                         onChange={setTempSkill}
+                       />
+                       <Button onClick={() => {
+                         addSkill(tempSkill);
+                         setTempSkill("");
+                       }}>Adicionar</Button>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                       {resumeData.skills.map(s => (
+                         <span key={s.id} className="px-3 py-1.5 bg-soft-blue text-primary-blue rounded-lg font-bold text-xs flex items-center gap-2">
+                           {s.name}
+                           <button onClick={() => setResumeData(p => ({...p, skills: p.skills.filter(sk => sk.id !== s.id)}))}><X size={12} /></button>
+                         </span>
+                       ))}
+                    </div>
                   </div>
-                  <div className="flex flex-wrap gap-2">
-                    {resumeData.skills.map(s => (
-                      <span key={s.id} className="px-3 py-1.5 bg-soft-blue text-primary-blue rounded-lg font-bold text-xs flex items-center gap-2">
-                        {s.name}
-                        <button onClick={() => setResumeData(p => ({...p, skills: p.skills.filter(sk => sk.id !== s.id)}))}><X size={12} /></button>
-                      </span>
-                    ))}
+
+                  <div className="space-y-6 pt-6 border-t border-border-main">
+                    <h3 className="text-sm font-black uppercase tracking-[0.2em] text-primary-blue">Idiomas</h3>
+                    <div className="flex gap-2">
+                       <Input 
+                         placeholder="Ex: Inglês" 
+                         value={tempLanguage}
+                         onChange={setTempLanguage}
+                       />
+                       <Button onClick={() => {
+                         addLanguage(tempLanguage);
+                         setTempLanguage("");
+                       }}>Adicionar</Button>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                       {resumeData.languages.map(l => (
+                         <span key={l.id} className="px-3 py-1.5 bg-soft-blue text-primary-blue rounded-lg font-bold text-xs flex items-center gap-2">
+                           {l.name}
+                           <button onClick={() => setResumeData(p => ({...p, languages: p.languages.filter(lk => lk.id !== l.id)}))}><X size={12} /></button>
+                         </span>
+                       ))}
+                    </div>
                   </div>
                 </div>
               )}
 
               {activeStep === 4 && ( /* Design / Templates */
-                <div className="space-y-6">
+                <div className="space-y-8">
                   <div className="space-y-2">
-                    <h3 className="text-sm font-black uppercase tracking-[0.2em] text-primary-blue">Catálogo de Modelos</h3>
-                    <p className="text-xs text-text-muted">Selecione o estilo visual que melhor representa sua carreira.</p>
+                    <h3 className="text-sm font-black uppercase tracking-[0.2em] text-primary-blue">Estilo Visual</h3>
+                    <p className="text-xs text-text-muted">Personalize a identidade do seu documento.</p>
                   </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+
+                  <div className="p-6 bg-soft-blue/30 rounded-3xl border border-primary-blue/10 space-y-4">
+                    <div className="flex items-center justify-between">
+                       <span className="text-[10px] font-black uppercase text-primary-blue tracking-widest">Cor Principal</span>
+                       <div className="flex gap-2">
+                          {['#1B2A4A', '#064E3B', '#7F1D1D', '#0369A1', '#0D4A45', '#4A4C53'].map(color => (
+                            <button 
+                              key={color}
+                              onClick={() => setResumeData(p => ({ ...p, themeColor: color }))}
+                              className={`w-6 h-6 rounded-full border-2 transition-all ${resumeData.themeColor === color ? 'border-primary-blue scale-125' : 'border-transparent'}`}
+                              style={{ backgroundColor: color }}
+                            />
+                          ))}
+                          <div className="relative w-8 h-8 rounded-full border-2 border-white shadow-sm overflow-hidden flex items-center justify-center bg-white cursor-pointer">
+                             <Plus size={14} className="text-text-muted" />
+                             <input 
+                                type="color" 
+                                className="absolute inset-0 opacity-0 cursor-pointer"
+                                onChange={(e) => setResumeData(p => ({ ...p, themeColor: e.target.value }))}
+                             />
+                          </div>
+                       </div>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 gap-3">
                     {Object.entries(TEMPLATES).map(([id, t]) => (
                       <button
                         key={id}
                         onClick={() => setTemplate(id as TemplateType)}
-                        className={`group relative flex items-center gap-4 p-4 rounded-2xl border-2 transition-all duration-300 ${template === id ? 'border-primary-blue bg-soft-blue/10 shadow-sm' : 'border-border-main hover:border-primary-blue/20 bg-white'}`}
+                        className={`group relative flex items-center gap-4 p-4 rounded-3xl border-2 transition-all duration-300 ${template === id ? 'border-primary-blue bg-soft-blue/10 shadow-md' : 'border-border-main hover:border-primary-blue/20 bg-white'}`}
                       >
                          <div 
-                           className="w-16 h-16 rounded-xl flex flex-col overflow-hidden shrink-0 border border-black/5 shadow-sm"
-                           style={{ background: t.colors.primary }}
+                           className="w-20 h-20 rounded-2xl flex flex-col overflow-hidden shrink-0 border border-black/5 shadow-inner transition-colors duration-500"
+                           style={{ background: resumeData.themeColor || t.colors.primary }}
                          >
-                            <div className="h-4 w-full bg-white/20"></div>
-                            <div className="p-2 space-y-1">
-                               <div className="h-1 w-2/3 bg-white/40 rounded-full"></div>
-                               <div className="h-1 w-full bg-white/20 rounded-full"></div>
-                               <div className="h-1 w-full bg-white/20 rounded-full"></div>
+                            <div className="h-5 w-full bg-white/20"></div>
+                            <div className="p-3 space-y-1.5 flex-1 flex flex-col justify-center">
+                               <div className="h-1.5 w-2/3 bg-white/40 rounded-full"></div>
+                               <div className="h-1.5 w-full bg-white/20 rounded-full"></div>
+                               <div className="h-1.5 w-full bg-white/20 rounded-full"></div>
                             </div>
                          </div>
                          <div className="text-left flex-1 min-w-0">
-                           <span className="text-[11px] font-black uppercase tracking-widest block truncate" style={{ color: template === id ? '#0066FF' : '#334155' }}>
+                           <span className="text-sm font-black uppercase tracking-widest block truncate text-deep-blue">
                              {t.name}
                            </span>
-                           <span className="text-[9px] text-text-muted font-bold uppercase tracking-tighter opacity-70">
+                           <span className="text-[10px] text-text-muted font-bold uppercase tracking-tight opacity-70">
                              Layout {t.layout.split('-')[1]}
                            </span>
                          </div>
                          {template === id ? (
-                           <CheckCircle size={20} className="text-primary-blue shrink-0" />
+                           <div className="w-8 h-8 bg-primary-blue text-white rounded-full flex items-center justify-center shadow-lg">
+                              <CheckCircle size={18} />
+                           </div>
                          ) : (
-                           <div className="w-5 h-5 rounded-full border-2 border-border-main group-hover:border-primary-blue/30 shrink-0"></div>
+                           <div className="w-6 h-6 rounded-full border-2 border-border-main group-hover:border-primary-blue/30 shrink-0"></div>
                          )}
                       </button>
                     ))}
@@ -1420,17 +1600,61 @@ export default function App() {
                       <div className="absolute -top-10 -right-10 w-32 h-32 bg-white/10 rounded-full blur-3xl"></div>
                       <h3 className="text-2xl font-black leading-tight">Currículo Pronto!</h3>
                       <p className="text-sm opacity-80 font-medium text-balance">Você agora pode visualizar seu documento de maneira completa, baixá-lo ou gerar uma carta de apresentação.</p>
-                      <Button className="w-full bg-white text-primary-blue hover:bg-white/95" onClick={() => setShowPreviewModal(true)} icon={ExternalLink}>Pré-Visualizar</Button>
-                      <Button variant="outline" className="w-full text-white border-white hover:bg-white/10" onClick={handleDownloadPdf} disabled={isDownloading} icon={Download}>{isDownloading ? "Gerando PDF..." : "Baixar Currículo"}</Button>
+                      
+                      <Button variant="outline" className="w-full text-white border-white hover:bg-white/10" onClick={() => { setIsCoverLetterMode(false); setShowPreviewModal(true); }} icon={ExternalLink}>Visualizar Online</Button>
+                      <Button className="w-full bg-deep-blue text-white hover:bg-deep-blue/90 border-0" onClick={handleDownloadPdf} disabled={isDownloading} icon={Download}>
+                        {isDownloading ? "Preparando o seu Currículo..." : "Baixar Currículo em PDF"}
+                      </Button>
                    </div>
 
-                   <div className="p-8 bg-white border-2 border-dashed border-primary-blue/30 rounded-3xl text-center space-y-4">
-                      <div className="w-16 h-16 bg-soft-blue text-primary-blue rounded-2xl flex items-center justify-center mx-auto mb-2">
-                         <FileText size={32} />
-                      </div>
-                      <h4 className="text-lg font-black text-deep-blue">Carta de Apresentação</h4>
-                      <p className="text-xs text-text-muted font-medium">Gere uma carta personalizada para a vaga dos seus sonhos por apenas 1150 Kzs no total.</p>
-                      <Button variant="outline" className="w-full" onClick={handleCreateCoverLetter}>Gerar Carta</Button>
+                   <div className="p-8 bg-white border-2 border-dashed border-primary-blue/30 rounded-3xl text-center space-y-4 overflow-hidden relative">
+                      <AnimatePresence mode="wait">
+                        {generatedLetter ? (
+                          <motion.div 
+                            key="success"
+                            initial={{ opacity: 0, scale: 0.9 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            className="space-y-4"
+                          >
+                             <div className="w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto relative">
+                                <motion.div animate={{ scale: [1, 1.2, 1] }} transition={{ repeat: Infinity, duration: 2 }} className="absolute inset-0 bg-green-100 rounded-full opacity-50"></motion.div>
+                                <CheckCircle size={32} className="relative z-10" />
+                             </div>
+                             <h4 className="text-lg font-black text-deep-blue">Carta Gerada com Sucesso</h4>
+                             <p className="text-xs text-text-muted font-medium">A sua carta foi adaptada para o seu cargo e já está pronta.</p>
+                             
+                             <Button className="w-full bg-white text-primary-blue border border-primary-blue hover:bg-primary-blue/5" onClick={() => { setIsCoverLetterMode(true); setShowPreviewModal(true); }}>
+                               Visualizar Carta
+                             </Button>
+                             <Button className="w-full bg-primary-blue text-white hover:bg-primary-blue/90" onClick={() => { setIsCoverLetterMode(true); setTimeout(handleDownloadPdf, 100); }} disabled={isDownloading} icon={Download}>
+                               {isDownloading ? "Gerando PDF..." : "Baixar Carta em PDF"}
+                             </Button>
+                          </motion.div>
+                        ) : (
+                          <motion.div 
+                            key="create"
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            className="space-y-4"
+                          >
+                             <div className="w-16 h-16 bg-soft-blue text-primary-blue rounded-2xl flex items-center justify-center mx-auto mb-2">
+                                <FileText size={32} />
+                             </div>
+                             <h4 className="text-lg font-black text-deep-blue">Carta de Apresentação</h4>
+                             <p className="text-xs text-text-muted font-medium">Gere uma carta personalizada para a vaga dos seus sonhos por apenas 1150 Kzs no total.</p>
+                             
+                             <Button className="w-full bg-white text-primary-blue border border-primary-blue hover:bg-primary-blue/10 relative overflow-hidden" onClick={handleCreateCoverLetter} disabled={loading}>
+                                {loading ? (
+                                   <div className="flex items-center justify-center gap-2">
+                                      <div className="w-3 h-3 border-2 border-primary-blue border-t-transparent rounded-full animate-spin"></div>
+                                      <span>A gerar sua carta...</span>
+                                   </div>
+                                ) : "Gerar com Inteligência Artificial"}
+                             </Button>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
                    </div>
                 </div>
               )}
@@ -1496,8 +1720,8 @@ export default function App() {
                    id="cover-letter-content"
                    className={`bg-white min-h-[1123px] w-[794px] p-10 md:p-20 relative`}
                  >
-                   <button onClick={() => setIsCoverLetterMode(false)} className="absolute top-8 left-8 text-[10px] font-black uppercase text-primary-blue tracking-widest flex items-center gap-2 print:hidden">
-                      <ChevronLeft size={14} /> Voltar ao Currículo
+                   <button data-html2canvas-ignore="true" onClick={() => setIsCoverLetterMode(false)} className="absolute top-8 left-8 text-[10px] font-black uppercase text-primary-blue tracking-widest flex items-center gap-2 print:hidden">
+                      <ChevronLeft size={14} /> Fechar Carta
                    </button>
                    <div className="max-w-prose mx-auto text-justify whitespace-pre-line text-sm md:text-lg leading-relaxed pt-12" style={{ color: '#334155' }}>
                       {renderText(generatedLetter)}
