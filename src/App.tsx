@@ -175,10 +175,10 @@ const ProfilePage = ({ user, isAdmin, setView, onLogout }: { user: any, isAdmin:
                     
                     <Button 
                         variant="outline" 
-                        onClick={() => setView('editor')} 
+                        onClick={() => setView('my-resumes')} 
                         className="w-full h-14 border-border-main text-deep-blue hover:bg-bg-main flex items-center justify-center gap-2 font-black uppercase text-xs tracking-widest"
                     >
-                        Meus Currículos (Em Breve)
+                        <FileText size={18} /> Meus Currículos e Pedidos
                     </Button>
 
                     <button 
@@ -193,11 +193,107 @@ const ProfilePage = ({ user, isAdmin, setView, onLogout }: { user: any, isAdmin:
     );
 };
 
+const MyResumesPage = ({ user, setView }: { user: any, setView: (v: any) => void }) => {
+    const [myOrders, setMyOrders] = useState<any[]>([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        if (!user || user.email === 'anonymous') return;
+        
+        const q = query(
+            collection(db, 'orders'),
+            where('ownerId', '==', user.uid)
+        );
+
+        const unsubscribe = onSnapshot(q, (snapshot) => {
+            const fetched = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            setMyOrders(fetched.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
+            setLoading(false);
+        });
+
+        return unsubscribe;
+    }, [user]);
+
+    const downloadPDF = async (order: any) => {
+        // Simple logic to re-render and download
+        alert("Iniciando download... Por favor aguarde.");
+        // This is a simplified version - in real app would load the data into the renderer
+        const element = document.createElement('div');
+        element.style.position = 'fixed';
+        element.style.left = '-9999px';
+        document.body.appendChild(element);
+        
+        // We'll just show an alert for now if we don't have the full renderer state easily accessible here
+        // The user should go back to editor if they have the data locally, 
+        // but here they track the ORDER status.
+        alert("Recurso de download direto da central de pedidos em desenvolvimento. Por favor, utilize o Editor para exportar seu currículo aprovado.");
+    };
+
+    if (loading) return <div className="p-20 text-center"><div className="animate-spin w-8 h-8 border-4 border-primary-blue border-t-transparent rounded-full mx-auto"></div></div>;
+
+    return (
+        <div className="max-w-4xl mx-auto py-10 px-6 space-y-8">
+            <header className="space-y-2">
+                <h2 className="text-3xl font-black text-deep-blue">Meus Currículos</h2>
+                <p className="text-text-muted">Acompanhe o estado dos seus pedidos de liberação e PDF.</p>
+            </header>
+
+            <div className="grid gap-4">
+                {myOrders.map(order => (
+                    <div key={order.id} className="bg-white p-6 rounded-2xl border border-border-main shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+                        <div className="space-y-1">
+                            <div className="flex items-center gap-2">
+                                <span className={`w-2 h-2 rounded-full ${order.status === 'approved' ? 'bg-green-500' : 'bg-amber-500'}`}></span>
+                                <span className="text-[10px] uppercase font-black tracking-widest text-text-muted">Pedido {order.id}</span>
+                            </div>
+                            <h3 className="font-bold text-deep-blue">
+                                {order.documentType === 'resume' ? 'Currículo Profissional' : 'Carta de Apresentação'}
+                            </h3>
+                            <p className="text-[11px] text-text-muted italic">Solicitado em {new Date(order.createdAt).toLocaleDateString()}</p>
+                        </div>
+
+                        <div className="flex items-center gap-3">
+                            <div className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest ${
+                                order.status === 'approved' 
+                                ? 'bg-green-50 text-green-600' 
+                                : 'bg-amber-50 text-amber-600'
+                            }`}>
+                                {order.status === 'approved' ? 'Aprovado para Download' : 'Pendente de Aprovação'}
+                            </div>
+                            
+                            {order.status === 'approved' && (
+                                <Button size="sm" onClick={() => downloadPDF(order)} className="bg-green-600 text-white border-transparent hover:bg-green-700 h-10 px-6 rounded-2xl shadow-lg shadow-green-600/20">
+                                   <Download size={16} className="mr-2" /> Baixar PDF
+                                </Button>
+                            )}
+                        </div>
+                    </div>
+                ))}
+                
+                {myOrders.length === 0 && (
+                    <div className="bg-white p-20 rounded-[48px] border border-border-main text-center space-y-6 shadow-sm">
+                        <div className="w-20 h-20 bg-bg-main rounded-3xl flex items-center justify-center mx-auto">
+                            <FileText size={40} className="text-gray-300" />
+                        </div>
+                        <div className="space-y-2">
+                            <h3 className="text-2xl font-black text-deep-blue">Nenhum currículo ainda</h3>
+                            <p className="text-sm text-text-muted max-w-xs mx-auto">Sua jornada para o emprego ideal começa com um currículo impecável.</p>
+                        </div>
+                        <Button onClick={() => setView('editor')} className="px-10 h-14 rounded-2xl">Criar Meu Primeiro CV</Button>
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+};
+
 const AdminPanel = () => {
     const { isAdmin } = useAuth();
     const [orders, setOrders] = useState<any[]>([]);
     const [searchQuery, setSearchQuery] = useState('');
     const [stats, setStats] = useState({ users: 0, pending: 0, approved: 0 });
+    const [page, setPage] = useState(1);
+    const itemsPerPage = 8;
     
     useEffect(() => {
         if (!isAdmin) return;
@@ -236,7 +332,8 @@ const AdminPanel = () => {
     const approveOrder = async (orderId: string) => {
         if (!window.confirm("Liberar PDF para este pedido?")) return;
         try {
-            await updateDoc(doc(db, 'orders', orderId), { 
+            const orderRef = doc(db, 'orders', orderId);
+            await updateDoc(orderRef, { 
                status: 'approved',
                updatedAt: new Date().toISOString()
             });
@@ -250,78 +347,129 @@ const AdminPanel = () => {
     if (!isAdmin) return <div className="p-20 text-center font-bold text-red-500">Acesso Restrito: Suas permissões são insuficientes para aceder o painel.</div>;
 
     const filteredOrders = orders.filter(o => 
-        (searchQuery ? o.id.toLowerCase().includes(searchQuery.toLowerCase()) || (o.contactEmail && o.contactEmail.toLowerCase().includes(searchQuery.toLowerCase())) : o.status === 'pending')
+        (searchQuery ? o.id.toLowerCase().includes(searchQuery.toLowerCase()) || (o.contactEmail && o.contactEmail.toLowerCase().includes(searchQuery.toLowerCase())) : true)
     );
 
+    // Filter by pending only if not searching
+    const displayOrders = searchQuery ? filteredOrders : filteredOrders.filter(o => o.status === 'pending');
+    
+    // Pagination logic
+    const totalPages = Math.ceil(displayOrders.length / itemsPerPage);
+    const paginatedOrders = displayOrders.slice((page - 1) * itemsPerPage, page * itemsPerPage);
+
     return (
-        <div className="p-6 md:p-10 max-w-6xl mx-auto flex-1 w-full bg-bg-main min-h-screen">
-            <h1 className="text-3xl font-black mb-2 text-deep-blue">Painel Administrativo</h1>
-            <p className="text-sm text-text-muted mb-8">Gestão de acessos, downloads e métricas da plataforma CV LAB.</p>
+        <div className="p-4 md:p-10 max-w-6xl mx-auto flex-1 w-full bg-bg-main min-h-screen space-y-8">
+            <header>
+                <h1 className="text-3xl font-black text-deep-blue">Painel Administrativo</h1>
+                <p className="text-sm text-text-muted">Gestão de acessos, downloads e métricas da plataforma CV LAB.</p>
+            </header>
             
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-10">
-                <div className="bg-white p-6 rounded-2xl shadow-sm border border-border-main flex flex-col justify-between">
-                    <span className="text-xs uppercase tracking-widest text-text-muted font-bold mb-2">Usuários Cadastrados</span>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div className="bg-white p-6 rounded-3xl shadow-sm border border-border-main flex flex-col items-center text-center">
+                    <span className="text-[10px] uppercase tracking-widest text-text-muted font-black mb-1">Usuários</span>
                     <span className="text-4xl font-black text-primary-blue">{stats.users}</span>
                 </div>
-                <div className="bg-white p-6 rounded-2xl shadow-sm border border-border-main flex flex-col justify-between">
-                    <span className="text-xs uppercase tracking-widest text-text-muted font-bold mb-2">Pedidos Pendentes</span>
+                <div className="bg-white p-6 rounded-3xl shadow-sm border border-border-main flex flex-col items-center text-center">
+                    <span className="text-[10px] uppercase tracking-widest text-text-muted font-black mb-1">Pendentes</span>
                     <span className="text-4xl font-black text-amber-500">{stats.pending}</span>
                 </div>
-                <div className="bg-white p-6 rounded-2xl shadow-sm border border-border-main flex flex-col justify-between">
-                    <span className="text-xs uppercase tracking-widest text-text-muted font-bold mb-2">Pedidos Aprovados</span>
+                <div className="bg-white p-6 rounded-3xl shadow-sm border border-border-main flex flex-col items-center text-center">
+                    <span className="text-[10px] uppercase tracking-widest text-text-muted font-black mb-1">Aprovados</span>
                     <span className="text-4xl font-black text-green-600">{stats.approved}</span>
                 </div>
             </div>
 
-            <div className="mb-6 flex flex-col sm:flex-row items-center justify-between gap-4">
-                <h2 className="text-xl font-bold">Listagem de Pedidos</h2>
-                <div className="relative w-full sm:w-72">
-                    <input 
-                        type="text" 
-                        value={searchQuery}
-                        onChange={e => setSearchQuery(e.target.value)}
-                        placeholder="Pesquisar por Email ou ID (Vê todos se preenchido)" 
-                        className="w-full pl-4 pr-4 py-2 text-sm border border-border-main rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-blue/20"
-                    />
+            <div className="bg-white rounded-[32px] shadow-2xl border border-gray-100 overflow-hidden">
+                <div className="p-6 border-b border-gray-50 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div>
+                        <h2 className="text-xl font-bold text-deep-blue">Pedidos de Liberação</h2>
+                        <p className="text-xs text-text-muted">{displayOrders.length} registros encontrados</p>
+                    </div>
+                    <div className="relative w-full md:w-80">
+                        <input 
+                            type="text" 
+                            value={searchQuery}
+                            onChange={e => {setSearchQuery(e.target.value); setPage(1);}}
+                            placeholder="Pesquisar por Email ou ID..." 
+                            className="w-full pl-4 pr-10 py-3 text-sm border border-gray-100 bg-bg-main rounded-2xl focus:outline-none focus:ring-4 focus:ring-primary-blue/5 transition-all"
+                        />
+                    </div>
                 </div>
-            </div>
 
-            <div className="bg-white rounded-2xl shadow-xl overflow-x-auto border border-gray-100">
-                <table className="w-full text-left text-sm min-w-[700px]">
-                    <thead className="bg-gray-50 border-b border-gray-100">
-                        <tr>
-                            <th className="p-4 font-bold text-text-muted w-40">Data e Hora</th>
-                            <th className="p-4 font-bold text-text-muted">ID do Pedido</th>
-                            <th className="p-4 font-bold text-text-muted">Email Contacto</th>
-                            <th className="p-4 font-bold text-text-muted text-center">Tipo</th>
-                            <th className="p-4 font-bold text-text-muted text-center">Ações</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {filteredOrders.map(o => (
-                            <tr key={o.id} className="border-b border-gray-50 hover:bg-gray-50 transition-colors">
-                                <td className="p-4 text-xs text-gray-400">{new Date(o.createdAt).toLocaleString()}</td>
-                                <td className="p-4"><div className="font-mono text-[11px] bg-bg-main px-2 py-1 inline-block rounded select-all">{o.id}</div></td>
-                                <td className="p-4 font-medium">{o.contactEmail}</td>
-                                <td className="p-4 text-center">
-                                    <span className={`text-[10px] uppercase font-bold tracking-widest px-2 py-1 rounded-full ${o.documentType === 'resume' ? 'bg-blue-50 text-blue-600' : 'bg-purple-50 text-purple-600'}`}>
-                                        {o.documentType === 'resume' ? 'Currículo' : 'Carta'}
-                                    </span>
-                                </td>
-                                <td className="p-4 text-center">
-                                    {o.status === 'pending' ? (
-                                        <Button onClick={() => approveOrder(o.id)} className="bg-green-600 hover:bg-green-700 h-8 px-4 text-[11px] border-transparent text-white shadow-none w-full max-w-[140px] mx-auto">Aprovar PDF</Button>
-                                    ) : (
-                                        <span className="text-[11px] font-bold text-green-600 uppercase flex items-center justify-center gap-1"><CheckCircle size={12}/> Aprovado</span>
-                                    )}
-                                </td>
+                <div className="overflow-x-auto">
+                    <table className="w-full text-left text-sm whitespace-nowrap">
+                        <thead className="bg-bg-main/50 text-[10px] font-black uppercase tracking-widest text-text-muted">
+                            <tr>
+                                <th className="px-6 py-4">Data</th>
+                                <th className="px-6 py-4">ID Pedido</th>
+                                <th className="px-6 py-4">Email Contacto</th>
+                                <th className="px-6 py-4 text-center">Status</th>
+                                <th className="px-6 py-4 text-right">Ação</th>
                             </tr>
-                        ))}
-                        {filteredOrders.length === 0 && (
-                            <tr><td colSpan={5} className="p-12 text-center text-gray-400 font-medium tracking-tight">Nenhum pedido encontrado.</td></tr>
-                        )}
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody className="divide-y divide-gray-50">
+                            {paginatedOrders.map(o => (
+                                <tr key={o.id} className="hover:bg-gray-50 transition-colors group">
+                                    <td className="px-6 py-5">
+                                        <div className="flex flex-col">
+                                            <span className="font-bold text-deep-blue">{new Date(o.createdAt).toLocaleDateString()}</span>
+                                            <span className="text-[10px] text-gray-400">{new Date(o.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+                                        </div>
+                                    </td>
+                                    <td className="px-6 py-5">
+                                        <span className="font-mono text-[11px] bg-gray-100 px-2 py-1 rounded-md text-gray-600 group-hover:bg-gray-200 transition-colors">{o.id}</span>
+                                    </td>
+                                    <td className="px-6 py-5 font-medium">{o.contactEmail}</td>
+                                    <td className="px-6 py-5 text-center">
+                                        <span className={`text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full ${
+                                            o.status === 'pending' ? 'bg-amber-50 text-amber-600' : 'bg-green-50 text-green-600'
+                                        }`}>
+                                            {o.status === 'pending' ? 'Pendente' : 'Aprovado'}
+                                        </span>
+                                    </td>
+                                    <td className="px-6 py-5 text-right">
+                                        {o.status === 'pending' ? (
+                                            <Button 
+                                                onClick={() => approveOrder(o.id)}
+                                                className="bg-green-600 hover:bg-green-700 text-white h-9 px-4 text-[10px] uppercase font-black tracking-widest rounded-xl transition-all hover:scale-105 shadow-md shadow-green-600/10"
+                                            >
+                                                Liberar PDF
+                                            </Button>
+                                        ) : (
+                                            <span className="text-green-600 inline-flex items-center gap-1 font-bold text-xs"><CheckCircle size={14}/> Pronto</span>
+                                        )}
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+                
+                {displayOrders.length === 0 && (
+                    <div className="p-20 text-center text-text-muted font-medium italic">
+                        Nenhum pedido pendente encontrado.
+                    </div>
+                )}
+
+                {totalPages > 1 && (
+                    <div className="p-6 border-t border-gray-50 flex items-center justify-center gap-2">
+                        <button 
+                            disabled={page === 1}
+                            onClick={() => setPage(p => p - 1)}
+                            className="p-2 border border-gray-100 rounded-xl disabled:opacity-30 hover:bg-bg-main"
+                        >
+                            <ChevronLeft size={16} />
+                        </button>
+                        <span className="text-xs font-black px-4">Página {page} de {totalPages}</span>
+                        <button 
+                            disabled={page === totalPages}
+                            onClick={() => setPage(p => p + 1)}
+                            className="p-2 border border-gray-100 rounded-xl disabled:opacity-30 hover:bg-bg-main"
+                        >
+                            <ChevronRight size={16} />
+                        </button>
+                    </div>
+                )}
             </div>
         </div>
     );
@@ -880,7 +1028,7 @@ export default function App() {
   const [orderStatus, setOrderStatus] = useState<string | null>(null);
   const [contactEmail, setContactEmail] = useState('');
 
-  const [view, setView] = useState<'landing' | 'editor' | 'faq' | 'about' | 'terms' | 'tips' | 'showcase' | 'admin' | 'profile'>('landing');
+  const [view, setView] = useState<'landing' | 'editor' | 'faq' | 'about' | 'terms' | 'tips' | 'showcase' | 'admin' | 'profile' | 'my-resumes'>('landing');
   const [activeStep, setActiveStep] = useState(0);
   const [resumeData, setResumeData] = useState<ResumeData>(() => {
     const saved = localStorage.getItem('cv_lab_data');
@@ -1557,7 +1705,7 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
     );
   }
 
-  if (view === 'faq' || view === 'about' || view === 'terms' || view === 'tips' || view === 'showcase' || view === 'admin' || view === 'profile') {
+  if (view === 'faq' || view === 'about' || view === 'terms' || view === 'tips' || view === 'showcase' || view === 'admin' || view === 'profile' || view === 'my-resumes') {
     return (
       <div className="min-h-screen hero-gradient flex flex-col">
         <nav className="h-24 px-6 md:px-12 flex items-center justify-between glass sticky top-0 z-50">
@@ -1611,11 +1759,13 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
         </nav>
         
         <main className="flex-1 max-w-4xl mx-auto w-full px-6 py-16">
-          {(view !== 'admin' && view !== 'profile') && (
+          {(view !== 'admin' && view !== 'profile' && view !== 'my-resumes') && (
             <button onClick={() => setView('landing')} className="text-primary-blue text-xs font-bold uppercase tracking-widest flex items-center gap-2 mb-8 hover:opacity-80 transition-opacity">
               <ChevronLeft size={16} /> Voltar
             </button>
           )}
+
+          {view === 'my-resumes' && <MyResumesPage user={user} setView={setView} />}
 
           {view === 'profile' && <ProfilePage user={user} isAdmin={isAdmin} setView={setView} onLogout={logOut} />}
 

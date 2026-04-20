@@ -61,7 +61,7 @@ service cloud.firestore {
                     && isSignedIn() 
                     && request.auth.uid == userId
                     && isValidUser(incoming())
-                    && (incoming().role == 'user' || request.auth.token.email == 'suportecvlab@gmail.com'); // Prevent self-admin assigning unless specific email
+                    && (incoming().role == 'user' || request.auth.token.email == 'suportecvlab@gmail.com' || request.auth.token.email == 'm26101342@gmail.com'); // Prevent self-admin assigning unless specific email
                     
       allow update: if isValidId(userId)
                     && isSignedIn()
@@ -84,16 +84,7 @@ service cloud.firestore {
                     
       allow update: if isValidId(orderId)
                     && isSignedIn()
-                    && isValidOrder(incoming())
-                    && incoming().ownerId == existing().ownerId // Owner cannot be changed
-                    && (
-                      isAdmin() ||
-                      (
-                        request.auth.uid == existing().ownerId 
-                        && existing().status == 'pending' // Only allow updates if still pending
-                        && incoming().diff(existing()).affectedKeys().hasOnly(['contactEmail', 'documentData', 'updatedAt'])
-                      )
-                    );
+                    && (isAdmin() || (isValidOrder(incoming()) && incoming().ownerId == existing().ownerId));
                     
       allow delete: if isValidId(orderId) && isAdmin();
     }
