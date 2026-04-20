@@ -26,7 +26,8 @@ import {
   CheckCircle,
   MessageCircle,
   Facebook,
-  Instagram
+  Instagram,
+  Shield
 } from 'lucide-react';
 import { AdSenseUnit } from './components/AdSenseUnit';
 import { ResumeData, INITIAL_RESUME_DATA, TemplateType } from './types.ts';
@@ -128,55 +129,196 @@ const TEMPLATES: Record<TemplateType, { name: string; layout: string; colors: an
 // --- Helpers ---
 const renderText = (str: string) => str ? str.replace(/\*/g, '') : '';
 
+const ProfilePage = ({ user, isAdmin, setView, onLogout }: { user: any, isAdmin: boolean, setView: (v: any) => void, onLogout: () => void }) => {
+    if (!user || user.email === 'anonymous') return (
+        <div className="p-20 text-center space-y-6">
+            <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <User size={40} className="text-gray-400" />
+            </div>
+            <h2 className="text-2xl font-black text-deep-blue">Acesso Restrito</h2>
+            <p className="text-text-muted">Você está navegando como convidado. Entre com sua conta Google para salvar seus currículos.</p>
+            <Button onClick={loginWithGoogle} className="px-8 shadow-xl">Entrar com Google</Button>
+        </div>
+    );
+
+    return (
+        <div className="max-w-xl mx-auto py-10 px-6 space-y-8">
+            <div className="bg-white p-8 rounded-[32px] shadow-2xl border border-border-main text-center space-y-6">
+                <div className="relative inline-block">
+                    <img 
+                        src={user.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.displayName || user.email || 'U')}&background=0D8ABC&color=fff`} 
+                        className="w-24 h-24 rounded-full border-4 border-white shadow-xl mx-auto" 
+                        alt="Avatar"
+                        referrerPolicy="no-referrer"
+                    />
+                    {isAdmin && (
+                        <div className="absolute -bottom-1 -right-1 bg-red-500 text-white text-[10px] font-black px-2 py-1 rounded-lg shadow-lg uppercase tracking-widest border-2 border-white">
+                            Admin
+                        </div>
+                    )}
+                </div>
+                
+                <div>
+                    <h2 className="text-2xl font-black text-deep-blue">{user.displayName || 'Usuário'}</h2>
+                    <p className="text-sm font-medium text-text-muted">{user.email}</p>
+                </div>
+
+                <div className="pt-4 space-y-3">
+                    {isAdmin && (
+                        <Button 
+                            onClick={() => setView('admin')} 
+                            className="w-full h-14 bg-red-500 hover:bg-red-600 border-transparent text-white shadow-xl flex items-center justify-center gap-2 font-black uppercase text-xs tracking-widest"
+                        >
+                            <Shield size={18} /> Aceder ao Painel Administrativo
+                        </Button>
+                    )}
+                    
+                    <Button 
+                        variant="outline" 
+                        onClick={() => setView('editor')} 
+                        className="w-full h-14 border-border-main text-deep-blue hover:bg-bg-main flex items-center justify-center gap-2 font-black uppercase text-xs tracking-widest"
+                    >
+                        Meus Currículos (Em Breve)
+                    </Button>
+
+                    <button 
+                        onClick={onLogout}
+                        className="w-full py-4 text-xs font-black text-red-500 uppercase tracking-widest hover:bg-red-50 rounded-2xl transition-colors mt-6"
+                    >
+                        Sair da Conta
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+};
+
 const AdminPanel = () => {
     const { isAdmin } = useAuth();
     const [orders, setOrders] = useState<any[]>([]);
+    const [searchQuery, setSearchQuery] = useState('');
+    const [stats, setStats] = useState({ users: 0, pending: 0, approved: 0 });
     
     useEffect(() => {
         if (!isAdmin) return;
-        const q = query(collection(db, 'orders'), where('status', '==', 'pending'));
+        
+        // Fetch all orders to keep stats and search accurate
+        const q = query(collection(db, 'orders'));
         const unsubscribe = onSnapshot(q, (snapshot) => {
-            setOrders(snapshot.docs.map(doc => ({id: doc.id, ...doc.data()})));
+            let pendingCount = 0;
+            let approvedCount = 0;
+            const fetchedOrders = snapshot.docs.map(doc => {
+                const data: any = {id: doc.id, ...doc.data()};
+                if (data.status === 'pending') pendingCount++;
+                if (data.status === 'approved') approvedCount++;
+                return data;
+            });
+            
+            setStats(s => ({ ...s, pending: pendingCount, approved: approvedCount }));
+            setOrders(fetchedOrders.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
+        }, (error) => {
+            console.error("Firestore listener error:", error);
+            if (error.code === 'permission-denied') {
+                alert("Acesso negado ao banco de dados. Verifique se sua conta tem permissões de administrador.");
+            }
         });
+
+        // Fast simple snapshot for user count
+        const fetchUsers = async () => {
+            const usersSnap = await getDocs(collection(db, 'users'));
+            setStats(s => ({ ...s, users: usersSnap.size }));
+        };
+        fetchUsers();
+
         return unsubscribe;
     }, [isAdmin]);
 
     const approveOrder = async (orderId: string) => {
-        await updateDoc(doc(db, 'orders', orderId), { 
-           status: 'approved',
-           updatedAt: new Date().toISOString()
-        });
+        if (!window.confirm("Liberar PDF para este pedido?")) return;
+        try {
+            await updateDoc(doc(db, 'orders', orderId), { 
+               status: 'approved',
+               updatedAt: new Date().toISOString()
+            });
+            alert("Pedido aprovado com sucesso!");
+        } catch (error: any) {
+            console.error("Error approving order:", error);
+            alert(`Erro ao aprovar pedido: ${error.message || 'Erro desconhecido'}`);
+        }
     };
 
     if (!isAdmin) return <div className="p-20 text-center font-bold text-red-500">Acesso Restrito: Suas permissões são insuficientes para aceder o painel.</div>;
 
+    const filteredOrders = orders.filter(o => 
+        (searchQuery ? o.id.toLowerCase().includes(searchQuery.toLowerCase()) || (o.contactEmail && o.contactEmail.toLowerCase().includes(searchQuery.toLowerCase())) : o.status === 'pending')
+    );
+
     return (
-        <div className="p-10 max-w-5xl mx-auto flex-1 w-full bg-bg-main min-h-screen">
-            <h1 className="text-3xl font-black mb-8 text-deep-blue">Painel Administrativo</h1>
-            <p className="text-sm text-text-muted mb-6">Confira os comprovativos no WhatsApp e clique em "Aprovar Download" para liberar o PDF do cliente.</p>
-            <div className="bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-100">
-                <table className="w-full text-left text-sm">
+        <div className="p-6 md:p-10 max-w-6xl mx-auto flex-1 w-full bg-bg-main min-h-screen">
+            <h1 className="text-3xl font-black mb-2 text-deep-blue">Painel Administrativo</h1>
+            <p className="text-sm text-text-muted mb-8">Gestão de acessos, downloads e métricas da plataforma CV LAB.</p>
+            
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-10">
+                <div className="bg-white p-6 rounded-2xl shadow-sm border border-border-main flex flex-col justify-between">
+                    <span className="text-xs uppercase tracking-widest text-text-muted font-bold mb-2">Usuários Cadastrados</span>
+                    <span className="text-4xl font-black text-primary-blue">{stats.users}</span>
+                </div>
+                <div className="bg-white p-6 rounded-2xl shadow-sm border border-border-main flex flex-col justify-between">
+                    <span className="text-xs uppercase tracking-widest text-text-muted font-bold mb-2">Pedidos Pendentes</span>
+                    <span className="text-4xl font-black text-amber-500">{stats.pending}</span>
+                </div>
+                <div className="bg-white p-6 rounded-2xl shadow-sm border border-border-main flex flex-col justify-between">
+                    <span className="text-xs uppercase tracking-widest text-text-muted font-bold mb-2">Pedidos Aprovados</span>
+                    <span className="text-4xl font-black text-green-600">{stats.approved}</span>
+                </div>
+            </div>
+
+            <div className="mb-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+                <h2 className="text-xl font-bold">Listagem de Pedidos</h2>
+                <div className="relative w-full sm:w-72">
+                    <input 
+                        type="text" 
+                        value={searchQuery}
+                        onChange={e => setSearchQuery(e.target.value)}
+                        placeholder="Pesquisar por Email ou ID (Vê todos se preenchido)" 
+                        className="w-full pl-4 pr-4 py-2 text-sm border border-border-main rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-blue/20"
+                    />
+                </div>
+            </div>
+
+            <div className="bg-white rounded-2xl shadow-xl overflow-x-auto border border-gray-100">
+                <table className="w-full text-left text-sm min-w-[700px]">
                     <thead className="bg-gray-50 border-b border-gray-100">
                         <tr>
-                            <th className="p-4 font-bold text-text-muted">ID / Data</th>
+                            <th className="p-4 font-bold text-text-muted w-40">Data e Hora</th>
+                            <th className="p-4 font-bold text-text-muted">ID do Pedido</th>
                             <th className="p-4 font-bold text-text-muted">Email Contacto</th>
-                            <th className="p-4 font-bold text-text-muted">Tipo</th>
-                            <th className="p-4 font-bold text-text-muted">Ações</th>
+                            <th className="p-4 font-bold text-text-muted text-center">Tipo</th>
+                            <th className="p-4 font-bold text-text-muted text-center">Ações</th>
                         </tr>
                     </thead>
                     <tbody>
-                        {orders.map(o => (
-                            <tr key={o.id} className="border-b border-gray-50 hover:bg-gray-50">
-                                <td className="p-4"><div className="font-mono text-xs">{o.id}</div><div className="text-gray-400">{new Date(o.createdAt).toLocaleString()}</div></td>
+                        {filteredOrders.map(o => (
+                            <tr key={o.id} className="border-b border-gray-50 hover:bg-gray-50 transition-colors">
+                                <td className="p-4 text-xs text-gray-400">{new Date(o.createdAt).toLocaleString()}</td>
+                                <td className="p-4"><div className="font-mono text-[11px] bg-bg-main px-2 py-1 inline-block rounded select-all">{o.id}</div></td>
                                 <td className="p-4 font-medium">{o.contactEmail}</td>
-                                <td className="p-4 uppercase text-[10px] tracking-widest font-bold">{o.documentType === 'resume' ? 'Currículo' : 'Carta'}</td>
-                                <td className="p-4">
-                                    <Button onClick={() => approveOrder(o.id)} className="bg-green-600 hover:bg-green-700 h-8 px-4 text-xs border-transparent text-white shadow-none">Aprovar Download</Button>
+                                <td className="p-4 text-center">
+                                    <span className={`text-[10px] uppercase font-bold tracking-widest px-2 py-1 rounded-full ${o.documentType === 'resume' ? 'bg-blue-50 text-blue-600' : 'bg-purple-50 text-purple-600'}`}>
+                                        {o.documentType === 'resume' ? 'Currículo' : 'Carta'}
+                                    </span>
+                                </td>
+                                <td className="p-4 text-center">
+                                    {o.status === 'pending' ? (
+                                        <Button onClick={() => approveOrder(o.id)} className="bg-green-600 hover:bg-green-700 h-8 px-4 text-[11px] border-transparent text-white shadow-none w-full max-w-[140px] mx-auto">Aprovar PDF</Button>
+                                    ) : (
+                                        <span className="text-[11px] font-bold text-green-600 uppercase flex items-center justify-center gap-1"><CheckCircle size={12}/> Aprovado</span>
+                                    )}
                                 </td>
                             </tr>
                         ))}
-                        {orders.length === 0 && (
-                            <tr><td colSpan={4} className="p-8 text-center text-gray-400 font-medium tracking-tight">Nenhum pedido pendente no momento.</td></tr>
+                        {filteredOrders.length === 0 && (
+                            <tr><td colSpan={5} className="p-12 text-center text-gray-400 font-medium tracking-tight">Nenhum pedido encontrado.</td></tr>
                         )}
                     </tbody>
                 </table>
@@ -738,7 +880,7 @@ export default function App() {
   const [orderStatus, setOrderStatus] = useState<string | null>(null);
   const [contactEmail, setContactEmail] = useState('');
 
-  const [view, setView] = useState<'landing' | 'editor' | 'faq' | 'about' | 'terms' | 'tips' | 'showcase' | 'admin'>('landing');
+  const [view, setView] = useState<'landing' | 'editor' | 'faq' | 'about' | 'terms' | 'tips' | 'showcase' | 'admin' | 'profile'>('landing');
   const [activeStep, setActiveStep] = useState(0);
   const [resumeData, setResumeData] = useState<ResumeData>(() => {
     const saved = localStorage.getItem('cv_lab_data');
@@ -931,7 +1073,18 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
             to: ['suportecvlab@gmail.com'],
             message: {
                 subject: `Novo Pedido de Currículo - ID: ${orderRef.id}`,
-                html: `<p>Um novo pedido foi feito por <b>${orderData.contactEmail}</b>.</p><p>ID do Pedido: ${orderRef.id}</p><p>Acesse o painel administratrivo na plataforma para verificar o comprovativo e aprovar o download.</p>`
+                html: `
+                    <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; color: #333;">
+                        <h2 style="color: #0D8ABC;">Novo Pedido de Currículo / Carta</h2>
+                        <p>Um novo pedido foi feito por <b>${orderData.contactEmail}</b>.</p>
+                        <p><b>ID do Pedido:</b> ${orderRef.id}</p>
+                        <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;" />
+                        <h3 style="color: #555;">Dados do Documento Associado:</h3>
+                        <pre style="background-color: #f4f4f4; padding: 15px; border-radius: 8px; font-size: 13px; overflow-x: auto; white-space: pre-wrap; word-wrap: break-word;">${JSON.stringify(orderData.documentData, null, 2)}</pre>
+                        <br/>
+                        <p>Acesse o <a href="https://cvlab.app/admin" style="color: #0D8ABC;">painel administrativo</a> (ou clique no botão no site) para verificar os comprovativos e aprovar o download.</p>
+                    </div>
+                `
             }
         });
 
@@ -1067,40 +1220,53 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
   if (view === 'landing') {
     return (
       <div className="min-h-screen hero-gradient flex flex-col">
-        <nav className="h-20 px-6 md:px-12 flex items-center justify-between glass sticky top-0 z-50">
-          <div className="cursor-pointer" onClick={() => setView('landing')} onDoubleClick={loginWithGoogle}>
-            <img 
-              src="https://i.supaimg.com/6bc04951-8cbe-4706-9f0c-a01f9ea9a6c4/f7862e8c-46f6-4d82-a9e0-b9cb52c6fc4f.png" 
-              alt="CV LAB" 
-              className="h-10 md:h-12 w-auto object-contain"
-              referrerPolicy="no-referrer" 
-            />
+        <nav className="h-24 px-6 md:px-12 flex items-center justify-between glass sticky top-0 z-50">
+          <div className="flex-1">
+            <div className="cursor-pointer inline-block" onClick={() => setView('landing')}>
+              <img 
+                src="https://i.supaimg.com/6bc04951-8cbe-4706-9f0c-a01f9ea9a6c4/f7862e8c-46f6-4d82-a9e0-b9cb52c6fc4f.png" 
+                alt="CV LAB" 
+                className="h-10 md:h-12 w-auto object-contain"
+                referrerPolicy="no-referrer" 
+              />
+            </div>
           </div>
-          <div className="hidden md:flex items-center gap-8 text-[10px] font-black tracking-widest text-text-muted uppercase">
-            {isAdmin && <button onClick={() => setView('admin')} className="text-red-500 hover:text-red-600 transition-colors focus:outline-none flex items-center gap-1.5 border border-red-100 bg-red-50 px-2 py-1 rounded">Painel Admin</button>}
-            <button onClick={() => setView('tips')} className="hover:text-primary-blue transition-colors focus:outline-none flex items-center gap-1.5">
-              Dicas <span className="text-[7px] bg-primary-blue text-white px-1 py-0.5 rounded-sm animate-pulse">Novo</span>
-            </button>
-            <button onClick={() => setView('showcase')} className="hover:text-primary-blue transition-colors focus:outline-none flex items-center gap-1.5">
-              Exemplos <span className="text-[7px] bg-deep-blue text-white px-1 py-0.5 rounded-sm">Novo</span>
-            </button>
-            <button onClick={() => setView('about')} className="hover:text-primary-blue transition-colors focus:outline-none">Sobre Nós</button>
-            <button onClick={() => setView('faq')} className="hover:text-primary-blue transition-colors focus:outline-none">FAQ</button>
-            <button onClick={() => setView('terms')} className="hover:text-primary-blue transition-colors focus:outline-none">Termos</button>
+
+          <div className="flex-[2] hidden lg:flex flex-col items-center gap-2">
+            <Button 
+              onClick={() => setView('editor')} 
+              className="bg-primary-blue hover:bg-deep-blue text-white px-8 h-11 text-xs uppercase tracking-[0.2em] font-black shadow-lg shadow-primary-blue/20 transition-all hover:scale-105 active:scale-95"
+            >
+              Criar Meu Currículo
+            </Button>
+            <div className="flex items-center gap-6 text-[9px] font-black tracking-widest text-text-muted uppercase">
+              <button onClick={() => setView('tips')} className="hover:text-primary-blue transition-colors">Dicas</button>
+              <button onClick={() => setView('showcase')} className="hover:text-primary-blue transition-colors">Exemplos</button>
+              <button onClick={() => setView('about')} className="hover:text-primary-blue transition-colors">Sobre Nós</button>
+              <button onClick={() => setView('faq')} className="hover:text-primary-blue transition-colors">FAQ</button>
+            </div>
           </div>
-          <div className="flex items-center gap-4">
+
+          <div className="flex-1 flex items-center justify-end gap-4">
             {user && user.email !== 'anonymous' ? (
-                <div className="flex items-center gap-3">
-                  <div className="flex flex-col items-end">
-                    <span className="text-[10px] font-black text-deep-blue leading-none">{user.displayName}</span>
-                    <button onClick={logOut} className="text-[9px] text-red-500 font-bold uppercase tracking-tighter hover:underline">Sair</button>
+                <button 
+                  onClick={() => setView('profile')}
+                  className="flex items-center gap-2 group transition-all p-1 pr-3 rounded-full hover:bg-white/40"
+                >
+                  <img 
+                    src={user.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.email || 'U')}&background=0D8ABC&color=fff`} 
+                    className="w-9 h-9 rounded-full border-2 border-white shadow-sm transition-transform group-hover:scale-110" 
+                    alt="Avatar" 
+                    referrerPolicy="no-referrer" 
+                  />
+                  <div className="hidden sm:flex flex-col items-start">
+                    <span className="text-[10px] font-black text-deep-blue uppercase leading-tight">Meu Perfil</span>
+                    <span className="text-[8px] text-primary-blue font-bold tracking-tighter">Ver Central</span>
                   </div>
-                  <img src={user.photoURL || `https://ui-avatars.com/api/?name=${user.displayName}`} className="w-8 h-8 rounded-full border border-border-main" alt="Avatar" referrerPolicy="no-referrer" />
-                </div>
+                </button>
               ) : (
-                <button onClick={loginWithGoogle} className="text-[10px] font-black text-primary-blue uppercase tracking-widest hover:opacity-70 transition-opacity">Entrar</button>
+                <button onClick={loginWithGoogle} className="text-xs font-black text-primary-blue uppercase tracking-widest px-4 py-2 hover:bg-white/50 rounded-xl transition-all border border-primary-blue/10">Entrar</button>
               )}
-            <Button variant="outline" onClick={() => setView('editor')} className="text-xs uppercase tracking-widest">Criar CV</Button>
           </div>
         </nav>
 
@@ -1391,53 +1557,67 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
     );
   }
 
-  if (view === 'faq' || view === 'about' || view === 'terms' || view === 'tips' || view === 'showcase' || view === 'admin') {
+  if (view === 'faq' || view === 'about' || view === 'terms' || view === 'tips' || view === 'showcase' || view === 'admin' || view === 'profile') {
     return (
       <div className="min-h-screen hero-gradient flex flex-col">
-        <nav className="h-20 px-6 md:px-12 flex items-center justify-between glass sticky top-0 z-50">
-          <button onClick={() => setView('landing')} className="flex items-center">
-            <img 
-              src="https://i.supaimg.com/6bc04951-8cbe-4706-9f0c-a01f9ea9a6c4/f7862e8c-46f6-4d82-a9e0-b9cb52c6fc4f.png" 
-              alt="CV LAB" 
-              className="h-10 md:h-12 w-auto object-contain"
-              referrerPolicy="no-referrer" 
-              onDoubleClick={loginWithGoogle}
-            />
-          </button>
-          <div className="hidden md:flex items-center gap-8 text-[10px] font-black tracking-widest text-text-muted uppercase">
-            {isAdmin && <button onClick={() => setView('admin')} className="text-red-500 hover:text-red-600 transition-colors focus:outline-none flex items-center gap-1.5 border border-red-100 bg-red-50 px-2 py-1 rounded">Painel Admin</button>}
-            <button onClick={() => setView('tips')} className="hover:text-primary-blue transition-colors focus:outline-none flex items-center gap-1.5">
-              Dicas <span className="text-[7px] bg-primary-blue text-white px-1 py-0.5 rounded-sm animate-pulse">Novo</span>
+        <nav className="h-24 px-6 md:px-12 flex items-center justify-between glass sticky top-0 z-50">
+          <div className="flex-1">
+            <button onClick={() => setView('landing')} className="flex items-center">
+              <img 
+                src="https://i.supaimg.com/6bc04951-8cbe-4706-9f0c-a01f9ea9a6c4/f7862e8c-46f6-4d82-a9e0-b9cb52c6fc4f.png" 
+                alt="CV LAB" 
+                className="h-10 md:h-12 w-auto object-contain"
+                referrerPolicy="no-referrer" 
+              />
             </button>
-            <button onClick={() => setView('showcase')} className="hover:text-primary-blue transition-colors focus:outline-none flex items-center gap-1.5">
-              Exemplos <span className="text-[7px] bg-deep-blue text-white px-1 py-0.5 rounded-sm">Novo</span>
-            </button>
-            <button onClick={() => setView('about')} className="hover:text-primary-blue transition-colors focus:outline-none">Sobre Nós</button>
-            <button onClick={() => setView('faq')} className="hover:text-primary-blue transition-colors focus:outline-none">FAQ</button>
-            <button onClick={() => setView('terms')} className="hover:text-primary-blue transition-colors focus:outline-none">Termos</button>
           </div>
-          <div className="flex items-center gap-4">
+
+          <div className="flex-[2] hidden lg:flex flex-col items-center gap-2">
+            <Button 
+              onClick={() => setView('editor')} 
+              className="bg-primary-blue hover:bg-deep-blue text-white px-8 h-11 text-xs uppercase tracking-[0.2em] font-black shadow-lg shadow-primary-blue/20 transition-all hover:scale-105 active:scale-95"
+            >
+              Criar Novo Currículo
+            </Button>
+            <div className="flex items-center gap-6 text-[9px] font-black tracking-widest text-text-muted uppercase">
+              <button onClick={() => setView('tips')} className="hover:text-primary-blue transition-colors">Dicas</button>
+              <button onClick={() => setView('showcase')} className="hover:text-primary-blue transition-colors">Exemplos</button>
+              <button onClick={() => setView('about')} className="hover:text-primary-blue transition-colors">Sobre Nós</button>
+              <button onClick={() => setView('faq')} className="hover:text-primary-blue transition-colors">FAQ</button>
+            </div>
+          </div>
+
+          <div className="flex-1 flex items-center justify-end gap-4">
              {user && user.email !== 'anonymous' ? (
-                <div className="flex items-center gap-3">
-                  <div className="flex flex-col items-end">
-                    <span className="text-[10px] font-black text-deep-blue leading-none">{user.displayName}</span>
-                    <button onClick={logOut} className="text-[9px] text-red-500 font-bold uppercase tracking-tighter hover:underline">Sair</button>
+                <button 
+                  onClick={() => setView('profile')}
+                  className="flex items-center gap-2 group transition-all p-1 pr-3 rounded-full hover:bg-white/40"
+                >
+                  <img 
+                    src={user.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.email || 'U')}&background=0D8ABC&color=fff`} 
+                    className="w-9 h-9 rounded-full border-2 border-white shadow-sm transition-transform group-hover:scale-110" 
+                    alt="Avatar" 
+                    referrerPolicy="no-referrer" 
+                  />
+                  <div className="hidden sm:flex flex-col items-start">
+                    <span className="text-[10px] font-black text-deep-blue uppercase leading-tight">Meu Perfil</span>
+                    <span className="text-[8px] text-primary-blue font-bold tracking-tighter">Ver Central</span>
                   </div>
-                  <img src={user.photoURL || `https://ui-avatars.com/api/?name=${user.displayName}`} className="w-8 h-8 rounded-full border border-border-main" alt="Avatar" referrerPolicy="no-referrer" />
-                </div>
+                </button>
               ) : (
-                <button onClick={loginWithGoogle} className="text-[10px] font-black text-primary-blue uppercase tracking-widest hover:opacity-70 transition-opacity">Entrar</button>
+                <button onClick={loginWithGoogle} className="text-xs font-black text-primary-blue uppercase tracking-widest px-4 py-2 hover:bg-white/50 rounded-xl transition-all border border-primary-blue/10">Entrar</button>
               )}
-            <Button variant="outline" onClick={() => setView('editor')} className="text-xs uppercase tracking-widest">Criar CV</Button>
           </div>
         </nav>
         
         <main className="flex-1 max-w-4xl mx-auto w-full px-6 py-16">
-          {view !== 'admin' && (
+          {(view !== 'admin' && view !== 'profile') && (
             <button onClick={() => setView('landing')} className="text-primary-blue text-xs font-bold uppercase tracking-widest flex items-center gap-2 mb-8 hover:opacity-80 transition-opacity">
               <ChevronLeft size={16} /> Voltar
             </button>
           )}
+
+          {view === 'profile' && <ProfilePage user={user} isAdmin={isAdmin} setView={setView} onLogout={logOut} />}
 
           {view === 'admin' && <AdminPanel />}
 

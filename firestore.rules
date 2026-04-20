@@ -14,9 +14,13 @@ service cloud.firestore {
     function isSignedIn() { return request.auth != null; }
     function isAdmin() { 
       return isSignedIn() && 
-             (request.auth.token.email == 'suportecvlab@gmail.com' ||
-             (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
-             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin')); 
+             (
+              request.auth.token.email == 'suportecvlab@gmail.com' ||
+              request.auth.token.email == 'm26101342@gmail.com' ||
+              (request.auth.token.email_verified == true && 
+               exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
+               get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin')
+             ); 
     }
     function isValidId(id) { return id is string && id.size() > 0 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$'); }
 
