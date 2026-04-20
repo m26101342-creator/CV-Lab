@@ -111,8 +111,11 @@ service cloud.firestore {
       allow get: if isAdmin() || (isSignedIn() && request.auth.uid == userId);
       allow list: if isAdmin();
       allow create, update: if isValidId(userId)
-                            && isSignedIn()
-                            && request.auth.uid == userId
+                            && incoming().userId == userId
+                            && (
+                              (isSignedIn() && request.auth.uid == userId) ||
+                              (userId.matches('^visitor_[a-z0-9]+$'))
+                            )
                             && isValidPresence(incoming());
       allow delete: if isValidId(userId) && (isAdmin() || (isSignedIn() && request.auth.uid == userId));
     }

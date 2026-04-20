@@ -1341,24 +1341,28 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
 
   // Presence Tracking
   useEffect(() => {
-    if (!user) return;
-
     const updatePresence = async () => {
       try {
-        await setDoc(doc(db, 'presence', user.uid), {
-          userId: user.uid,
-          email: user.email || 'Anônimo',
-          isAnonymous: user.isAnonymous,
+        const trackingId = user?.uid || localStorage.getItem('cv_lab_visitor_id') || `visitor_${Math.random().toString(36).substring(2, 11)}`;
+        if (!user && !localStorage.getItem('cv_lab_visitor_id')) {
+          localStorage.setItem('cv_lab_visitor_id', trackingId);
+        }
+
+        await setDoc(doc(db, 'presence', trackingId), {
+          userId: trackingId,
+          email: user?.email || (user?.isAnonymous ? 'Anónimo (Guest)' : 'Visitante'),
+          isAnonymous: user ? user.isAnonymous : true,
           lastSeen: new Date().toISOString(),
           view: view
         }, { merge: true });
       } catch (err) {
-        console.error("Presence update failed:", err);
+        // Silently fail if rules block it, common for non-auth visitors
+        console.warn("Presence update failed (expected if guest auth disabled):", err);
       }
     };
 
     updatePresence();
-    const interval = setInterval(updatePresence, 30000); // Pulse every 30s
+    const interval = setInterval(updatePresence, 30000); 
     return () => clearInterval(interval);
   }, [user, view]);
 
