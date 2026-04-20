@@ -36,6 +36,19 @@
         "message": { "type": "object" }
       },
       "required": ["to", "message"]
+    },
+    "Presence": {
+      "title": "Presence",
+      "description": "Real-time user online status heartbeats",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "email": { "type": "string" },
+        "lastSeen": { "type": "string" },
+        "isAnonymous": { "type": "boolean" },
+        "view": { "type": "string" }
+      },
+      "required": ["userId", "lastSeen"]
     }
   },
   "firestore": {
@@ -50,6 +63,10 @@
     "/mail/{mailId}": {
       "schema": { "$ref": "#/entities/Mail" },
       "description": "Outbox for Firebase Trigger Email extension"
+    },
+    "/presence/{userId}": {
+      "schema": { "$ref": "#/entities/Presence" },
+      "description": "User online heartbeats"
     }
   }
 }

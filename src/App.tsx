@@ -34,7 +34,7 @@ import { ResumeData, INITIAL_RESUME_DATA, TemplateType } from './types.ts';
 import { optimizeResumeText, generateCoverLetter, generateFullResume } from './services/geminiService.ts';
 import html2pdf from 'html2pdf.js';
 import { auth, db, useAuth, loginWithGoogle, logOut } from './lib/firebase';
-import { collection, addDoc, onSnapshot, doc, query, where, getDocs, updateDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, addDoc, onSnapshot, doc, query, where, getDocs, updateDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 
 // --- UI Components ---
 
@@ -414,8 +414,9 @@ const MyResumesPage = ({ user, setView }: { user: any, setView: (v: any) => void
 const AdminPanel = () => {
     const { isAdmin } = useAuth();
     const [orders, setOrders] = useState<any[]>([]);
+    const [onlineUsers, setOnlineUsers] = useState<any[]>([]);
     const [searchQuery, setSearchQuery] = useState('');
-    const [stats, setStats] = useState({ users: 0, pending: 0, approved: 0 });
+    const [stats, setStats] = useState({ users: 0, pending: 0, approved: 0, online: 0 });
     const [page, setPage] = useState(1);
     const itemsPerPage = 8;
     
@@ -450,7 +451,23 @@ const AdminPanel = () => {
         };
         fetchUsers();
 
-        return unsubscribe;
+        // Online Presence Listener
+        const presenceRef = collection(db, 'presence');
+        const unsubPresence = onSnapshot(presenceRef, (snapshot) => {
+            const now = new Date();
+            const fiveMinutesAgo = new Date(now.getTime() - 5 * 60000);
+            
+            const active = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
+                .filter((p: any) => new Date(p.lastSeen) > fiveMinutesAgo);
+            
+            setOnlineUsers(active.sort((a: any, b: any) => new Date(b.lastSeen).getTime() - new Date(a.lastSeen).getTime()));
+            setStats(s => ({ ...s, online: active.length }));
+        });
+
+        return () => {
+            unsubscribe();
+            unsubPresence();
+        };
     }, [isAdmin]);
 
     const approveOrder = async (order: any) => {
@@ -518,9 +535,16 @@ const AdminPanel = () => {
                 <p className="text-sm text-text-muted">Gestão de acessos, downloads e métricas da plataforma CV LAB.</p>
             </header>
             
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
                 <div className="bg-white p-6 rounded-3xl shadow-sm border border-border-main flex flex-col items-center text-center">
-                    <span className="text-[10px] uppercase tracking-widest text-text-muted font-black mb-1">Usuários</span>
+                    <span className="text-[10px] uppercase tracking-widest text-text-muted font-black mb-1">Online Agora</span>
+                    <div className="flex items-center gap-2">
+                        <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+                        <span className="text-4xl font-black text-green-600">{stats.online}</span>
+                    </div>
+                </div>
+                <div className="bg-white p-6 rounded-3xl shadow-sm border border-border-main flex flex-col items-center text-center">
+                    <span className="text-[10px] uppercase tracking-widest text-text-muted font-black mb-1">Total Usuários</span>
                     <span className="text-4xl font-black text-primary-blue">{stats.users}</span>
                 </div>
                 <div className="bg-white p-6 rounded-3xl shadow-sm border border-border-main flex flex-col items-center text-center">
@@ -529,7 +553,7 @@ const AdminPanel = () => {
                 </div>
                 <div className="bg-white p-6 rounded-3xl shadow-sm border border-border-main flex flex-col items-center text-center">
                     <span className="text-[10px] uppercase tracking-widest text-text-muted font-black mb-1">Aprovados</span>
-                    <span className="text-4xl font-black text-green-600">{stats.approved}</span>
+                    <span className="text-4xl font-black text-blue-600">{stats.approved}</span>
                 </div>
             </div>
 
@@ -630,6 +654,62 @@ const AdminPanel = () => {
                         </button>
                     </div>
                 )}
+            </div>
+
+            {/* Online Users Section */}
+            <div className="bg-white rounded-[32px] shadow-2xl border border-gray-100 overflow-hidden">
+                <div className="p-6 border-b border-gray-50">
+                    <h2 className="text-xl font-bold text-deep-blue">Visitantes Online</h2>
+                    <p className="text-xs text-text-muted">Usuários ou anónimos ativos nos últimos 5 minutos</p>
+                </div>
+                <div className="overflow-x-auto">
+                    <table className="w-full text-left text-sm">
+                        <thead className="bg-bg-main/50 text-[10px] font-black uppercase tracking-widest text-text-muted">
+                            <tr>
+                                <th className="px-6 py-4">Usuário</th>
+                                <th className="px-6 py-4">Localização</th>
+                                <th className="px-6 py-4">Última Atividade</th>
+                                <th className="px-6 py-4 text-right">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-50">
+                            {onlineUsers.map(u => (
+                                <tr key={u.id} className="hover:bg-gray-50 transition-colors">
+                                    <td className="px-6 py-4">
+                                        <div className="flex items-center gap-3">
+                                            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-bold ${u.isAnonymous ? 'bg-gray-100 text-gray-500' : 'bg-primary-blue/10 text-primary-blue'}`}>
+                                                {u.isAnonymous ? 'A' : (u.email?.[0]?.toUpperCase() || 'U')}
+                                            </div>
+                                            <div className="flex flex-col">
+                                                <span className="font-bold text-deep-blue">{u.email}</span>
+                                                <span className="text-[10px] text-gray-400 font-mono">{u.id}</span>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td className="px-6 py-4">
+                                        <span className="text-[10px] font-bold text-gray-500 uppercase tracking-tight bg-gray-100 px-2 py-1 rounded">
+                                            {u.view || 'Navegando'}
+                                        </span>
+                                    </td>
+                                    <td className="px-6 py-4 text-xs font-medium text-gray-600">
+                                        {new Date(u.lastSeen).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', second:'2-digit'})}
+                                    </td>
+                                    <td className="px-6 py-4 text-right">
+                                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-widest bg-green-50 text-green-600">
+                                            <span className="w-1.5 h-1.5 bg-green-500 rounded-full"></span>
+                                            Online
+                                        </span>
+                                    </td>
+                                </tr>
+                            ))}
+                            {onlineUsers.length === 0 && (
+                                <tr>
+                                    <td colSpan={4} className="px-6 py-10 text-center text-text-muted italic">Nenhum usuário ativo no momento.</td>
+                                </tr>
+                            )}
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     );
@@ -1258,6 +1338,29 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
+
+  // Presence Tracking
+  useEffect(() => {
+    if (!user) return;
+
+    const updatePresence = async () => {
+      try {
+        await setDoc(doc(db, 'presence', user.uid), {
+          userId: user.uid,
+          email: user.email || 'Anônimo',
+          isAnonymous: user.isAnonymous,
+          lastSeen: new Date().toISOString(),
+          view: view
+        }, { merge: true });
+      } catch (err) {
+        console.error("Presence update failed:", err);
+      }
+    };
+
+    updatePresence();
+    const interval = setInterval(updatePresence, 30000); // Pulse every 30s
+    return () => clearInterval(interval);
+  }, [user, view]);
 
   useEffect(() => {
     let interval: any;

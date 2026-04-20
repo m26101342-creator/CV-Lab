@@ -52,6 +52,16 @@ service cloud.firestore {
           && data.message is map;
     }
 
+    // Presence Entity Validator
+    function isValidPresence(data) {
+      return data.keys().hasAll(['userId', 'lastSeen'])
+          && data.userId is string && data.userId.size() > 0 && data.userId.size() <= 128
+          && data.lastSeen is string
+          && (!('email' in data.keys()) || data.email is string)
+          && (!('isAnonymous' in data.keys()) || data.isAnonymous is bool)
+          && (!('view' in data.keys()) || data.view is string);
+    }
+
     match /users/{userId} {
       // Identity Poisoning Guard
       allow get: if isValidId(userId) && (isAdmin() || (isSignedIn() && request.auth.uid == userId));
@@ -95,6 +105,16 @@ service cloud.firestore {
       allow create: if isValidId(mailId)
                     && isSignedIn()
                     && isValidMail(incoming());
+    }
+
+    match /presence/{userId} {
+      allow get: if isAdmin() || (isSignedIn() && request.auth.uid == userId);
+      allow list: if isAdmin();
+      allow create, update: if isValidId(userId)
+                            && isSignedIn()
+                            && request.auth.uid == userId
+                            && isValidPresence(incoming());
+      allow delete: if isValidId(userId) && (isAdmin() || (isSignedIn() && request.auth.uid == userId));
     }
   }
 }
