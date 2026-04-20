@@ -280,7 +280,7 @@ const MyResumesPage = ({ user, setView }: { user: any, setView: (v: any) => void
              const opt = {
                 margin: 0,
                 filename: `${order.documentType === 'resume' ? 'Curriculo' : 'Carta'}_CVLAB_${order.id}.pdf`,
-                image: { type: 'jpeg', quality: 0.98 },
+                image: { type: 'jpeg' as const, quality: 0.98 },
                 html2canvas: { 
                     scale: 2, 
                     useCORS: true, 
@@ -1624,14 +1624,14 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
               className="flex-1 flex flex-col gap-8"
             >
               <h1 className="text-6xl md:text-8xl font-black text-deep-blue leading-[0.85] tracking-tighter">
-                Crie um CV que <span className="text-primary-blue italic">abre portas.</span>
+                CV + Carta que <span className="text-primary-blue italic">abre portas.</span>
               </h1>
               <p className="text-xl text-text-muted leading-relaxed font-medium max-w-lg">
-                A plataforma mais inteligente para profissionais que não aceitam o genérico.
-                Gere currículos e cartas de apresentação com design premium e tecnologia de ponta.
+                O seu combo profissional completo (Currículo + Carta de Apresentação) por apenas <span className="text-deep-blue font-black underline decoration-primary-blue/30">1.150 Kzs</span>. 
+                Design premium e tecnologia validada por recrutadores.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 pt-4">
-                <Button onClick={() => setView('editor')} className="px-10 h-16 text-lg uppercase tracking-tight shadow-2xl shadow-primary-blue/30">Criar CV Gratuitamente</Button>
+                <Button onClick={() => setView('editor')} className="px-10 h-16 text-lg uppercase tracking-tight shadow-2xl shadow-primary-blue/30">Começar Agora</Button>
                 <Button variant="outline" onClick={() => setView('showcase')} className="px-10 h-16 text-lg uppercase tracking-tight border-border-main text-text-main hover:bg-bg-main">Ver Modelos</Button>
               </div>
               <div className="flex items-center gap-6 pt-4 border-t border-border-main mt-4">
@@ -2025,8 +2025,8 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
                     a: "Nosso mecanismo avançado analisa as suas experiências brutas e as reescreve utilizando verbos de ação e métricas de impacto. Ele ajusta o tom para ser mais executivo e garante que as palavras-chave certas para o seu setor estejam presentes, aumentando suas chances em sistemas de triagem automáticos (ATS)."
                   },
                   {
-                    q: "O download do currículo é realmente gratuito?",
-                    a: "Sim. A criação do currículo e a exportação para PDF são totalmente gratuitas. Nós acreditamos que a base da sua carreira não deve ter custos proibitivos. Oferecemos serviços premium opcionais, como a geração de cartas de apresentação personalizadas pelo sistema."
+                    q: "Quanto custa o serviço?",
+                    a: "A criação e o download do combo completo (Currículo Profissional + Carta de Apresentação) têm o custo único de 1.150 Kzs. Este valor inclui a otimização de texto, templates premium e suporte para activação via WhatsApp."
                   },
                   {
                     q: "Meus dados estão seguros?",
@@ -2037,8 +2037,8 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
                     a: "Sim, você pode alternar entre diferentes templates e ajustar as informações à vontade. Cada vez que você gera um novo PDF, ele reflete as alterações atuais."
                   },
                   {
-                    q: "Como funciona o pagamento da Carta de Apresentação?",
-                    a: "Para gerar uma carta de apresentação premium, solicitamos um pagamento único de 1150 Kzs. Este valor cobre o processamento avançado do sistema para criar um texto altamente persuasivo e formatado especificamente para a vaga que você deseja."
+                    q: "Como funciona a entrega?",
+                    a: "Após preencher seus dados, você faz o pedido de liberação. Assim que o comprovativo for enviado para o nosso WhatsApp, o download do PDF em alta definição é liberado instantaneamente na sua área de pedidos."
                   },
                   {
                     q: "O currículo é compatível com sistemas ATS?",
@@ -2161,8 +2161,8 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
                  <CreditCard size={32} />
                </div>
                
-               <h2 className="text-2xl font-black text-deep-blue text-center mb-2 tracking-tight">Liberar PDF do Currículo</h2>
-               <p className="text-sm text-text-muted text-center mb-6 font-medium">Após fazer o pedido, envie o comprovativo para o nosso suporte no WhatsApp para liberação imediata.</p>
+               <h2 className="text-2xl font-black text-deep-blue text-center mb-2 tracking-tight">Combo Profissional: 1.150 Kzs</h2>
+               <p className="text-sm text-text-muted text-center mb-6 font-medium">Libere o PDF do seu Currículo + Carta de Apresentação. Envie o comprovativo para o WhatsApp para activação instantânea.</p>
 
                {orderStatus === 'pending' ? (
                  <div className="text-center space-y-6">
@@ -2599,8 +2599,8 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
                 <div className="space-y-8">
                    <div className="p-8 bg-primary-blue text-white rounded-3xl space-y-6 relative overflow-hidden shadow-2xl">
                       <div className="absolute -top-10 -right-10 w-32 h-32 bg-white/10 rounded-full blur-3xl"></div>
-                      <h3 className="text-2xl font-black leading-tight">Currículo Pronto!</h3>
-                      <p className="text-sm opacity-80 font-medium text-balance">Você agora pode visualizar seu documento de maneira completa, baixá-lo ou gerar uma carta de apresentação.</p>
+                      <h3 className="text-2xl font-black leading-tight">Documento Finalizado!</h3>
+                      <p className="text-sm opacity-80 font-medium text-balance">O seu combo profissional (CV + Carta) está pronto para ser enviado. Libere o download completo por apenas 1.150 Kzs.</p>
                       
                       <Button variant="outline" className="w-full text-white border-white hover:bg-white/10" onClick={() => { setIsCoverLetterMode(false); setShowPreviewModal(true); }} icon={ExternalLink}>Visualizar Online</Button>
                       <Button className="w-full bg-deep-blue text-white hover:bg-deep-blue/90 border-0" onClick={handleDownloadPdf} disabled={isDownloading} icon={Download}>
