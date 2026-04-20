@@ -193,9 +193,54 @@ const ProfilePage = ({ user, isAdmin, setView, onLogout }: { user: any, isAdmin:
     );
 };
 
+const CoverLetterRenderer = ({ content, personalInfo, themeColor }: { content: string; personalInfo: any; themeColor?: string }) => {
+  const c = { primary: themeColor || '#1B2A4A' };
+  return (
+    <div 
+      id="cover-letter-content"
+      className="bg-white h-[1122px] w-[794px] p-20 relative flex flex-col font-sans text-left shadow-2xl overflow-hidden"
+    >
+       <div className="flex justify-between items-start border-b-2 pb-8 mb-10 mt-4" style={{ borderColor: `${c.primary}30` }}>
+         <div className="space-y-1.5 max-w-[60%]">
+           <h1 className="text-[32px] font-black tracking-tight leading-none" style={{ color: c.primary }}>
+             {personalInfo.fullName || 'Seu Nome'}
+           </h1>
+           <p className="text-gray-500 font-bold tracking-[0.1em] text-[11px] uppercase">
+             {personalInfo.title || 'Seu Cargo'}
+           </p>
+         </div>
+         <div className="text-right space-y-2 text-gray-500 font-medium text-[11px] bg-gray-50/50 p-4 rounded-xl border border-gray-100">
+           {personalInfo.email && <div className="flex items-center justify-end gap-2 text-gray-700"><span>{personalInfo.email}</span><Mail size={12} className="opacity-60"/></div>}
+           {personalInfo.phone && <div className="flex items-center justify-end gap-2 text-gray-700"><span>{personalInfo.phone}</span><Phone size={12} className="opacity-60"/></div>}
+           {personalInfo.location && <div className="flex items-center justify-end gap-2 text-gray-700"><span>{personalInfo.location}</span><MapPin size={12} className="opacity-60"/></div>}
+         </div>
+       </div>
+
+       <div className="flex justify-between items-end mb-12 text-[12px] uppercase tracking-widest font-bold text-gray-400">
+         <span>Ref: Candidatura Espontânea</span>
+         <span>Luanda, {new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })}</span>
+       </div>
+       
+       <div className="flex-1 text-justify whitespace-pre-line text-[14px] leading-[2.1] text-gray-700 font-medium px-4">
+          {content ? content.replace(/\*/g, '') : ''}
+       </div>
+
+       <div className="mt-20 pt-10 flex flex-col justify-end items-end pr-4">
+          <div className="text-right">
+             <p className="text-[11px] text-gray-400 uppercase tracking-widest mb-4">Atentamente,</p>
+             <p className="text-[18px] font-black italic tracking-tighter" style={{ color: c.primary }}>
+                {personalInfo.fullName}
+             </p>
+          </div>
+       </div>
+    </div>
+  );
+};
+
 const MyResumesPage = ({ user, setView }: { user: any, setView: (v: any) => void }) => {
     const [myOrders, setMyOrders] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
+    const [printingOrder, setPrintingOrder] = useState<any>(null);
 
     useEffect(() => {
         if (!user || user.email === 'anonymous') return;
@@ -215,18 +260,33 @@ const MyResumesPage = ({ user, setView }: { user: any, setView: (v: any) => void
     }, [user]);
 
     const downloadPDF = async (order: any) => {
-        // Simple logic to re-render and download
-        alert("Iniciando download... Por favor aguarde.");
-        // This is a simplified version - in real app would load the data into the renderer
-        const element = document.createElement('div');
-        element.style.position = 'fixed';
-        element.style.left = '-9999px';
-        document.body.appendChild(element);
+        setPrintingOrder(order);
+        alert("Iniciando a geração do PDF... Isso levará apenas alguns segundos.");
         
-        // We'll just show an alert for now if we don't have the full renderer state easily accessible here
-        // The user should go back to editor if they have the data locally, 
-        // but here they track the ORDER status.
-        alert("Recurso de download direto da central de pedidos em desenvolvimento. Por favor, utilize o Editor para exportar seu currículo aprovado.");
+        setTimeout(async () => {
+             const element = document.getElementById('my-resumes-print-renderer');
+             if (!element) {
+                 setPrintingOrder(null);
+                 return;
+             }
+             
+             const opt = {
+                margin: 0,
+                filename: `${order.documentType === 'resume' ? 'Curriculo' : 'Carta'}_CVLAB_${order.id}.pdf`,
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2, useCORS: true, letterRendering: true, backgroundColor: '#ffffff' },
+                jsPDF: { unit: 'px', format: [794, 1122] as [number, number], orientation: 'portrait' as const, compress: true }
+              };
+              
+              try {
+                  await html2pdf().set(opt).from(element).save();
+              } catch (err) {
+                  console.error("Erro ao gerar PDF:", err);
+                  alert("Erro ao baixar o documento. Por favor, tente novamente.");
+              } finally {
+                  setPrintingOrder(null);
+              }
+        }, 800);
     };
 
     if (loading) return <div className="p-20 text-center"><div className="animate-spin w-8 h-8 border-4 border-primary-blue border-t-transparent rounded-full mx-auto"></div></div>;
@@ -283,6 +343,23 @@ const MyResumesPage = ({ user, setView }: { user: any, setView: (v: any) => void
                     </div>
                 )}
             </div>
+
+            {/* Hidden Renderer for PDF generation */}
+            {printingOrder && (
+                <div className="fixed top-0 left-0 z-[-100] opacity-0 pointer-events-none" style={{ width: '794px', height: '1122px', backgroundColor: 'white' }}>
+                    <div id="my-resumes-print-renderer">
+                        {printingOrder.documentType === 'resume' ? (
+                            <ResumeRenderer data={printingOrder.documentData} templateId={printingOrder.documentData.template || 't1_executive'} />
+                        ) : (
+                            <CoverLetterRenderer 
+                                content={printingOrder.documentData.content} 
+                                personalInfo={printingOrder.documentData.personalInfo} 
+                                themeColor={printingOrder.documentData.themeColor} 
+                            />
+                        )}
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
@@ -329,15 +406,53 @@ const AdminPanel = () => {
         return unsubscribe;
     }, [isAdmin]);
 
-    const approveOrder = async (orderId: string) => {
+    const approveOrder = async (order: any) => {
         if (!window.confirm("Liberar PDF para este pedido?")) return;
         try {
-            const orderRef = doc(db, 'orders', orderId);
+            const orderRef = doc(db, 'orders', order.id);
             await updateDoc(orderRef, { 
                status: 'approved',
                updatedAt: new Date().toISOString()
             });
-            alert("Pedido aprovado com sucesso!");
+
+            // Send notification email to the user
+            await addDoc(collection(db, 'mail'), {
+                to: [order.contactEmail],
+                message: {
+                    subject: `Seu documento está pronto para download! - CV LAB`,
+                    html: `
+                        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #1f2937; line-height: 1.6;">
+                            <div style="background-color: #0D8ABC; padding: 30px; text-align: center; border-radius: 16px 16px 0 0;">
+                                <h1 style="color: white; margin: 0; font-size: 24px;">CV LAB - Angola</h1>
+                            </div>
+                            <div style="padding: 40px; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 16px 16px; background-color: #ffffff;">
+                                <h2 style="color: #111827; margin-top: 0;">Olá! Ótimas notícias.</h2>
+                                <p>O seu pedido de <b>${order.documentType === 'resume' ? 'Currículo Profissional' : 'Carta de Apresentação'}</b> foi analisado e aprovado com sucesso.</p>
+                                <p>Você já pode baixar o seu documento em alta definição diretamente na sua central de currículos.</p>
+                                
+                                <div style="margin: 40px 0; text-align: center;">
+                                    <a href="https://cvlab.app/my-resumes" style="background-color: #0D8ABC; color: white; padding: 16px 32px; text-decoration: none; border-radius: 12px; font-weight: bold; font-size: 16px; display: inline-block; box-shadow: 0 4px 6px -1px rgba(13, 138, 188, 0.2);">Aceder aos Meus Currículos</a>
+                                </div>
+                                
+                                <div style="background-color: #f9fafb; padding: 20px; border-radius: 12px; font-size: 14px;">
+                                    <p style="margin: 0; color: #6b7280;"><b>ID do Pedido:</b> ${order.id}</p>
+                                    <p style="margin: 5px 0 0 0; color: #6b7280;"><b>Email de Contacto:</b> ${order.contactEmail}</p>
+                                </div>
+                                
+                                <p style="margin-top: 30px; font-size: 14px; color: #4b5563;">
+                                    Agradecemos por escolher a CV LAB. Desejamos muito sucesso na sua jornada profissional!
+                                </p>
+                            </div>
+                            <div style="padding: 20px; text-align: center; font-size: 12px; color: #9ca3af;">
+                                <p>© 2026 CV LAB. Todos os direitos reservados.</p>
+                                <p>Esta é uma notificação automática, por favor não responda.</p>
+                            </div>
+                        </div>
+                    `
+                }
+            });
+
+            alert("Pedido aprovado e notificação enviada com sucesso!");
         } catch (error: any) {
             console.error("Error approving order:", error);
             alert(`Erro ao aprovar pedido: ${error.message || 'Erro desconhecido'}`);
@@ -430,7 +545,7 @@ const AdminPanel = () => {
                                     <td className="px-6 py-5 text-right">
                                         {o.status === 'pending' ? (
                                             <Button 
-                                                onClick={() => approveOrder(o.id)}
+                                                onClick={() => approveOrder(o)}
                                                 className="bg-green-600 hover:bg-green-700 text-white h-9 px-4 text-[10px] uppercase font-black tracking-widest rounded-xl transition-all hover:scale-105 shadow-md shadow-green-600/10"
                                             >
                                                 Liberar PDF
@@ -1206,7 +1321,11 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
         ownerId: user.uid,
         status: 'pending',
         documentType: isCoverLetterMode ? 'cover_letter' : 'resume',
-        documentData: isCoverLetterMode ? { content: generatedLetter } : resumeData,
+        documentData: isCoverLetterMode ? { 
+            content: generatedLetter,
+            personalInfo: resumeData.personalInfo,
+            themeColor: resumeData.themeColor
+        } : resumeData,
         contactEmail: contactEmail,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
@@ -2570,47 +2689,12 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
                    key="letter"
                    initial={{ opacity: 0, y: 20 }}
                    animate={{ opacity: 1, y: 0 }}
-                   id="cover-letter-content"
-                   className="bg-white h-[1122px] w-[794px] p-20 relative flex flex-col font-sans text-left shadow-2xl overflow-hidden"
+                   className="relative"
                  >
-                    <button data-html2canvas-ignore="true" onClick={() => setIsCoverLetterMode(false)} className="absolute top-8 left-8 text-[10px] font-black uppercase text-primary-blue tracking-widest flex items-center gap-2 print:hidden group bg-soft-blue px-4 py-2 rounded-full hover:bg-primary-blue hover:text-white transition-all">
+                    <button data-html2canvas-ignore="true" onClick={() => setIsCoverLetterMode(false)} className="absolute top-8 left-8 text-[10px] font-black uppercase text-primary-blue tracking-widest flex items-center gap-2 print:hidden z-10 group bg-soft-blue px-4 py-2 rounded-full hover:bg-primary-blue hover:text-white transition-all">
                        <ChevronLeft size={14} className="group-hover:-translate-x-1 transition-transform" /> Voltar ao Editor
                     </button>
-
-                    {/* Minimalist Professional Header */}
-                    <div className="flex justify-between items-start border-b-2 pb-8 mb-10 mt-4" style={{ borderColor: `${c.primary}30` }}>
-                      <div className="space-y-1.5 max-w-[60%]">
-                        <h1 className="text-[32px] font-black tracking-tight leading-none" style={{ color: c.primary }}>
-                          {resumeData.personalInfo.fullName || 'Seu Nome'}
-                        </h1>
-                        <p className="text-gray-500 font-bold tracking-[0.1em] text-[11px] uppercase">
-                          {resumeData.personalInfo.title || 'Seu Cargo'}
-                        </p>
-                      </div>
-                      <div className="text-right space-y-2 text-gray-500 font-medium text-[11px] bg-gray-50/50 p-4 rounded-xl border border-gray-100">
-                        {resumeData.personalInfo.email && <div className="flex items-center justify-end gap-2 text-gray-700"><span>{resumeData.personalInfo.email}</span><Mail size={12} className="opacity-60"/></div>}
-                        {resumeData.personalInfo.phone && <div className="flex items-center justify-end gap-2 text-gray-700"><span>{resumeData.personalInfo.phone}</span><Phone size={12} className="opacity-60"/></div>}
-                        {resumeData.personalInfo.location && <div className="flex items-center justify-end gap-2 text-gray-700"><span>{resumeData.personalInfo.location}</span><MapPin size={12} className="opacity-60"/></div>}
-                      </div>
-                    </div>
-
-                    <div className="flex justify-between items-end mb-12 text-[12px] uppercase tracking-widest font-bold text-gray-400">
-                      <span>Ref: Candidatura Espontânea</span>
-                      <span>Luanda, {new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })}</span>
-                    </div>
-                    
-                    <div className="flex-1 text-justify whitespace-pre-line text-[14px] leading-[2.1] text-gray-700 font-medium px-4">
-                       {renderText(generatedLetter)}
-                    </div>
-
-                    <div className="mt-20 pt-10 flex flex-col justify-end items-end pr-4">
-                       <div className="text-right">
-                          <p className="text-[11px] text-gray-400 uppercase tracking-widest mb-4">Atentamente,</p>
-                          <p className="text-[18px] font-black italic tracking-tighter" style={{ color: c.primary }}>
-                             {resumeData.personalInfo.fullName}
-                          </p>
-                       </div>
-                    </div>
+                    <CoverLetterRenderer content={generatedLetter} personalInfo={resumeData.personalInfo} themeColor={resumeData.themeColor} />
                  </motion.div>
                ) : (
                  <ResumeRenderer data={resumeData} templateId={template} />
