@@ -1886,12 +1886,17 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
               </div>
               <div className="flex items-center gap-6 pt-4 border-t border-border-main mt-4">
                 <div className="flex -space-x-3">
-                  {[1,2,3,4].map(i => (
-                    <img key={i} src={`https://picsum.photos/seed/user${i}/100/100`} alt="User" className="w-10 h-10 rounded-full border-2 border-white ring-1 ring-border-main" referrerPolicy="no-referrer" />
+                  {[
+                    "https://images.unsplash.com/photo-1522529599102-193c0bc76f27?w=100&h=100&fit=crop&q=80",
+                    "https://images.unsplash.com/photo-1531123897727-8f129e1688ce?w=100&h=100&fit=crop&q=80",
+                    "https://images.unsplash.com/photo-1507152832244-10d45c7eda57?w=100&h=100&fit=crop&q=80",
+                    "https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?w=100&h=100&fit=crop&q=80"
+                  ].map((url, i) => (
+                    <img key={i} src={url} alt="User" className="w-10 h-10 rounded-full border-2 border-white ring-1 ring-border-main object-cover" referrerPolicy="no-referrer" />
                   ))}
                 </div>
                 <div className="text-xs font-bold text-text-muted">
-                   <p className="text-deep-blue font-black tracking-tight">+15 mil usuários</p>
+                   <p className="text-deep-blue font-black tracking-tight">+500 usuários</p>
                    <p className="opacity-70">Confiam na nossa plataforma</p>
                 </div>
               </div>
