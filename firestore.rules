@@ -1,0 +1,105 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Global Safety Net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Primitives
+    function incoming() { return request.resource.data; }
+    function existing() { return resource.data; }
+    function isSignedIn() { return request.auth != null; }
+    function isAdmin() { 
+      return isSignedIn() && 
+             (request.auth.token.email == 'suportecvlab@gmail.com' ||
+             (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin')); 
+    }
+    function isValidId(id) { return id is string && id.size() > 0 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$'); }
+
+    // User Entity Validator
+    function isValidUser(data) {
+      return data.keys().hasAll(['email', 'role']) 
+          && data.email is string && data.email.size() > 5 && data.email.size() <= 100
+          && data.role in ['user', 'admin']
+          && (!('name' in data.keys()) || (data.name is string && data.name.size() <= 100))
+          && (!('createdAt' in data.keys()) || data.createdAt is string);
+    }
+
+    // Order Entity Validator
+    function isValidOrder(data) {
+      return data.keys().hasAll(['ownerId', 'status', 'documentType', 'createdAt'])
+          && data.ownerId is string && data.ownerId.size() > 0 && data.ownerId.size() <= 128
+          && data.status in ['pending', 'approved', 'rejected']
+          && data.documentType in ['resume', 'cover_letter']
+          && data.createdAt is string && data.createdAt.size() <= 100
+          && (!('contactEmail' in data.keys()) || (data.contactEmail is string && data.contactEmail.size() <= 100))
+          && (!('documentData' in data.keys()) || data.documentData is map)
+          && (!('updatedAt' in data.keys()) || data.updatedAt is string);
+    }
+
+    // Mail Entity Validator
+    function isValidMail(data) {
+      return data.keys().hasAll(['to', 'message'])
+          && data.to is list && data.to.size() == 1 && data.to[0] == 'suportecvlab@gmail.com'
+          && data.message is map;
+    }
+
+    match /users/{userId} {
+      // Identity Poisoning Guard
+      allow get: if isValidId(userId) && (isAdmin() || (isSignedIn() && request.auth.uid == userId));
+      allow list: if isAdmin();
+      
+      allow create: if isValidId(userId) 
+                    && isSignedIn() 
+                    && request.auth.uid == userId
+                    && isValidUser(incoming())
+                    && (incoming().role == 'user' || request.auth.token.email == 'suportecvlab@gmail.com'); // Prevent self-admin assigning unless specific email
+                    
+      allow update: if isValidId(userId)
+                    && isSignedIn()
+                    && isValidUser(incoming())
+                    && (
+                      isAdmin() ||
+                      (request.auth.uid == userId && !incoming().diff(existing()).affectedKeys().hasAny(['role']))
+                    );
+    }
+
+    match /orders/{orderId} {
+      allow get: if isValidId(orderId) && (isAdmin() || (isSignedIn() && existing().ownerId == request.auth.uid));
+      allow list: if isAdmin() || (isSignedIn() && existing().ownerId == request.auth.uid);
+      
+      allow create: if isValidId(orderId)
+                    && isSignedIn()
+                    && isValidOrder(incoming())
+                    && incoming().ownerId == request.auth.uid
+                    && incoming().status == 'pending'; // New orders must be pending
+                    
+      allow update: if isValidId(orderId)
+                    && isSignedIn()
+                    && isValidOrder(incoming())
+                    && incoming().ownerId == existing().ownerId // Owner cannot be changed
+                    && (
+                      isAdmin() ||
+                      (
+                        request.auth.uid == existing().ownerId 
+                        && existing().status == 'pending' // Only allow updates if still pending
+                        && incoming().diff(existing()).affectedKeys().hasOnly(['contactEmail', 'documentData', 'updatedAt'])
+                      )
+                    );
+                    
+      allow delete: if isValidId(orderId) && isAdmin();
+    }
+
+    match /mail/{mailId} {
+      allow get, list: if isAdmin();
+      
+      allow create: if isValidId(mailId)
+                    && isSignedIn()
+                    && isValidMail(incoming());
+    }
+  }
+}

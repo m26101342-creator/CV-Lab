@@ -32,6 +32,8 @@ import { AdSenseUnit } from './components/AdSenseUnit';
 import { ResumeData, INITIAL_RESUME_DATA, TemplateType } from './types.ts';
 import { optimizeResumeText, generateCoverLetter, generateFullResume } from './services/geminiService.ts';
 import html2pdf from 'html2pdf.js';
+import { auth, db, useAuth, loginWithGoogle, logOut } from './lib/firebase';
+import { collection, addDoc, onSnapshot, doc, query, where, getDocs, updateDoc, serverTimestamp } from 'firebase/firestore';
 
 // --- UI Components ---
 
@@ -118,13 +120,70 @@ const TextArea = ({ label, value, onChange, placeholder, onOptimize, isOptimizin
 const TEMPLATES: Record<TemplateType, { name: string; layout: string; colors: any }> = {
   t1_executive: { name: 'Executivo Classic', layout: 'custom-t1', colors: { primary: '#1B2A4A', text: '#4B5563', heading: '#1B2A4A', soft: '#1B2A4A', lines: '#E5E7EB' } },
   t2_geometric: { name: 'Geométrico Mod', layout: 'custom-t2', colors: { primary: '#1B2A4A', text: '#4B5563', heading: '#1B2A4A', soft: '#F9FAFB', lines: '#F3F4F6' } },
-  t3_modern: { name: 'Moderno Vibrante', layout: 'custom-t3', colors: { primary: '#0369A1', text: '#4B5563', heading: '#0369A1', soft: '#F0F9FF', lines: '#BAE6FD', dark: '#075985' } },
+  t3_modern: { name: 'Corporate Clean', layout: 'custom-t3', colors: { primary: '#2D3748', text: '#4A5568', heading: '#1A202C', soft: '#F7FAFC', lines: '#E2E8F0', dark: '#1A202C' } },
   t4_barnabas: { name: 'Sidebar Limpa', layout: 'custom-t4', colors: { primary: '#2D313A', text: '#3E4249', heading: '#333333', soft: '#2D313A', lines: '#E5E7EB' } },
   t5_jonathan: { name: 'Escritor Arches', layout: 'custom-t5', colors: { primary: '#4A4C53', text: '#555555', heading: '#222222', soft: '#F3F4F6', lines: '#D1D5DB' } }
 };
 
-// --- Helper to clean up Markdown / formatting ---
+// --- Helpers ---
 const renderText = (str: string) => str ? str.replace(/\*/g, '') : '';
+
+const AdminPanel = () => {
+    const { isAdmin } = useAuth();
+    const [orders, setOrders] = useState<any[]>([]);
+    
+    useEffect(() => {
+        if (!isAdmin) return;
+        const q = query(collection(db, 'orders'), where('status', '==', 'pending'));
+        const unsubscribe = onSnapshot(q, (snapshot) => {
+            setOrders(snapshot.docs.map(doc => ({id: doc.id, ...doc.data()})));
+        });
+        return unsubscribe;
+    }, [isAdmin]);
+
+    const approveOrder = async (orderId: string) => {
+        await updateDoc(doc(db, 'orders', orderId), { 
+           status: 'approved',
+           updatedAt: new Date().toISOString()
+        });
+    };
+
+    if (!isAdmin) return <div className="p-20 text-center font-bold text-red-500">Acesso Restrito: Suas permissões são insuficientes para aceder o painel.</div>;
+
+    return (
+        <div className="p-10 max-w-5xl mx-auto flex-1 w-full bg-bg-main min-h-screen">
+            <h1 className="text-3xl font-black mb-8 text-deep-blue">Painel Administrativo</h1>
+            <p className="text-sm text-text-muted mb-6">Confira os comprovativos no WhatsApp e clique em "Aprovar Download" para liberar o PDF do cliente.</p>
+            <div className="bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-100">
+                <table className="w-full text-left text-sm">
+                    <thead className="bg-gray-50 border-b border-gray-100">
+                        <tr>
+                            <th className="p-4 font-bold text-text-muted">ID / Data</th>
+                            <th className="p-4 font-bold text-text-muted">Email Contacto</th>
+                            <th className="p-4 font-bold text-text-muted">Tipo</th>
+                            <th className="p-4 font-bold text-text-muted">Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {orders.map(o => (
+                            <tr key={o.id} className="border-b border-gray-50 hover:bg-gray-50">
+                                <td className="p-4"><div className="font-mono text-xs">{o.id}</div><div className="text-gray-400">{new Date(o.createdAt).toLocaleString()}</div></td>
+                                <td className="p-4 font-medium">{o.contactEmail}</td>
+                                <td className="p-4 uppercase text-[10px] tracking-widest font-bold">{o.documentType === 'resume' ? 'Currículo' : 'Carta'}</td>
+                                <td className="p-4">
+                                    <Button onClick={() => approveOrder(o.id)} className="bg-green-600 hover:bg-green-700 h-8 px-4 text-xs border-transparent text-white shadow-none">Aprovar Download</Button>
+                                </td>
+                            </tr>
+                        ))}
+                        {orders.length === 0 && (
+                            <tr><td colSpan={4} className="p-8 text-center text-gray-400 font-medium tracking-tight">Nenhum pedido pendente no momento.</td></tr>
+                        )}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    );
+};
 
 const ResumeRenderer = ({ data, templateId }: { data: ResumeData; templateId: TemplateType }) => {
   const theme = TEMPLATES[templateId] || TEMPLATES.t1_executive;
@@ -338,82 +397,42 @@ const ResumeRenderer = ({ data, templateId }: { data: ResumeData; templateId: Te
       )}
 
       {theme.layout === 'custom-t3' && (
-        <div className="t3" style={{ '--primary': c.primary, '--primary-dark': c.dark, '--primary-light': c.lines, '--primary-soft': c.soft } as any}>
+        <div className="t3" style={{ '--primary': c.primary, '--primary-light': c.lines, '--heading': c.heading } as any}>
            <div className="t3-header">
-              <div className="t3-header-left">
-                 <div 
-                   className="t3-avatar"
-                   style={{ 
-                     borderRadius: data.personalInfo.photoStyle === 'square' ? '12px' : '50%',
-                     width: `${data.personalInfo.photoSize || 120}px`,
-                     height: `${data.personalInfo.photoSize || 120}px`,
-                     fontSize: `${(data.personalInfo.photoSize || 120) * 0.4}px`,
-                     lineHeight: `${data.personalInfo.photoSize || 120}px`,
-                   }}
-                 >
-                   {data.personalInfo.photo ? <img src={data.personalInfo.photo} referrerPolicy="no-referrer" alt="Profile" className="w-full h-full object-cover object-top" /> : (data.personalInfo.fullName ? data.personalInfo.fullName.charAt(0).toUpperCase() : 'CV')}
-                 </div>
-              </div>
-              <div className="t3-header-right">
-                 <div className="t3-name">{data.personalInfo.fullName || "Seu Nome"}</div>
-                 <div className="t3-title">{data.personalInfo.title || "Cargo Desejado"}</div>
-                 <div className="t3-divider"></div>
-                 {data.personalInfo.summary && <div className="t3-bio">{renderText(data.personalInfo.summary)}</div>}
+              <div className="t3-name">{data.personalInfo.fullName || "Seu Nome"}</div>
+              <div className="t3-title">{data.personalInfo.title || "Cargo Desejado"}</div>
+              {data.personalInfo.summary && <div className="t3-bio">{renderText(data.personalInfo.summary)}</div>}
+              
+              <div className="t3-contact-row">
+                {data.personalInfo.email && <div className="t3-contact-item"><Mail size={12} className="t3-contact-icon"/> {data.personalInfo.email}</div>}
+                {data.personalInfo.phone && <div className="t3-contact-item"><Phone size={12} className="t3-contact-icon"/> {data.personalInfo.phone}</div>}
+                {data.personalInfo.location && <div className="t3-contact-item"><MapPin size={12} className="t3-contact-icon"/> {data.personalInfo.location}</div>}
               </div>
            </div>
            
            <div className="t3-body">
-              <div className="t3-left">
-                 <div className="t3-section">
-                    <div className="t3-section-title">Contacto</div>
-                    <div className="flex flex-col gap-3">
-                      {data.personalInfo.email && <div className="t3-contact-row"><span className="t3-contact-icon flex items-center justify-center flex-shrink-0"><Mail size={12}/></span> <span className="t3-contact-text">{data.personalInfo.email}</span></div>}
-                      {data.personalInfo.phone && <div className="t3-contact-row"><span className="t3-contact-icon flex items-center justify-center flex-shrink-0"><Phone size={12}/></span> <span className="t3-contact-text">{data.personalInfo.phone}</span></div>}
-                      {data.personalInfo.location && <div className="t3-contact-row"><span className="t3-contact-icon flex items-center justify-center flex-shrink-0"><MapPin size={12}/></span> <span className="t3-contact-text">{data.personalInfo.location}</span></div>}
-                    </div>
-                 </div>
-                 
+              <div className="t3-left">                 
                  {data.education.length > 0 && (
-                   <div className="t3-section">
-                     <div className="t3-section-title">Formação</div>
+                   <div>
+                     <div className="t3-section-title">Formação Académica</div>
                      {data.education.map(e => (
                        <div key={e.id} className="t3-edu-item">
-                          <div className="t3-edu-school font-bold">{e.institution}</div>
+                          <div className="t3-edu-school">{e.institution}</div>
                           <div className="t3-edu-degree">{e.degree}</div>
-                          <div className="t3-edu-year text-gray-500 opacity-70">{e.startDate} - {e.endDate}</div>
+                          <div className="t3-edu-year">{e.startDate} - {e.endDate}</div>
                        </div>
                      ))}
                    </div>
                  )}
-              </div>
-              
-              <div className="t3-right">
-                 {data.experience.length > 0 && (
-                   <div className="t3-section">
-                      <div className="t3-section-title">Experiência Profissional</div>
-                      {data.experience.map(ex => (
-                         <div key={ex.id} className="t3-exp-item pb-4 border-b border-gray-100 last:border-0 mb-4">
-                            <div className="t3-exp-header mb-1">
-                               <div className="t3-exp-company font-black uppercase tracking-wider">{ex.company}</div>
-                               <div className="t3-exp-period bg-primary-soft text-primary px-2 py-0.5 rounded text-[10px] font-bold">{ex.startDate} - {ex.current ? "Presente" : ex.endDate}</div>
-                            </div>
-                            <div className="t3-exp-role font-bold text-gray-700 italic">{ex.position}</div>
-                            <div className="t3-exp-desc mt-2 leading-relaxed">{renderText(ex.description)}</div>
-                         </div>
-                      ))}
-                   </div>
-                 )}
-                 
+
                  {data.skills.length > 0 && (
-                   <div className="t3-section" style={{marginTop: '20px'}}>
+                   <div>
                       <div className="t3-section-title">Habilidades</div>
-                      <div className="grid grid-cols-1 gap-2">
+                      <div>
                         {data.skills.map(s => (
                            <div key={s.id} className="t3-skill-item">
-                              <div className="t3-skill-label font-medium">{s.name}</div>
-                              <div className="t3-skill-bar-bg h-1.5 rounded-full">
-                                 <div className="t3-skill-bar-fill h-full rounded-full" style={{ width: s.level === 'Especialista' ? '100%' : s.level === 'Avançado' ? '75%' : s.level === 'Intermédio' ? '50%' : '25%' }}></div>
-                              </div>
+                              <span className="t3-skill-label">{s.name}</span>
+                              <span className="t3-skill-level">{s.level}</span>
                            </div>
                         ))}
                       </div>
@@ -421,21 +440,34 @@ const ResumeRenderer = ({ data, templateId }: { data: ResumeData; templateId: Te
                  )}
 
                  {data.languages && data.languages.length > 0 && (
-                   <div className="t3-section" style={{marginTop: '20px'}}>
+                   <div>
                       <div className="t3-section-title">Idiomas</div>
-                      <div className="grid grid-cols-1 gap-2">
+                      <div>
                         {data.languages.map(l => (
                            <div key={l.id} className="t3-skill-item">
-                              <div className="flex justify-between items-center w-full mb-1">
-                                <div className="t3-skill-label font-medium">{l.name}</div>
-                                <div className="text-[10px] uppercase font-bold text-gray-500">{l.level}</div>
-                              </div>
-                              <div className="t3-skill-bar-bg h-1.5 rounded-full">
-                                 <div className="t3-skill-bar-fill h-full rounded-full" style={{ width: l.level === 'Nativo' ? '100%' : l.level === 'Fluente' ? '85%' : l.level === 'Avançado' ? '70%' : l.level === 'Intermédio' ? '50%' : '25%' }}></div>
-                              </div>
+                              <span className="t3-skill-label">{l.name}</span>
+                              <span className="t3-skill-level">{l.level}</span>
                            </div>
                         ))}
                       </div>
+                   </div>
+                 )}
+              </div>
+              
+              <div className="t3-right">
+                 {data.experience.length > 0 && (
+                   <div>
+                      <div className="t3-section-title">Experiência Profissional</div>
+                      {data.experience.map(ex => (
+                         <div key={ex.id} className="t3-exp-item">
+                            <div className="t3-exp-header">
+                               <div className="t3-exp-company">{ex.company}</div>
+                               <div className="t3-exp-period">{ex.startDate} - {ex.current ? "Presente" : ex.endDate}</div>
+                            </div>
+                            <div className="t3-exp-role">{ex.position}</div>
+                            <div className="t3-exp-desc">{renderText(ex.description)}</div>
+                         </div>
+                      ))}
                    </div>
                  )}
               </div>
@@ -700,7 +732,13 @@ const ResumeRenderer = ({ data, templateId }: { data: ResumeData; templateId: Te
 // --- Main Application ---
 
 export default function App() {
-  const [view, setView] = useState<'landing' | 'editor' | 'faq' | 'about' | 'terms' | 'tips' | 'showcase'>('landing');
+  const { user, isAdmin } = useAuth();
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [currentOrderId, setCurrentOrderId] = useState<string | null>(null);
+  const [orderStatus, setOrderStatus] = useState<string | null>(null);
+  const [contactEmail, setContactEmail] = useState('');
+
+  const [view, setView] = useState<'landing' | 'editor' | 'faq' | 'about' | 'terms' | 'tips' | 'showcase' | 'admin'>('landing');
   const [activeStep, setActiveStep] = useState(0);
   const [resumeData, setResumeData] = useState<ResumeData>(() => {
     const saved = localStorage.getItem('cv_lab_data');
@@ -780,7 +818,26 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
     return () => clearInterval(interval);
   }, [view, currentBanner]);
 
-  const handleDownloadPdf = async () => {
+  // Firebase Order Listener
+  useEffect(() => {
+    if (!currentOrderId) return;
+    const unsubscribe = onSnapshot(doc(db, 'orders', currentOrderId), (docSnap) => {
+        if (docSnap.exists()) {
+            const status = docSnap.data().status;
+            setOrderStatus(status);
+            if (status === 'approved') {
+                // Execute download
+                setShowPaymentModal(false);
+                executeDownloadPdf();
+                setCurrentOrderId(null);
+            }
+        }
+    });
+    return unsubscribe;
+  }, [currentOrderId]);
+
+  // Actual download function replacing old handleDownloadPdf
+  const executeDownloadPdf = async () => {
     // Determine the element early so we know it exists
     const elementId = isCoverLetterMode ? 'cover-letter-content' : 'resume-content';
     const element = document.getElementById(elementId);
@@ -793,46 +850,97 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
       window.scrollTo(0, 0);
       await document.fonts.ready;
 
-      // Temporarily disable scaling for accurate capture
-      const originalScale = previewScale;
-      setPreviewScale(1);
-
-      // We need a small delay for state update to reflect directly in DOM before canvas captures it
-      await new Promise(r => setTimeout(r, 300));
-
-      // Configurações otimizadas para evitar elementos tortos e desalinhados
+      // We explicitly instruct html2canvas to capture exactly at 794x1122
+      // No state previewScale change needed, eliminating race conditions.
       const opt = {
         margin:       0,
         filename:     isCoverLetterMode ? 'Carta_Apresentacao.pdf' : `${resumeData.personalInfo.fullName.replace(/\s+/g, '_')}_Curriculo.pdf`,
         image:        { type: 'jpeg' as const, quality: 1 },
         html2canvas:  { 
-          scale: 4, 
+          scale: 2, 
           useCORS: true, 
           letterRendering: true,
           scrollY: 0,
           scrollX: 0,
+          width: 794,
+          height: 1122,
           windowWidth: 794,
+          windowHeight: 1122,
           logging: false,
           backgroundColor: '#FFFFFF',
           onclone: (clonedDoc: any) => {
             const clonedElement = clonedDoc.getElementById(elementId);
             if (clonedElement) {
+               // Force exact dimensions and flatten visual layers
                clonedElement.style.transform = 'none';
                clonedElement.style.transition = 'none';
+               clonedElement.style.width = '794px';
+               clonedElement.style.height = '1122px';
+               clonedElement.style.position = 'relative';
+               clonedElement.style.overflow = 'hidden';
+               
+               const children = clonedElement.getElementsByTagName('*');
+               for (let i = 0; i < children.length; i++) {
+                 children[i].style.transition = 'none';
+                 children[i].style.animation = 'none';
+               }
             }
           }
         },
-        jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' as const, compress: true, precision: 16 },
-        pagebreak:    { mode: 'avoid-all' as const }
+        // Using 'px' with exactly [794, 1122] ensures 1 single page without any spillover
+        jsPDF: { unit: 'px', format: [794, 1122] as [number, number], orientation: 'portrait' as const, compress: true }
       };
       
       await html2pdf().set(opt).from(element).save();
 
-      setPreviewScale(originalScale);
     } catch (err) {
       console.error("Erro ao gerar PDF:", err);
     } finally {
       setIsDownloading(false);
+    }
+  };
+
+  const handleDownloadPdf = () => {
+    setShowPaymentModal(true);
+    setContactEmail(user?.email && user.email !== 'anonymous' ? user.email : '');
+  };
+
+  const createOrder = async () => {
+    if (!user) {
+        alert("Autenticação necessária. Se não deseja criar conta, o Administrador precisa ativar o login 'Anônimo' no Firebase Console. Por favor, tente clicar na Logo duas vezes para tentar logar via Google.");
+        return;
+    }
+    if (!contactEmail) return;
+
+    const orderData = {
+        ownerId: user.uid,
+        status: 'pending',
+        documentType: isCoverLetterMode ? 'cover_letter' : 'resume',
+        documentData: isCoverLetterMode ? { content: generatedLetter } : resumeData,
+        contactEmail: contactEmail,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+    };
+    
+    try {
+        const orderRef = await addDoc(collection(db, 'orders'), orderData);
+        setCurrentOrderId(orderRef.id);
+        setOrderStatus('pending');
+        
+        await addDoc(collection(db, 'mail'), {
+            to: ['suportecvlab@gmail.com'],
+            message: {
+                subject: `Novo Pedido de Currículo - ID: ${orderRef.id}`,
+                html: `<p>Um novo pedido foi feito por <b>${orderData.contactEmail}</b>.</p><p>ID do Pedido: ${orderRef.id}</p><p>Acesse o painel administratrivo na plataforma para verificar o comprovativo e aprovar o download.</p>`
+            }
+        });
+
+        const waMessage = encodeURIComponent(`Olá CV LAB, fiz o pedido de emissão (ID: ${orderRef.id}) e aqui está o meu comprovativo de pagamento.`);
+        window.open(`https://wa.me/244954748806?text=${waMessage}`, '_blank');
+        
+    } catch(e) {
+        console.error(e);
+        alert("Erro ao processar o pedido. Tente novamente.");
     }
   };
 
@@ -960,7 +1068,7 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
     return (
       <div className="min-h-screen hero-gradient flex flex-col">
         <nav className="h-20 px-6 md:px-12 flex items-center justify-between glass sticky top-0 z-50">
-          <div className="cursor-pointer" onClick={() => setView('landing')}>
+          <div className="cursor-pointer" onClick={() => setView('landing')} onDoubleClick={loginWithGoogle}>
             <img 
               src="https://i.supaimg.com/6bc04951-8cbe-4706-9f0c-a01f9ea9a6c4/f7862e8c-46f6-4d82-a9e0-b9cb52c6fc4f.png" 
               alt="CV LAB" 
@@ -969,6 +1077,7 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
             />
           </div>
           <div className="hidden md:flex items-center gap-8 text-[10px] font-black tracking-widest text-text-muted uppercase">
+            {isAdmin && <button onClick={() => setView('admin')} className="text-red-500 hover:text-red-600 transition-colors focus:outline-none flex items-center gap-1.5 border border-red-100 bg-red-50 px-2 py-1 rounded">Painel Admin</button>}
             <button onClick={() => setView('tips')} className="hover:text-primary-blue transition-colors focus:outline-none flex items-center gap-1.5">
               Dicas <span className="text-[7px] bg-primary-blue text-white px-1 py-0.5 rounded-sm animate-pulse">Novo</span>
             </button>
@@ -979,7 +1088,20 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
             <button onClick={() => setView('faq')} className="hover:text-primary-blue transition-colors focus:outline-none">FAQ</button>
             <button onClick={() => setView('terms')} className="hover:text-primary-blue transition-colors focus:outline-none">Termos</button>
           </div>
-          <Button variant="outline" onClick={() => setView('editor')} className="text-xs uppercase tracking-widest">Criar CV</Button>
+          <div className="flex items-center gap-4">
+            {user && user.email !== 'anonymous' ? (
+                <div className="flex items-center gap-3">
+                  <div className="flex flex-col items-end">
+                    <span className="text-[10px] font-black text-deep-blue leading-none">{user.displayName}</span>
+                    <button onClick={logOut} className="text-[9px] text-red-500 font-bold uppercase tracking-tighter hover:underline">Sair</button>
+                  </div>
+                  <img src={user.photoURL || `https://ui-avatars.com/api/?name=${user.displayName}`} className="w-8 h-8 rounded-full border border-border-main" alt="Avatar" referrerPolicy="no-referrer" />
+                </div>
+              ) : (
+                <button onClick={loginWithGoogle} className="text-[10px] font-black text-primary-blue uppercase tracking-widest hover:opacity-70 transition-opacity">Entrar</button>
+              )}
+            <Button variant="outline" onClick={() => setView('editor')} className="text-xs uppercase tracking-widest">Criar CV</Button>
+          </div>
         </nav>
 
         {/* Animated Banner Carousel - Positioned after Header */}
@@ -1269,7 +1391,7 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
     );
   }
 
-  if (view === 'faq' || view === 'about' || view === 'terms' || view === 'tips' || view === 'showcase') {
+  if (view === 'faq' || view === 'about' || view === 'terms' || view === 'tips' || view === 'showcase' || view === 'admin') {
     return (
       <div className="min-h-screen hero-gradient flex flex-col">
         <nav className="h-20 px-6 md:px-12 flex items-center justify-between glass sticky top-0 z-50">
@@ -1279,9 +1401,11 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
               alt="CV LAB" 
               className="h-10 md:h-12 w-auto object-contain"
               referrerPolicy="no-referrer" 
+              onDoubleClick={loginWithGoogle}
             />
           </button>
           <div className="hidden md:flex items-center gap-8 text-[10px] font-black tracking-widest text-text-muted uppercase">
+            {isAdmin && <button onClick={() => setView('admin')} className="text-red-500 hover:text-red-600 transition-colors focus:outline-none flex items-center gap-1.5 border border-red-100 bg-red-50 px-2 py-1 rounded">Painel Admin</button>}
             <button onClick={() => setView('tips')} className="hover:text-primary-blue transition-colors focus:outline-none flex items-center gap-1.5">
               Dicas <span className="text-[7px] bg-primary-blue text-white px-1 py-0.5 rounded-sm animate-pulse">Novo</span>
             </button>
@@ -1292,13 +1416,30 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
             <button onClick={() => setView('faq')} className="hover:text-primary-blue transition-colors focus:outline-none">FAQ</button>
             <button onClick={() => setView('terms')} className="hover:text-primary-blue transition-colors focus:outline-none">Termos</button>
           </div>
-          <Button variant="outline" onClick={() => setView('editor')} className="text-xs uppercase tracking-widest">Criar CV</Button>
+          <div className="flex items-center gap-4">
+             {user && user.email !== 'anonymous' ? (
+                <div className="flex items-center gap-3">
+                  <div className="flex flex-col items-end">
+                    <span className="text-[10px] font-black text-deep-blue leading-none">{user.displayName}</span>
+                    <button onClick={logOut} className="text-[9px] text-red-500 font-bold uppercase tracking-tighter hover:underline">Sair</button>
+                  </div>
+                  <img src={user.photoURL || `https://ui-avatars.com/api/?name=${user.displayName}`} className="w-8 h-8 rounded-full border border-border-main" alt="Avatar" referrerPolicy="no-referrer" />
+                </div>
+              ) : (
+                <button onClick={loginWithGoogle} className="text-[10px] font-black text-primary-blue uppercase tracking-widest hover:opacity-70 transition-opacity">Entrar</button>
+              )}
+            <Button variant="outline" onClick={() => setView('editor')} className="text-xs uppercase tracking-widest">Criar CV</Button>
+          </div>
         </nav>
         
         <main className="flex-1 max-w-4xl mx-auto w-full px-6 py-16">
-          <button onClick={() => setView('landing')} className="text-primary-blue text-xs font-bold uppercase tracking-widest flex items-center gap-2 mb-8 hover:opacity-80 transition-opacity">
-            <ChevronLeft size={16} /> Voltar
-          </button>
+          {view !== 'admin' && (
+            <button onClick={() => setView('landing')} className="text-primary-blue text-xs font-bold uppercase tracking-widest flex items-center gap-2 mb-8 hover:opacity-80 transition-opacity">
+              <ChevronLeft size={16} /> Voltar
+            </button>
+          )}
+
+          {view === 'admin' && <AdminPanel />}
 
           {view === 'tips' && (
             <div className="space-y-12">
@@ -1524,6 +1665,85 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
   return (
     <div className="min-h-screen bg-bg-main flex flex-col md:flex-row justify-center md:h-screen md:overflow-hidden print:bg-white print:h-auto print:overflow-visible">
       
+      {/* Payment Modal Overlay */}
+      <AnimatePresence>
+        {showPaymentModal && (
+          <div className="fixed inset-0 bg-deep-blue/80 backdrop-blur-sm z-[9999] flex items-center justify-center p-4">
+            <motion.div 
+               initial={{ opacity: 0, scale: 0.9, y: 20 }}
+               animate={{ opacity: 1, scale: 1, y: 0 }}
+               exit={{ opacity: 0, scale: 0.9, y: 20 }}
+               className="bg-white rounded-3xl shadow-2xl p-8 max-w-md w-full relative overflow-hidden"
+            >
+               <button onClick={() => setShowPaymentModal(false)} className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 bg-gray-50 rounded-full p-2">
+                 <X size={20} />
+               </button>
+               
+               <div className="w-16 h-16 bg-primary-blue/10 text-primary-blue flex items-center justify-center rounded-2xl mb-6 mx-auto">
+                 <CreditCard size={32} />
+               </div>
+               
+               <h2 className="text-2xl font-black text-deep-blue text-center mb-2 tracking-tight">Liberar PDF do Currículo</h2>
+               <p className="text-sm text-text-muted text-center mb-6 font-medium">Após fazer o pedido, envie o comprovativo para o nosso suporte no WhatsApp para liberação imediata.</p>
+
+               {orderStatus === 'pending' ? (
+                 <div className="text-center space-y-6">
+                    <div className="bg-yellow-50 border border-yellow-100 p-4 rounded-xl">
+                      <p className="text-yellow-700 font-bold text-sm mb-1">Aguardando Pagamento</p>
+                      <p className="text-xs text-yellow-600">ID do Pedido: <span className="font-mono">{currentOrderId}</span></p>
+                    </div>
+                    
+                    <p className="text-xs text-gray-500 font-medium">Se você ainda não enviou o comprovativo, envie para o nosso WhatsApp:</p>
+                    
+                    <Button onClick={() => window.open(`https://wa.me/244954748806?text=${encodeURIComponent(`Olá CV LAB, fiz o pedido de emissão (ID: ${currentOrderId}) e aqui está o meu comprovativo de pagamento.`)}`, '_blank')} className="w-full bg-[#25D366] hover:bg-[#128C7E] shadow-none h-12 text-white">
+                      <MessageCircle size={18} /> Enviar Comprovativo
+                    </Button>
+
+                    <div className="flex items-center justify-center gap-2 mt-4 text-[10px] uppercase font-bold tracking-widest text-gray-400">
+                      <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 2, ease: 'linear' }}><Settings size={12} /></motion.div>
+                      Aguardando Liberação do ADM...
+                    </div>
+                 </div>
+               ) : (
+                 <form onSubmit={(e) => { e.preventDefault(); createOrder(); }} className="space-y-4">
+                    <Input 
+                       label="Seu Email de Contacto" 
+                       type="email" 
+                       required 
+                       value={contactEmail} 
+                       onChange={setContactEmail} 
+                       icon={Mail} 
+                       placeholder="exemplo@email.com" 
+                    />
+                    
+                    <div className="bg-gray-50 p-4 rounded-xl border border-gray-100 mt-4 flex flex-col gap-3">
+                       <h3 className="text-[10px] font-black uppercase text-gray-400 tracking-wider">Dados para Pagamento</h3>
+                       
+                       <div className="flex items-center gap-3 bg-white p-3 rounded-lg border border-gray-100 shadow-sm">
+                         <img src="https://i.supaimg.com/6bc04951-8cbe-4706-9f0c-a01f9ea9a6c4/1c1795b0-8faf-4c4d-a939-e439d7e7903e.png" alt="Multicaixa Express" className="h-8 w-12 object-contain" referrerPolicy="no-referrer" />
+                         <div className="text-xs">
+                            <p className="text-gray-500 font-medium leading-none mb-1">Multicaixa Express</p>
+                            <p className="font-black text-gray-800 text-sm leading-none">954748806</p>
+                         </div>
+                       </div>
+
+                       <div className="bg-white p-3 rounded-lg border border-gray-100 shadow-sm text-xs">
+                          <p className="text-gray-500 font-medium mb-1">Transferência Bancária</p>
+                          <p className="font-mono text-gray-800 font-bold mb-0.5 text-[11px]">IBAN: 0040 0000 82177395101 67</p>
+                          <p className="text-gray-600 font-medium text-[11px]">Jelson Monteiro Francisco</p>
+                       </div>
+                    </div>
+
+                    <Button type="submit" className="w-full h-12 text-base shadow-xl shadow-primary-blue/20 mt-2">
+                      Já Paguei, Enviar Comprovativo
+                    </Button>
+                 </form>
+               )}
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
       {/* Sidebar Editor */}
       <aside className={`w-full max-w-3xl mx-auto md:w-[600px] bg-white border-x border-border-main flex flex-col shadow-2xl z-30 print:hidden shrink-0 ${showPreviewModal ? 'hidden' : 'flex'}`}>
         <header className="p-4 border-b border-border-main flex items-center justify-between sticky top-0 bg-white z-40 shadow-sm">
