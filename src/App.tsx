@@ -263,36 +263,39 @@ const MyResumesPage = ({ user, setView }: { user: any, setView: (v: any) => void
         return unsubscribe;
     }, [user]);
 
-    const downloadPDF = async (order: any) => {
+    const downloadPDF = async (order: any, specificType: 'resume' | 'cover_letter' = 'resume') => {
         if (isGenerating) return;
-        setIsGenerating(order.id);
-        setPrintingOrder(order);
+        setIsGenerating(`${order.id}-${specificType}`);
+        setPrintingOrder({ 
+            ...order, 
+            documentType: specificType, 
+            documentData: order.documentType === 'combo' 
+                ? (specificType === 'resume' ? order.documentData.resume : order.documentData.coverLetter)
+                : order.documentData 
+        });
         
         // Short delay to ensure React renders the hidden component
         setTimeout(async () => {
-             const element = document.getElementById('my-resumes-print-renderer');
+             const elementId = specificType === 'resume' ? 'resume-content' : 'cover-letter-content';
+             const container = document.getElementById('my-resumes-print-renderer');
+             const element = container?.querySelector(`#${elementId}`);
+             
              if (!element) {
                  setIsGenerating(null);
                  setPrintingOrder(null);
                  return;
              }
-             
+
              const opt = {
                 margin: 0,
-                filename: `${order.documentType === 'resume' ? 'Curriculo' : 'Carta'}_CVLAB_${order.id}.pdf`,
+                filename: specificType === 'resume' ? 'Curriculo_CVLAB.pdf' : 'Carta_Apresentacao_CVLAB.pdf',
                 image: { type: 'jpeg' as const, quality: 0.98 },
-                html2canvas: { 
-                    scale: 2, 
-                    useCORS: true, 
-                    letterRendering: true, 
-                    backgroundColor: '#ffffff',
-                    scrollY: 0,
-                    scrollX: 0
-                },
+                html2canvas: { scale: 2, useCORS: true, letterRendering: true, backgroundColor: '#ffffff' },
                 jsPDF: { unit: 'px', format: [794, 1122] as [number, number], orientation: 'portrait' as const, compress: true }
               };
               
               try {
+                  // @ts-ignore
                   await html2pdf().set(opt).from(element).save();
               } catch (err) {
                   console.error("Erro ao gerar PDF:", err);
@@ -306,44 +309,59 @@ const MyResumesPage = ({ user, setView }: { user: any, setView: (v: any) => void
 
     if (loading) return <div className="p-20 text-center"><div className="animate-spin w-8 h-8 border-4 border-primary-blue border-t-transparent rounded-full mx-auto"></div></div>;
 
+    // Expand combo orders into separate items for the user to see both
+    const expandedItems: any[] = [];
+    myOrders.forEach(o => {
+        if (o.documentType === 'combo') {
+            expandedItems.push({ ...o, subType: 'resume', displayName: 'Currículo Profissional' });
+            expandedItems.push({ ...o, subType: 'cover_letter', displayName: 'Carta de Apresentação' });
+        } else {
+            expandedItems.push({ 
+                ...o, 
+                subType: o.documentType, 
+                displayName: o.documentType === 'cover_letter' ? 'Carta de Apresentação' : 'Currículo Profissional' 
+            });
+        }
+    });
+
     return (
         <div className="max-w-4xl mx-auto py-10 px-6 space-y-8 relative">
             <header className="space-y-2">
-                <h2 className="text-3xl font-black text-deep-blue text-center md:text-left">Meus Currículos</h2>
-                <p className="text-sm text-text-muted text-center md:text-left">Acompanhe o estado dos seus pedidos de liberação e PDF.</p>
+                <h2 className="text-3xl font-black text-deep-blue text-center md:text-left">Meus Documentos</h2>
+                <p className="text-sm text-text-muted text-center md:text-left">Acompanhe o estado dos seus currículos e cartas de apresentação.</p>
             </header>
 
             <div className="grid gap-4">
-                {myOrders.map(order => (
-                    <div key={order.id} className="bg-white p-6 rounded-3xl border border-border-main shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4 transition-all hover:border-primary-blue/30">
+                {expandedItems.map((item, idx) => (
+                    <div key={`${item.id}-${item.subType}-${idx}`} className="bg-white p-6 rounded-3xl border border-border-main shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4 transition-all hover:border-primary-blue/30">
                         <div className="space-y-2">
                             <div className="flex items-center gap-2">
-                                <span className={`w-2 h-2 rounded-full ${order.status === 'approved' ? 'bg-green-500' : 'bg-amber-500 animate-pulse'}`}></span>
-                                <span className="text-[10px] uppercase font-black tracking-widest text-text-muted">Pedido {order.id.slice(0, 8)}...</span>
+                                <span className={`w-2 h-2 rounded-full ${item.status === 'approved' ? 'bg-green-500' : 'bg-amber-500 animate-pulse'}`}></span>
+                                <span className="text-[10px] uppercase font-black tracking-widest text-text-muted">Pedido {item.id.slice(0, 8)}...</span>
                             </div>
                             <h3 className="font-black text-lg text-deep-blue">
-                                {order.documentType === 'resume' ? 'Currículo Profissional' : 'Carta de Apresentação'}
+                                {item.displayName}
                             </h3>
-                            <p className="text-[11px] text-text-muted font-bold opacity-60">Solicitado em {new Date(order.createdAt).toLocaleDateString('pt-BR')}</p>
+                            <p className="text-[11px] text-text-muted font-bold opacity-60">Solicitado em {new Date(item.createdAt).toLocaleDateString('pt-BR')}</p>
                         </div>
 
                         <div className="flex flex-col sm:flex-row items-center gap-4">
                             <div className={`px-4 py-2 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] ${
-                                order.status === 'approved' 
+                                item.status === 'approved' 
                                 ? 'bg-green-50 text-green-600' 
                                 : 'bg-amber-50 text-amber-600'
                             }`}>
-                                {order.status === 'approved' ? 'Aprovado' : 'Pendente de Aprovação'}
+                                {item.status === 'approved' ? 'Aprovado' : 'Aguardando Pagamento'}
                             </div>
                             
-                            {order.status === 'approved' && (
+                            {item.status === 'approved' && (
                                 <Button 
                                     size="sm" 
-                                    onClick={() => downloadPDF(order)} 
+                                    onClick={() => downloadPDF(item, item.subType)} 
                                     disabled={!!isGenerating}
                                     className="bg-primary-blue text-white hover:bg-deep-blue h-12 px-8 rounded-2xl shadow-xl shadow-primary-blue/20 w-full sm:w-auto"
                                 >
-                                   {isGenerating === order.id ? (
+                                   {isGenerating === `${item.id}-${item.subType}` ? (
                                        <div className="flex items-center gap-2">
                                            <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
                                            <span>Baixando...</span>
@@ -458,23 +476,15 @@ const AdminPanel = () => {
                                 <h2 style="color: #111827; margin-top: 0;">Olá! Ótimas notícias.</h2>
                                 <p>O seu pedido de <b>${order.documentType === 'resume' ? 'Currículo Profissional' : 'Carta de Apresentação'}</b> foi analisado e aprovado com sucesso.</p>
                                 <p>Você já pode baixar o seu documento em alta definição diretamente na sua central de currículos.</p>
-                                
-                                <div style="margin: 40px 0; text-align: center;">
-                                    <a href="https://cvlab.app/my-resumes" style="background-color: #0D8ABC; color: white; padding: 16px 32px; text-decoration: none; border-radius: 12px; font-weight: bold; font-size: 16px; display: inline-block; box-shadow: 0 4px 6px -1px rgba(13, 138, 188, 0.2);">Aceder aos Meus Currículos</a>
+                                <div style="text-align: center; margin: 30px 0;">
+                                    <a href="${window.location.origin}" style="background-color: #0D8ABC; color: white; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px;">Ir para Meus Currículos</a>
                                 </div>
-                                
-                                <div style="background-color: #f9fafb; padding: 20px; border-radius: 12px; font-size: 14px;">
-                                    <p style="margin: 0; color: #6b7280;"><b>ID do Pedido:</b> ${order.id}</p>
-                                    <p style="margin: 5px 0 0 0; color: #6b7280;"><b>Email de Contacto:</b> ${order.contactEmail}</p>
-                                </div>
-                                
-                                <p style="margin-top: 30px; font-size: 14px; color: #4b5563;">
-                                    Agradecemos por escolher a CV LAB. Desejamos muito sucesso na sua jornada profissional!
+                                <p style="font-size: 14px; color: #6b7280; border-top: 1px solid #e5e7eb; pt: 20px; margin-top: 20px;">
+                                    Se tiver qualquer dúvida, entre em contacto com o nosso suporte.
                                 </p>
                             </div>
-                            <div style="padding: 20px; text-align: center; font-size: 12px; color: #9ca3af;">
-                                <p>© 2026 CV LAB. Todos os direitos reservados.</p>
-                                <p>Esta é uma notificação automática, por favor não responda.</p>
+                            <div style="text-align: center; padding: 20px; color: #9ca3af; font-size: 12px;">
+                                © 2026 CV LAB Angola - Todos os direitos reservados.
                             </div>
                         </div>
                     `
@@ -546,7 +556,8 @@ const AdminPanel = () => {
                             <tr>
                                 <th className="px-6 py-4">Data</th>
                                 <th className="px-6 py-4">ID Pedido</th>
-                                <th className="px-6 py-4">Email Contacto</th>
+                                <th className="px-6 py-4">Email</th>
+                                <th className="px-6 py-4">Tipo</th>
                                 <th className="px-6 py-4 text-center">Status</th>
                                 <th className="px-6 py-4 text-right">Ação</th>
                             </tr>
@@ -564,6 +575,11 @@ const AdminPanel = () => {
                                         <span className="font-mono text-[11px] bg-gray-100 px-2 py-1 rounded-md text-gray-600 group-hover:bg-gray-200 transition-colors">{o.id}</span>
                                     </td>
                                     <td className="px-6 py-5 font-medium">{o.contactEmail}</td>
+                                    <td className="px-6 py-5">
+                                        <span className="text-[10px] font-bold text-gray-400 uppercase tracking-tighter">
+                                            {o.documentType === 'combo' ? 'Combo (CV+Carta)' : (o.documentType === 'resume' ? 'Currículo' : 'Carta')}
+                                        </span>
+                                    </td>
                                     <td className="px-6 py-5 text-center">
                                         <span className={`text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full ${
                                             o.status === 'pending' ? 'bg-amber-50 text-amber-600' : 'bg-green-50 text-green-600'
@@ -1349,12 +1365,15 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
     const orderData = {
         ownerId: user.uid,
         status: 'pending',
-        documentType: isCoverLetterMode ? 'cover_letter' : 'resume',
-        documentData: isCoverLetterMode ? { 
-            content: generatedLetter,
-            personalInfo: resumeData.personalInfo,
-            themeColor: resumeData.themeColor
-        } : resumeData,
+        documentType: 'combo',
+        documentData: {
+            resume: { ...resumeData, template },
+            coverLetter: {
+                content: generatedLetter,
+                personalInfo: resumeData.personalInfo,
+                themeColor: resumeData.themeColor
+            }
+        },
         contactEmail: contactEmail,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
@@ -1368,17 +1387,21 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
         await addDoc(collection(db, 'mail'), {
             to: ['suportecvlab@gmail.com'],
             message: {
-                subject: `Novo Pedido de Currículo - ID: ${orderRef.id}`,
+                subject: `🚨 NOVO COMBO - ${orderData.contactEmail}`,
                 html: `
-                    <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; color: #333;">
-                        <h2 style="color: #0D8ABC;">Novo Pedido de Currículo / Carta</h2>
-                        <p>Um novo pedido foi feito por <b>${orderData.contactEmail}</b>.</p>
-                        <p><b>ID do Pedido:</b> ${orderRef.id}</p>
-                        <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;" />
-                        <h3 style="color: #555;">Dados do Documento Associado:</h3>
-                        <pre style="background-color: #f4f4f4; padding: 15px; border-radius: 8px; font-size: 13px; overflow-x: auto; white-space: pre-wrap; word-wrap: break-word;">${JSON.stringify(orderData.documentData, null, 2)}</pre>
-                        <br/>
-                        <p>Acesse o <a href="https://cvlab.app/admin" style="color: #0D8ABC;">painel administrativo</a> (ou clique no botão no site) para verificar os comprovativos e aprovar o download.</p>
+                    <div style="font-family: sans-serif; max-width: 600px; border: 1px solid #eee; border-radius: 12px; overflow: hidden;">
+                        <div style="background-color: #0D8ABC; color: white; padding: 20px; text-align: center;">
+                            <h2 style="margin: 0;">Novo Combo Profissional</h2>
+                        </div>
+                        <div style="padding: 30px; color: #333;">
+                            <p><b>Usuário:</b> ${orderData.contactEmail}</p>
+                            <p><b>Tipo:</b> Combo (CV + Carta)</p>
+                            <p><b>ID do Pedido:</b> <code style="background: #f4f4f4; padding: 2px 6px; border-radius: 4px;">${orderRef.id}</code></p>
+                            <p><b>Data:</b> ${new Date().toLocaleString('pt-AO')}</p>
+                            <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;" />
+                            <p style="font-size: 14px; color: #666;">Acesse o Painel Administrativo para validar o comprovativo e liberar o acesso ao combo.</p>
+                            <a href="${window.location.origin}/admin" style="display: inline-block; background-color: #0D8ABC; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: bold; margin-top: 10px;">Ver Pedidos no Painel</a>
+                        </div>
                     </div>
                 `
             }
@@ -1868,14 +1891,14 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
             </button>
           </div>
 
-          <div className="flex-[2] hidden lg:flex flex-col items-center gap-2">
+          <div className="flex-[2] flex flex-col items-center gap-1.5">
             <Button 
               onClick={() => setView('editor')} 
-              className="bg-primary-blue hover:bg-deep-blue text-white px-8 h-11 text-xs uppercase tracking-[0.2em] font-black shadow-lg shadow-primary-blue/20 transition-all hover:scale-105 active:scale-95"
+              className="bg-primary-blue hover:bg-deep-blue text-white px-6 md:px-8 h-10 md:h-11 text-[10px] md:text-xs uppercase tracking-[0.2em] font-black shadow-lg shadow-primary-blue/20 transition-all hover:scale-105 active:scale-95 rounded-full"
             >
-              Criar Novo Currículo
+              Criar CV
             </Button>
-            <div className="flex items-center gap-6 text-[9px] font-black tracking-widest text-text-muted uppercase">
+            <div className="hidden lg:flex items-center gap-6 text-[9px] font-black tracking-widest text-text-muted uppercase">
               <button onClick={() => setView('tips')} className="hover:text-primary-blue transition-colors">Dicas</button>
               <button onClick={() => setView('showcase')} className="hover:text-primary-blue transition-colors">Exemplos</button>
               <button onClick={() => setView('about')} className="hover:text-primary-blue transition-colors">Sobre Nós</button>
@@ -2161,8 +2184,8 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
                  <CreditCard size={32} />
                </div>
                
-               <h2 className="text-2xl font-black text-deep-blue text-center mb-2 tracking-tight">Combo Profissional: 1.150 Kzs</h2>
-               <p className="text-sm text-text-muted text-center mb-6 font-medium">Libere o PDF do seu Currículo + Carta de Apresentação. Envie o comprovativo para o WhatsApp para activação instantânea.</p>
+               <h2 className="text-2xl font-black text-deep-blue text-center mb-2 tracking-tight">Combo (CV + Carta): 1.150 Kzs</h2>
+               <p className="text-sm text-text-muted text-center mb-6 font-medium">O pagamento único de 1.150 Kzs libera tanto o seu Currículo quanto a sua Carta de Apresentação simultaneamente.</p>
 
                {orderStatus === 'pending' ? (
                  <div className="text-center space-y-6">
