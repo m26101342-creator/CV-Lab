@@ -195,24 +195,27 @@ const ProfilePage = ({ user, isAdmin, setView, onLogout }: { user: any, isAdmin:
 
 const CoverLetterRenderer = ({ content, personalInfo, themeColor }: { content: string; personalInfo: any; themeColor?: string }) => {
   const c = { primary: themeColor || '#1B2A4A' };
+  const info = personalInfo || {};
+  
   return (
     <div 
       id="cover-letter-content"
       className="bg-white h-[1122px] w-[794px] p-20 relative flex flex-col font-sans text-left shadow-2xl overflow-hidden"
     >
+       {/* Minimalist Professional Header */}
        <div className="flex justify-between items-start border-b-2 pb-8 mb-10 mt-4" style={{ borderColor: `${c.primary}30` }}>
          <div className="space-y-1.5 max-w-[60%]">
            <h1 className="text-[32px] font-black tracking-tight leading-none" style={{ color: c.primary }}>
-             {personalInfo.fullName || 'Seu Nome'}
+             {info.fullName || 'Seu Nome'}
            </h1>
            <p className="text-gray-500 font-bold tracking-[0.1em] text-[11px] uppercase">
-             {personalInfo.title || 'Seu Cargo'}
+             {info.title || 'Seu Cargo'}
            </p>
          </div>
          <div className="text-right space-y-2 text-gray-500 font-medium text-[11px] bg-gray-50/50 p-4 rounded-xl border border-gray-100">
-           {personalInfo.email && <div className="flex items-center justify-end gap-2 text-gray-700"><span>{personalInfo.email}</span><Mail size={12} className="opacity-60"/></div>}
-           {personalInfo.phone && <div className="flex items-center justify-end gap-2 text-gray-700"><span>{personalInfo.phone}</span><Phone size={12} className="opacity-60"/></div>}
-           {personalInfo.location && <div className="flex items-center justify-end gap-2 text-gray-700"><span>{personalInfo.location}</span><MapPin size={12} className="opacity-60"/></div>}
+           {info.email && <div className="flex items-center justify-end gap-2 text-gray-700"><span>{info.email}</span><Mail size={12} className="opacity-60"/></div>}
+           {info.phone && <div className="flex items-center justify-end gap-2 text-gray-700"><span>{info.phone}</span><Phone size={12} className="opacity-60"/></div>}
+           {info.location && <div className="flex items-center justify-end gap-2 text-gray-700"><span>{info.location}</span><MapPin size={12} className="opacity-60"/></div>}
          </div>
        </div>
 
@@ -229,7 +232,7 @@ const CoverLetterRenderer = ({ content, personalInfo, themeColor }: { content: s
           <div className="text-right">
              <p className="text-[11px] text-gray-400 uppercase tracking-widest mb-4">Atentamente,</p>
              <p className="text-[18px] font-black italic tracking-tighter" style={{ color: c.primary }}>
-                {personalInfo.fullName}
+                {info.fullName || 'Seu Nome'}
              </p>
           </div>
        </div>
@@ -241,6 +244,7 @@ const MyResumesPage = ({ user, setView }: { user: any, setView: (v: any) => void
     const [myOrders, setMyOrders] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [printingOrder, setPrintingOrder] = useState<any>(null);
+    const [isGenerating, setIsGenerating] = useState<string | null>(null);
 
     useEffect(() => {
         if (!user || user.email === 'anonymous') return;
@@ -260,12 +264,15 @@ const MyResumesPage = ({ user, setView }: { user: any, setView: (v: any) => void
     }, [user]);
 
     const downloadPDF = async (order: any) => {
+        if (isGenerating) return;
+        setIsGenerating(order.id);
         setPrintingOrder(order);
-        alert("Iniciando a geração do PDF... Isso levará apenas alguns segundos.");
         
+        // Short delay to ensure React renders the hidden component
         setTimeout(async () => {
              const element = document.getElementById('my-resumes-print-renderer');
              if (!element) {
+                 setIsGenerating(null);
                  setPrintingOrder(null);
                  return;
              }
@@ -274,7 +281,14 @@ const MyResumesPage = ({ user, setView }: { user: any, setView: (v: any) => void
                 margin: 0,
                 filename: `${order.documentType === 'resume' ? 'Curriculo' : 'Carta'}_CVLAB_${order.id}.pdf`,
                 image: { type: 'jpeg', quality: 0.98 },
-                html2canvas: { scale: 2, useCORS: true, letterRendering: true, backgroundColor: '#ffffff' },
+                html2canvas: { 
+                    scale: 2, 
+                    useCORS: true, 
+                    letterRendering: true, 
+                    backgroundColor: '#ffffff',
+                    scrollY: 0,
+                    scrollX: 0
+                },
                 jsPDF: { unit: 'px', format: [794, 1122] as [number, number], orientation: 'portrait' as const, compress: true }
               };
               
@@ -284,46 +298,59 @@ const MyResumesPage = ({ user, setView }: { user: any, setView: (v: any) => void
                   console.error("Erro ao gerar PDF:", err);
                   alert("Erro ao baixar o documento. Por favor, tente novamente.");
               } finally {
+                  setIsGenerating(null);
                   setPrintingOrder(null);
               }
-        }, 800);
+        }, 1000);
     };
 
     if (loading) return <div className="p-20 text-center"><div className="animate-spin w-8 h-8 border-4 border-primary-blue border-t-transparent rounded-full mx-auto"></div></div>;
 
     return (
-        <div className="max-w-4xl mx-auto py-10 px-6 space-y-8">
+        <div className="max-w-4xl mx-auto py-10 px-6 space-y-8 relative">
             <header className="space-y-2">
-                <h2 className="text-3xl font-black text-deep-blue">Meus Currículos</h2>
-                <p className="text-text-muted">Acompanhe o estado dos seus pedidos de liberação e PDF.</p>
+                <h2 className="text-3xl font-black text-deep-blue text-center md:text-left">Meus Currículos</h2>
+                <p className="text-sm text-text-muted text-center md:text-left">Acompanhe o estado dos seus pedidos de liberação e PDF.</p>
             </header>
 
             <div className="grid gap-4">
                 {myOrders.map(order => (
-                    <div key={order.id} className="bg-white p-6 rounded-2xl border border-border-main shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
-                        <div className="space-y-1">
+                    <div key={order.id} className="bg-white p-6 rounded-3xl border border-border-main shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4 transition-all hover:border-primary-blue/30">
+                        <div className="space-y-2">
                             <div className="flex items-center gap-2">
-                                <span className={`w-2 h-2 rounded-full ${order.status === 'approved' ? 'bg-green-500' : 'bg-amber-500'}`}></span>
-                                <span className="text-[10px] uppercase font-black tracking-widest text-text-muted">Pedido {order.id}</span>
+                                <span className={`w-2 h-2 rounded-full ${order.status === 'approved' ? 'bg-green-500' : 'bg-amber-500 animate-pulse'}`}></span>
+                                <span className="text-[10px] uppercase font-black tracking-widest text-text-muted">Pedido {order.id.slice(0, 8)}...</span>
                             </div>
-                            <h3 className="font-bold text-deep-blue">
+                            <h3 className="font-black text-lg text-deep-blue">
                                 {order.documentType === 'resume' ? 'Currículo Profissional' : 'Carta de Apresentação'}
                             </h3>
-                            <p className="text-[11px] text-text-muted italic">Solicitado em {new Date(order.createdAt).toLocaleDateString()}</p>
+                            <p className="text-[11px] text-text-muted font-bold opacity-60">Solicitado em {new Date(order.createdAt).toLocaleDateString('pt-BR')}</p>
                         </div>
 
-                        <div className="flex items-center gap-3">
-                            <div className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest ${
+                        <div className="flex flex-col sm:flex-row items-center gap-4">
+                            <div className={`px-4 py-2 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] ${
                                 order.status === 'approved' 
                                 ? 'bg-green-50 text-green-600' 
                                 : 'bg-amber-50 text-amber-600'
                             }`}>
-                                {order.status === 'approved' ? 'Aprovado para Download' : 'Pendente de Aprovação'}
+                                {order.status === 'approved' ? 'Aprovado' : 'Pendente de Aprovação'}
                             </div>
                             
                             {order.status === 'approved' && (
-                                <Button size="sm" onClick={() => downloadPDF(order)} className="bg-green-600 text-white border-transparent hover:bg-green-700 h-10 px-6 rounded-2xl shadow-lg shadow-green-600/20">
-                                   <Download size={16} className="mr-2" /> Baixar PDF
+                                <Button 
+                                    size="sm" 
+                                    onClick={() => downloadPDF(order)} 
+                                    disabled={!!isGenerating}
+                                    className="bg-primary-blue text-white hover:bg-deep-blue h-12 px-8 rounded-2xl shadow-xl shadow-primary-blue/20 w-full sm:w-auto"
+                                >
+                                   {isGenerating === order.id ? (
+                                       <div className="flex items-center gap-2">
+                                           <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                                           <span>Baixando...</span>
+                                       </div>
+                                   ) : (
+                                       <><Download size={16} className="mr-2" /> Baixar PDF</>
+                                   )}
                                 </Button>
                             )}
                         </div>
@@ -332,8 +359,8 @@ const MyResumesPage = ({ user, setView }: { user: any, setView: (v: any) => void
                 
                 {myOrders.length === 0 && (
                     <div className="bg-white p-20 rounded-[48px] border border-border-main text-center space-y-6 shadow-sm">
-                        <div className="w-20 h-20 bg-bg-main rounded-3xl flex items-center justify-center mx-auto">
-                            <FileText size={40} className="text-gray-300" />
+                        <div className="w-20 h-20 bg-soft-blue/20 rounded-3xl flex items-center justify-center mx-auto">
+                            <FileText size={40} className="text-primary-blue/30" />
                         </div>
                         <div className="space-y-2">
                             <h3 className="text-2xl font-black text-deep-blue">Nenhum currículo ainda</h3>
@@ -345,21 +372,23 @@ const MyResumesPage = ({ user, setView }: { user: any, setView: (v: any) => void
             </div>
 
             {/* Hidden Renderer for PDF generation */}
-            {printingOrder && (
-                <div className="fixed top-0 left-0 z-[-100] opacity-0 pointer-events-none" style={{ width: '794px', height: '1122px', backgroundColor: 'white' }}>
-                    <div id="my-resumes-print-renderer">
-                        {printingOrder.documentType === 'resume' ? (
-                            <ResumeRenderer data={printingOrder.documentData} templateId={printingOrder.documentData.template || 't1_executive'} />
-                        ) : (
-                            <CoverLetterRenderer 
-                                content={printingOrder.documentData.content} 
-                                personalInfo={printingOrder.documentData.personalInfo} 
-                                themeColor={printingOrder.documentData.themeColor} 
-                            />
-                        )}
+            <AnimatePresence>
+                {printingOrder && (
+                    <div className="fixed top-0 left-0 z-[-500] opacity-0 pointer-events-none" style={{ width: '794px', height: '1122px' }}>
+                        <div id="my-resumes-print-renderer">
+                            {printingOrder.documentType === 'resume' ? (
+                                <ResumeRenderer data={printingOrder.documentData} templateId={printingOrder.documentData.template || 't1_executive'} />
+                            ) : (
+                                <CoverLetterRenderer 
+                                    content={printingOrder.documentData.content} 
+                                    personalInfo={printingOrder.documentData.personalInfo} 
+                                    themeColor={printingOrder.documentData.themeColor} 
+                                />
+                            )}
+                        </div>
                     </div>
-                </div>
-            )}
+                )}
+            </AnimatePresence>
         </div>
     );
 };
