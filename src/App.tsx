@@ -1184,6 +1184,7 @@ const ResumeRenderer = ({ data, templateId }: { data: ResumeData; templateId: Te
 export default function App() {
   const { user, isAdmin } = useAuth();
   const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [showAuthModal, setShowAuthModal] = useState(false);
   const [currentOrderId, setCurrentOrderId] = useState<string | null>(null);
   const [orderStatus, setOrderStatus] = useState<string | null>(null);
   const [contactEmail, setContactEmail] = useState('');
@@ -1351,13 +1352,17 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
   };
 
   const handleDownloadPdf = () => {
+    if (!user || user.isAnonymous) {
+      setShowAuthModal(true);
+      return;
+    }
     setShowPaymentModal(true);
-    setContactEmail(user?.email && user.email !== 'anonymous' ? user.email : '');
+    setContactEmail(user.email || '');
   };
 
   const createOrder = async () => {
-    if (!user) {
-        alert("Autenticação necessária. Se não deseja criar conta, o Administrador precisa ativar o login 'Anônimo' no Firebase Console. Por favor, tente clicar na Logo duas vezes para tentar logar via Google.");
+    if (!user || user.isAnonymous) {
+        setShowAuthModal(true);
         return;
     }
     if (!contactEmail) return;
@@ -2240,6 +2245,62 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
                     </Button>
                  </form>
                )}
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Auth Required Modal */}
+      <AnimatePresence>
+        {showAuthModal && (
+          <div className="fixed inset-0 bg-deep-blue/80 backdrop-blur-sm z-[9999] flex items-center justify-center p-4">
+            <motion.div 
+               initial={{ opacity: 0, scale: 0.9, y: 20 }}
+               animate={{ opacity: 1, scale: 1, y: 0 }}
+               exit={{ opacity: 0, scale: 0.9, y: 20 }}
+               className="bg-white rounded-[40px] shadow-2xl p-10 max-w-sm w-full relative overflow-hidden text-center space-y-6"
+            >
+               <button onClick={() => setShowAuthModal(false)} className="absolute top-6 right-6 text-gray-400 hover:text-gray-600 bg-gray-50 rounded-full p-2">
+                 <X size={20} />
+               </button>
+               
+               <div className="w-20 h-20 bg-primary-blue/10 text-primary-blue flex items-center justify-center rounded-3xl mx-auto">
+                 <User size={40} />
+               </div>
+               
+               <div className="space-y-2">
+                 <h2 className="text-2xl font-black text-deep-blue tracking-tight">Login Necessário</h2>
+                 <p className="text-sm text-text-muted font-medium leading-relaxed">Para solicitar a liberação do seu currículo e garantir o seu acesso futuro, você precisa estar conectado a uma conta.</p>
+               </div>
+               
+               <div className="space-y-3 pt-2">
+                 <Button 
+                   onClick={async () => {
+                     await loginWithGoogle();
+                     setShowAuthModal(false);
+                     // If login was successful, show payment modal
+                     if (auth.currentUser && !auth.currentUser.isAnonymous) {
+                        setShowPaymentModal(true);
+                        setContactEmail(auth.currentUser.email || '');
+                     }
+                   }} 
+                   className="w-full h-14 bg-primary-blue hover:bg-deep-blue text-white shadow-xl shadow-primary-blue/20 rounded-2xl text-base font-black"
+                   icon={User}
+                 >
+                   Entrar com Google
+                 </Button>
+                 <button 
+                   onClick={() => setShowAuthModal(false)}
+                   className="text-[10px] font-black text-text-muted uppercase tracking-[0.2em] hover:text-deep-blue transition-colors"
+                 >
+                   Continuar Editando
+                 </button>
+               </div>
+
+               <div className="pt-4 border-t border-gray-100 flex items-center justify-center gap-2">
+                 <Shield size={14} className="text-green-500" />
+                 <span className="text-[9px] font-black uppercase tracking-widest text-gray-400">Segurança de Dados Garantida</span>
+               </div>
             </motion.div>
           </div>
         )}
