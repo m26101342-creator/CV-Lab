@@ -1,13 +1,13 @@
 import { GoogleGenAI, ThinkingLevel } from "@google/genai";
 
 // Initialize lazily to prevent app crash on load if key is missing
-let aiInstance: GoogleGenAI | null = null;
+let engineInstance: GoogleGenAI | null = null;
 
-function getAI() {
-  if (!aiInstance) {
+function getEngine() {
+  if (!engineInstance) {
     // Check various sources for API key:
-    // 1. process.env (Standard AI Studio environment)
-    // 2. import.meta.env.VITE_GEMINI_API_KEY (Standard Vite production build)
+    // 1. process.env (Standard environment)
+    // 2. import.meta.env.VITE_GEMINI_API_KEY (Standard production build)
     let apiKey = "";
     
     // @ts-ignore - process might not exist in browser
@@ -20,14 +20,14 @@ function getAI() {
     }
     
     if (!apiKey) {
-      console.warn("GEMINI_API_KEY is missing. AI features may not work outside the preview environment without configuration.");
+      console.warn("GEMINI_API_KEY is missing. Features may not work outside the preview environment without configuration.");
     }
     
     // Note: The fallback below is for demo purposes in safe environments. 
     // In production, the key MUST be provided via environment variables.
-    aiInstance = new GoogleGenAI({ apiKey: apiKey || "" });
+    engineInstance = new GoogleGenAI({ apiKey: apiKey || "" });
   }
-  return aiInstance;
+  return engineInstance;
 }
 
 export async function optimizeResumeText(text: string, type: 'summary' | 'experience' | 'skills'): Promise<string> {
@@ -47,8 +47,8 @@ export async function optimizeResumeText(text: string, type: 'summary' | 'experi
   `;
 
   try {
-    const ai = getAI();
-    const response = await ai.models.generateContent({
+    const engine = getEngine();
+    const response = await engine.models.generateContent({
       model: "gemini-3-flash-preview",
       contents: prompt,
       config: {
@@ -61,7 +61,7 @@ export async function optimizeResumeText(text: string, type: 'summary' | 'experi
     const result = response.text?.trim();
     return result && result.length > 5 ? result.replace(/\*/g, '') : text;
   } catch (error) {
-    console.error("Erro na otimização Gemini:", error);
+    console.error("Erro na otimização do sistema:", error);
     return text;
   }
 }
@@ -85,8 +85,8 @@ export async function generateCoverLetter(resumeData: any, jobTitle: string): Pr
   `;
 
   try {
-    const ai = getAI();
-    const response = await ai.models.generateContent({
+    const engine = getEngine();
+    const response = await engine.models.generateContent({
       model: "gemini-3-flash-preview",
       contents: prompt,
       config: {
@@ -98,14 +98,14 @@ export async function generateCoverLetter(resumeData: any, jobTitle: string): Pr
     const result = response.text?.trim();
     return result || "Sentimos muito, não foi possível gerar a carta agora. Tente novamente em instantes.";
   } catch (error) {
-    console.error("Erro ao gerar carta com Gemini:", error);
+    console.error("Erro ao gerar carta com o sistema:", error);
     return "Ocorreu um erro técnico ao gerar sua carta. Verifique sua conexão.";
   }
 }
 
 export async function generateFullResume(personalInfo: any): Promise<any> {
   const prompt = `
-    Você é um assistente de carreira inteligente. 
+    Você é um assistente de carreira. 
     Com base nas informações básicas do usuário abaixo, gere um rascunho completo de currículo.
     
     INFORMAÇÕES BÁSICAS:
@@ -128,8 +128,8 @@ export async function generateFullResume(personalInfo: any): Promise<any> {
   `;
 
   try {
-    const ai = getAI();
-    const response = await ai.models.generateContent({
+    const engine = getEngine();
+    const response = await engine.models.generateContent({
       model: "gemini-3-flash-preview",
       contents: prompt,
       config: {

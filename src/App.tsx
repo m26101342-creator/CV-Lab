@@ -25,7 +25,8 @@ import {
   ExternalLink,
   CheckCircle,
   MessageCircle,
-  Facebook
+  Facebook,
+  Instagram
 } from 'lucide-react';
 import { AdSenseUnit } from './components/AdSenseUnit';
 import { ResumeData, INITIAL_RESUME_DATA, TemplateType } from './types.ts';
@@ -35,19 +36,19 @@ import html2pdf from 'html2pdf.js';
 // --- UI Components ---
 
 const Button = ({ children, onClick, variant = 'primary', className = '', disabled = false, icon: Icon }: any) => {
-  const base = "px-6 py-3 rounded-xl font-bold transition-all flex items-center justify-center gap-2 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed";
+  const base = "px-6 py-2.5 rounded-lg font-semibold transition-all flex items-center justify-center gap-2 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed text-sm";
   const variants: any = {
-    primary: "bg-primary-blue text-white shadow-lg shadow-primary-blue/20 hover:bg-primary-blue/90 h-12",
-    secondary: "bg-soft-blue text-primary-blue hover:bg-soft-blue/80 h-12",
-    outline: "border-2 border-primary-blue text-primary-blue hover:bg-soft-blue h-12",
-    ghost: "text-text-muted hover:text-text-main hover:bg-bg-main h-12",
-    danger: "bg-red-50 text-red-600 hover:bg-red-100 h-12",
+    primary: "bg-primary-blue text-white shadow-sm hover:bg-primary-blue/90 border border-transparent shadow-primary-blue/10 h-11",
+    secondary: "bg-white text-text-main border border-border-main shadow-sm hover:bg-gray-50 h-11",
+    outline: "border border-primary-blue text-primary-blue hover:bg-soft-blue h-11",
+    ghost: "text-text-muted hover:text-text-main hover:bg-bg-main h-11",
+    danger: "bg-red-50 text-red-600 hover:bg-red-100 h-11 border border-red-100",
     none: ""
   };
 
   return (
     <button onClick={onClick} className={`${base} ${variants[variant] || ''} ${className}`} disabled={disabled}>
-      {Icon && <Icon size={18} />}
+      {Icon && <Icon size={16} />}
       {children}
     </button>
   );
@@ -55,9 +56,9 @@ const Button = ({ children, onClick, variant = 'primary', className = '', disabl
 
 const Input = ({ label, value, onChange, placeholder, type = 'text', icon: Icon, disabled = false, ...props }: any) => (
   <div className="flex flex-col gap-1.5 w-full">
-    {label && <label className="text-[10px] font-black text-text-muted uppercase tracking-wider pl-1">{label}</label>}
+    {label && <label className="text-[11px] font-semibold text-gray-700 pl-1">{label}</label>}
     <div className="relative group">
-      {Icon && <Icon className="absolute left-3.5 top-1/2 -translate-y-1/2 text-text-muted transition-colors group-focus-within:text-primary-blue" size={16} />}
+      {Icon && <Icon className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 transition-colors group-focus-within:text-primary-blue" size={16} />}
       <input
         {...props}
         type={type}
@@ -65,7 +66,7 @@ const Input = ({ label, value, onChange, placeholder, type = 'text', icon: Icon,
         onChange={(e) => onChange?.(e.target.value)}
         placeholder={placeholder}
         disabled={disabled}
-        className={`w-full bg-white border border-border-main rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary-blue/20 focus:border-primary-blue transition-all ${Icon ? 'pl-10' : ''} ${disabled ? 'opacity-50 bg-bg-main' : ''}`}
+        className={`w-full bg-white border border-gray-200 rounded-lg px-4 h-11 text-sm focus:outline-none focus:ring-2 focus:ring-primary-blue/20 focus:border-primary-blue transition-all shadow-sm ${Icon ? 'pl-10' : ''} ${disabled ? 'opacity-50 bg-gray-50' : ''}`}
       />
     </div>
   </div>
@@ -74,12 +75,12 @@ const Input = ({ label, value, onChange, placeholder, type = 'text', icon: Icon,
 const TextArea = ({ label, value, onChange, placeholder, onOptimize, isOptimizing }: any) => (
   <div className="flex flex-col gap-1.5 w-full relative">
     <div className="flex justify-between items-center px-1">
-      {label && <label className="text-[10px] font-black text-text-muted uppercase tracking-wider">{label}</label>}
+      {label && <label className="text-[11px] font-semibold text-gray-700">{label}</label>}
       {onOptimize && (
         <button 
           onClick={onOptimize}
           disabled={isOptimizing}
-          className={`text-[10px] font-black text-primary-blue flex items-center gap-1 transition-all bg-soft-blue px-2 py-0.5 rounded border border-primary-blue/20 ${isOptimizing ? 'opacity-80 scale-95 cursor-wait' : 'hover:opacity-80'}`}
+          className={`text-[10px] font-bold text-primary-blue flex items-center gap-1.5 transition-all bg-soft-blue px-2.5 py-1 rounded-md border border-primary-blue/10 ${isOptimizing ? 'opacity-80 scale-95 cursor-wait' : 'hover:opacity-80 hover:bg-primary-blue/10'}`}
         >
           {isOptimizing ? (
             <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: 'linear' }}>
@@ -88,7 +89,7 @@ const TextArea = ({ label, value, onChange, placeholder, onOptimize, isOptimizin
           ) : (
             <Plus size={10} />
           )}
-          {isOptimizing ? 'OTIMIZANDO...' : 'OTIMIZAR COM IA'}
+          {isOptimizing ? 'OTIMIZANDO...' : 'MELHORAR TEXTO'}
         </button>
       )}
     </div>
@@ -99,10 +100,10 @@ const TextArea = ({ label, value, onChange, placeholder, onOptimize, isOptimizin
         placeholder={placeholder}
         disabled={isOptimizing}
         rows={4}
-        className={`w-full bg-white border border-border-main rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary-blue/20 focus:border-primary-blue transition-all resize-none ${isOptimizing ? 'opacity-60' : ''}`}
+        className={`w-full bg-white border border-gray-200 rounded-lg p-3.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-blue/20 focus:border-primary-blue transition-all resize-y shadow-sm min-h-[140px] ${isOptimizing ? 'opacity-50' : ''}`}
       />
       {isOptimizing && (
-        <div className="absolute inset-0 bg-white/40 flex items-center justify-center rounded-xl backdrop-blur-[1px] animate-pulse">
+        <div className="absolute inset-0 bg-white/40 flex items-center justify-center rounded-lg backdrop-blur-[1px] animate-pulse">
           <div className="w-1/2 h-1 bg-primary-blue/20 rounded-full overflow-hidden">
              <motion.div className="h-full bg-primary-blue" initial={{ width: "0%" }} animate={{ width: "100%" }} transition={{ repeat: Infinity, duration: 1.5 }} />
           </div>
@@ -122,7 +123,7 @@ const TEMPLATES: Record<TemplateType, { name: string; layout: string; colors: an
   t5_jonathan: { name: 'Escritor Arches', layout: 'custom-t5', colors: { primary: '#4A4C53', text: '#555555', heading: '#222222', soft: '#F3F4F6', lines: '#D1D5DB' } }
 };
 
-// --- Helper to clean up Markdown / AI formatting ---
+// --- Helper to clean up Markdown / formatting ---
 const renderText = (str: string) => str ? str.replace(/\*/g, '') : '';
 
 const ResumeRenderer = ({ data, templateId }: { data: ResumeData; templateId: TemplateType }) => {
@@ -130,7 +131,7 @@ const ResumeRenderer = ({ data, templateId }: { data: ResumeData; templateId: Te
   const c = { ...theme.colors, primary: data.themeColor || theme.colors.primary };
 
   return (
-    <div className={`bg-white min-h-[1123px] w-[794px] relative overflow-visible print:shadow-none`} id="resume-content" style={{ color: '#1f2937' }}>
+    <div className={`bg-white h-[1122px] w-[794px] relative overflow-hidden print:shadow-none`} id="resume-content" style={{ color: '#1f2937' }}>
       
       {/* Dynamic Layout Styles */}
       {theme.layout === 'custom-t1' && (
@@ -138,61 +139,73 @@ const ResumeRenderer = ({ data, templateId }: { data: ResumeData; templateId: Te
           <div className="t1-left">
             <div className="t1-avatar-wrap">
               <div 
-                className="t1-avatar flex items-center justify-center overflow-hidden" 
+                className="t1-avatar overflow-hidden" 
                 style={{ 
                   borderRadius: data.personalInfo.photoStyle === 'square' ? '12px' : '50%',
                   width: `${data.personalInfo.photoSize || 100}px`,
                   height: `${data.personalInfo.photoSize || 100}px`,
-                  fontSize: `${(data.personalInfo.photoSize || 100) * 0.4}px`
+                  fontSize: `${(data.personalInfo.photoSize || 100) * 0.4}px`,
+                  lineHeight: `${data.personalInfo.photoSize || 100}px`,
+                  textAlign: 'center',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
                 }}
               >
                 {data.personalInfo.photo ? <img src={data.personalInfo.photo} referrerPolicy="no-referrer" alt="Profile" className="w-full h-full object-cover object-top" /> : (data.personalInfo.fullName ? data.personalInfo.fullName.charAt(0).toUpperCase() : 'CV')}
               </div>
             </div>
-            <div className="pt-4">
-              <div className="t1-section-title">Contacto</div>
-              {data.personalInfo.email && <div className="t1-contact-item"><span className="t1-contact-icon flex items-center justify-center"><Mail size={12}/></span><span className="t1-contact-text">{data.personalInfo.email}</span></div>}
-              {data.personalInfo.phone && <div className="t1-contact-item"><span className="t1-contact-icon flex items-center justify-center"><Phone size={12}/></span><span className="t1-contact-text">{data.personalInfo.phone}</span></div>}
-              {data.personalInfo.location && <div className="t1-contact-item"><span className="t1-contact-icon flex items-center justify-center"><MapPin size={12}/></span><span className="t1-contact-text">{data.personalInfo.location}</span></div>}
-            </div>
-            
-            {data.education.length > 0 && (
-              <div>
-                <div className="t1-section-title">Formação</div>
-                {data.education.map(e => (
-                  <div key={e.id} className="t1-edu-item">
-                    <div className="t1-edu-degree">{e.degree}</div>
-                    <div className="t1-edu-school">{e.institution}</div>
-                    <div className="t1-edu-year">{e.startDate} - {e.endDate}</div>
+            {/* T1 Sidebar sections with improved alignment */}
+            <div style={{ display: 'flex', flexDirection: 'column', marginTop: '32px' }}>
+              <div style={{ marginBottom: '32px' }}>
+                <div className="t1-section-title">Contacto</div>
+                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                  {data.personalInfo.email && <div className="t1-contact-item"><span className="t1-contact-icon"><Mail style={{ width: '12px', height: '12px' }} /></span><span className="t1-contact-text">{data.personalInfo.email}</span></div>}
+                  {data.personalInfo.phone && <div className="t1-contact-item"><span className="t1-contact-icon"><Phone style={{ width: '12px', height: '12px' }} /></span><span className="t1-contact-text">{data.personalInfo.phone}</span></div>}
+                  {data.personalInfo.location && <div className="t1-contact-item"><span className="t1-contact-icon"><MapPin style={{ width: '12px', height: '12px' }} /></span><span className="t1-contact-text">{data.personalInfo.location}</span></div>}
+                </div>
+              </div>
+              
+              {data.education.length > 0 && (
+                <div style={{ marginBottom: '32px' }}>
+                  <div className="t1-section-title">Formação</div>
+                  <div style={{ display: 'flex', flexDirection: 'column' }}>
+                    {data.education.map((e, idx) => (
+                      <div key={e.id} className="t1-edu-item" style={{ marginBottom: idx === data.education.length - 1 ? 0 : '18px' }}>
+                        <div className="t1-edu-degree">{e.degree}</div>
+                        <div className="t1-edu-school">{e.institution}</div>
+                        <div className="t1-edu-year">{e.startDate} - {e.endDate}</div>
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </div>
-            )}
-            
-            {data.skills.length > 0 && (
-              <div>
-                <div className="t1-section-title">Habilidades</div>
-                <div className="flex flex-wrap">
-                  {data.skills.map(s => (
-                     <span key={s.id} className="t1-skill-tag">{s.name}</span>
-                  ))}
                 </div>
-              </div>
-            )}
+              )}
+              
+              {data.skills.length > 0 && (
+                <div style={{ marginBottom: '32px' }}>
+                  <div className="t1-section-title">Habilidades</div>
+                  <div>
+                    {data.skills.map(s => (
+                       <span key={s.id} className="t1-skill-tag">{s.name}</span>
+                    ))}
+                  </div>
+                </div>
+              )}
 
-            {data.languages && data.languages.length > 0 && (
-              <div>
-                <div className="t1-section-title" style={{ marginTop: '24px' }}>Idiomas</div>
-                <div className="flex flex-col gap-2">
-                  {data.languages.map(l => (
-                     <div key={l.id} className="flex justify-between items-center text-[12px]">
-                       <span className="font-bold text-gray-700">{l.name}</span>
-                       <span className="text-gray-500 italic">{l.level}</span>
-                     </div>
-                  ))}
+              {data.languages && data.languages.length > 0 && (
+                <div style={{ marginBottom: '32px' }}>
+                  <div className="t1-section-title">Idiomas</div>
+                  <div style={{ display: 'flex', flexDirection: 'column' }}>
+                    {data.languages.map((l, idx) => (
+                       <div key={l.id} className="flex justify-between items-center text-[12px] opacity-90" style={{ marginBottom: idx === data.languages.length - 1 ? 0 : '12px' }}>
+                         <span className="font-bold">{l.name}</span>
+                         <span className="opacity-60 italic text-[10px] uppercase font-black tracking-widest">{l.level}</span>
+                       </div>
+                    ))}
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
+            </div>
           </div>
           
           <div className="t1-right">
@@ -204,16 +217,21 @@ const ResumeRenderer = ({ data, templateId }: { data: ResumeData; templateId: Te
              {data.experience.length > 0 && (
                 <div className="t1-right-section">
                   <div className="t1-right-title">Experiência Profissional</div>
-                  {data.experience.map(ex => (
-                    <div key={ex.id} className="t1-exp-item">
-                      <div className="t1-exp-dot" style={{ marginTop: '6px' }}></div>
-                      <div className="t1-exp-body">
-                         <div className="t1-exp-role font-bold">{ex.position} | <span style={{color: '#4b5563', fontSize: '13px', fontWeight: '500'}}>{ex.company}</span></div>
-                         <div className="t1-exp-period text-gray-400 mt-0.5">{ex.startDate} - {ex.current ? "Presente" : ex.endDate}</div>
-                         <div className="t1-exp-desc mt-3 leading-relaxed">{renderText(ex.description)}</div>
+                  <div className="flex flex-col gap-6">
+                    {data.experience.map(ex => (
+                      <div key={ex.id} className="t1-exp-item">
+                        <div className="flex flex-col items-center pt-1.5 flex-shrink-0">
+                          <div className="t1-exp-dot"></div>
+                          <div className="flex-1 w-0.5 bg-gray-100 my-1"></div>
+                        </div>
+                        <div className="t1-exp-body">
+                           <div className="t1-exp-role font-bold">{ex.position} | <span style={{color: '#4b5563', fontSize: '13px', fontWeight: '500'}}>{ex.company}</span></div>
+                           <div className="t1-exp-period text-gray-400 mt-0.5 uppercase tracking-tighter font-black text-[10px]">{ex.startDate} - {ex.current ? "Presente" : ex.endDate}</div>
+                           <div className="t1-exp-desc mt-3 leading-relaxed">{renderText(ex.description)}</div>
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
              )}
           </div>
@@ -246,44 +264,52 @@ const ResumeRenderer = ({ data, templateId }: { data: ResumeData; templateId: Te
              <div className="t2-left">
                 <div className="t2-section">
                    <div className="t2-section-title">Contacto</div>
-                   {data.personalInfo.email && <div className="t2-contact-row"><span className="t2-contact-icon flex items-center"><Mail size={14}/></span> <span className="t2-contact-text">{data.personalInfo.email}</span></div>}
-                   {data.personalInfo.phone && <div className="t2-contact-row"><span className="t2-contact-icon flex items-center"><Phone size={14}/></span> <span className="t2-contact-text">{data.personalInfo.phone}</span></div>}
-                   {data.personalInfo.location && <div className="t2-contact-row"><span className="t2-contact-icon flex items-center"><MapPin size={14}/></span> <span className="t2-contact-text">{data.personalInfo.location}</span></div>}
+                   <div className="flex flex-col gap-3">
+                     {data.personalInfo.email && <div className="t2-contact-row"><span className="t2-contact-icon flex items-center justify-center flex-shrink-0"><Mail size={14}/></span> <span className="t2-contact-text">{data.personalInfo.email}</span></div>}
+                     {data.personalInfo.phone && <div className="t2-contact-row"><span className="t2-contact-icon flex items-center justify-center flex-shrink-0"><Phone size={14}/></span> <span className="t2-contact-text">{data.personalInfo.phone}</span></div>}
+                     {data.personalInfo.location && <div className="t2-contact-row"><span className="t2-contact-icon flex items-center justify-center flex-shrink-0"><MapPin size={14}/></span> <span className="t2-contact-text">{data.personalInfo.location}</span></div>}
+                   </div>
                 </div>
                 
                 {data.education.length > 0 && (
                   <div className="t2-section">
                      <div className="t2-section-title">Formação</div>
-                     {data.education.map(e => (
-                       <div key={e.id} className="t2-edu-item">
-                         <div className="t2-edu-degree">{e.degree}</div>
-                         <div className="t2-edu-school">{e.institution}</div>
-                         <div className="t2-edu-year">{e.startDate} - {e.endDate}</div>
-                       </div>
-                     ))}
+                     <div className="flex flex-col gap-4">
+                       {data.education.map(e => (
+                         <div key={e.id} className="t2-edu-item">
+                           <div className="t2-edu-degree">{e.degree}</div>
+                           <div className="t2-edu-school">{e.institution}</div>
+                           <div className="t2-edu-year">{e.startDate} - {e.endDate}</div>
+                         </div>
+                       ))}
+                     </div>
                   </div>
                 )}
                 
                 {data.skills.length > 0 && (
                   <div className="t2-section">
                      <div className="t2-section-title">Habilidades</div>
-                     {data.skills.map(s => (
-                       <div key={s.id} className="t2-skill-item">
-                          <div className="t2-skill-label">{s.name}</div>
-                       </div>
-                     ))}
+                     <div className="flex flex-wrap gap-2">
+                       {data.skills.map(s => (
+                         <div key={s.id} className="t2-skill-item px-3 py-1 bg-white border border-gray-100 rounded shadow-sm text-xs font-bold text-gray-700">
+                           {s.name}
+                         </div>
+                       ))}
+                     </div>
                   </div>
                 )}
                 
                 {data.languages && data.languages.length > 0 && (
                   <div className="t2-section">
                      <div className="t2-section-title">Idiomas</div>
-                     {data.languages.map(l => (
-                       <div key={l.id} className="flex justify-between items-center mb-2 text-[12px]">
-                          <div className="font-semibold text-gray-800">{l.name}</div>
-                          <div className="font-medium text-gray-400">{l.level}</div>
-                       </div>
-                     ))}
+                     <div className="flex flex-col gap-2">
+                       {data.languages.map(l => (
+                         <div key={l.id} className="flex justify-between items-center text-[12px]">
+                            <div className="font-semibold text-gray-800">{l.name}</div>
+                            <div className="font-bold text-gray-400 uppercase tracking-widest text-[9px]">{l.level}</div>
+                         </div>
+                       ))}
+                     </div>
                   </div>
                 )}
              </div>
@@ -292,16 +318,18 @@ const ResumeRenderer = ({ data, templateId }: { data: ResumeData; templateId: Te
                 {data.experience.length > 0 && (
                   <div className="t2-section">
                      <div className="t2-section-title">Experiência Profissional</div>
-                     {data.experience.map(ex => (
-                        <div key={ex.id} className="t2-exp-item">
-                           <div className="t2-exp-header">
-                              <div className="t2-exp-company">{ex.company}</div>
-                              <div className="t2-exp-period">{ex.startDate} - {ex.current ? "Presente" : ex.endDate}</div>
-                           </div>
-                           <div className="t2-exp-role">{ex.position}</div>
-                           <div className="t2-exp-desc">{renderText(ex.description)}</div>
-                        </div>
-                     ))}
+                     <div className="flex flex-col gap-8">
+                       {data.experience.map(ex => (
+                          <div key={ex.id} className="t2-exp-item">
+                             <div className="t2-exp-header">
+                                <div className="t2-exp-company">{ex.company}</div>
+                                <div className="t2-exp-period">{ex.startDate} - {ex.current ? "Presente" : ex.endDate}</div>
+                             </div>
+                             <div className="t2-exp-role">{ex.position}</div>
+                             <div className="t2-exp-desc">{renderText(ex.description)}</div>
+                          </div>
+                       ))}
+                     </div>
                   </div>
                 )}
              </div>
@@ -314,37 +342,40 @@ const ResumeRenderer = ({ data, templateId }: { data: ResumeData; templateId: Te
            <div className="t3-header">
               <div className="t3-header-left">
                  <div 
-                   className="t3-avatar shadow-lg border-4 border-white flex items-center justify-center overflow-hidden"
+                   className="t3-avatar"
                    style={{ 
                      borderRadius: data.personalInfo.photoStyle === 'square' ? '12px' : '50%',
-                     width: `${data.personalInfo.photoSize || 100}px`,
-                     height: `${data.personalInfo.photoSize || 100}px`,
-                     fontSize: `${(data.personalInfo.photoSize || 100) * 0.4}px`
+                     width: `${data.personalInfo.photoSize || 120}px`,
+                     height: `${data.personalInfo.photoSize || 120}px`,
+                     fontSize: `${(data.personalInfo.photoSize || 120) * 0.4}px`,
+                     lineHeight: `${data.personalInfo.photoSize || 120}px`,
                    }}
                  >
                    {data.personalInfo.photo ? <img src={data.personalInfo.photo} referrerPolicy="no-referrer" alt="Profile" className="w-full h-full object-cover object-top" /> : (data.personalInfo.fullName ? data.personalInfo.fullName.charAt(0).toUpperCase() : 'CV')}
                  </div>
               </div>
               <div className="t3-header-right">
-                 <div className="t3-name leading-tight text-center sm:text-left">{data.personalInfo.fullName || "Seu Nome"}</div>
-                 <div className="t3-title text-center sm:text-left">{data.personalInfo.title || "Cargo Desejado"}</div>
-                 <div className="t3-divider mx-auto sm:mx-0"></div>
-                 {data.personalInfo.summary && <div className="t3-bio leading-relaxed">{renderText(data.personalInfo.summary)}</div>}
+                 <div className="t3-name">{data.personalInfo.fullName || "Seu Nome"}</div>
+                 <div className="t3-title">{data.personalInfo.title || "Cargo Desejado"}</div>
+                 <div className="t3-divider"></div>
+                 {data.personalInfo.summary && <div className="t3-bio">{renderText(data.personalInfo.summary)}</div>}
               </div>
            </div>
            
            <div className="t3-body">
               <div className="t3-left">
                  <div className="t3-section">
-                    <div className="t3-section-title text-center">Contacto</div>
-                    {data.personalInfo.email && <div className="t3-contact-row"><span className="t3-contact-icon flex items-center"><Mail size={12}/></span> <span className="t3-contact-text">{data.personalInfo.email}</span></div>}
-                    {data.personalInfo.phone && <div className="t3-contact-row"><span className="t3-contact-icon flex items-center"><Phone size={12}/></span> <span className="t3-contact-text">{data.personalInfo.phone}</span></div>}
-                    {data.personalInfo.location && <div className="t3-contact-row"><span className="t3-contact-icon flex items-center"><MapPin size={12}/></span> <span className="t3-contact-text">{data.personalInfo.location}</span></div>}
+                    <div className="t3-section-title">Contacto</div>
+                    <div className="flex flex-col gap-3">
+                      {data.personalInfo.email && <div className="t3-contact-row"><span className="t3-contact-icon flex items-center justify-center flex-shrink-0"><Mail size={12}/></span> <span className="t3-contact-text">{data.personalInfo.email}</span></div>}
+                      {data.personalInfo.phone && <div className="t3-contact-row"><span className="t3-contact-icon flex items-center justify-center flex-shrink-0"><Phone size={12}/></span> <span className="t3-contact-text">{data.personalInfo.phone}</span></div>}
+                      {data.personalInfo.location && <div className="t3-contact-row"><span className="t3-contact-icon flex items-center justify-center flex-shrink-0"><MapPin size={12}/></span> <span className="t3-contact-text">{data.personalInfo.location}</span></div>}
+                    </div>
                  </div>
                  
                  {data.education.length > 0 && (
                    <div className="t3-section">
-                     <div className="t3-section-title text-center">Formação</div>
+                     <div className="t3-section-title">Formação</div>
                      {data.education.map(e => (
                        <div key={e.id} className="t3-edu-item">
                           <div className="t3-edu-school font-bold">{e.institution}</div>
@@ -359,7 +390,7 @@ const ResumeRenderer = ({ data, templateId }: { data: ResumeData; templateId: Te
               <div className="t3-right">
                  {data.experience.length > 0 && (
                    <div className="t3-section">
-                      <div className="t3-section-title text-center">Experiência Profissional</div>
+                      <div className="t3-section-title">Experiência Profissional</div>
                       {data.experience.map(ex => (
                          <div key={ex.id} className="t3-exp-item pb-4 border-b border-gray-100 last:border-0 mb-4">
                             <div className="t3-exp-header mb-1">
@@ -375,7 +406,7 @@ const ResumeRenderer = ({ data, templateId }: { data: ResumeData; templateId: Te
                  
                  {data.skills.length > 0 && (
                    <div className="t3-section" style={{marginTop: '20px'}}>
-                      <div className="t3-section-title text-center">Habilidades</div>
+                      <div className="t3-section-title">Habilidades</div>
                       <div className="grid grid-cols-1 gap-2">
                         {data.skills.map(s => (
                            <div key={s.id} className="t3-skill-item">
@@ -391,7 +422,7 @@ const ResumeRenderer = ({ data, templateId }: { data: ResumeData; templateId: Te
 
                  {data.languages && data.languages.length > 0 && (
                    <div className="t3-section" style={{marginTop: '20px'}}>
-                      <div className="t3-section-title text-center">Idiomas</div>
+                      <div className="t3-section-title">Idiomas</div>
                       <div className="grid grid-cols-1 gap-2">
                         {data.languages.map(l => (
                            <div key={l.id} className="t3-skill-item">
@@ -413,7 +444,7 @@ const ResumeRenderer = ({ data, templateId }: { data: ResumeData; templateId: Te
       )}
 
       {theme.layout === 'custom-t4' && (
-        <div className="flex w-full min-h-[1123px] bg-white text-left font-sans overflow-visible relative border border-gray-100">
+        <div className="flex w-full h-[1122px] bg-white text-left font-sans overflow-hidden relative border border-gray-100">
           <div className="w-[32%] flex flex-col relative z-10" style={{ backgroundColor: c.primary, color: 'white' }}>
              {data.personalInfo.photo ? (
                <div className="w-full flex justify-center py-8">
@@ -431,13 +462,18 @@ const ResumeRenderer = ({ data, templateId }: { data: ResumeData; templateId: Te
                </div>
              ) : (
                <div 
-                 className="w-full flex items-center justify-center font-black bg-black/20" 
+                 className="w-full font-black bg-black/20" 
                  style={{ 
                    height: data.personalInfo.photoStyle === 'circle' ? `${(data.personalInfo.photoSize || 100) * 1.5}px` : '320px',
                    width: data.personalInfo.photoStyle === 'circle' ? `${(data.personalInfo.photoSize || 100) * 1.5}px` : '100%',
                    borderRadius: data.personalInfo.photoStyle === 'circle' ? '50%' : '0',
                    margin: data.personalInfo.photoStyle === 'circle' ? '20px auto' : '0',
-                   fontSize: '4rem'
+                   fontSize: '4rem',
+                   display: 'flex',
+                   alignItems: 'center',
+                   justifyContent: 'center',
+                   lineHeight: data.personalInfo.photoStyle === 'circle' ? `${(data.personalInfo.photoSize || 100) * 1.5}px` : '320px',
+                   textAlign: 'center'
                  }}
                >
                  {data.personalInfo.fullName.charAt(0)}
@@ -450,11 +486,11 @@ const ResumeRenderer = ({ data, templateId }: { data: ResumeData; templateId: Te
                 </div>
                 <div>
                    <h3 className="text-xl font-bold mb-5 pb-2 text-white border-b-2 border-white/20 inline-block pr-6">Contacto</h3>
-                   <div className="flex flex-col gap-4 text-[13px] opacity-90">
-                     {data.personalInfo.email && <div className="flex items-center gap-3"><Mail size={16} className="opacity-70"/> {data.personalInfo.email}</div>}
-                     {data.personalInfo.phone && <div className="flex items-center gap-3"><Phone size={16} className="opacity-70"/> {data.personalInfo.phone}</div>}
-                     {data.personalInfo.location && <div className="flex items-center gap-3"><MapPin size={16} className="opacity-70"/> {data.personalInfo.location}</div>}
-                   </div>
+                     <div className="flex flex-col text-[13px] opacity-90">
+                       {data.personalInfo.email && <div style={{ display: 'flex', alignItems: 'center', marginBottom: '16px' }}><Mail style={{ width: '16px', height: '16px', marginRight: '12px', opacity: 0.7 }}/> {data.personalInfo.email}</div>}
+                       {data.personalInfo.phone && <div style={{ display: 'flex', alignItems: 'center', marginBottom: '16px' }}><Phone style={{ width: '16px', height: '16px', marginRight: '12px', opacity: 0.7 }}/> {data.personalInfo.phone}</div>}
+                       {data.personalInfo.location && <div style={{ display: 'flex', alignItems: 'center', marginBottom: '16px' }}><MapPin style={{ width: '16px', height: '16px', marginRight: '12px', opacity: 0.7 }}/> {data.personalInfo.location}</div>}
+                     </div>
                 </div>
                 {data.languages && data.languages.length > 0 && (
                   <div>
@@ -484,17 +520,22 @@ const ResumeRenderer = ({ data, templateId }: { data: ResumeData; templateId: Te
                   <h2 className="text-[28px] font-black mb-4 leading-tight" style={{ color: '#111827' }}>Experiência Profissional</h2>
                   <div className="w-12 h-1.5 bg-gray-200 mb-8 rounded-full"></div>
                   <div className="flex flex-col gap-10">
-                    {data.experience.map(ex => (
-                      <div key={ex.id} className="relative pl-6 border-l-2 border-gray-100">
-                         <div className="absolute top-1 -left-[9px] w-4 h-4 rounded-full bg-white border-2 border-gray-200"></div>
-                         <h4 className="text-[16px] font-bold mb-1" style={{ color: '#1f2937' }}>{ex.position}</h4>
-                         <div className="flex justify-between items-center mb-4">
-                            <span className="text-[13px] font-bold tracking-tight uppercase" style={{ color: '#4b5563' }}>{ex.company}</span>
-                            <span className="text-[11px] font-black bg-gray-100 px-2 py-1 rounded" style={{ color: '#6b7280' }}>{ex.startDate} - {ex.current ? "Presente" : ex.endDate}</span>
-                         </div>
-                         <p className="text-[13px] leading-[1.7] text-left font-serif mt-1" style={{ color: '#4b5563' }}>{renderText(ex.description)}</p>
-                      </div>
-                    ))}
+                     {data.experience.map(ex => (
+                       <div key={ex.id} className="flex gap-4">
+                          <div className="flex flex-col items-center pt-2">
+                             <div className="w-3 h-3 rounded-full border-2 border-gray-200"></div>
+                             <div className="w-0.5 flex-1 bg-gray-50 my-1"></div>
+                          </div>
+                          <div className="flex-1">
+                             <h4 className="text-[16px] font-bold mb-1" style={{ color: '#1f2937' }}>{ex.position}</h4>
+                             <div className="flex justify-between items-center mb-4">
+                                <span className="text-[13px] font-bold tracking-tight uppercase" style={{ color: '#4b5563' }}>{ex.company}</span>
+                                <span className="text-[11px] font-black bg-gray-100 px-2 py-1 rounded" style={{ color: '#6b7280' }}>{ex.startDate} - {ex.current ? "Presente" : ex.endDate}</span>
+                             </div>
+                             <p className="text-[13px] leading-[1.7] text-left font-serif mt-1" style={{ color: '#4b5563' }}>{renderText(ex.description)}</p>
+                          </div>
+                       </div>
+                     ))}
                   </div>
                </div>
              )}
@@ -529,43 +570,45 @@ const ResumeRenderer = ({ data, templateId }: { data: ResumeData; templateId: Te
       )}
 
       {theme.layout === 'custom-t5' && (
-        <div className="flex w-full min-h-[1123px] bg-[#FAFAFA] text-left font-sans overflow-visible relative">
-           <div className="w-[34%] flex flex-col relative z-10 pt-16" style={{ backgroundColor: c.soft || '#F3F4F6' }}>
-             <div className="bg-white h-64 w-full absolute top-0 left-0" style={{ borderBottomLeftRadius: '60%', borderBottomRightRadius: '60%', transform: 'scaleX(1.3)', transformOrigin: 'top center', boxShadow: '0 10px 30px rgba(0,0,0,0.02)' }}></div>
-             <div className="relative z-20 w-full flex flex-col items-center px-10">
+        <div className="flex w-full h-[1122px] bg-[#FAFAFA] text-left font-sans overflow-hidden relative">
+           <div className="w-[34%] flex flex-col relative z-20 pt-16" style={{ backgroundColor: c.soft || '#F3F4F6' }}>
+             {/* Decorative header shape - simplified for PDF consistency */}
+             <div className="absolute top-0 left-0 right-0 h-48 bg-white" style={{ borderRadius: '0 0 100px 100px', boxShadow: '0 10px 30px rgba(0,0,0,0.02)' }}></div>
+             
+             <div className="relative z-30 w-full flex flex-col items-center px-10">
+                <div className="mb-12 shadow-[0_20px_40px_-15px_rgba(0,0,0,0.15)] bg-white overflow-hidden" 
+                     style={{ 
+                       width: `${data.personalInfo.photoSize || 160}px`,
+                       height: `${data.personalInfo.photoSize || 160}px`,
+                       borderRadius: data.personalInfo.photoStyle === 'circle' ? '50%' : '24px',
+                       border: '5px solid white'
+                     }}>
                 {data.personalInfo.photo ? (
-                  <img 
-                    src={data.personalInfo.photo} 
-                    referrerPolicy="no-referrer" 
-                    className="object-cover object-top border-[5px] border-white mb-12 shadow-[0_20px_40px_-15px_rgba(0,0,0,0.15)] bg-white" 
-                    style={{ 
-                      width: `${data.personalInfo.photoSize || 160}px`,
-                      height: `${data.personalInfo.photoSize || 160}px`,
-                      borderRadius: data.personalInfo.photoStyle === 'circle' ? '50%' : '24px'
-                    }}
-                  />
+                  <img src={data.personalInfo.photo} referrerPolicy="no-referrer" alt="Profile" className="w-full h-full object-cover object-top" />
                 ) : (
                   <div 
-                    className="border-[5px] border-white mb-12 flex items-center justify-center font-black shadow-[0_20px_40px_-15px_rgba(0,0,0,0.15)] bg-gray-100 text-gray-400" 
+                    className="w-full h-full font-black bg-gray-100 text-gray-400" 
                     style={{ 
-                      width: `${data.personalInfo.photoSize || 160}px`,
-                      height: `${data.personalInfo.photoSize || 160}px`,
-                      borderRadius: data.personalInfo.photoStyle === 'circle' ? '50%' : '24px',
-                      fontSize: `${(data.personalInfo.photoSize || 160) * 0.4}px`
-                    }}
-                  >
+                      fontSize: `${(data.personalInfo.photoSize || 160) * 0.4}px`,
+                      lineHeight: `${data.personalInfo.photoSize || 160}px`,
+                      textAlign: 'center',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center'
+                    }}>
                     {data.personalInfo.fullName.charAt(0)}
                   </div>
                 )}
+                </div>
                 
                 <div className="w-full mb-10">
                   <div className="mb-6 border-b-2 pb-2" style={{ borderColor: `${c.primary}40` }}>
                      <h3 className="text-[12px] font-black uppercase tracking-[0.2em]" style={{ color: c.primary }}>Contacto</h3>
                   </div>
-                  <div className="flex flex-col gap-4 text-[13px] w-full font-medium" style={{ color: c.text }}>
-                     {data.personalInfo.phone && <div className="flex items-center gap-3"><Phone className="opacity-70" size={16} color={c.primary}/> <span>{data.personalInfo.phone}</span></div>}
-                     {data.personalInfo.email && <div className="flex items-center gap-3"><Mail className="opacity-70" size={16} color={c.primary}/> <span className="break-all">{data.personalInfo.email}</span></div>}
-                     {data.personalInfo.location && <div className="flex items-center gap-3"><MapPin className="opacity-70" size={16} color={c.primary}/> <span>{data.personalInfo.location}</span></div>}
+                  <div style={{ display: 'flex', flexDirection: 'column', fontSize: '13px', width: '100%', fontWeight: '500', color: '#374151' }}>
+                     {data.personalInfo.phone && <div style={{ display: 'flex', alignItems: 'center', marginBottom: '16px' }}><Phone style={{ opacity: 0.7, width: '16px', height: '16px', marginRight: '12px', flexShrink: 0 }} color={c.primary}/> <span>{data.personalInfo.phone}</span></div>}
+                     {data.personalInfo.email && <div style={{ display: 'flex', alignItems: 'center', marginBottom: '16px' }}><Mail style={{ opacity: 0.7, width: '16px', height: '16px', marginRight: '12px', flexShrink: 0 }} color={c.primary}/> <span className="break-all">{data.personalInfo.email}</span></div>}
+                     {data.personalInfo.location && <div style={{ display: 'flex', alignItems: 'center', marginBottom: '16px' }}><MapPin style={{ opacity: 0.7, width: '16px', height: '16px', marginRight: '12px', flexShrink: 0 }} color={c.primary}/> <span>{data.personalInfo.location}</span></div>}
                   </div>
                 </div>
 
@@ -574,43 +617,27 @@ const ResumeRenderer = ({ data, templateId }: { data: ResumeData; templateId: Te
                     <div className="mb-6 border-b-2 pb-2" style={{ borderColor: `${c.primary}40` }}>
                        <h3 className="text-[12px] font-black uppercase tracking-[0.2em]" style={{ color: c.primary }}>Habilidades</h3>
                     </div>
-                    <ul className="flex flex-col gap-3 text-[13px] w-full pl-2 space-y-1" style={{ color: c.text }}>
+                    <div className="flex flex-col gap-3">
                        {data.skills.map(s => (
-                         <li key={s.id} className="font-semibold flex items-center gap-2">
-                           <div className="w-1.5 h-1.5 rounded-full" style={{backgroundColor: c.primary}}></div>
-                           {s.name}
-                         </li>
+                         <div key={s.id} className="font-semibold text-[13px] flex items-center gap-2" style={{ color: '#374151' }}>
+                            <div className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{backgroundColor: c.primary}}></div>
+                            {s.name}
+                         </div>
                        ))}
-                    </ul>
+                    </div>
                   </div>
                 )}
 
-                {data.languages && data.languages.length > 0 && (
-                  <div className="w-full mb-10">
-                    <div className="mb-6 border-b-2 pb-2" style={{ borderColor: `${c.primary}40` }}>
-                       <h3 className="text-[12px] font-black uppercase tracking-[0.2em]" style={{ color: c.primary }}>Idiomas</h3>
-                    </div>
-                    <ul className="flex flex-col gap-3 text-[13px] w-full pl-2 space-y-1" style={{ color: c.text }}>
-                       {data.languages.map(l => (
-                         <li key={l.id} className="font-semibold flex items-center justify-between">
-                           <span className="flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full" style={{backgroundColor: c.primary}}></div> {l.name}</span>
-                           <span className="text-[10px] uppercase font-bold px-2 py-0.5 rounded-md" style={{backgroundColor: `${c.primary}15`, color: c.primary}}>{l.level}</span>
-                         </li>
-                       ))}
-                    </ul>
-                  </div>
-                )}
-                
                 {data.education.length > 0 && (
                   <div className="w-full mb-10">
                     <div className="mb-6 border-b-2 pb-2" style={{ borderColor: `${c.primary}40` }}>
                        <h3 className="text-[12px] font-black uppercase tracking-[0.2em]" style={{ color: c.primary }}>Formação</h3>
                     </div>
-                    <div className="flex flex-col gap-6 w-full" style={{ color: c.text }}>
+                    <div className="flex flex-col gap-6" style={{ color: '#374151' }}>
                        {data.education.map(e => (
-                         <div key={e.id} className="relative">
+                         <div key={e.id}>
                             <div className="font-black mb-1 text-[13px] leading-tight" style={{ color: c.primary }}>{e.institution}</div>
-                            <div className="font-medium text-[13px] text-gray-700">{e.degree}</div>
+                            <div className="font-medium text-[13px]">{e.degree}</div>
                             <div className="text-[11px] font-bold opacity-60 mt-1 uppercase tracking-wider">{e.startDate} - {e.endDate}</div>
                          </div>
                        ))}
@@ -620,7 +647,7 @@ const ResumeRenderer = ({ data, templateId }: { data: ResumeData; templateId: Te
              </div>
            </div>
 
-           <div className="w-[66%] py-20 px-14 flex flex-col gap-12 bg-white shadow-[-20px_0_40px_rgba(0,0,0,0.02)] relative z-10">
+           <div className="w-[66%] py-20 px-14 flex flex-col gap-12 bg-white relative z-10">
               <div>
                  <h1 className="text-[48px] uppercase font-black leading-[1] tracking-tighter" style={{ color: c.primary }}>
                    {data.personalInfo.fullName.split(' ')[0]} <br/>
@@ -642,15 +669,21 @@ const ResumeRenderer = ({ data, templateId }: { data: ResumeData; templateId: Te
                    <h2 className="text-[18px] font-black uppercase tracking-[0.15em] mb-6 border-b pb-4" style={{ color: '#111827', borderColor: '#F3F4F6' }}>Experiência Profissional</h2>
                    <div className="flex flex-col gap-8">
                      {data.experience.map(ex => (
-                       <div key={ex.id}>
-                          <div className="flex justify-between items-baseline mb-1">
-                             <h4 className="text-[17px] font-black text-gray-900 tracking-tight">{ex.position}</h4>
-                             <span className="text-[11px] font-bold px-3 py-1 bg-gray-100 rounded-lg text-gray-500">{ex.startDate} - {ex.current ? "Presente" : ex.endDate}</span>
+                       <div key={ex.id} className="flex gap-4">
+                          <div className="flex flex-col items-center pt-2">
+                             <div className="w-2.5 h-2.5 rounded-full border-2" style={{ borderColor: c.primary }}></div>
+                             <div className="w-0.5 flex-1 bg-gray-50 my-1"></div>
                           </div>
-                          <div className="text-[14px] font-bold mb-4 flex items-center gap-2" style={{ color: c.primary }}>
-                             {ex.company}
+                          <div className="flex-1">
+                            <div className="flex justify-between items-baseline mb-1">
+                               <h4 className="text-[17px] font-black text-gray-900 tracking-tight">{ex.position}</h4>
+                               <span className="text-[11px] font-bold px-3 py-1 bg-gray-100 rounded-lg text-gray-500">{ex.startDate} - {ex.current ? "Presente" : ex.endDate}</span>
+                            </div>
+                            <div className="text-[14px] font-bold mb-4 flex items-center gap-2" style={{ color: c.primary }}>
+                               {ex.company}
+                            </div>
+                            <p className="text-[13px] leading-[1.8] text-left text-gray-600 font-medium pl-4 border-l-2" style={{borderColor: `${c.primary}20`}}>{renderText(ex.description)}</p>
                           </div>
-                          <p className="text-[13px] leading-[1.8] text-left text-gray-600 font-medium pl-4 border-l-2" style={{borderColor: `${c.primary}20`}}>{renderText(ex.description)}</p>
                        </div>
                      ))}
                    </div>
@@ -676,7 +709,18 @@ export default function App() {
   const [loading, setLoading] = useState(false);
   const [optimizingId, setOptimizingId] = useState<string | null>(null);
   const [isCoverLetterMode, setIsCoverLetterMode] = useState(false);
-  const [generatedLetter, setGeneratedLetter] = useState("");
+  const [generatedLetter, setGeneratedLetter] = useState(() => {
+    const saved = localStorage.getItem('cv_lab_letter');
+    return saved || `Prezado(a) Diretor(a) de Recursos Humanos,
+
+É com grande entusiasmo que apresento minha candidatura. Ao longo do meu percurso profissional e académico, tenho desenvolvido competências sólidas que acredito estarem em perfeito alinhamento com os desafios propostos pela vossa prestigiada organização.
+
+Minha trajetória é marcada pela dedicação, foco em resultados e rápida adaptação a novas metodologias. A possibilidade de contribuir de forma imediata e significativa para o sucesso contínuo da sua empresa é algo que me motiva profundamente, agregando o meu conhecimento técnico à vossa visão institucional.
+
+Considero-me um profissional orientado para soluções e com grande capacidade de trabalhar de forma colaborativa em equipas dinâmicas.
+
+Agradeço desde já a atenção demonstrada em analisar o meu currículo em anexo e coloco-me à disposição para uma entrevista, onde poderei detalhar como a minha experiência será útil para as vossas futuras iniciativas.`;
+  });
   const [tempSkill, setTempSkill] = useState("");
   const [tempLanguage, setTempLanguage] = useState("");
   const [showPreviewModal, setShowPreviewModal] = useState(false);
@@ -693,6 +737,10 @@ export default function App() {
   useEffect(() => {
     localStorage.setItem('cv_lab_template', template);
   }, [template]);
+
+  useEffect(() => {
+    localStorage.setItem('cv_lab_letter', generatedLetter);
+  }, [generatedLetter]);
   const [previewScale, setPreviewScale] = useState(1);
   const [currentBanner, setCurrentBanner] = useState(0);
 
@@ -733,33 +781,54 @@ export default function App() {
   }, [view, currentBanner]);
 
   const handleDownloadPdf = async () => {
+    // Determine the element early so we know it exists
     const elementId = isCoverLetterMode ? 'cover-letter-content' : 'resume-content';
     const element = document.getElementById(elementId);
     if (!element) return;
 
     setIsDownloading(true);
-    
-    // Configurações otimizadas para evitar elementos tortos e desalinhados
-    const opt = {
-      margin:       0,
-      filename:     isCoverLetterMode ? 'Carta_Apresentacao.pdf' : `${resumeData.personalInfo.fullName.replace(/\s+/g, '_')}_Curriculo.pdf`,
-      image:        { type: 'jpeg' as const, quality: 1 },
-      html2canvas:  { 
-        scale: 2, 
-        useCORS: true, 
-        letterRendering: false,
-        scrollY: 0,
-        scrollX: 0,
-        windowWidth: 794
-      },
-      jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' as const },
-      pagebreak:    { mode: ['css', 'legacy'] }
-    };
 
     try {
-      // Forçamos o scroll para o topo antes da captura para evitar desalinhamento
+      // Force scroll to top and wait for fonts
       window.scrollTo(0, 0);
+      await document.fonts.ready;
+
+      // Temporarily disable scaling for accurate capture
+      const originalScale = previewScale;
+      setPreviewScale(1);
+
+      // We need a small delay for state update to reflect directly in DOM before canvas captures it
+      await new Promise(r => setTimeout(r, 300));
+
+      // Configurações otimizadas para evitar elementos tortos e desalinhados
+      const opt = {
+        margin:       0,
+        filename:     isCoverLetterMode ? 'Carta_Apresentacao.pdf' : `${resumeData.personalInfo.fullName.replace(/\s+/g, '_')}_Curriculo.pdf`,
+        image:        { type: 'jpeg' as const, quality: 1 },
+        html2canvas:  { 
+          scale: 4, 
+          useCORS: true, 
+          letterRendering: true,
+          scrollY: 0,
+          scrollX: 0,
+          windowWidth: 794,
+          logging: false,
+          backgroundColor: '#FFFFFF',
+          onclone: (clonedDoc: any) => {
+            const clonedElement = clonedDoc.getElementById(elementId);
+            if (clonedElement) {
+               clonedElement.style.transform = 'none';
+               clonedElement.style.transition = 'none';
+            }
+          }
+        },
+        jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' as const, compress: true, precision: 16 },
+        pagebreak:    { mode: 'avoid-all' as const }
+      };
+      
       await html2pdf().set(opt).from(element).save();
+
+      setPreviewScale(originalScale);
     } catch (err) {
       console.error("Erro ao gerar PDF:", err);
     } finally {
@@ -841,7 +910,7 @@ export default function App() {
     const optimized = await optimizeResumeText(text, type);
     
     if (optimized === text) {
-      alert("A IA não conseguiu sugerir mudanças significativas. Verifique:\n1. Se o texto inserido tem detalhes suficientes.\n2. Se a chave da API (VITE_GEMINI_API_KEY) está configurada no seu ambiente de deploy.");
+      alert("O sistema não conseguiu sugerir mudanças significativas. Verifique:\n1. Se o texto inserido tem detalhes suficientes.\n2. Se o motor de processamento está configurado no seu ambiente de deploy.");
     } else {
       if (type === 'summary') updatePersonalInfo('summary', optimized);
       else if (type === 'experience' && index !== undefined) {
@@ -961,154 +1030,238 @@ export default function App() {
           </div>
         </motion.div>
 
-        <main className="flex-1 flex flex-col md:flex-row items-center px-6 md:px-12 py-12 md:py-20 gap-16 max-w-7xl mx-auto w-full">
-          <motion.div 
-            initial={{ opacity: 0, x: -50 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.8 }}
-            className="flex-1 flex flex-col gap-8"
-          >
-            <h1 className="text-6xl md:text-8xl font-black text-deep-blue leading-[0.85] tracking-tighter">
-              Crie um CV que <span className="text-primary-blue italic">abre portas.</span>
-            </h1>
-            <p className="text-xl text-text-muted leading-relaxed font-medium">
-              A plataforma mais inteligente para profissionais que não aceitam o genérico.
-              Gere currículos e cartas de apresentação com design premium e IA integrada.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 pt-4">
-              <Button onClick={() => setView('editor')} className="px-10 h-16 text-lg uppercase tracking-tight">Começar Gratuitamente</Button>
-              <div className="flex items-center gap-4 text-xs font-bold text-text-muted border-l-2 border-border-main pl-6">
-                 <div>
-                   <p className="text-deep-blue font-black tracking-tighter text-lg leading-tight">5 Minutos</p>
-                   <p className="uppercase tracking-widest text-[9px]">Para concluir tudo</p>
-                 </div>
-              </div>
-            </div>
-          </motion.div>
-
-          <motion.div 
-            initial={{ opacity: 0, scale: 0.8 }}
-            whileInView={{ opacity: 1, scale: 1 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.8, delay: 0.2 }}
-            className="flex-1 w-full flex flex-col items-center justify-center"
-          >
-             <div className="flex flex-col items-center justify-center space-y-8 w-full">
-               <h2 className="text-3xl font-black text-deep-blue text-center mb-4">O que dizem os profissionais</h2>
-               
-               <div className="w-full max-w-lg space-y-6">
-                  {[
-                    {
-                      name: "Ana Silva",
-                      role: "Diretora de Marketing",
-                      testimonial: "A CV LAB transformou completamente meu currículo. A linguagem usada pela IA foi o divisor de águas para minha contratação."
-                    },
-                    {
-                      name: "Ricardo Mendes",
-                      role: "Engenheiro de Dados",
-                      testimonial: "Interface incrível, rápida e o resultado final é de um nível executivo que eu não conseguiria fazer sozinho no Word."
-                    }
-                  ].map((t, i) => (
-                    <div key={i} className="bg-white p-6 rounded-3xl border border-border-main shadow-sm hover:shadow-xl transition-shadow group">
-                      <div className="flex items-center gap-4 mb-4">
-                        <div className="w-12 h-12 rounded-full bg-soft-blue flex items-center justify-center text-primary-blue font-black text-lg">
-                          {t.name.charAt(0)}
-                        </div>
-                        <div>
-                          <div className="font-bold text-deep-blue">{t.name}</div>
-                          <div className="text-[10px] text-text-muted font-black uppercase tracking-widest">{t.role}</div>
-                        </div>
-                      </div>
-                      <p className="text-sm text-text-muted leading-relaxed italic">"{t.testimonial}"</p>
-                    </div>
-                  ))}
-               </div>
-             </div>
-          </motion.div>
-        </main>
-        
-        <motion.img
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.8, delay: 0.4 }}
-          src="https://i.supaimg.com/6bc04951-8cbe-4706-9f0c-a01f9ea9a6c4/646b44b0-23b8-462d-9e14-c75ff88d0244.png"
-          alt="Banner de Destaque"
-          className="w-full object-cover"
-          referrerPolicy="no-referrer"
-        />
-
-        <section className="bg-white py-16 px-6 border-t border-border-main scroll-mt-20">
-          <div className="max-w-7xl mx-auto">
+        <main className="flex-1 flex flex-col items-center max-w-7xl mx-auto w-full pt-12 md:pt-20">
+          <div className="flex flex-col md:flex-row items-center px-6 md:px-12 gap-16 w-full">
             <motion.div 
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
+              initial={{ opacity: 0, x: -50 }}
+              whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.8 }}
-              className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8"
+              className="flex-1 flex flex-col gap-8"
             >
+              <h1 className="text-6xl md:text-8xl font-black text-deep-blue leading-[0.85] tracking-tighter">
+                Crie um CV que <span className="text-primary-blue italic">abre portas.</span>
+              </h1>
+              <p className="text-xl text-text-muted leading-relaxed font-medium max-w-lg">
+                A plataforma mais inteligente para profissionais que não aceitam o genérico.
+                Gere currículos e cartas de apresentação com design premium e tecnologia de ponta.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-4 pt-4">
+                <Button onClick={() => setView('editor')} className="px-10 h-16 text-lg uppercase tracking-tight shadow-2xl shadow-primary-blue/30">Criar CV Gratuitamente</Button>
+                <Button variant="outline" onClick={() => setView('showcase')} className="px-10 h-16 text-lg uppercase tracking-tight border-border-main text-text-main hover:bg-bg-main">Ver Modelos</Button>
+              </div>
+              <div className="flex items-center gap-6 pt-4 border-t border-border-main mt-4">
+                <div className="flex -space-x-3">
+                  {[1,2,3,4].map(i => (
+                    <img key={i} src={`https://picsum.photos/seed/user${i}/100/100`} alt="User" className="w-10 h-10 rounded-full border-2 border-white ring-1 ring-border-main" referrerPolicy="no-referrer" />
+                  ))}
+                </div>
+                <div className="text-xs font-bold text-text-muted">
+                   <p className="text-deep-blue font-black tracking-tight">+15 mil usuários</p>
+                   <p className="opacity-70">Confiam na nossa plataforma</p>
+                </div>
+              </div>
+            </motion.div>
+
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.8 }}
+              whileInView={{ opacity: 1, scale: 1 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.8, delay: 0.2 }}
+              className="flex-1 w-full flex flex-col items-center justify-center relative"
+            >
+               <div className="relative w-full aspect-square md:aspect-[4/5] max-w-md bg-white rounded-3xl shadow-2xl overflow-hidden group border border-border-main">
+                  <img 
+                    src="https://i.supaimg.com/6bc04951-8cbe-4706-9f0c-a01f9ea9a6c4/4406a25d-b692-476b-955d-409d5a851e46.jpg" 
+                    alt="Resume Preview" 
+                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                    referrerPolicy="no-referrer"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-deep-blue/80 via-transparent to-transparent"></div>
+                  <div className="absolute bottom-8 left-8 right-8 text-white">
+                    <p className="font-black text-2xl leading-tight mb-2 tracking-tighter">Design de Nível Executivo</p>
+                    <p className="text-xs opacity-80 font-medium">Aprovado em triagens de empresas globais.</p>
+                  </div>
+                  <div className="absolute top-6 right-6 bg-white/20 backdrop-blur-md px-4 py-2 rounded-xl text-white text-[10px] font-black tracking-widest border border-white/20">PREMIUM</div>
+               </div>
+               
+               {/* Floating elements - Redesigned for elite business look */}
+               <motion.div 
+                 animate={{ y: [0, -10, 0] }}
+                 transition={{ repeat: Infinity, duration: 5, ease: "easeInOut" }}
+                 className="absolute -top-10 -right-10 p-5 bg-white rounded-xl shadow-[0_20px_50px_rgba(0,0,0,0.1)] border border-gray-100 flex items-center gap-4 z-10"
+               >
+                 <div className="w-12 h-12 bg-primary-blue/5 text-primary-blue rounded-full flex items-center justify-center shadow-inner">
+                   <div className="bg-primary-blue text-white p-1.5 rounded-lg shadow-lg">
+                     <FileText size={18} strokeWidth={2.5} />
+                   </div>
+                 </div>
+                 <div className="flex flex-col">
+                   <p className="text-[10px] font-bold text-gray-400 uppercase tracking-[0.2em] mb-0.5">Padrão Elite</p>
+                   <p className="text-[15px] font-black text-deep-blue leading-tight italic">Validado p/ Recrutamento</p>
+                 </div>
+               </motion.div>
+            </motion.div>
+          </div>
+
+          {/* Stats Bar */}
+          <section className="w-full py-16 px-6 mt-16 bg-white border-y border-gray-100 shadow-sm">
+            <div className="max-w-7xl mx-auto grid grid-cols-2 lg:grid-cols-4 gap-8 md:gap-12">
+              {[
+                { label: "Currículos Criados", val: "1.250+" },
+                { label: "Taxa de Entrevistas", val: "92%" },
+                { label: "Modelos Exclusivos", val: "8" },
+                { label: "Profissionais Colocados", val: "340+" }
+              ].map((stat, i) => (
+                <div key={i} className="flex flex-col items-center justify-center p-4 rounded-2xl hover:bg-bg-main transition-colors duration-300">
+                  <h3 className="text-4xl md:text-5xl font-black text-deep-blue tracking-tighter mb-1">
+                    {stat.val}
+                  </h3>
+                  <div className="h-1 w-8 bg-primary-blue/30 rounded-full mb-3"></div>
+                  <p className="text-[10px] md:text-[11px] font-bold text-gray-400 uppercase tracking-[0.25em] text-center">
+                    {stat.label}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          {/* Features Section */}
+          <section className="py-24 px-6 w-full max-w-7xl mx-auto">
+            <div className="text-center space-y-4 mb-20">
+               <h2 className="text-4xl md:text-6xl font-black text-deep-blue tracking-tighter">Eficiência que você sente no <span className="text-primary-blue italic">primeiro clique.</span></h2>
+               <p className="text-text-muted font-medium max-w-2xl mx-auto">Desenvolvemos cada detalhe para que sua jornada até a mesa do recrutador seja o mais curta possível.</p>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
               {[
                 { 
-                  title: "Texto Otimizado", 
-                  desc: "Nossa IA transforma rascunhos em conquistas profissionais marcantes.", 
-                  icon: FileText,
-                  color: "bg-soft-blue text-primary-blue"
-                },
-                { 
-                  title: "Design Mobile-Ready", 
-                  desc: "Edite seu currículo em qualquer dispositivo com interface fluida e moderna.", 
-                  icon: Globe,
-                  color: "bg-deep-blue text-white"
-                },
-                { 
-                  title: "Toque Pessoal", 
-                  desc: "Nada de modelos genéricos. Designs exclusivos que refletem sua identidade.", 
+                  title: "Otimização Semântica", 
+                  desc: "Nosso sistema analisa e aprimora seus textos com linguagem executiva focada em impacto e resultados reais.", 
                   icon: Settings,
-                  color: "bg-primary-blue text-white"
+                  color: "bg-primary-blue text-white shadow-primary-blue/20"
+                },
+                { 
+                  title: "Exportação em Alta Definição", 
+                  desc: "PDFs gerados com precisão matemática para garantir que nenhum pixel saia do lugar na impressão.", 
+                  icon: FileText,
+                  color: "bg-deep-blue text-white shadow-deep-blue/20"
+                },
+                { 
+                  title: "Privacidade Garantida", 
+                  desc: "Seus dados pessoais pertencem a você. Processamos suas informações de forma segura e local sempre que possível.", 
+                  icon: CheckCircle,
+                  color: "bg-soft-blue text-primary-blue border border-primary-blue/10"
                 }
               ].map((item, i) => (
                 <motion.div 
                   key={i}
-                  whileHover={{ y: -5 }}
-                  className="p-8 rounded-[32px] border border-border-main bg-white hover:shadow-[0_20px_40px_-12px_rgba(0,0,0,0.05)] transition-all group"
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: i * 0.2 }}
+                  className="p-10 rounded-[40px] bg-white border border-border-main hover:shadow-2xl transition-all group"
                 >
-                  <div className={`w-12 h-12 ${item.color} rounded-2xl flex items-center justify-center mb-6 shadow-sm group-hover:scale-110 transition-transform`}>
-                    <item.icon size={22} />
+                  <div className={`w-14 h-14 ${item.color} rounded-2xl flex items-center justify-center mb-8 shadow-xl group-hover:scale-110 transition-transform`}>
+                    <item.icon size={28} />
                   </div>
-                  <h3 className="text-xl font-black text-deep-blue tracking-tight mb-3">
+                  <h3 className="text-2xl font-black text-deep-blue tracking-tight mb-4">
                     {item.title}
                   </h3>
-                  <p className="text-sm text-text-muted leading-relaxed font-medium">
+                  <p className="text-text-muted leading-relaxed font-medium">
                     {item.desc}
                   </p>
                 </motion.div>
               ))}
-            </motion.div>
+            </div>
+          </section>
+
+          {/* Testimonials */}
+          <section className="w-full bg-deep-blue py-24 px-6 overflow-hidden relative">
+            <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_30%_20%,rgba(0,102,255,0.1),transparent)]"></div>
+             <div className="max-w-7xl mx-auto relative z-10 flex flex-col md:flex-row gap-16 items-center">
+                <div className="flex-1 space-y-8">
+                   <h2 className="text-4xl md:text-6xl font-black text-white leading-tight tracking-tighter">O que dizem os <span className="text-primary-blue italic">Líderes.</span></h2>
+                   <p className="text-white/60 text-lg font-medium leading-relaxed">Milhares de profissionais de Angola e do mundo ja garantiram suas posições usando nossa tecnologia.</p>
+                   <Button onClick={() => setView('editor')} className="bg-white text-deep-blue hover:bg-gray-100 h-16 px-10 uppercase tracking-widest text-xs">Junte-se a eles</Button>
+                </div>
+                <div className="flex-1 w-full grid grid-cols-1 gap-6">
+                   {[
+                      {
+                        name: "Ana Silva",
+                        role: "Diretora de Marketing",
+                        testimonial: "A CV LAB transformou completamente meu currículo. A estruturação e a formatação sugeridas foram o divisor de águas para minha contratação."
+                      },
+                      {
+                        name: "Ricardo Mendes",
+                        role: "Engenheiro de Dados",
+                        testimonial: "Interface incrível, rápida e o resultado final é de um nível executivo que eu não conseguiria fazer sozinho no Word."
+                      }
+                   ].map((t, i) => (
+                      <div key={i} className="bg-white/10 backdrop-blur-lg border border-white/10 p-8 rounded-[32px] text-white">
+                         <div className="flex items-center gap-4 mb-6">
+                            <div className="w-12 h-12 rounded-full bg-primary-blue flex items-center justify-center font-black text-xl">
+                               {t.name.charAt(0)}
+                            </div>
+                            <div>
+                               <p className="font-bold text-lg">{t.name}</p>
+                               <p className="text-[10px] font-black uppercase tracking-widest text-primary-blue">{t.role}</p>
+                            </div>
+                         </div>
+                         <p className="text-white/80 font-medium leading-relaxed italic italic-font italic-style">"{t.testimonial}"</p>
+                      </div>
+                   ))}
+                </div>
+             </div>
+          </section>
+
+          {/* Trusted Logos (Simulated for high-end look) */}
+          <div className="py-20 px-6 w-full border-t border-gray-100 bg-white">
+            <div className="max-w-7xl mx-auto">
+              <p className="text-center text-[11px] font-bold text-gray-400 uppercase tracking-[0.4em] mb-12">Empresas onde nossos usuários foram contratados</p>
+              <div className="flex flex-wrap justify-center items-center gap-10 md:gap-20 opacity-30 grayscale hover:grayscale-0 transition-all duration-500">
+                {['UNITEL', 'SONANGOL', 'BAI', 'BFA', 'ENSA', 'AFRICELL', 'CARRINHO'].map(brand => (
+                  <span key={brand} className="text-xl md:text-2xl font-black tracking-tighter text-deep-blue hover:text-primary-blue cursor-default">{brand}</span>
+                ))}
+              </div>
+            </div>
           </div>
-        </section>
-
-        <AdSenseUnit />
-
+        </main>
+        
         <motion.footer 
           initial={{ opacity: 0 }}
           whileInView={{ opacity: 1 }}
           viewport={{ once: true }}
           transition={{ duration: 1 }}
-          className="bg-bg-main py-12 border-t border-border-main text-center flex flex-col items-center gap-6"
+          className="bg-bg-main py-20 border-t border-border-main text-center flex flex-col items-center gap-10"
         >
-           <div className="flex flex-wrap justify-center items-center gap-6 text-xs font-bold text-text-muted uppercase tracking-widest">
+           <div className="flex flex-col items-center gap-4">
+              <img 
+                src="https://i.supaimg.com/6bc04951-8cbe-4706-9f0c-a01f9ea9a6c4/f7862e8c-46f6-4d82-a9e0-b9cb52c6fc4f.png" 
+                alt="CV LAB" 
+                className="h-10 w-auto opacity-50"
+                referrerPolicy="no-referrer" 
+              />
+              <p className="text-xs font-bold text-text-muted max-w-sm">Ferramenta definitiva para a criação de currículos profissionais de alto impacto em Angola.</p>
+           </div>
+           
+           <div className="flex flex-wrap justify-center items-center gap-8 text-[10px] font-black text-text-muted uppercase tracking-widest">
               <button onClick={() => setView('tips')} className="hover:text-primary-blue transition-colors">Dicas</button>
               <button onClick={() => setView('showcase')} className="hover:text-primary-blue transition-colors">Exemplos</button>
               <button onClick={() => setView('about')} className="hover:text-primary-blue transition-colors">Sobre Nós</button>
               <button onClick={() => setView('faq')} className="hover:text-primary-blue transition-colors">FAQ</button>
-              <button onClick={() => setView('terms')} className="hover:text-primary-blue transition-colors">Termos e Condições</button>
-              <a href="https://www.facebook.com/share/18jr2KKfK1/" target="_blank" rel="noopener noreferrer" className="hover:text-primary-blue transition-colors">
-                <Facebook size={16} />
-              </a>
+              <button onClick={() => setView('terms')} className="hover:text-primary-blue transition-colors">Termos</button>
+              <a href="https://www.facebook.com/share/18jr2KKfK1/" target="_blank" rel="noopener noreferrer" className="hover:text-primary-blue transition-colors">Facebook</a>
+              <a href="https://www.instagram.com/cvlabvisaodecarreira?igsh=YWZpb2RuNXFrajhx" target="_blank" rel="noopener noreferrer" className="hover:text-primary-blue transition-colors">Instagram</a>
+              <a href="https://www.tiktok.com/@cv.lab.viso.de.ca?_r=1&_t=ZS-95gvLuKq4As" target="_blank" rel="noopener noreferrer" className="hover:text-primary-blue transition-colors">TikTok</a>
            </div>
-           <Button onClick={() => setView('editor')} className="px-8 h-12 text-sm uppercase tracking-tight">Criar Currículo</Button>
-           <p className="text-[10px] text-text-muted opacity-60">© 2026 CV LAB. Todos os direitos reservados.</p>
+           
+           <div className="w-14 h-1.5 bg-border-main rounded-full"></div>
+           
+           <div className="flex flex-col items-center gap-2">
+             <Button onClick={() => setView('editor')} className="px-12 h-14 text-sm uppercase tracking-tight">Criar Meu Currículo Agora</Button>
+             <p className="text-[9px] text-text-muted opacity-40 uppercase tracking-widest mt-2">© 2026 CV LAB. Todos os direitos reservados para Lab Digital.</p>
+           </div>
         </motion.footer>
 
         {/* Floating WhatsApp Button - Already handled at landing page logic level or consolidate here if needed */}
@@ -1196,7 +1349,7 @@ export default function App() {
               <div className="bg-primary-blue p-10 rounded-[40px] text-white flex flex-col md:flex-row items-center gap-8 shadow-2xl shadow-primary-blue/20">
                 <div className="space-y-4 flex-1">
                   <h3 className="text-2xl font-black">Quer uma análise personalizada?</h3>
-                  <p className="text-white/80 text-sm font-medium">Nossa IA pode revisar seu currículo atual e sugerir melhorias específicas para o seu perfil profissional.</p>
+                  <p className="text-white/80 text-sm font-medium">Nosso sistema pode revisar seu currículo atual e sugerir melhorias específicas para o seu perfil profissional.</p>
                 </div>
                 <Button onClick={() => setView('editor')} className="bg-white text-primary-blue hover:bg-white/90 shrink-0 h-14 px-8 uppercase tracking-widest text-xs">Começar Agora</Button>
               </div>
@@ -1249,12 +1402,12 @@ export default function App() {
               <div className="grid gap-6">
                 {[
                   {
-                    q: "Como a Inteligência Artificial melhora meu currículo?",
-                    a: "Nossa IA, baseada no Google Gemini, analisa as suas experiências brutas e as reescreve utilizando verbos de ação e métricas de impacto. Ela ajusta o tom para ser mais executivo e garante que as palavras-chave certas para o seu setor estejam presentes, aumentando suas chances em sistemas de triagem automáticos (ATS)."
+                    q: "Como o sistema melhora meu currículo?",
+                    a: "Nosso mecanismo avançado analisa as suas experiências brutas e as reescreve utilizando verbos de ação e métricas de impacto. Ele ajusta o tom para ser mais executivo e garante que as palavras-chave certas para o seu setor estejam presentes, aumentando suas chances em sistemas de triagem automáticos (ATS)."
                   },
                   {
                     q: "O download do currículo é realmente gratuito?",
-                    a: "Sim. A criação do currículo e a exportação para PDF são totalmente gratuitas. Nós acreditamos que a base da sua carreira não deve ter custos proibitivos. Oferecemos serviços premium opcionais, como a geração de cartas de apresentação personalizadas por IA."
+                    a: "Sim. A criação do currículo e a exportação para PDF são totalmente gratuitas. Nós acreditamos que a base da sua carreira não deve ter custos proibitivos. Oferecemos serviços premium opcionais, como a geração de cartas de apresentação personalizadas pelo sistema."
                   },
                   {
                     q: "Meus dados estão seguros?",
@@ -1266,7 +1419,7 @@ export default function App() {
                   },
                   {
                     q: "Como funciona o pagamento da Carta de Apresentação?",
-                    a: "Para gerar uma carta de apresentação premium, solicitamos um pagamento único de 1150 Kzs. Este valor cobre o processamento avançado de IA para criar um texto altamente persuasivo e formatado especificamente para a vaga que você deseja."
+                    a: "Para gerar uma carta de apresentação premium, solicitamos um pagamento único de 1150 Kzs. Este valor cobre o processamento avançado do sistema para criar um texto altamente persuasivo e formatado especificamente para a vaga que você deseja."
                   },
                   {
                     q: "O currículo é compatível com sistemas ATS?",
@@ -1320,7 +1473,7 @@ export default function App() {
               <div className="grid sm:grid-cols-3 gap-8">
                 {[
                   { label: "Design Premium", desc: "Templates criados por especialistas em UX para máxima legibilidade." },
-                  { label: "IA Integrada", desc: "Textos otimizados pelo Google Gemini para soar como um executivo sênior." },
+                  { label: "Sistema Integrado", desc: "Textos otimizados pelo nosso motor próprio para soar como um executivo sênior." },
                   { label: "Foco no Candidato", desc: "Ferramenta gratuita e acessível para impulsionar talentos locais." }
                 ].map((stat, i) => (
                   <div key={i} className="space-y-2 p-6 bg-white rounded-3xl border border-border-main shadow-sm">
@@ -1331,7 +1484,6 @@ export default function App() {
               </div>
 
               <div className="bg-deep-blue text-white p-12 rounded-[40px] text-center space-y-6 shadow-2xl relative overflow-hidden">
-                <div className="absolute top-0 left-0 w-full h-full bg-grid opacity-10"></div>
                 <h3 className="text-3xl font-black relative z-10">Pronto para dar o próximo passo?</h3>
                 <p className="text-white/70 max-w-xl mx-auto font-medium relative z-10">
                   Junte-se a milhares de profissionais que já transformaram suas carreiras com a ajuda da CV LAB.
@@ -1350,8 +1502,8 @@ export default function App() {
                 <h3 className="font-bold text-primary-blue">1. Aceitação</h3>
                 <p>Ao utilizar o aplicativo CV Lab, o usuário concorda plenamente com os termos estabelecidos nesta página.</p>
                 
-                <h3 className="font-bold text-primary-blue">2. Uso da Inteligência Artificial</h3>
-                <p>O serviço utiliza APIs externas (Google Gemini) para gerar textos otimizados. Não garantimos contratações, mas sim a formatação e estruturação correta do texto.</p>
+                <h3 className="font-bold text-primary-blue">2. Uso de Algoritmos de Otimização</h3>
+                <p>O serviço utiliza ferramentas de processamento avançado para gerar textos otimizados. Não garantimos contratações, mas sim a formatação e estruturação correta do texto.</p>
 
                 <h3 className="font-bold text-primary-blue">3. Pagamentos e Reembolsos</h3>
                 <p>O pacote premium (Gerador de Carta de Apresentação) é entregue imediatamente de forma digital, invalidando o recurso de reembolso sob regras locais pertinentes a bens consumíveis de software.</p>
@@ -1365,6 +1517,9 @@ export default function App() {
       </div>
     );
   }
+
+  const currentTheme = TEMPLATES[template];
+  const c = { ...currentTheme.colors, primary: resumeData.themeColor || currentTheme.colors.primary };
 
   return (
     <div className="min-h-screen bg-bg-main flex flex-col md:flex-row justify-center md:h-screen md:overflow-hidden print:bg-white print:h-auto print:overflow-visible">
@@ -1541,9 +1696,9 @@ export default function App() {
                        <div className="p-2 bg-primary-blue rounded-xl">
                           <Plus size={20} className="animate-pulse" />
                        </div>
-                       <h4 className="font-black uppercase text-[11px] tracking-widest text-white/90">Atalho Inteligente</h4>
+                       <h4 className="font-black uppercase text-[11px] tracking-widest text-white/90">Assistente de Conteúdo</h4>
                     </div>
-                    <p className="text-xs text-white/70 font-medium leading-relaxed">Otimize seu tempo! Nossa IA gera sugestões de alto impacto para seu resumo e histórico profissional baseado no seu cargo atual.</p>
+                    <p className="text-xs text-white/70 font-medium leading-relaxed">Otimize seu tempo! Receba sugestões de alto impacto para preencher seu resumo e histórico profissional com base no cargo informado.</p>
                     <Button 
                       variant="none"
                       className="w-full bg-white text-deep-blue hover:bg-white/90 h-11 text-[10px] font-black uppercase tracking-widest shadow-lg shadow-black/10 transition-all active:scale-95" 
@@ -1819,7 +1974,7 @@ export default function App() {
       </aside>
 
       {/* Preview Section - Transformed to Modal explicitly on request/mobile, hidden standard */}
-      <main className={`flex-1 overflow-y-auto overflow-x-hidden w-full custom-scrollbar transition-all duration-300 print:flex print:bg-white print:p-0 print:m-0 print:overflow-visible flex-col items-center ${showPreviewModal ? 'fixed inset-0 z-50 bg-bg-main/95 backdrop-blur-md pt-20 pb-8 px-2 flex' : 'hidden print:flex'}`}>
+      <main className={`flex-1 overflow-y-auto overflow-x-hidden w-full custom-scrollbar transition-all duration-300 print:flex print:bg-white print:p-0 print:m-0 print:overflow-visible flex-col items-center ${showPreviewModal ? 'fixed inset-0 z-50 bg-bg-main/95 backdrop-blur-md pt-20 pb-8 px-2 flex' : isDownloading ? 'fixed top-0 left-0 z-[-50] flex opacity-100 pointer-events-none' : 'hidden print:flex'}`}>
         
         {loading && (
           <div className="fixed inset-0 bg-white/60 backdrop-blur-md z-[100] flex flex-col items-center justify-center gap-6 print:hidden">
@@ -1831,7 +1986,7 @@ export default function App() {
                  className="h-12 w-auto object-contain brightness-0 invert"
                  referrerPolicy="no-referrer" 
                />
-               <p className="font-black text-primary-blue text-[10px] tracking-[0.3em] uppercase animate-pulse">Inteligência Artificial Ativada</p>
+               <p className="font-black text-primary-blue text-[10px] tracking-[0.3em] uppercase animate-pulse">Sincronizando com o Sistema</p>
              </div>
           </div>
         )}
@@ -1848,14 +2003,14 @@ export default function App() {
         {/* Scaled Wrapper to prevent horizontal scroll and extra vertical whitespace */}
         <div 
           className="flex justify-center w-full"
-          style={{ height: showPreviewModal ? `${1123 * previewScale}px` : 'auto' }}
+          style={{ height: showPreviewModal ? `${1122 * previewScale}px` : 'auto' }}
         >
           <div 
             className={`origin-top transition-all duration-700 print:shadow-none print:w-full shadow-[0_60px_120px_-20px_rgba(0,0,0,0.2)]`}
             style={{ 
               transform: showPreviewModal ? `scale(${previewScale})` : 'none',
               width: '794px',
-              height: '1123px',
+              height: '1122px',
               flexShrink: 0
             }}
           >
@@ -1866,52 +2021,44 @@ export default function App() {
                    initial={{ opacity: 0, y: 20 }}
                    animate={{ opacity: 1, y: 0 }}
                    id="cover-letter-content"
-                   className="bg-white min-h-[1123px] w-[794px] p-20 relative flex flex-col font-sans text-left shadow-2xl"
+                   className="bg-white h-[1122px] w-[794px] p-20 relative flex flex-col font-sans text-left shadow-2xl overflow-hidden"
                  >
                     <button data-html2canvas-ignore="true" onClick={() => setIsCoverLetterMode(false)} className="absolute top-8 left-8 text-[10px] font-black uppercase text-primary-blue tracking-widest flex items-center gap-2 print:hidden group bg-soft-blue px-4 py-2 rounded-full hover:bg-primary-blue hover:text-white transition-all">
                        <ChevronLeft size={14} className="group-hover:-translate-x-1 transition-transform" /> Voltar ao Editor
                     </button>
 
                     {/* Minimalist Professional Header */}
-                    <div className="flex justify-between items-end border-b-4 border-primary-blue/5 pb-10 mb-12 mt-8">
-                      <div className="space-y-1">
-                        <h1 className="text-4xl font-black text-deep-blue tracking-tighter uppercase leading-none">
+                    <div className="flex justify-between items-start border-b-2 pb-8 mb-10 mt-4" style={{ borderColor: `${c.primary}30` }}>
+                      <div className="space-y-1.5 max-w-[60%]">
+                        <h1 className="text-[32px] font-black tracking-tight leading-none" style={{ color: c.primary }}>
                           {resumeData.personalInfo.fullName || 'Seu Nome'}
                         </h1>
-                        <p className="text-primary-blue font-black tracking-[0.2em] text-[10px] uppercase">
+                        <p className="text-gray-500 font-bold tracking-[0.1em] text-[11px] uppercase">
                           {resumeData.personalInfo.title || 'Seu Cargo'}
                         </p>
                       </div>
-                      <div className="text-right space-y-1 text-text-muted font-medium text-[11px]">
-                        <div className="flex items-center justify-end gap-2 text-primary-blue font-bold">
-                          <span>{resumeData.personalInfo.phone}</span>
-                          <span className="opacity-30">•</span>
-                          <span>{resumeData.personalInfo.email}</span>
-                        </div>
-                        <p className="uppercase tracking-wider opacity-60 font-black">{resumeData.personalInfo.location}</p>
+                      <div className="text-right space-y-2 text-gray-500 font-medium text-[11px] bg-gray-50/50 p-4 rounded-xl border border-gray-100">
+                        {resumeData.personalInfo.email && <div className="flex items-center justify-end gap-2 text-gray-700"><span>{resumeData.personalInfo.email}</span><Mail size={12} className="opacity-60"/></div>}
+                        {resumeData.personalInfo.phone && <div className="flex items-center justify-end gap-2 text-gray-700"><span>{resumeData.personalInfo.phone}</span><Phone size={12} className="opacity-60"/></div>}
+                        {resumeData.personalInfo.location && <div className="flex items-center justify-end gap-2 text-gray-700"><span>{resumeData.personalInfo.location}</span><MapPin size={12} className="opacity-60"/></div>}
                       </div>
                     </div>
 
-                    <div className="flex flex-col gap-1 mb-12">
-                      <span className="text-primary-blue font-black text-[9px] uppercase tracking-[0.3em] mb-1">Data de Emissão</span>
-                      <div className="text-deep-blue text-sm font-bold">
-                        {new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })}
-                      </div>
+                    <div className="flex justify-between items-end mb-12 text-[12px] uppercase tracking-widest font-bold text-gray-400">
+                      <span>Ref: Candidatura Espontânea</span>
+                      <span>Luanda, {new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })}</span>
                     </div>
                     
-                    <div className="flex-1 text-justify whitespace-pre-line text-[15px] leading-[1.8] text-slate-700 font-medium">
+                    <div className="flex-1 text-justify whitespace-pre-line text-[14px] leading-[2.1] text-gray-700 font-medium px-4">
                        {renderText(generatedLetter)}
                     </div>
 
-                    <div className="mt-20 pt-16 border-t border-gray-100 flex justify-between items-center">
-                       <div className="text-left">
-                          <p className="text-xs text-text-muted uppercase tracking-widest mb-1">Atentamente,</p>
-                          <p className="text-lg font-black text-deep-blue tracking-tight underline decoration-primary-blue/30 decoration-4 underline-offset-8">
+                    <div className="mt-20 pt-10 flex flex-col justify-end items-end pr-4">
+                       <div className="text-right">
+                          <p className="text-[11px] text-gray-400 uppercase tracking-widest mb-4">Atentamente,</p>
+                          <p className="text-[18px] font-black italic tracking-tighter" style={{ color: c.primary }}>
                              {resumeData.personalInfo.fullName}
                           </p>
-                       </div>
-                       <div className="w-24 h-24 bg-soft-blue/50 rounded-full flex items-center justify-center opacity-20 filter grayscale">
-                          <CheckCircle size={32} className="text-primary-blue" />
                        </div>
                     </div>
                  </motion.div>
