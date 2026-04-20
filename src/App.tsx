@@ -1306,9 +1306,9 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
       const opt = {
         margin:       0,
         filename:     isCoverLetterMode ? 'Carta_Apresentacao.pdf' : `${resumeData.personalInfo.fullName.replace(/\s+/g, '_')}_Curriculo.pdf`,
-        image:        { type: 'jpeg' as const, quality: 1 },
+        image:        { type: 'jpeg' as const, quality: 1.0 },
         html2canvas:  { 
-          scale: 2, 
+          scale: 3, 
           useCORS: true, 
           letterRendering: true,
           scrollY: 0,
@@ -1322,24 +1322,79 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
           onclone: (clonedDoc: any) => {
             const clonedElement = clonedDoc.getElementById(elementId);
             if (clonedElement) {
-               // Force exact dimensions and flatten visual layers
-               clonedElement.style.transform = 'none';
-               clonedElement.style.transition = 'none';
-               clonedElement.style.width = '794px';
-               clonedElement.style.height = '1122px';
-               clonedElement.style.position = 'relative';
-               clonedElement.style.overflow = 'hidden';
-               
-               const children = clonedElement.getElementsByTagName('*');
-               for (let i = 0; i < children.length; i++) {
-                 children[i].style.transition = 'none';
-                 children[i].style.animation = 'none';
+               // ABSOLUTE DIMENSION LOCKING & CLEANUP
+               Object.assign(clonedElement.style, {
+                 transform: 'none',
+                 transition: 'none',
+                 animation: 'none',
+                 width: '794px',
+                 height: '1122px',
+                 position: 'absolute',
+                 top: '0px',
+                 left: '0px',
+                 overflow: 'hidden',
+                 margin: '0px',
+                 padding: isCoverLetterMode ? '80px' : '0px',
+                 boxShadow: 'none',
+                 border: 'none',
+                 display: 'block',
+                 backgroundColor: '#FFFFFF'
+               });
+
+               const allElements = clonedElement.getElementsByTagName('*');
+               for (let i = 0; i < allElements.length; i++) {
+                 const el = allElements[i] as HTMLElement;
+                 el.style.transition = 'none';
+                 el.style.animation = 'none';
+                 
+                 // Remove shadows that cause artifacts in PDF
+                 if (el.style.boxShadow || el.className.includes('shadow')) {
+                   el.style.boxShadow = 'none';
+                 }
+
+                 // CRITICAL FIX: Align icons with text
+                 // Detect rows that contain both icons (SVG) and text
+                 if (el.style.display === 'flex' || el.className.includes('flex')) {
+                    el.style.display = 'flex !important';
+                    el.style.alignItems = 'center !important';
+                 }
+                 
+                 // CRITICAL FIX: Initial centering in circles
+                 const isAvatarCircle = el.style.borderRadius === '50%' || el.className.includes('rounded-full');
+                 if (isAvatarCircle && el.innerText && el.innerText.length <= 2) {
+                    el.style.display = 'flex';
+                    el.style.alignItems = 'center';
+                    el.style.justifyContent = 'center';
+                    el.style.lineHeight = '0'; // Reset line height to prevent font-baseline shifting
+                    el.style.paddingTop = '2px'; // Fine-tune centering
+                 }
+                 
+                 // Fix for images
+                 if (el.tagName.toLowerCase() === 'img') {
+                   const img = el as HTMLImageElement;
+                   img.style.objectFit = 'cover';
+                   img.style.objectPosition = 'top center';
+                   img.style.display = 'block';
+                   // Force re-eval of dimensions to prevent flattening
+                   const currentWidth = img.offsetWidth;
+                   const currentHeight = img.offsetHeight;
+                   if (currentWidth && currentHeight) {
+                      img.style.width = `${currentWidth}px`;
+                      img.style.height = `${currentHeight}px`;
+                   }
+                 }
+                 
+                 // Fix for Lucide icons
+                 if (el.tagName.toLowerCase() === 'svg') {
+                   el.style.display = 'inline-block';
+                   el.style.verticalAlign = 'middle';
+                   el.style.flexShrink = '0';
+                 }
                }
             }
           }
         },
-        // Using 'px' with exactly [794, 1122] ensures 1 single page without any spillover
-        jsPDF: { unit: 'px', format: [794, 1122] as [number, number], orientation: 'portrait' as const, compress: true }
+        jsPDF: { unit: 'px', format: [794, 1122] as [number, number], orientation: 'portrait' as const, compress: true, precision: 16 }
       };
       
       await html2pdf().set(opt).from(element).save();
@@ -1367,6 +1422,7 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
     }
     if (!contactEmail) return;
 
+    setLoading(true);
     const orderData = {
         ownerId: user.uid,
         status: 'pending',
@@ -1418,6 +1474,8 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
     } catch(e) {
         console.error(e);
         alert("Erro ao processar o pedido. Tente novamente.");
+    } finally {
+        setLoading(false);
     }
   };
 
@@ -2240,8 +2298,13 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
                        </div>
                     </div>
 
-                    <Button type="submit" className="w-full h-12 text-base shadow-xl shadow-primary-blue/20 mt-2">
-                      Já Paguei, Enviar Comprovativo
+                    <Button type="submit" disabled={loading} className="w-full h-12 text-base shadow-xl shadow-primary-blue/20 mt-2">
+                      {loading ? (
+                        <div className="flex items-center gap-2">
+                           <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                           <span>Processando...</span>
+                        </div>
+                      ) : "Já Paguei, Enviar Comprovativo"}
                     </Button>
                  </form>
                )}

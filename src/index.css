@@ -70,15 +70,46 @@
 #resume-content, #cover-letter-content {
   page-break-after: avoid;
   page-break-before: avoid;
-  width: 100%;
-}
-#resume-content > div, #cover-letter-content > div {
-  width: 100%;
+  width: 794px !important;
+  height: 1122px !important;
+  overflow: hidden !important;
+  box-sizing: border-box !important;
 }
 
-.t1-edu-item, .t1-exp-item, .t2-edu-item, .t2-exp-item, .t3-edu-item, .t3-exp-item, .t4-exp-item, .t5-exp-item {
-  break-inside: avoid;
-  page-break-inside: avoid;
+#resume-content img, #cover-letter-content img {
+  object-fit: cover !important;
+  object-position: top center !important;
+}
+
+.t1-edu-item, .t1-exp-item, .t2-edu-item, .t2-exp-item, .t3-edu-item, .t3-exp-item, .t4-exp-item, .t5-exp-item, .experience-block, .education-block, .skill-block {
+  break-inside: avoid !important;
+  page-break-inside: avoid !important;
+}
+
+/* Fix for potential flexbox alignment issues in PDF render */
+.flex {
+  display: flex !important;
+}
+
+.flex-col {
+  flex-direction: column !important;
+}
+
+.items-center {
+  align-items: center !important;
+}
+
+.justify-between {
+  justify-content: space-between !important;
+}
+
+.flex-1 {
+  flex: 1 1 0% !important;
+}
+
+/* Ensure images maintain aspect ratio */
+img {
+  max-width: none !important;
 }
 
 /* ══════════════════════════════════════════════
