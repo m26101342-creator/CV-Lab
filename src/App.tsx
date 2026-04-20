@@ -416,7 +416,15 @@ const AdminPanel = () => {
     const [orders, setOrders] = useState<any[]>([]);
     const [onlineUsers, setOnlineUsers] = useState<any[]>([]);
     const [searchQuery, setSearchQuery] = useState('');
-    const [stats, setStats] = useState({ users: 0, pending: 0, approved: 0, online: 0 });
+    const [stats, setStats] = useState({ 
+        users: 0, 
+        pending: 0, 
+        approved: 0, 
+        online: 0, 
+        totalVisitors: 0,
+        revenue: 0,
+        conversion: 0
+    });
     const [page, setPage] = useState(1);
     const itemsPerPage = 8;
     
@@ -435,7 +443,17 @@ const AdminPanel = () => {
                 return data;
             });
             
-            setStats(s => ({ ...s, pending: pendingCount, approved: approvedCount }));
+            setStats(s => {
+                const total = fetchedOrders.length;
+                const visitors = s.totalVisitors || 1;
+                return { 
+                    ...s, 
+                    pending: pendingCount, 
+                    approved: approvedCount,
+                    revenue: approvedCount * 1150,
+                    conversion: total > 0 ? (total / visitors) * 100 : 0
+                };
+            });
             setOrders(fetchedOrders.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
         }, (error) => {
             console.error("Firestore listener error:", error);
@@ -444,12 +462,17 @@ const AdminPanel = () => {
             }
         });
 
-        // Fast simple snapshot for user count
-        const fetchUsers = async () => {
+        // Fast simple snapshots for counts
+        const fetchGlobalStats = async () => {
             const usersSnap = await getDocs(collection(db, 'users'));
-            setStats(s => ({ ...s, users: usersSnap.size }));
+            const visitorsSnap = await getDocs(collection(db, 'visitors'));
+            setStats(s => ({ 
+                ...s, 
+                users: usersSnap.size,
+                totalVisitors: visitorsSnap.size
+            }));
         };
-        fetchUsers();
+        fetchGlobalStats();
 
         // Online Presence Listener
         const presenceRef = collection(db, 'presence');
@@ -554,6 +577,24 @@ const AdminPanel = () => {
                 <div className="bg-white p-6 rounded-3xl shadow-sm border border-border-main flex flex-col items-center text-center">
                     <span className="text-[10px] uppercase tracking-widest text-text-muted font-black mb-1">Aprovados</span>
                     <span className="text-4xl font-black text-blue-600">{stats.approved}</span>
+                </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div className="bg-white p-6 rounded-3xl shadow-sm border border-border-main flex flex-col items-center text-center group hover:bg-primary-blue transition-colors duration-300">
+                    <span className="text-[10px] uppercase tracking-widest text-text-muted font-black mb-1 group-hover:text-white/70">Visitantes Únicos</span>
+                    <span className="text-4xl font-black text-deep-blue group-hover:text-white">{stats.totalVisitors}</span>
+                    <span className="text-[9px] font-bold text-gray-400 mt-2 group-hover:text-white/50">LIFETIME TRAFFIC</span>
+                </div>
+                <div className="bg-white p-6 rounded-3xl shadow-sm border border-border-main flex flex-col items-center text-center group hover:bg-green-600 transition-colors duration-300">
+                    <span className="text-[10px] uppercase tracking-widest text-text-muted font-black mb-1 group-hover:text-white/70">Receita Bruta</span>
+                    <span className="text-4xl font-black text-green-600 group-hover:text-white">{stats.revenue.toLocaleString()} <span className="text-sm font-bold">Kzs</span></span>
+                    <span className="text-[9px] font-bold text-gray-400 mt-2 group-hover:text-white/50">EFETIVO APROVADO</span>
+                </div>
+                <div className="bg-white p-6 rounded-3xl shadow-sm border border-border-main flex flex-col items-center text-center group hover:bg-amber-500 transition-colors duration-300">
+                    <span className="text-[10px] uppercase tracking-widest text-text-muted font-black mb-1 group-hover:text-white/70">Taxa de Conversão</span>
+                    <span className="text-4xl font-black text-amber-500 group-hover:text-white">{stats.conversion.toFixed(1)}%</span>
+                    <span className="text-[9px] font-bold text-gray-400 mt-2 group-hover:text-white/50">LEADS PARA PEDIDOS</span>
                 </div>
             </div>
 
@@ -1339,14 +1380,30 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // Presence Tracking
+  // Presence & Visitor Tracking
   useEffect(() => {
+    const trackVisitor = async () => {
+      try {
+        const trackingId = localStorage.getItem('cv_lab_visitor_id') || `visitor_${Math.random().toString(36).substring(2, 11)}`;
+        if (!localStorage.getItem('cv_lab_visitor_id')) {
+          localStorage.setItem('cv_lab_visitor_id', trackingId);
+          
+          // Only record visitor on first creation
+          await setDoc(doc(db, 'visitors', trackingId), {
+            visitorId: trackingId,
+            firstSeen: new Date().toISOString(),
+            userAgent: navigator.userAgent
+          }, { merge: true });
+        }
+      } catch (e) {
+        console.warn("Visitor tracking prevented by environment/rules", e);
+      }
+    };
+
     const updatePresence = async () => {
       try {
-        const trackingId = user?.uid || localStorage.getItem('cv_lab_visitor_id') || `visitor_${Math.random().toString(36).substring(2, 11)}`;
-        if (!user && !localStorage.getItem('cv_lab_visitor_id')) {
-          localStorage.setItem('cv_lab_visitor_id', trackingId);
-        }
+        const trackingId = user?.uid || localStorage.getItem('cv_lab_visitor_id');
+        if (!trackingId) return;
 
         await setDoc(doc(db, 'presence', trackingId), {
           userId: trackingId,
@@ -1356,11 +1413,11 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
           view: view
         }, { merge: true });
       } catch (err) {
-        // Silently fail if rules block it, common for non-auth visitors
         console.warn("Presence update failed (expected if guest auth disabled):", err);
       }
     };
 
+    trackVisitor();
     updatePresence();
     const interval = setInterval(updatePresence, 30000); 
     return () => clearInterval(interval);

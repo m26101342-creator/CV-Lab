@@ -62,6 +62,13 @@ service cloud.firestore {
           && (!('view' in data.keys()) || data.view is string);
     }
 
+    // Visitor Entity Validator
+    function isValidVisitor(data) {
+      return data.keys().hasAll(['visitorId', 'firstSeen'])
+          && data.visitorId is string && data.visitorId.size() > 0 && data.visitorId.size() <= 128
+          && data.firstSeen is string;
+    }
+
     match /users/{userId} {
       // Identity Poisoning Guard
       allow get: if isValidId(userId) && (isAdmin() || (isSignedIn() && request.auth.uid == userId));
@@ -118,6 +125,12 @@ service cloud.firestore {
                             )
                             && isValidPresence(incoming());
       allow delete: if isValidId(userId) && (isAdmin() || (isSignedIn() && request.auth.uid == userId));
+    }
+
+    match /visitors/{visitorId} {
+      allow get: if isAdmin() || (isSignedIn() && request.auth.uid == visitorId);
+      allow list: if isAdmin();
+      allow create: if isValidId(visitorId) && isValidVisitor(incoming());
     }
   }
 }

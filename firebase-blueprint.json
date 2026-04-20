@@ -49,6 +49,17 @@
         "view": { "type": "string" }
       },
       "required": ["userId", "lastSeen"]
+    },
+    "Visitor": {
+      "title": "Visitor",
+      "description": "Unique visitor record for traffic analytics",
+      "type": "object",
+      "properties": {
+        "visitorId": { "type": "string" },
+        "firstSeen": { "type": "string" },
+        "userAgent": { "type": "string" }
+      },
+      "required": ["visitorId", "firstSeen"]
     }
   },
   "firestore": {
@@ -67,6 +78,10 @@
     "/presence/{userId}": {
       "schema": { "$ref": "#/entities/Presence" },
       "description": "User online heartbeats"
+    },
+    "/visitors/{visitorId}": {
+      "schema": { "$ref": "#/entities/Visitor" },
+      "description": "Unique visitor analytics"
     }
   }
 }
