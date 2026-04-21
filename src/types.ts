@@ -59,7 +59,7 @@ export const INITIAL_RESUME_DATA: ResumeData = {
   education: [],
   skills: [],
   languages: [],
-  themeColor: '#0066FF',
+  themeColor: '#1B2A4A',
 };
 
 export type TemplateType = 't1_executive' | 't2_geometric' | 't3_modern' | 't4_barnabas' | 't5_jonathan';

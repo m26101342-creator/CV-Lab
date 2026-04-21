@@ -34,7 +34,18 @@ import { ResumeData, INITIAL_RESUME_DATA, TemplateType } from './types.ts';
 import { optimizeResumeText, generateCoverLetter, generateFullResume } from './services/geminiService.ts';
 import html2pdf from 'html2pdf.js';
 import { auth, db, useAuth, loginWithGoogle, logOut } from './lib/firebase';
-import { collection, addDoc, onSnapshot, doc, query, where, getDocs, updateDoc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, addDoc, onSnapshot, doc, query, where, getDocs, updateDoc, setDoc, serverTimestamp, getDoc } from 'firebase/firestore';
+import { 
+  BarChart, 
+  Bar, 
+  XAxis, 
+  YAxis, 
+  CartesianGrid, 
+  Tooltip, 
+  ResponsiveContainer, 
+  AreaChart, 
+  Area 
+} from 'recharts';
 
 // --- UI Components ---
 
@@ -416,6 +427,7 @@ const AdminPanel = () => {
     const [orders, setOrders] = useState<any[]>([]);
     const [onlineUsers, setOnlineUsers] = useState<any[]>([]);
     const [searchQuery, setSearchQuery] = useState('');
+    const [activeTab, setActiveTab] = useState<'overview' | 'orders' | 'visitors'>('overview');
     const [stats, setStats] = useState({ 
         users: 0, 
         pending: 0, 
@@ -425,6 +437,7 @@ const AdminPanel = () => {
         revenue: 0,
         conversion: 0
     });
+    const [chartData, setChartData] = useState<any[]>([]);
     const [page, setPage] = useState(1);
     const itemsPerPage = 8;
     
@@ -436,29 +449,47 @@ const AdminPanel = () => {
         const unsubscribe = onSnapshot(q, (snapshot) => {
             let pendingCount = 0;
             let approvedCount = 0;
+            const dailyData: { [key: string]: number } = {};
+
             const fetchedOrders = snapshot.docs.map(doc => {
                 const data: any = {id: doc.id, ...doc.data()};
                 if (data.status === 'pending') pendingCount++;
                 if (data.status === 'approved') approvedCount++;
+                
+                try {
+                   const date = new Date(data.createdAt).toLocaleDateString('pt-PT', { day: '2-digit', month: '2-digit' });
+                   dailyData[date] = (dailyData[date] || 0) + 1;
+                } catch(e) {}
+
                 return data;
             });
             
+            const formattedChartData = Object.keys(dailyData)
+                .map(date => ({ date, pedidos: dailyData[date] }))
+                .sort((a, b) => {
+                    const [d1, m1] = a.date.split('/');
+                    const [d2, m2] = b.date.split('/');
+                    return new Date(2026, parseInt(m1)-1, parseInt(d1)).getTime() - new Date(2026, parseInt(m2)-1, parseInt(d2)).getTime();
+                })
+                .slice(-7);
+
+            setChartData(formattedChartData);
+            
             setStats(s => {
-                const total = fetchedOrders.length;
                 const visitors = s.totalVisitors || 1;
                 return { 
                     ...s, 
                     pending: pendingCount, 
                     approved: approvedCount,
                     revenue: approvedCount * 1150,
-                    conversion: total > 0 ? (total / visitors) * 100 : 0
+                    conversion: fetchedOrders.length > 0 ? (fetchedOrders.length / visitors) * 100 : 0
                 };
             });
             setOrders(fetchedOrders.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
         }, (error) => {
             console.error("Firestore listener error:", error);
             if (error.code === 'permission-denied') {
-                alert("Acesso negado ao banco de dados. Verifique se sua conta tem permissões de administrador.");
+                alert("Acesso negado ao banco de dados.");
             }
         });
 
@@ -494,264 +525,252 @@ const AdminPanel = () => {
     }, [isAdmin]);
 
     const approveOrder = async (order: any) => {
-        if (!window.confirm("Liberar PDF para este pedido?")) return;
+        if (!window.confirm("Liberar PDF?")) return;
         try {
-            const orderRef = doc(db, 'orders', order.id);
-            await updateDoc(orderRef, { 
-               status: 'approved',
-               updatedAt: new Date().toISOString()
-            });
-
-            // Send notification email to the user
+            await updateDoc(doc(db, 'orders', order.id), { status: 'approved', updatedAt: new Date().toISOString() });
             await addDoc(collection(db, 'mail'), {
                 to: [order.contactEmail],
                 message: {
-                    subject: `Seu documento está pronto para download! - CV LAB`,
-                    html: `
-                        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #1f2937; line-height: 1.6;">
-                            <div style="background-color: #0D8ABC; padding: 30px; text-align: center; border-radius: 16px 16px 0 0;">
-                                <h1 style="color: white; margin: 0; font-size: 24px;">CV LAB - Angola</h1>
-                            </div>
-                            <div style="padding: 40px; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 16px 16px; background-color: #ffffff;">
-                                <h2 style="color: #111827; margin-top: 0;">Olá! Ótimas notícias.</h2>
-                                <p>O seu pedido de <b>${order.documentType === 'resume' ? 'Currículo Profissional' : 'Carta de Apresentação'}</b> foi analisado e aprovado com sucesso.</p>
-                                <p>Você já pode baixar o seu documento em alta definição diretamente na sua central de currículos.</p>
-                                <div style="text-align: center; margin: 30px 0;">
-                                    <a href="${window.location.origin}" style="background-color: #0D8ABC; color: white; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px;">Ir para Meus Currículos</a>
-                                </div>
-                                <p style="font-size: 14px; color: #6b7280; border-top: 1px solid #e5e7eb; pt: 20px; margin-top: 20px;">
-                                    Se tiver qualquer dúvida, entre em contacto com o nosso suporte.
-                                </p>
-                            </div>
-                            <div style="text-align: center; padding: 20px; color: #9ca3af; font-size: 12px;">
-                                © 2026 CV LAB Angola - Todos os direitos reservados.
-                            </div>
-                        </div>
-                    `
+                    subject: 'CV LAB - Documento Liberado',
+                    html: `<p>Seu documento foi aprovado. Acesse o site para baixar.</p>`
                 }
             });
-
-            alert("Pedido aprovado e notificação enviada com sucesso!");
-        } catch (error: any) {
-            console.error("Error approving order:", error);
-            alert(`Erro ao aprovar pedido: ${error.message || 'Erro desconhecido'}`);
-        }
+            alert("Aprovado!");
+        } catch (e) { alert("Erro ao aprovar."); }
     };
 
-    if (!isAdmin) return <div className="p-20 text-center font-bold text-red-500">Acesso Restrito: Suas permissões são insuficientes para aceder o painel.</div>;
+    if (!isAdmin) return <div className="p-20 text-center font-bold text-red-500 font-sans uppercase tracking-widest text-xs">Acesso Restrito.</div>;
 
     const filteredOrders = orders.filter(o => 
         (searchQuery ? o.id.toLowerCase().includes(searchQuery.toLowerCase()) || (o.contactEmail && o.contactEmail.toLowerCase().includes(searchQuery.toLowerCase())) : true)
     );
-
-    // Filter by pending only if not searching
     const displayOrders = searchQuery ? filteredOrders : filteredOrders.filter(o => o.status === 'pending');
-    
-    // Pagination logic
-    const totalPages = Math.ceil(displayOrders.length / itemsPerPage);
     const paginatedOrders = displayOrders.slice((page - 1) * itemsPerPage, page * itemsPerPage);
+    const totalPages = Math.ceil(displayOrders.length / itemsPerPage);
 
     return (
-        <div className="p-4 md:p-10 max-w-6xl mx-auto flex-1 w-full bg-bg-main min-h-screen space-y-8">
-            <header>
-                <h1 className="text-3xl font-black text-deep-blue">Painel Administrativo</h1>
-                <p className="text-sm text-text-muted">Gestão de acessos, downloads e métricas da plataforma CV LAB.</p>
-            </header>
-            
-            <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
-                <div className="bg-white p-6 rounded-3xl shadow-sm border border-border-main flex flex-col items-center text-center">
-                    <span className="text-[10px] uppercase tracking-widest text-text-muted font-black mb-1">Online Agora</span>
-                    <div className="flex items-center gap-2">
-                        <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
-                        <span className="text-4xl font-black text-green-600">{stats.online}</span>
-                    </div>
-                </div>
-                <div className="bg-white p-6 rounded-3xl shadow-sm border border-border-main flex flex-col items-center text-center">
-                    <span className="text-[10px] uppercase tracking-widest text-text-muted font-black mb-1">Total Usuários</span>
-                    <span className="text-4xl font-black text-primary-blue">{stats.users}</span>
-                </div>
-                <div className="bg-white p-6 rounded-3xl shadow-sm border border-border-main flex flex-col items-center text-center">
-                    <span className="text-[10px] uppercase tracking-widest text-text-muted font-black mb-1">Pendentes</span>
-                    <span className="text-4xl font-black text-amber-500">{stats.pending}</span>
-                </div>
-                <div className="bg-white p-6 rounded-3xl shadow-sm border border-border-main flex flex-col items-center text-center">
-                    <span className="text-[10px] uppercase tracking-widest text-text-muted font-black mb-1">Aprovados</span>
-                    <span className="text-4xl font-black text-blue-600">{stats.approved}</span>
-                </div>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div className="bg-white p-6 rounded-3xl shadow-sm border border-border-main flex flex-col items-center text-center group hover:bg-primary-blue transition-colors duration-300">
-                    <span className="text-[10px] uppercase tracking-widest text-text-muted font-black mb-1 group-hover:text-white/70">Visitantes Únicos</span>
-                    <span className="text-4xl font-black text-deep-blue group-hover:text-white">{stats.totalVisitors}</span>
-                    <span className="text-[9px] font-bold text-gray-400 mt-2 group-hover:text-white/50">LIFETIME TRAFFIC</span>
-                </div>
-                <div className="bg-white p-6 rounded-3xl shadow-sm border border-border-main flex flex-col items-center text-center group hover:bg-green-600 transition-colors duration-300">
-                    <span className="text-[10px] uppercase tracking-widest text-text-muted font-black mb-1 group-hover:text-white/70">Receita Bruta</span>
-                    <span className="text-4xl font-black text-green-600 group-hover:text-white">{stats.revenue.toLocaleString()} <span className="text-sm font-bold">Kzs</span></span>
-                    <span className="text-[9px] font-bold text-gray-400 mt-2 group-hover:text-white/50">EFETIVO APROVADO</span>
-                </div>
-                <div className="bg-white p-6 rounded-3xl shadow-sm border border-border-main flex flex-col items-center text-center group hover:bg-amber-500 transition-colors duration-300">
-                    <span className="text-[10px] uppercase tracking-widest text-text-muted font-black mb-1 group-hover:text-white/70">Taxa de Conversão</span>
-                    <span className="text-4xl font-black text-amber-500 group-hover:text-white">{stats.conversion.toFixed(1)}%</span>
-                    <span className="text-[9px] font-bold text-gray-400 mt-2 group-hover:text-white/50">LEADS PARA PEDIDOS</span>
-                </div>
-            </div>
-
-            <div className="bg-white rounded-[32px] shadow-2xl border border-gray-100 overflow-hidden">
-                <div className="p-6 border-b border-gray-50 flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="flex flex-col md:flex-row min-h-screen bg-[#FDFDFE] font-sans">
+            {/* Sidebar */}
+            <aside className="w-full md:w-72 bg-white border-r border-gray-100 p-8 flex flex-col">
+                <div className="flex items-center gap-3 mb-12">
+                    <div className="w-10 h-10 bg-[#0D8ABC] rounded-xl flex items-center justify-center text-white font-black text-xl shadow-lg shadow-[#0D8ABC]/10">L</div>
                     <div>
-                        <h2 className="text-xl font-bold text-deep-blue">Pedidos de Liberação</h2>
-                        <p className="text-xs text-text-muted">{displayOrders.length} registros encontrados</p>
-                    </div>
-                    <div className="relative w-full md:w-80">
-                        <input 
-                            type="text" 
-                            value={searchQuery}
-                            onChange={e => {setSearchQuery(e.target.value); setPage(1);}}
-                            placeholder="Pesquisar por Email ou ID..." 
-                            className="w-full pl-4 pr-10 py-3 text-sm border border-gray-100 bg-bg-main rounded-2xl focus:outline-none focus:ring-4 focus:ring-primary-blue/5 transition-all"
-                        />
+                        <h2 className="text-sm font-black text-[#111827] leading-none uppercase tracking-tighter">CV LAB</h2>
+                        <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Painel Admin</span>
                     </div>
                 </div>
 
-                <div className="overflow-x-auto">
-                    <table className="w-full text-left text-sm whitespace-nowrap">
-                        <thead className="bg-bg-main/50 text-[10px] font-black uppercase tracking-widest text-text-muted">
-                            <tr>
-                                <th className="px-6 py-4">Data</th>
-                                <th className="px-6 py-4">ID Pedido</th>
-                                <th className="px-6 py-4">Email</th>
-                                <th className="px-6 py-4">Tipo</th>
-                                <th className="px-6 py-4 text-center">Status</th>
-                                <th className="px-6 py-4 text-right">Ação</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-gray-50">
-                            {paginatedOrders.map(o => (
-                                <tr key={o.id} className="hover:bg-gray-50 transition-colors group">
-                                    <td className="px-6 py-5">
-                                        <div className="flex flex-col">
-                                            <span className="font-bold text-deep-blue">{new Date(o.createdAt).toLocaleDateString()}</span>
-                                            <span className="text-[10px] text-gray-400">{new Date(o.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
-                                        </div>
-                                    </td>
-                                    <td className="px-6 py-5">
-                                        <span className="font-mono text-[11px] bg-gray-100 px-2 py-1 rounded-md text-gray-600 group-hover:bg-gray-200 transition-colors">{o.id}</span>
-                                    </td>
-                                    <td className="px-6 py-5 font-medium">{o.contactEmail}</td>
-                                    <td className="px-6 py-5">
-                                        <span className="text-[10px] font-bold text-gray-400 uppercase tracking-tighter">
-                                            {o.documentType === 'combo' ? 'Combo (CV+Carta)' : (o.documentType === 'resume' ? 'Currículo' : 'Carta')}
-                                        </span>
-                                    </td>
-                                    <td className="px-6 py-5 text-center">
-                                        <span className={`text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full ${
-                                            o.status === 'pending' ? 'bg-amber-50 text-amber-600' : 'bg-green-50 text-green-600'
-                                        }`}>
-                                            {o.status === 'pending' ? 'Pendente' : 'Aprovado'}
-                                        </span>
-                                    </td>
-                                    <td className="px-6 py-5 text-right">
-                                        {o.status === 'pending' ? (
-                                            <Button 
-                                                onClick={() => approveOrder(o)}
-                                                className="bg-green-600 hover:bg-green-700 text-white h-9 px-4 text-[10px] uppercase font-black tracking-widest rounded-xl transition-all hover:scale-105 shadow-md shadow-green-600/10"
-                                            >
-                                                Liberar PDF
-                                            </Button>
-                                        ) : (
-                                            <span className="text-green-600 inline-flex items-center gap-1 font-bold text-xs"><CheckCircle size={14}/> Pronto</span>
-                                        )}
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
+                <nav className="space-y-1.5 flex-1">
+                    {[
+                        { id: 'overview', label: 'Monitor Geral', icon: Globe },
+                        { id: 'orders', label: 'Pedidos Pendentes', icon: CreditCard },
+                        { id: 'visitors', label: 'Usuários Online', icon: User },
+                    ].map(tab => (
+                        <button
+                            key={tab.id}
+                            onClick={() => { setActiveTab(tab.id as any); setPage(1); }}
+                            className={`w-full flex items-center gap-3 px-5 py-4 rounded-2xl text-[13px] font-bold transition-all duration-300 ${
+                                activeTab === tab.id 
+                                ? 'bg-[#0D8ABC] text-white shadow-xl shadow-[#0D8ABC]/20 translate-x-1' 
+                                : 'text-gray-400 hover:bg-gray-50 hover:text-gray-600'
+                            }`}
+                        >
+                            <tab.icon size={18} strokeWidth={2.5} />
+                            {tab.label}
+                        </button>
+                    ))}
+                </nav>
+
+                <div className="pt-8 border-t border-gray-50">
+                    <div className="bg-gray-50 p-5 rounded-2xl border border-gray-100">
+                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5 opacity-60">Fatura Total</p>
+                        <p className="text-xl font-black text-[#111827]">{stats.revenue.toLocaleString()} Kzs</p>
+                    </div>
                 </div>
-                
-                {displayOrders.length === 0 && (
-                    <div className="p-20 text-center text-text-muted font-medium italic">
-                        Nenhum pedido pendente encontrado.
+            </aside>
+
+            {/* Main Area */}
+            <main className="flex-1 p-6 md:p-12 space-y-10 overflow-y-auto max-h-screen">
+                <header className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                    <div className="space-y-1">
+                        <h1 className="text-2xl font-black text-[#111827] tracking-tight">
+                            {activeTab === 'overview' ? 'Monitor em Tempo Real' : activeTab === 'orders' ? 'Gestão de Pagamentos' : 'Fluxo de Visitantes'}
+                        </h1>
+                        <p className="text-[12px] text-gray-400 font-bold uppercase tracking-widest opacity-60">Sistema de Inteligência CV LAB</p>
+                    </div>
+                    
+                    {activeTab === 'orders' && (
+                        <div className="relative w-full md:w-72">
+                            <input 
+                                type="text" 
+                                value={searchQuery}
+                                onChange={e => {setSearchQuery(e.target.value); setPage(1);}}
+                                placeholder="Filtrar por email..." 
+                                className="w-full px-5 py-3 text-sm border-none bg-white rounded-2xl shadow-sm outline-none ring-1 ring-gray-100 focus:ring-2 focus:ring-[#0D8ABC]/50 transition-all font-medium"
+                            />
+                        </div>
+                    )}
+                </header>
+
+                {activeTab === 'overview' && (
+                    <div className="space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                            {[
+                                { label: 'Online Atualmente', val: stats.online, color: 'text-green-600', icon: Globe, highlight: true },
+                                { label: 'Trafégo Único (Vida)', val: stats.totalVisitors, color: 'text-[#111827]', icon: User },
+                                { label: 'Taxa de Conversão', val: `${stats.conversion.toFixed(1)}%`, color: 'text-amber-500', icon: BarChart },
+                                { label: 'Aguardando Pagamento', val: stats.pending, color: 'text-[#0D8ABC]', icon: CreditCard },
+                            ].map((s, i) => (
+                                <div key={i} className="bg-white p-7 rounded-[32px] shadow-sm border border-gray-50 flex flex-col items-center text-center hover:shadow-xl hover:translate-y-[-4px] transition-all duration-500">
+                                    <div className="w-12 h-12 bg-gray-50 rounded-2xl flex items-center justify-center mb-4">
+                                        <s.icon size={20} className={s.highlight ? 'text-green-500' : 'text-gray-300'} strokeWidth={2.5} />
+                                    </div>
+                                    <span className="text-[10px] uppercase font-black tracking-widest text-gray-400 mb-2">{s.label}</span>
+                                    <div className="flex items-center gap-2">
+                                        {s.highlight && <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>}
+                                        <span className={`text-3xl font-black ${s.color}`}>{s.val}</span>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+
+                        <div className="bg-white p-10 rounded-[40px] shadow-sm border border-gray-50">
+                            <div className="flex items-center justify-between mb-10">
+                                <div>
+                                    <h3 className="font-black text-[#111827] text-lg tracking-tight">Atividade de Pedidos</h3>
+                                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Últimos 7 dias de operação</p>
+                                </div>
+                                <div className="flex items-center gap-3">
+                                    <div className="flex items-center gap-1.5">
+                                        <div className="w-2.5 h-2.5 bg-[#0D8ABC] rounded-full"></div>
+                                        <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Volume de Pedidos</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="w-full h-[320px]">
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <AreaChart data={chartData}>
+                                        <defs>
+                                            <linearGradient id="colorPed" x1="0" y1="0" x2="0" y2="1">
+                                                <stop offset="5%" stopColor="#0D8ABC" stopOpacity={0.15}/>
+                                                <stop offset="95%" stopColor="#0D8ABC" stopOpacity={0}/>
+                                            </linearGradient>
+                                        </defs>
+                                        <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{fontSize: 10, fontWeight: 800, fill: '#D1D5DB'}} dy={10} />
+                                        <YAxis axisLine={false} tickLine={false} tick={{fontSize: 10, fontWeight: 800, fill: '#D1D5DB'}} dx={-10} />
+                                        <Tooltip 
+                                            contentStyle={{borderRadius: '20px', border: 'none', padding: '15px', boxShadow: '0 20px 40px -10px rgba(0,0,0,0.1)'}} 
+                                            itemStyle={{color: '#0D8ABC', fontWeight: 'bold', fontSize: '12px'}}
+                                        />
+                                        <Area type="monotone" dataKey="pedidos" stroke="#0D8ABC" strokeWidth={4} fillOpacity={1} fill="url(#colorPed)" animationDuration={2000} />
+                                    </AreaChart>
+                                </ResponsiveContainer>
+                            </div>
+                        </div>
                     </div>
                 )}
 
-                {totalPages > 1 && (
-                    <div className="p-6 border-t border-gray-50 flex items-center justify-center gap-2">
-                        <button 
-                            disabled={page === 1}
-                            onClick={() => setPage(p => p - 1)}
-                            className="p-2 border border-gray-100 rounded-xl disabled:opacity-30 hover:bg-bg-main"
-                        >
-                            <ChevronLeft size={16} />
-                        </button>
-                        <span className="text-xs font-black px-4">Página {page} de {totalPages}</span>
-                        <button 
-                            disabled={page === totalPages}
-                            onClick={() => setPage(p => p + 1)}
-                            className="p-2 border border-gray-100 rounded-xl disabled:opacity-30 hover:bg-bg-main"
-                        >
-                            <ChevronRight size={16} />
-                        </button>
+                {activeTab === 'orders' && (
+                    <div className="bg-white rounded-[40px] border border-gray-50 overflow-hidden shadow-sm animate-in slide-in-from-right-4 duration-500">
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-left text-sm whitespace-nowrap">
+                                <thead className="bg-gray-50/50 text-[10px] font-black uppercase tracking-widest text-gray-400">
+                                    <tr>
+                                        <th className="px-8 py-6">Data de Criação</th>
+                                        <th className="px-8 py-6">E-mail do Cliente</th>
+                                        <th className="px-8 py-6">Documento</th>
+                                        <th className="px-8 py-6 text-center">Estado</th>
+                                        <th className="px-8 py-6 text-right">Controle</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-gray-50">
+                                    {paginatedOrders.map(o => (
+                                        <tr key={o.id} className="group hover:bg-gray-50/50 transition-colors duration-300">
+                                            <td className="px-8 py-6 text-gray-400 font-bold">{new Date(o.createdAt).toLocaleDateString()}</td>
+                                            <td className="px-8 py-6 font-black text-[#111827]">{o.contactEmail}</td>
+                                            <td className="px-8 py-6">
+                                                <span className="text-[10px] font-black uppercase tracking-tighter bg-gray-100 text-gray-400 px-3 py-1.5 rounded-xl">
+                                                    {o.documentType === 'combo' ? 'Combo Premium' : (o.documentType === 'resume' ? 'Currículo' : 'Carta Ref.')}
+                                                </span>
+                                            </td>
+                                            <td className="px-8 py-6 text-center">
+                                                <span className={`text-[10px] font-black uppercase tracking-widest px-4 py-1.5 rounded-full ${
+                                                    o.status === 'pending' ? 'bg-amber-50 text-amber-600' : 'bg-green-50 text-green-600'
+                                                }`}>
+                                                    {o.status === 'pending' ? 'Aguardando' : 'Liberado'}
+                                                </span>
+                                            </td>
+                                            <td className="px-8 py-6 text-right">
+                                                {o.status === 'pending' ? (
+                                                    <button onClick={() => approveOrder(o)} className="bg-green-500 hover:bg-green-600 text-white h-10 px-6 rounded-2xl text-[11px] font-black uppercase tracking-widest shadow-lg shadow-green-500/20 active:scale-95 transition-all">Validar</button>
+                                                ) : (
+                                                    <div className="flex items-center justify-end gap-2 text-green-500 font-black text-[11px] uppercase">
+                                                        <CheckCircle size={16} /> Finalizado
+                                                    </div>
+                                                )}
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                        {totalPages > 1 && (
+                            <div className="p-8 border-t border-gray-50 flex items-center justify-between">
+                                <span className="text-[11px] font-black text-gray-300 uppercase tracking-widest">Página {page} de {totalPages}</span>
+                                <div className="flex gap-2">
+                                    <button disabled={page === 1} onClick={() => setPage(page - 1)} className="w-10 h-10 rounded-xl border border-gray-100 flex items-center justify-center hover:bg-gray-50 disabled:opacity-20 transition-all"><ChevronLeft size={18}/></button>
+                                    <button disabled={page === totalPages} onClick={() => setPage(page + 1)} className="w-10 h-10 rounded-xl border border-gray-100 flex items-center justify-center hover:bg-gray-50 disabled:opacity-20 transition-all"><ChevronRight size={18}/></button>
+                                </div>
+                            </div>
+                        )}
                     </div>
                 )}
-            </div>
 
-            {/* Online Users Section */}
-            <div className="bg-white rounded-[32px] shadow-2xl border border-gray-100 overflow-hidden">
-                <div className="p-6 border-b border-gray-50">
-                    <h2 className="text-xl font-bold text-deep-blue">Visitantes Online</h2>
-                    <p className="text-xs text-text-muted">Usuários ou anónimos ativos nos últimos 5 minutos</p>
-                </div>
-                <div className="overflow-x-auto">
-                    <table className="w-full text-left text-sm">
-                        <thead className="bg-bg-main/50 text-[10px] font-black uppercase tracking-widest text-text-muted">
-                            <tr>
-                                <th className="px-6 py-4">Usuário</th>
-                                <th className="px-6 py-4">Localização</th>
-                                <th className="px-6 py-4">Última Atividade</th>
-                                <th className="px-6 py-4 text-right">Status</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-gray-50">
-                            {onlineUsers.map(u => (
-                                <tr key={u.id} className="hover:bg-gray-50 transition-colors">
-                                    <td className="px-6 py-4">
-                                        <div className="flex items-center gap-3">
-                                            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-bold ${u.isAnonymous ? 'bg-gray-100 text-gray-500' : 'bg-primary-blue/10 text-primary-blue'}`}>
-                                                {u.isAnonymous ? 'A' : (u.email?.[0]?.toUpperCase() || 'U')}
-                                            </div>
-                                            <div className="flex flex-col">
-                                                <span className="font-bold text-deep-blue">{u.email}</span>
-                                                <span className="text-[10px] text-gray-400 font-mono">{u.id}</span>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td className="px-6 py-4">
-                                        <span className="text-[10px] font-bold text-gray-500 uppercase tracking-tight bg-gray-100 px-2 py-1 rounded">
-                                            {u.view || 'Navegando'}
-                                        </span>
-                                    </td>
-                                    <td className="px-6 py-4 text-xs font-medium text-gray-600">
-                                        {new Date(u.lastSeen).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', second:'2-digit'})}
-                                    </td>
-                                    <td className="px-6 py-4 text-right">
-                                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-widest bg-green-50 text-green-600">
-                                            <span className="w-1.5 h-1.5 bg-green-500 rounded-full"></span>
-                                            Online
-                                        </span>
-                                    </td>
-                                </tr>
-                            ))}
-                            {onlineUsers.length === 0 && (
-                                <tr>
-                                    <td colSpan={4} className="px-6 py-10 text-center text-text-muted italic">Nenhum usuário ativo no momento.</td>
-                                </tr>
-                            )}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
+                {activeTab === 'visitors' && (
+                    <div className="bg-white rounded-[40px] border border-gray-50 overflow-hidden shadow-sm animate-in slide-in-from-left-4 duration-500">
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-left text-sm whitespace-nowrap">
+                                <thead className="bg-gray-50/50 text-[10px] font-black uppercase tracking-widest text-gray-400">
+                                    <tr>
+                                        <th className="px-8 py-6">Utilizador</th>
+                                        <th className="px-8 py-6">Página Atual</th>
+                                        <th className="px-8 py-6 text-right">Sinal</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-gray-50">
+                                    {onlineUsers.map(u => (
+                                        <tr key={u.id} className="hover:bg-gray-50/50 transition-colors duration-300">
+                                            <td className="px-8 py-6">
+                                                <div className="flex items-center gap-4">
+                                                    <div className={`w-10 h-10 rounded-2xl flex items-center justify-center text-[11px] font-black ${u.isAnonymous ? 'bg-gray-100 text-gray-400' : 'bg-[#0D8ABC] text-white'}`}>
+                                                        {u.isAnonymous ? 'VIS' : (u.email?.[0]?.toUpperCase() || 'USR')}
+                                                    </div>
+                                                    <div className="flex flex-col">
+                                                        <span className="font-black text-[#111827] text-sm tracking-tight">{u.email || 'Explorando Anónimo'}</span>
+                                                        <span className="text-[10px] text-gray-300 font-mono italic">{new Date(u.lastSeen).toLocaleTimeString()}</span>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td className="px-8 py-6 lowercase italic text-gray-400 font-medium">#{u.view || 'navegando...'}</td>
+                                            <td className="px-8 py-6 text-right">
+                                                <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-green-50 text-green-500">
+                                                    <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-ping"></div>
+                                                    <span className="text-[10px] font-black uppercase tracking-widest leading-none">Online</span>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                    {onlineUsers.length === 0 && (
+                                        <tr>
+                                            <td colSpan={3} className="px-8 py-20 text-center text-gray-300 font-bold uppercase text-[11px] tracking-widest italic">Nenhum rastro de presença detetado.</td>
+                                        </tr>
+                                    )}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                )}
+            </main>
         </div>
     );
 };
@@ -1385,11 +1404,17 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
     const trackVisitor = async () => {
       try {
         const trackingId = localStorage.getItem('cv_lab_visitor_id') || `visitor_${Math.random().toString(36).substring(2, 11)}`;
+        
         if (!localStorage.getItem('cv_lab_visitor_id')) {
           localStorage.setItem('cv_lab_visitor_id', trackingId);
-          
-          // Only record visitor on first creation
-          await setDoc(doc(db, 'visitors', trackingId), {
+        }
+
+        // Always check if doc exists to be robust
+        const visitorRef = doc(db, 'visitors', trackingId);
+        const visitorSnap = await getDoc(visitorRef);
+        
+        if (!visitorSnap.exists()) {
+          await setDoc(visitorRef, {
             visitorId: trackingId,
             firstSeen: new Date().toISOString(),
             userAgent: navigator.userAgent
@@ -1811,7 +1836,7 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
                   </div>
                 </button>
               ) : (
-                <button onClick={loginWithGoogle} className="text-xs font-black text-primary-blue uppercase tracking-widest px-4 py-2 hover:bg-white/50 rounded-xl transition-all border border-primary-blue/10">Entrar</button>
+                <button onClick={() => setView('editor')} className="text-xs font-black text-primary-blue uppercase tracking-widest px-4 py-2 hover:bg-white/50 rounded-xl transition-all border border-primary-blue/10">Criar currículo</button>
               )}
           </div>
         </nav>
@@ -1911,7 +1936,7 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
             >
                <div className="relative w-full aspect-square md:aspect-[4/5] max-w-md bg-white rounded-3xl shadow-2xl overflow-hidden group border border-border-main">
                   <img 
-                    src="https://i.supaimg.com/6bc04951-8cbe-4706-9f0c-a01f9ea9a6c4/4406a25d-b692-476b-955d-409d5a851e46.jpg" 
+                    src="https://i.postimg.cc/F788kyTm/1776760689134.jpg" 
                     alt="Resume Preview" 
                     className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                     referrerPolicy="no-referrer"
@@ -2156,7 +2181,7 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
                   </div>
                 </button>
               ) : (
-                <button onClick={loginWithGoogle} className="text-xs font-black text-primary-blue uppercase tracking-widest px-4 py-2 hover:bg-white/50 rounded-xl transition-all border border-primary-blue/10">Entrar</button>
+                <button onClick={() => setView('editor')} className="text-xs font-black text-primary-blue uppercase tracking-widest px-4 py-2 hover:bg-white/50 rounded-xl transition-all border border-primary-blue/10">Criar currículo</button>
               )}
           </div>
         </nav>
@@ -2239,10 +2264,10 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
 
               <div className="grid md:grid-cols-2 gap-8">
                 {[
-                  { name: "Modelo Executivo", desc: "Perfeito para cargos de gestão e liderança.", img: "https://picsum.photos/seed/resume1/600/800" },
-                  { name: "Modelo Criativo", desc: "Ideal para designers, publicidade e artes.", img: "https://picsum.photos/seed/resume2/600/800" },
-                  { name: "Modelo Minimalista", desc: "Foco total no conteúdo e experiências.", img: "https://picsum.photos/seed/resume3/600/800" },
-                  { name: "Modelo Académico", desc: "Estruturado para investigadores e professores.", img: "https://picsum.photos/seed/resume4/600/800" }
+                  { name: "Modelo Executivo", desc: "Perfeito para cargos de gestão e liderança.", img: "https://i.postimg.cc/F788kyTm/1776760689134.jpg" },
+                  { name: "Modelo Criativo", desc: "Ideal para designers, publicidade e artes.", img: "https://i.postimg.cc/Vdpp0qKk/1776760718067.jpg" },
+                  { name: "Modelo Minimalista", desc: "Foco total no conteúdo e experiências.", img: "https://i.postimg.cc/zV66HCxN/1776760738655.jpg" },
+                  { name: "Modelo Académico", desc: "Estruturado para investigadores e professores.", img: "https://i.postimg.cc/LnwwgtxK/1776760758698.jpg" }
                 ].map((item, idx) => (
                   <motion.div 
                     key={idx}
@@ -2251,9 +2276,9 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
                     onClick={() => setView('editor')}
                   >
                     <div className="aspect-[3/4] overflow-hidden relative">
-                      <img src={item.img} alt={item.name} className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-500" />
-                      <div className="absolute inset-0 bg-deep-blue/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                        <span className="bg-white text-primary-blue px-6 py-2 rounded-full font-black text-xs uppercase tracking-widest">Usar este Modelo</span>
+                      <img src={item.img} alt={item.name} className="w-full h-full object-cover transition-all duration-500" />
+                      <div className="absolute inset-0 bg-deep-blue/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                        <span className="bg-white text-primary-blue px-6 py-2 rounded-full font-black text-xs uppercase tracking-widest shadow-xl">Usar este Modelo</span>
                       </div>
                     </div>
                     <div className="p-6">

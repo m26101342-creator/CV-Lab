@@ -5,7 +5,9 @@ import { useState, useEffect } from 'react';
 
 // Recommended: Use environment variables for production/GitHub deployments
 // AI Studio automatically generates firebase-applet-config.json, which is now gitignored.
-import localConfig from '../../firebase-applet-config.json';
+const configs = (import.meta as any).glob('../../firebase-applet-config.json', { eager: true });
+const configKey = Object.keys(configs)[0];
+const localConfig: any = configKey ? (configs[configKey] as any).default : {};
 
 const firebaseConfig = {
     apiKey: (import.meta as any).env.VITE_FIREBASE_API_KEY || localConfig.apiKey,
@@ -17,30 +19,48 @@ const firebaseConfig = {
     firestoreDatabaseId: (import.meta as any).env.VITE_FIREBASE_DATABASE_ID || localConfig.firestoreDatabaseId
 };
 
-const app = initializeApp(firebaseConfig);
-export const auth = getAuth(app);
+let app: any;
+let auth: any;
+let db: any;
+let googleProvider: any;
 
-// Initialize Firestore with settings that are more robust in restricted network environments
-export const db = initializeFirestore(app, {
-    experimentalForceLongPolling: true,
-}, (firebaseConfig as any).firestoreDatabaseId || undefined);
+try {
+    if (firebaseConfig.apiKey && firebaseConfig.projectId) {
+        app = initializeApp(firebaseConfig);
+        auth = getAuth(app);
+        
+        // Initialize Firestore with settings that are more robust in restricted network environments
+        db = initializeFirestore(app, {
+            experimentalForceLongPolling: true,
+        }, (firebaseConfig as any).firestoreDatabaseId || undefined);
 
-// Connection test as per critical guidelines
-async function testConnection() {
-    try {
+        // Connection test as per critical guidelines
         const testDoc = doc(db, '_connection_test_', 'ping');
-        await getDocFromServer(testDoc);
-    } catch (error: any) {
-        if (error?.message?.includes('the client is offline') || error?.code === 'unavailable') {
-            console.warn("Firestore connection attempt: Client is offline or backend unavailable. Retrying in background...");
-        }
-    }
-}
-testConnection();
+        getDocFromServer(testDoc).catch((error: any) => {
+            if (error?.message?.includes('the client is offline') || error?.code === 'unavailable') {
+                console.warn("Firestore connection attempt: Client is offline or backend unavailable. Retrying in background...");
+            }
+        });
 
-export const googleProvider = new GoogleAuthProvider();
+        googleProvider = new GoogleAuthProvider();
+    } else {
+        console.warn("Firebase config is missing or invalid. Firebase services will be disabled.");
+        auth = {};
+        db = {};
+    }
+} catch (error) {
+    console.error("Firebase initialization failed:", error);
+    auth = {};
+    db = {};
+}
+
+export { auth, db, googleProvider };
 
 export const loginWithGoogle = async () => {
+    if (!auth || !auth.currentUser && !googleProvider) {
+        console.error("Firebase is not configured correctly.");
+        return;
+    }
     try {
         await signInWithPopup(auth, googleProvider);
     } catch (e: any) {
@@ -52,6 +72,7 @@ export const loginWithGoogle = async () => {
 };
 
 export const logOut = async () => {
+    if (!auth || !auth.signOut) return;
     try {
         await signOut(auth);
     } catch (e) {
@@ -65,6 +86,11 @@ export const useAuth = () => {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
+        if (!auth || !auth.onAuthStateChanged) {
+            setLoading(false);
+            return;
+        }
+
         const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
             if (currentUser) {
                 setUser(currentUser);
