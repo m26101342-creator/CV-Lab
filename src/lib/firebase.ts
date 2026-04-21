@@ -1,6 +1,6 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth, GoogleAuthProvider, signInWithPopup, signInAnonymously, onAuthStateChanged, User, signOut } from 'firebase/auth';
-import { initializeFirestore, doc, setDoc, getDoc, getDocFromServer } from 'firebase/firestore';
+import { getFirestore, doc, setDoc, getDoc, getDocFromServer } from 'firebase/firestore';
 import { useState, useEffect } from 'react';
 
 // Recommended: Use environment variables for production/GitHub deployments
@@ -29,10 +29,8 @@ try {
         app = initializeApp(firebaseConfig);
         auth = getAuth(app);
         
-        // Initialize Firestore with settings that are more robust in restricted network environments
-        db = initializeFirestore(app, {
-            experimentalForceLongPolling: true,
-        }, (firebaseConfig as any).firestoreDatabaseId || undefined);
+        // Initialize Firestore normally
+        db = getFirestore(app);
 
         // Connection test as per critical guidelines
         const testDoc = doc(db, '_connection_test_', 'ping');
@@ -45,20 +43,20 @@ try {
         googleProvider = new GoogleAuthProvider();
     } else {
         console.warn("Firebase config is missing or invalid. Firebase services will be disabled.");
-        auth = {};
-        db = {};
+        auth = null;
+        db = null;
     }
 } catch (error) {
     console.error("Firebase initialization failed:", error);
-    auth = {};
-    db = {};
+    auth = null;
+    db = null;
 }
 
 export { auth, db, googleProvider };
 
 export const loginWithGoogle = async () => {
-    if (!auth || !auth.currentUser && !googleProvider) {
-        console.error("Firebase is not configured correctly.");
+    if (!auth || !googleProvider) {
+        console.error("Firebase Auth is not configured.");
         return;
     }
     try {
@@ -72,7 +70,7 @@ export const loginWithGoogle = async () => {
 };
 
 export const logOut = async () => {
-    if (!auth || !auth.signOut) return;
+    if (!auth) return;
     try {
         await signOut(auth);
     } catch (e) {
@@ -86,7 +84,7 @@ export const useAuth = () => {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        if (!auth || !auth.onAuthStateChanged) {
+        if (!auth) {
             setLoading(false);
             return;
         }
@@ -109,8 +107,12 @@ export const useAuth = () => {
                         }, { merge: true });
                         setIsAdmin(currentUser.email === 'suportecvlab@gmail.com' || currentUser.email === 'm26101342@gmail.com');
                     }
-                } catch (error) {
-                    console.error("Error fetching user role:", error);
+                } catch (error: any) {
+                    if (error?.message?.includes('offline') || error?.code === 'unavailable') {
+                        console.error("⚠️ Firestore Database não está acessível no seu projeto. Vá ao Firebase Console > Firestore Database e clique em 'Create database'.", error);
+                    } else {
+                        console.error("Error fetching user role:", error);
+                    }
                     setIsAdmin(false);
                 }
             } else {

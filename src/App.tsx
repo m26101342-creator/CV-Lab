@@ -2567,6 +2567,10 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
                           setAuthError("Preencha todos os campos.");
                           return;
                        }
+                       if (!auth) {
+                          setAuthError("Erro crítico: As credenciais do Firebase (API Key, etc.) não estão configuradas na aplicação. Insira-as no ficheiro src/lib/firebase.ts ou nas Definições.");
+                          return;
+                       }
                        try {
                           if (isAuthModeLogin) {
                              await signInWithEmailAndPassword(auth, authEmail, authPassword);
@@ -2608,7 +2612,7 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
                         setContactEmail(auth.currentUser.email || '');
                      }
                    }} 
-                   className="w-full h-12 bg-white border-2 border-gray-100 hover:bg-gray-50 font-black rounded-xl text-sm text-text-main shadow-none"
+                   className="w-full h-12 bg-white border-2 border-gray-200 hover:bg-gray-50 font-black rounded-xl text-sm text-gray-900 shadow-none"
                  >
                    <img src="https://www.google.com/favicon.ico" alt="Google" className="w-4 h-4 mr-2" />
                    Continuar com Google
