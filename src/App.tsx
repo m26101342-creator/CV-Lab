@@ -35,6 +35,7 @@ import { optimizeResumeText, generateCoverLetter, generateFullResume } from './s
 import html2pdf from 'html2pdf.js';
 import { auth, db, useAuth, loginWithGoogle, logOut } from './lib/firebase';
 import { collection, addDoc, onSnapshot, doc, query, where, getDocs, updateDoc, setDoc, serverTimestamp, getDoc } from 'firebase/firestore';
+import { createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile } from 'firebase/auth';
 import { 
   BarChart, 
   Bar, 
@@ -809,9 +810,9 @@ const ResumeRenderer = ({ data, templateId }: { data: ResumeData; templateId: Te
               <div style={{ marginBottom: '32px' }}>
                 <div className="t1-section-title">Contacto</div>
                 <div style={{ display: 'flex', flexDirection: 'column' }}>
-                  {data.personalInfo.email && <div className="t1-contact-item"><span className="t1-contact-icon"><Mail style={{ width: '12px', height: '12px' }} /></span><span className="t1-contact-text">{data.personalInfo.email}</span></div>}
-                  {data.personalInfo.phone && <div className="t1-contact-item"><span className="t1-contact-icon"><Phone style={{ width: '12px', height: '12px' }} /></span><span className="t1-contact-text">{data.personalInfo.phone}</span></div>}
-                  {data.personalInfo.location && <div className="t1-contact-item"><span className="t1-contact-icon"><MapPin style={{ width: '12px', height: '12px' }} /></span><span className="t1-contact-text">{data.personalInfo.location}</span></div>}
+                  {data.personalInfo.email && <div className="t1-contact-item" style={{ alignItems: 'flex-start' }}><span className="t1-contact-icon" style={{ display: 'flex', marginTop: '2px' }}><Mail style={{ width: '12px', height: '12px', display: 'block' }} /></span><span className="t1-contact-text">{data.personalInfo.email}</span></div>}
+                  {data.personalInfo.phone && <div className="t1-contact-item" style={{ alignItems: 'flex-start' }}><span className="t1-contact-icon" style={{ display: 'flex', marginTop: '2px' }}><Phone style={{ width: '12px', height: '12px', display: 'block' }} /></span><span className="t1-contact-text">{data.personalInfo.phone}</span></div>}
+                  {data.personalInfo.location && <div className="t1-contact-item" style={{ alignItems: 'flex-start' }}><span className="t1-contact-icon" style={{ display: 'flex', marginTop: '2px' }}><MapPin style={{ width: '12px', height: '12px', display: 'block' }} /></span><span className="t1-contact-text">{data.personalInfo.location}</span></div>}
                 </div>
               </div>
               
@@ -914,9 +915,9 @@ const ResumeRenderer = ({ data, templateId }: { data: ResumeData; templateId: Te
                 <div className="t2-section">
                    <div className="t2-section-title">Contacto</div>
                    <div className="flex flex-col gap-3">
-                     {data.personalInfo.email && <div className="t2-contact-row"><span className="t2-contact-icon flex items-center justify-center flex-shrink-0"><Mail size={14}/></span> <span className="t2-contact-text">{data.personalInfo.email}</span></div>}
-                     {data.personalInfo.phone && <div className="t2-contact-row"><span className="t2-contact-icon flex items-center justify-center flex-shrink-0"><Phone size={14}/></span> <span className="t2-contact-text">{data.personalInfo.phone}</span></div>}
-                     {data.personalInfo.location && <div className="t2-contact-row"><span className="t2-contact-icon flex items-center justify-center flex-shrink-0"><MapPin size={14}/></span> <span className="t2-contact-text">{data.personalInfo.location}</span></div>}
+                     {data.personalInfo.email && <div className="t2-contact-row" style={{ alignItems: 'flex-start' }}><span className="t2-contact-icon flex items-center justify-center flex-shrink-0" style={{ marginTop: '2px' }}><Mail size={14} style={{ display: 'block' }}/></span> <span className="t2-contact-text">{data.personalInfo.email}</span></div>}
+                     {data.personalInfo.phone && <div className="t2-contact-row" style={{ alignItems: 'flex-start' }}><span className="t2-contact-icon flex items-center justify-center flex-shrink-0" style={{ marginTop: '2px' }}><Phone size={14} style={{ display: 'block' }}/></span> <span className="t2-contact-text">{data.personalInfo.phone}</span></div>}
+                     {data.personalInfo.location && <div className="t2-contact-row" style={{ alignItems: 'flex-start' }}><span className="t2-contact-icon flex items-center justify-center flex-shrink-0" style={{ marginTop: '2px' }}><MapPin size={14} style={{ display: 'block' }}/></span> <span className="t2-contact-text">{data.personalInfo.location}</span></div>}
                    </div>
                 </div>
                 
@@ -994,9 +995,9 @@ const ResumeRenderer = ({ data, templateId }: { data: ResumeData; templateId: Te
               {data.personalInfo.summary && <div className="t3-bio">{renderText(data.personalInfo.summary)}</div>}
               
               <div className="t3-contact-row">
-                {data.personalInfo.email && <div className="t3-contact-item"><Mail size={12} className="t3-contact-icon"/> {data.personalInfo.email}</div>}
-                {data.personalInfo.phone && <div className="t3-contact-item"><Phone size={12} className="t3-contact-icon"/> {data.personalInfo.phone}</div>}
-                {data.personalInfo.location && <div className="t3-contact-item"><MapPin size={12} className="t3-contact-icon"/> {data.personalInfo.location}</div>}
+                {data.personalInfo.email && <div className="t3-contact-item" style={{ alignItems: 'flex-start' }}><span style={{ display: 'flex', marginTop: '2px' }}><Mail size={12} className="t3-contact-icon" style={{ display: 'block' }}/></span> <span>{data.personalInfo.email}</span></div>}
+                {data.personalInfo.phone && <div className="t3-contact-item" style={{ alignItems: 'flex-start' }}><span style={{ display: 'flex', marginTop: '2px' }}><Phone size={12} className="t3-contact-icon" style={{ display: 'block' }}/></span> <span>{data.personalInfo.phone}</span></div>}
+                {data.personalInfo.location && <div className="t3-contact-item" style={{ alignItems: 'flex-start' }}><span style={{ display: 'flex', marginTop: '2px' }}><MapPin size={12} className="t3-contact-icon" style={{ display: 'block' }}/></span> <span>{data.personalInfo.location}</span></div>}
               </div>
            </div>
            
@@ -1109,9 +1110,9 @@ const ResumeRenderer = ({ data, templateId }: { data: ResumeData; templateId: Te
                 <div>
                    <h3 className="text-xl font-bold mb-5 pb-2 text-white border-b-2 border-white/20 inline-block pr-6">Contacto</h3>
                      <div className="flex flex-col text-[13px] opacity-90">
-                       {data.personalInfo.email && <div style={{ display: 'flex', alignItems: 'center', marginBottom: '16px' }}><Mail style={{ width: '16px', height: '16px', marginRight: '12px', opacity: 0.7 }}/> {data.personalInfo.email}</div>}
-                       {data.personalInfo.phone && <div style={{ display: 'flex', alignItems: 'center', marginBottom: '16px' }}><Phone style={{ width: '16px', height: '16px', marginRight: '12px', opacity: 0.7 }}/> {data.personalInfo.phone}</div>}
-                       {data.personalInfo.location && <div style={{ display: 'flex', alignItems: 'center', marginBottom: '16px' }}><MapPin style={{ width: '16px', height: '16px', marginRight: '12px', opacity: 0.7 }}/> {data.personalInfo.location}</div>}
+                       {data.personalInfo.email && <div style={{ display: 'flex', alignItems: 'flex-start', marginBottom: '16px' }}><span style={{ display: 'flex', marginTop: '2px', marginRight: '12px' }}><Mail style={{ width: '16px', height: '16px', opacity: 0.7, display: 'block' }}/></span> <span>{data.personalInfo.email}</span></div>}
+                       {data.personalInfo.phone && <div style={{ display: 'flex', alignItems: 'flex-start', marginBottom: '16px' }}><span style={{ display: 'flex', marginTop: '2px', marginRight: '12px' }}><Phone style={{ width: '16px', height: '16px', opacity: 0.7, display: 'block' }}/></span> <span>{data.personalInfo.phone}</span></div>}
+                       {data.personalInfo.location && <div style={{ display: 'flex', alignItems: 'flex-start', marginBottom: '16px' }}><span style={{ display: 'flex', marginTop: '2px', marginRight: '12px' }}><MapPin style={{ width: '16px', height: '16px', opacity: 0.7, display: 'block' }}/></span> <span>{data.personalInfo.location}</span></div>}
                      </div>
                 </div>
                 {data.languages && data.languages.length > 0 && (
@@ -1228,9 +1229,9 @@ const ResumeRenderer = ({ data, templateId }: { data: ResumeData; templateId: Te
                      <h3 className="text-[12px] font-black uppercase tracking-[0.2em]" style={{ color: c.primary }}>Contacto</h3>
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', fontSize: '13px', width: '100%', fontWeight: '500', color: '#374151' }}>
-                     {data.personalInfo.phone && <div style={{ display: 'flex', alignItems: 'center', marginBottom: '16px' }}><Phone style={{ opacity: 0.7, width: '16px', height: '16px', marginRight: '12px', flexShrink: 0 }} color={c.primary}/> <span>{data.personalInfo.phone}</span></div>}
-                     {data.personalInfo.email && <div style={{ display: 'flex', alignItems: 'center', marginBottom: '16px' }}><Mail style={{ opacity: 0.7, width: '16px', height: '16px', marginRight: '12px', flexShrink: 0 }} color={c.primary}/> <span className="break-all">{data.personalInfo.email}</span></div>}
-                     {data.personalInfo.location && <div style={{ display: 'flex', alignItems: 'center', marginBottom: '16px' }}><MapPin style={{ opacity: 0.7, width: '16px', height: '16px', marginRight: '12px', flexShrink: 0 }} color={c.primary}/> <span>{data.personalInfo.location}</span></div>}
+                     {data.personalInfo.phone && <div style={{ display: 'flex', alignItems: 'flex-start', marginBottom: '16px' }}><span style={{ display: 'flex', marginTop: '2px', marginRight: '12px' }}><Phone style={{ opacity: 0.7, width: '16px', height: '16px', flexShrink: 0, display: 'block' }} color={c.primary}/></span> <span>{data.personalInfo.phone}</span></div>}
+                     {data.personalInfo.email && <div style={{ display: 'flex', alignItems: 'flex-start', marginBottom: '16px' }}><span style={{ display: 'flex', marginTop: '2px', marginRight: '12px' }}><Mail style={{ opacity: 0.7, width: '16px', height: '16px', flexShrink: 0, display: 'block' }} color={c.primary}/></span> <span className="break-all">{data.personalInfo.email}</span></div>}
+                     {data.personalInfo.location && <div style={{ display: 'flex', alignItems: 'flex-start', marginBottom: '16px' }}><span style={{ display: 'flex', marginTop: '2px', marginRight: '12px' }}><MapPin style={{ opacity: 0.7, width: '16px', height: '16px', flexShrink: 0, display: 'block' }} color={c.primary}/></span> <span>{data.personalInfo.location}</span></div>}
                   </div>
                 </div>
 
@@ -1328,6 +1329,12 @@ export default function App() {
   const [currentOrderId, setCurrentOrderId] = useState<string | null>(null);
   const [orderStatus, setOrderStatus] = useState<string | null>(null);
   const [contactEmail, setContactEmail] = useState('');
+
+  const [authName, setAuthName] = useState('');
+  const [authEmail, setAuthEmail] = useState('');
+  const [authPassword, setAuthPassword] = useState('');
+  const [authError, setAuthError] = useState('');
+  const [isAuthModeLogin, setIsAuthModeLogin] = useState(false);
 
   const [view, setView] = useState<'landing' | 'editor' | 'faq' | 'about' | 'terms' | 'tips' | 'showcase' | 'admin' | 'profile' | 'my-resumes'>('landing');
   const [activeStep, setActiveStep] = useState(0);
@@ -1906,7 +1913,7 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
                 Design premium e tecnologia validada por recrutadores.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 pt-4">
-                <Button onClick={() => setView('editor')} className="px-10 h-16 text-lg uppercase tracking-tight shadow-2xl shadow-primary-blue/30">Começar Agora</Button>
+                <Button onClick={() => setView('editor')} className="px-10 h-16 text-lg uppercase tracking-tight shadow-2xl shadow-primary-blue/30">Criar meu currículo</Button>
                 <Button variant="outline" onClick={() => setView('showcase')} className="px-10 h-16 text-lg uppercase tracking-tight border-border-main text-text-main hover:bg-bg-main">Ver Modelos</Button>
               </div>
               <div className="flex items-center gap-6 pt-4 border-t border-border-main mt-4">
@@ -1938,7 +1945,8 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
                   <img 
                     src="https://i.postimg.cc/F788kyTm/1776760689134.jpg" 
                     alt="Resume Preview" 
-                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                    className="w-full h-full object-cover object-top transition-transform duration-700 group-hover:scale-110"
+                    style={{ imageRendering: '-webkit-optimize-contrast' }}
                     referrerPolicy="no-referrer"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-deep-blue/80 via-transparent to-transparent"></div>
@@ -2250,7 +2258,7 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
                   <h3 className="text-2xl font-black">Quer uma análise personalizada?</h3>
                   <p className="text-white/80 text-sm font-medium">Nosso sistema pode revisar seu currículo atual e sugerir melhorias específicas para o seu perfil profissional.</p>
                 </div>
-                <Button onClick={() => setView('editor')} className="bg-white text-primary-blue hover:bg-white/90 shrink-0 h-14 px-8 uppercase tracking-widest text-xs">Começar Agora</Button>
+                <Button onClick={() => setView('editor')} className="bg-white text-primary-blue hover:bg-white/90 shrink-0 h-14 px-8 uppercase tracking-widest text-xs">Criar meu currículo</Button>
               </div>
             </div>
           )}
@@ -2264,10 +2272,10 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
 
               <div className="grid md:grid-cols-2 gap-8">
                 {[
-                  { name: "Modelo Executivo", desc: "Perfeito para cargos de gestão e liderança.", img: "https://i.postimg.cc/F788kyTm/1776760689134.jpg" },
-                  { name: "Modelo Criativo", desc: "Ideal para designers, publicidade e artes.", img: "https://i.postimg.cc/Vdpp0qKk/1776760718067.jpg" },
-                  { name: "Modelo Minimalista", desc: "Foco total no conteúdo e experiências.", img: "https://i.postimg.cc/zV66HCxN/1776760738655.jpg" },
-                  { name: "Modelo Académico", desc: "Estruturado para investigadores e professores.", img: "https://i.postimg.cc/LnwwgtxK/1776760758698.jpg" }
+                  { name: "Modelo Executivo", desc: "Perfeito para cargos de gestão e liderança.", img: "https://i.supaimg.com/6bc04951-8cbe-4706-9f0c-a01f9ea9a6c4/4fe98738-3a04-404b-ae2e-6d1533cd27ef.jpg" },
+                  { name: "Modelo Criativo", desc: "Ideal para designers, publicidade e artes.", img: "https://i.supaimg.com/6bc04951-8cbe-4706-9f0c-a01f9ea9a6c4/2ab532fe-f8f0-431f-9042-30442f1c617d.jpg" },
+                  { name: "Modelo Minimalista", desc: "Foco total no conteúdo e experiências.", img: "https://i.supaimg.com/6bc04951-8cbe-4706-9f0c-a01f9ea9a6c4/5f13c796-6b4e-49f4-9f75-af155f179f7a.jpg" },
+                  { name: "Modelo Académico", desc: "Estruturado para investigadores e professores.", img: "https://i.supaimg.com/6bc04951-8cbe-4706-9f0c-a01f9ea9a6c4/6dcf83ae-ea5d-413f-b326-64577ba5053f.jpg" }
                 ].map((item, idx) => (
                   <motion.div 
                     key={idx}
@@ -2275,8 +2283,13 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
                     className="bg-white rounded-[32px] border border-border-main overflow-hidden shadow-sm hover:shadow-2xl transition-all cursor-pointer group"
                     onClick={() => setView('editor')}
                   >
-                    <div className="aspect-[3/4] overflow-hidden relative">
-                      <img src={item.img} alt={item.name} className="w-full h-full object-cover transition-all duration-500" />
+                    <div className="aspect-[3/4] overflow-hidden relative bg-gray-50 flex items-center justify-center">
+                      <img 
+                        src={item.img} 
+                        alt={item.name} 
+                        className="w-full h-full object-cover object-top transition-transform duration-500 group-hover:scale-105" 
+                        style={{ imageRendering: '-webkit-optimize-contrast' }}
+                      />
                       <div className="absolute inset-0 bg-deep-blue/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                         <span className="bg-white text-primary-blue px-6 py-2 rounded-full font-black text-xs uppercase tracking-widest shadow-xl">Usar este Modelo</span>
                       </div>
@@ -2388,7 +2401,7 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
                   Junte-se a milhares de profissionais que já transformaram suas carreiras com a ajuda da CV LAB.
                 </p>
                 <div className="relative z-10 pt-4">
-                  <Button onClick={() => setView('editor')} className="bg-white text-primary-blue hover:bg-white/90 px-12 h-16 text-lg">Começar Agora</Button>
+                  <Button onClick={() => setView('editor')} className="bg-white text-primary-blue hover:bg-white/90 px-12 h-16 text-lg">Criar meu currículo</Button>
                 </div>
               </div>
             </div>
@@ -2521,37 +2534,100 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
                  <X size={20} />
                </button>
                
-               <div className="w-20 h-20 bg-primary-blue/10 text-primary-blue flex items-center justify-center rounded-3xl mx-auto">
-                 <User size={40} />
+               <div className="w-16 h-16 bg-primary-blue/10 text-primary-blue flex items-center justify-center rounded-3xl mx-auto">
+                 <User size={32} />
                </div>
                
-               <div className="space-y-2">
-                 <h2 className="text-2xl font-black text-deep-blue tracking-tight">Login Necessário</h2>
-                 <p className="text-sm text-text-muted font-medium leading-relaxed">Para solicitar a liberação do seu currículo e garantir o seu acesso futuro, você precisa estar conectado a uma conta.</p>
+               <div className="space-y-1">
+                 <h2 className="text-xl font-black text-deep-blue tracking-tight">{isAuthModeLogin ? "Fazer Login" : "Criar Conta"}</h2>
+                 <p className="text-xs text-text-muted font-medium leading-relaxed">Guarde seu progresso para baixar o currículo.</p>
                </div>
                
-               <div className="space-y-3 pt-2">
+               <div className="space-y-3 pt-2 text-left">
+                  {authError && <p className="text-red-500 text-[10px] text-center font-bold bg-red-50 p-2 rounded-lg">{authError}</p>}
+                  {!isAuthModeLogin && (
+                    <div>
+                      <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest pl-1 mb-1 block">Nome</label>
+                      <input type="text" value={authName} onChange={e => setAuthName(e.target.value)} className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary-blue/50" placeholder="Seu nome" />
+                    </div>
+                  )}
+                  <div>
+                    <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest pl-1 mb-1 block">Email</label>
+                    <input type="email" value={authEmail} onChange={e => setAuthEmail(e.target.value)} className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary-blue/50" placeholder="exemplo@email.com" />
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest pl-1 mb-1 block">Senha rápida</label>
+                    <input type="password" value={authPassword} onChange={e => setAuthPassword(e.target.value)} className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary-blue/50" placeholder="••••••••" />
+                  </div>
+                  <Button 
+                    className="w-full h-12 bg-primary-blue text-white hover:bg-deep-blue rounded-xl text-sm font-black shadow-lg shadow-primary-blue/20"
+                    onClick={async () => {
+                       setAuthError('');
+                       if (!authEmail || !authPassword) {
+                          setAuthError("Preencha todos os campos.");
+                          return;
+                       }
+                       try {
+                          if (isAuthModeLogin) {
+                             await signInWithEmailAndPassword(auth, authEmail, authPassword);
+                          } else {
+                             const userCredential = await createUserWithEmailAndPassword(auth, authEmail, authPassword);
+                             if (authName) {
+                               await updateProfile(userCredential.user, { displayName: authName });
+                             }
+                          }
+                          setShowAuthModal(false);
+                          setShowPaymentModal(true);
+                          setContactEmail(auth.currentUser?.email || authEmail);
+                       } catch (e: any) {
+                          if (e.code === 'auth/email-already-in-use') setAuthError("Email já cadastrado. Tente fazer login.");
+                          else if (e.code === 'auth/weak-password') setAuthError("A senha deve ter pelo menos 6 caracteres.");
+                          else if (e.code === 'auth/invalid-credential') setAuthError("Email ou senha incorretos.");
+                          else setAuthError("Erro na autenticação. Verifique se ativou Email/Senha no Firebase Console.");
+                          console.error(e);
+                       }
+                    }}
+                  >
+                    {isAuthModeLogin ? "Entrar na Conta" : "Criar Conta Rápida"}
+                  </Button>
+               </div>
+
+               <div className="relative flex items-center py-2">
+                 <div className="flex-grow border-t border-gray-200"></div>
+                 <span className="flex-shrink-0 mx-4 text-gray-400 text-[10px] font-bold uppercase tracking-widest">OU</span>
+                 <div className="flex-grow border-t border-gray-200"></div>
+               </div>
+
+               <div className="space-y-3">
                  <Button 
                    onClick={async () => {
                      await loginWithGoogle();
                      setShowAuthModal(false);
-                     // If login was successful, show payment modal
                      if (auth.currentUser && !auth.currentUser.isAnonymous) {
                         setShowPaymentModal(true);
                         setContactEmail(auth.currentUser.email || '');
                      }
                    }} 
-                   className="w-full h-14 bg-primary-blue hover:bg-deep-blue text-white shadow-xl shadow-primary-blue/20 rounded-2xl text-base font-black"
-                   icon={User}
+                   className="w-full h-12 bg-white border-2 border-gray-100 hover:bg-gray-50 font-black rounded-xl text-sm text-text-main shadow-none"
                  >
-                   Entrar com Google
+                   <img src="https://www.google.com/favicon.ico" alt="Google" className="w-4 h-4 mr-2" />
+                   Continuar com Google
                  </Button>
-                 <button 
-                   onClick={() => setShowAuthModal(false)}
-                   className="text-[10px] font-black text-text-muted uppercase tracking-[0.2em] hover:text-deep-blue transition-colors"
-                 >
-                   Continuar Editando
-                 </button>
+                 
+                 <div className="flex justify-between items-center text-xs px-2 pt-2">
+                    <button 
+                      onClick={() => setIsAuthModeLogin(!isAuthModeLogin)}
+                      className="font-bold text-primary-blue hover:underline"
+                    >
+                      {isAuthModeLogin ? "Quero criar uma conta" : "Já tenho uma conta"}
+                    </button>
+                    <button 
+                      onClick={() => setShowAuthModal(false)}
+                      className="font-bold text-gray-400 hover:text-gray-600"
+                    >
+                      Cancelar
+                    </button>
+                 </div>
                </div>
 
                <div className="pt-4 border-t border-gray-100 flex items-center justify-center gap-2">
@@ -2579,7 +2655,7 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
           </div>
           <div className="flex items-center gap-2">
             <div className="px-3 py-1 bg-soft-blue text-primary-blue text-[9px] font-black rounded-full hidden md:block">PASSO {activeStep + 1}/6</div>
-            <Button variant="outline" className="h-9 px-4 text-xs font-bold" onClick={() => setShowPreviewModal(true)} icon={ExternalLink}>Pré-Visualizar</Button>
+            <Button variant="outline" className="h-9 px-4 text-xs font-bold" onClick={() => setShowPreviewModal(true)} icon={ExternalLink}>Ver currículo</Button>
             <Button className="h-9 px-4 text-xs font-bold hidden sm:flex" onClick={handleDownloadPdf} disabled={isDownloading} icon={Download}>{isDownloading ? 'Baixando...' : 'Baixar'}</Button>
           </div>
         </header>
@@ -2943,7 +3019,7 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
                       <h3 className="text-2xl font-black leading-tight">Documento Finalizado!</h3>
                       <p className="text-sm opacity-80 font-medium text-balance">O seu combo profissional (CV + Carta) está pronto para ser enviado. Libere o download completo por apenas 1.150 Kzs.</p>
                       
-                      <Button variant="outline" className="w-full text-white border-white hover:bg-white/10" onClick={() => { setIsCoverLetterMode(false); setShowPreviewModal(true); }} icon={ExternalLink}>Visualizar Online</Button>
+                      <Button variant="outline" className="w-full text-white border-white hover:bg-white/10" onClick={() => { setIsCoverLetterMode(false); setShowPreviewModal(true); }} icon={ExternalLink}>Ver currículo</Button>
                       <Button className="w-full bg-deep-blue text-white hover:bg-deep-blue/90 border-0" onClick={handleDownloadPdf} disabled={isDownloading} icon={Download}>
                         {isDownloading ? "Preparando o seu Currículo..." : "Baixar Currículo em PDF"}
                       </Button>
