@@ -145,3 +145,71 @@ export async function generateFullResume(personalInfo: any): Promise<any> {
     throw error;
   }
 }
+
+export async function parseResumeFromText(rawText: string, imageData?: string): Promise<any> {
+    console.log("parseResumeFromText: Enviando dados. Texto:", !!rawText, "Imagem:", !!imageData);
+    
+    const textPart = {
+      text: `
+        Analise o currículo fornecido e extraia as informações no formato JSON estruturado.
+        
+        SINTAXE DO JSON:
+        {
+          "personalInfo": {
+            "fullName": "Nome Completo",
+            "title": "Cargo ou Título Profissional",
+            "email": "E-mail",
+            "phone": "Telemóvel/Telefone",
+            "location": "Cidade/País",
+            "summary": "Resumo Profissional extraído ou sintetizado"
+          },
+          "experience": [
+            { "company": "Empresa", "position": "Cargo", "startDate": "Data", "endDate": "Data", "description": "Resumo das funções" }
+          ],
+          "education": [
+            { "institution": "Escola/Universidade", "degree": "Grau", "field": "Área de Estudo", "startDate": "Data", "endDate": "Data" }
+          ],
+          "skills": ["Habilidade 1"],
+          "languages": ["Idioma 1"],
+          "certifications": ["Certificado 1"],
+          "interests": ["Interesse 1"]
+        }
+
+        REGRAS:
+        1. Retorne APENAS o JSON.
+        2. Melhore o tom para ser profissional.
+        3. Se houver imagem, use-a para OCR se o texto estiver em falta ou confuso.
+        4. Texto extraído (se houver):
+        "${rawText}"
+      `
+    };
+
+    const parts: any[] = [textPart];
+    
+    if (imageData) {
+      parts.push({
+        inlineData: {
+          mimeType: "image/png",
+          data: imageData.split(',')[1] // Remove prefix data:image/png;base64,
+        }
+      });
+    }
+
+    try {
+        const engine = getEngine();
+        const response = await engine.models.generateContent({
+            model: "gemini-3-flash-preview",
+            contents: { parts },
+            config: {
+                responseMimeType: "application/json",
+                temperature: 0.1
+            }
+        });
+        
+        const result = response.text?.trim() || "{}";
+        return JSON.parse(result);
+    } catch (error) {
+        console.error("Erro ao analisar currículo com IA (Multimodal):", error);
+        throw error;
+    }
+}

@@ -40,6 +40,8 @@ export interface ResumeData {
     name: string;
     level: 'Básico' | 'Intermédio' | 'Avançado' | 'Fluente' | 'Nativo';
   }[];
+  interests?: string[];
+  certifications?: { id: string; name: string; date: string }[];
   themeColor?: string;
 }
 

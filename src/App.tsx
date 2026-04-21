@@ -29,12 +29,21 @@ import {
   Instagram,
   Shield,
   LogOut,
-  Search
+  Search,
+  Upload,
+  Sparkles,
+  Zap
 } from 'lucide-react';
 import { AdSenseUnit } from './components/AdSenseUnit';
 import { ResumeData, INITIAL_RESUME_DATA, TemplateType } from './types.ts';
-import { optimizeResumeText, generateCoverLetter, generateFullResume } from './services/geminiService.ts';
-import html2pdf from 'html2pdf.js';
+import { optimizeResumeText, generateCoverLetter, generateFullResume, parseResumeFromText } from './services/geminiService.ts';
+import { pdf } from '@react-pdf/renderer';
+import { PdfDocument } from './pdf/PdfDocument';
+import * as pdfjsLib from 'pdfjs-dist';
+
+// Use CDN for worker to ensure reliability in all environments
+pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@5.6.205/build/pdf.worker.min.mjs`;
+
 import { auth, db, useAuth, loginWithGoogle, logOut } from './lib/firebase';
 import { collection, addDoc, onSnapshot, doc, query, where, getDocs, updateDoc, setDoc, serverTimestamp, getDoc } from 'firebase/firestore';
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile } from 'firebase/auth';
@@ -49,6 +58,51 @@ import {
   AreaChart, 
   Area 
 } from 'recharts';
+
+// --- Helper Functions ---
+
+const extractTextFromPDF = async (file: File): Promise<{ text: string, image?: string }> => {
+  try {
+    const arrayBuffer = await file.arrayBuffer();
+    const loadingTask = pdfjsLib.getDocument({ data: new Uint8Array(arrayBuffer) });
+    const pdf = await loadingTask.promise;
+    let fullText = "";
+    
+    // Attempt text extraction
+    for (let i = 1; i <= pdf.numPages; i++) {
+        const page = await pdf.getPage(i);
+        const textContent = await page.getTextContent();
+        const pageText = textContent.items.map((item: any) => (item as any).str).join(" ");
+        fullText += pageText + "\n";
+    }
+
+    let imageBase64: string | undefined = undefined;
+
+    // Fallback: If text is empty or very short, capture first page as image for AI Vision OCR
+    if (fullText.trim().length < 50 && pdf.numPages > 0) {
+      console.log("PDF parece ser uma imagem. Tentando renderizar página para OCR via Visão computacional...");
+      const page = await pdf.getPage(1);
+      const viewport = page.getViewport({ scale: 2.0 }); // High quality for better OCR
+      const canvas = document.createElement('canvas');
+      const context = canvas.getContext('2d');
+      canvas.height = viewport.height;
+      canvas.width = viewport.width;
+
+      if (context) {
+        await (page as any).render({
+          canvasContext: context,
+          viewport: viewport
+        }).promise;
+        imageBase64 = canvas.toDataURL('image/png');
+      }
+    }
+
+    return { text: fullText, image: imageBase64 };
+  } catch (error) {
+    console.error("Erro ao extrair texto do PDF:", error);
+    throw new Error("Não foi possível ler o arquivo PDF. Verifique se o arquivo não está protegido por senha.");
+  }
+};
 
 // --- UI Components ---
 
@@ -296,7 +350,6 @@ const CoverLetterRenderer = ({ content, personalInfo, themeColor }: { content: s
 const MyResumesPage = ({ user, setView }: { user: any, setView: (v: any) => void }) => {
     const [myOrders, setMyOrders] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
-    const [printingOrder, setPrintingOrder] = useState<any>(null);
     const [isGenerating, setIsGenerating] = useState<string | null>(null);
 
     useEffect(() => {
@@ -319,61 +372,39 @@ const MyResumesPage = ({ user, setView }: { user: any, setView: (v: any) => void
     const downloadPDF = async (order: any, specificType: 'resume' | 'cover_letter' = 'resume') => {
         if (isGenerating) return;
         setIsGenerating(`${order.id}-${specificType}`);
-        setPrintingOrder({ 
-            ...order, 
-            documentType: specificType, 
-            documentData: order.documentType === 'combo' 
-                ? (specificType === 'resume' ? order.documentData.resume : order.documentData.coverLetter)
-                : order.documentData 
-        });
         
-        // Short delay to ensure React renders the hidden component
-        setTimeout(async () => {
-             const elementId = specificType === 'resume' ? 'resume-content' : 'cover-letter-content';
-             const container = document.getElementById('my-resumes-print-renderer');
-             const element = container?.querySelector(`#${elementId}`);
-             
-             if (!element) {
-                 setIsGenerating(null);
-                 setPrintingOrder(null);
-                 return;
-             }
+        try {
+            const filename = specificType === 'resume' ? 'Curriculo_CVLAB.pdf' : 'Carta_Apresentacao_CVLAB.pdf';
+            const templateMap: Record<TemplateType, number> = {
+                't1_executive': 1, 't2_geometric': 2, 't3_modern': 3, 't4_barnabas': 4, 't5_jonathan': 5
+            };
+            
+            // Extract correct data based on type
+            const documentData = order.documentType === 'combo'
+                ? (specificType === 'resume' ? order.documentData.resume : order.documentData.coverLetter)
+                : order.documentData;
 
-             const opt = {
-                margin: 0,
-                filename: specificType === 'resume' ? 'Curriculo_CVLAB.pdf' : 'Carta_Apresentacao_CVLAB.pdf',
-                image: { type: 'jpeg' as const, quality: 0.98 },
-                html2canvas: {
-                  scale: 2,
-                  useCORS: true,
-                  letterRendering: true,
-                  backgroundColor: '#ffffff',
-                  logging: false,
-                  allowTaint: true,
-                  imageTimeout: 0,
-                  onclone: (clonedDoc: Document) => {
-                    clonedDoc.querySelectorAll('svg').forEach((svg: SVGElement) => {
-                      svg.style.display = 'block';
-                      svg.style.verticalAlign = 'middle';
-                      svg.style.overflow = 'visible';
-                    });
-                  }
-                },
-                jsPDF: { unit: 'px', format: [794, 1122] as [number, number], orientation: 'portrait' as const, compress: true }
-              };
-              
-              try {
-                  await document.fonts.ready;
-                  // @ts-ignore
-                  await html2pdf().set(opt).from(element).save();
-              } catch (err) {
-                  console.error("Erro ao gerar PDF:", err);
-                  alert("Erro ao baixar o documento. Por favor, tente novamente.");
-              } finally {
-                  setIsGenerating(null);
-                  setPrintingOrder(null);
-              }
-        }, 1000);
+            const resumeDataToUse = specificType === 'resume' ? (documentData.resume || documentData) : documentData;
+            const templateId = templateMap[resumeDataToUse?.template as TemplateType || 't1_executive'] || 1;
+
+            const blob = await pdf(
+                <PdfDocument 
+                    data={documentData} 
+                    templateId={templateId} 
+                    type={specificType} 
+                />
+            ).toBlob();
+            
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url; a.download = filename; document.body.appendChild(a); a.click();
+            window.URL.revokeObjectURL(url); document.body.removeChild(a);
+        } catch (err) {
+            console.error("Erro ao gerar PDF vectorial:", err);
+            alert("Erro ao baixar o documento. Por favor, tente novamente.");
+        } finally {
+            setIsGenerating(null);
+        }
     };
 
     if (loading) return <div className="p-20 text-center"><div className="animate-spin w-8 h-8 border-4 border-primary-blue border-t-transparent rounded-full mx-auto"></div></div>;
@@ -465,25 +496,6 @@ const MyResumesPage = ({ user, setView }: { user: any, setView: (v: any) => void
                     </div>
                 )}
             </div>
-
-            {/* Hidden Renderer for PDF generation */}
-            <AnimatePresence>
-                {printingOrder && (
-                    <div className="fixed top-0 left-0 z-[-500] opacity-0 pointer-events-none" style={{ width: '794px', height: '1122px' }}>
-                        <div id="my-resumes-print-renderer">
-                            {printingOrder.documentType === 'resume' ? (
-                                <ResumeRenderer data={printingOrder.documentData} templateId={printingOrder.documentData.template || 't1_executive'} />
-                            ) : (
-                                <CoverLetterRenderer 
-                                    content={printingOrder.documentData.content} 
-                                    personalInfo={printingOrder.documentData.personalInfo} 
-                                    themeColor={printingOrder.documentData.themeColor} 
-                                />
-                            )}
-                        </div>
-                    </div>
-                )}
-            </AnimatePresence>
         </div>
     );
 };
@@ -914,9 +926,9 @@ const ResumeRenderer = ({ data, templateId }: { data: ResumeData; templateId: Te
               <div style={{ marginBottom: '32px' }}>
                 <div className="t1-section-title">Contacto</div>
                 <div style={{ display: 'flex', flexDirection: 'column' }}>
-                  {data.personalInfo.email && <div className="t1-contact-item" style={{ alignItems: 'center' }}><span className="t1-contact-icon" style={{ display: 'flex', alignItems: 'center', flexShrink: 0, lineHeight: 0 }}><Mail style={{ width: '12px', height: '12px', display: 'block', verticalAlign: 'middle' }} /></span><span className="t1-contact-text" style={{ lineHeight: '1.2' }}>{data.personalInfo.email}</span></div>}
-                  {data.personalInfo.phone && <div className="t1-contact-item" style={{ alignItems: 'center' }}><span className="t1-contact-icon" style={{ display: 'flex', alignItems: 'center', flexShrink: 0, lineHeight: 0 }}><Phone style={{ width: '12px', height: '12px', display: 'block', verticalAlign: 'middle' }} /></span><span className="t1-contact-text" style={{ lineHeight: '1.2' }}>{data.personalInfo.phone}</span></div>}
-                  {data.personalInfo.location && <div className="t1-contact-item" style={{ alignItems: 'center' }}><span className="t1-contact-icon" style={{ display: 'flex', alignItems: 'center', flexShrink: 0, lineHeight: 0 }}><MapPin style={{ width: '12px', height: '12px', display: 'block', verticalAlign: 'middle' }} /></span><span className="t1-contact-text" style={{ lineHeight: '1.2' }}>{data.personalInfo.location}</span></div>}
+                  {data.personalInfo.email && <div key="email" className="t1-contact-item" style={{ alignItems: 'center' }}><span className="t1-contact-icon" style={{ display: 'flex', alignItems: 'center', flexShrink: 0, lineHeight: 0 }}><Mail style={{ width: '12px', height: '12px', display: 'block', verticalAlign: 'middle' }} /></span><span className="t1-contact-text" style={{ lineHeight: '1.2' }}>{data.personalInfo.email}</span></div>}
+                  {data.personalInfo.phone && <div key="phone" className="t1-contact-item" style={{ alignItems: 'center' }}><span className="t1-contact-icon" style={{ display: 'flex', alignItems: 'center', flexShrink: 0, lineHeight: 0 }}><Phone style={{ width: '12px', height: '12px', display: 'block', verticalAlign: 'middle' }} /></span><span className="t1-contact-text" style={{ lineHeight: '1.2' }}>{data.personalInfo.phone}</span></div>}
+                  {data.personalInfo.location && <div key="loc" className="t1-contact-item" style={{ alignItems: 'center' }}><span className="t1-contact-icon" style={{ display: 'flex', alignItems: 'center', flexShrink: 0, lineHeight: 0 }}><MapPin style={{ width: '12px', height: '12px', display: 'block', verticalAlign: 'middle' }} /></span><span className="t1-contact-text" style={{ lineHeight: '1.2' }}>{data.personalInfo.location}</span></div>}
                 </div>
               </div>
               
@@ -925,7 +937,7 @@ const ResumeRenderer = ({ data, templateId }: { data: ResumeData; templateId: Te
                   <div className="t1-section-title">Formação</div>
                   <div style={{ display: 'flex', flexDirection: 'column' }}>
                     {data.education.map((e, idx) => (
-                      <div key={e.id} className="t1-edu-item" style={{ marginBottom: idx === data.education.length - 1 ? 0 : '18px' }}>
+                      <div key={e.id || `edu-${idx}`} className="t1-edu-item" style={{ marginBottom: idx === data.education.length - 1 ? 0 : '18px' }}>
                         <div className="t1-edu-degree">{e.degree}</div>
                         <div className="t1-edu-school">{e.institution}</div>
                         <div className="t1-edu-year">{e.startDate} - {e.endDate}</div>
@@ -939,8 +951,8 @@ const ResumeRenderer = ({ data, templateId }: { data: ResumeData; templateId: Te
                 <div style={{ marginBottom: '32px' }}>
                   <div className="t1-section-title">Habilidades</div>
                   <div>
-                    {data.skills.map(s => (
-                       <span key={s.id} className="t1-skill-tag">{s.name}</span>
+                    {data.skills.map((s, idx) => (
+                       <span key={s.id || `skill-${idx}`} className="t1-skill-tag">{s.name}</span>
                     ))}
                   </div>
                 </div>
@@ -951,7 +963,7 @@ const ResumeRenderer = ({ data, templateId }: { data: ResumeData; templateId: Te
                   <div className="t1-section-title">Idiomas</div>
                   <div style={{ display: 'flex', flexDirection: 'column' }}>
                     {data.languages.map((l, idx) => (
-                       <div key={l.id} className="flex justify-between items-center text-[12px] opacity-90" style={{ marginBottom: idx === data.languages.length - 1 ? 0 : '12px' }}>
+                       <div key={l.id || `lang-${idx}`} className="flex justify-between items-center text-[12px] opacity-90" style={{ marginBottom: idx === data.languages.length - 1 ? 0 : '12px' }}>
                          <span className="font-bold">{l.name}</span>
                          <span className="opacity-60 italic text-[10px] uppercase font-black tracking-widest">{l.level}</span>
                        </div>
@@ -972,8 +984,8 @@ const ResumeRenderer = ({ data, templateId }: { data: ResumeData; templateId: Te
                 <div className="t1-right-section">
                   <div className="t1-right-title">Experiência Profissional</div>
                   <div className="flex flex-col gap-6">
-                    {data.experience.map(ex => (
-                      <div key={ex.id} className="t1-exp-item">
+                    {data.experience.map((ex, idx) => (
+                      <div key={ex.id || `exp-${idx}`} className="t1-exp-item">
                         <div className="flex flex-col items-center pt-1.5 flex-shrink-0">
                           <div className="t1-exp-dot"></div>
                           <div className="flex-1 w-0.5 bg-gray-100 my-1"></div>
@@ -1019,9 +1031,9 @@ const ResumeRenderer = ({ data, templateId }: { data: ResumeData; templateId: Te
                 <div className="t2-section">
                    <div className="t2-section-title">Contacto</div>
                    <div className="flex flex-col gap-3">
-                     {data.personalInfo.email && <div className="t2-contact-row" style={{ alignItems: 'center' }}><span className="t2-contact-icon" style={{ display: 'flex', alignItems: 'center', flexShrink: 0, lineHeight: 0 }}><Mail style={{ width: '14px', height: '14px', display: 'block', verticalAlign: 'middle' }} /></span> <span className="t2-contact-text" style={{ lineHeight: '1.2' }}>{data.personalInfo.email}</span></div>}
-                     {data.personalInfo.phone && <div className="t2-contact-row" style={{ alignItems: 'center' }}><span className="t2-contact-icon" style={{ display: 'flex', alignItems: 'center', flexShrink: 0, lineHeight: 0 }}><Phone style={{ width: '14px', height: '14px', display: 'block', verticalAlign: 'middle' }} /></span> <span className="t2-contact-text" style={{ lineHeight: '1.2' }}>{data.personalInfo.phone}</span></div>}
-                     {data.personalInfo.location && <div className="t2-contact-row" style={{ alignItems: 'center' }}><span className="t2-contact-icon" style={{ display: 'flex', alignItems: 'center', flexShrink: 0, lineHeight: 0 }}><MapPin style={{ width: '14px', height: '14px', display: 'block', verticalAlign: 'middle' }} /></span> <span className="t2-contact-text" style={{ lineHeight: '1.2' }}>{data.personalInfo.location}</span></div>}
+                     {data.personalInfo.email && <div key="email" className="t2-contact-row" style={{ alignItems: 'center' }}><span className="t2-contact-icon" style={{ display: 'flex', alignItems: 'center', flexShrink: 0, lineHeight: 0 }}><Mail style={{ width: '14px', height: '14px', display: 'block', verticalAlign: 'middle' }} /></span> <span className="t2-contact-text" style={{ lineHeight: '1.2' }}>{data.personalInfo.email}</span></div>}
+                     {data.personalInfo.phone && <div key="phone" className="t2-contact-row" style={{ alignItems: 'center' }}><span className="t2-contact-icon" style={{ display: 'flex', alignItems: 'center', flexShrink: 0, lineHeight: 0 }}><Phone style={{ width: '14px', height: '14px', display: 'block', verticalAlign: 'middle' }} /></span> <span className="t2-contact-text" style={{ lineHeight: '1.2' }}>{data.personalInfo.phone}</span></div>}
+                     {data.personalInfo.location && <div key="loc" className="t2-contact-row" style={{ alignItems: 'center' }}><span className="t2-contact-icon" style={{ display: 'flex', alignItems: 'center', flexShrink: 0, lineHeight: 0 }}><MapPin style={{ width: '14px', height: '14px', display: 'block', verticalAlign: 'middle' }} /></span> <span className="t2-contact-text" style={{ lineHeight: '1.2' }}>{data.personalInfo.location}</span></div>}
                    </div>
                 </div>
                 
@@ -1099,9 +1111,9 @@ const ResumeRenderer = ({ data, templateId }: { data: ResumeData; templateId: Te
               {data.personalInfo.summary && <div className="t3-bio">{renderText(data.personalInfo.summary)}</div>}
               
               <div className="t3-contact-row">
-                {data.personalInfo.email && <div className="t3-contact-item" style={{ alignItems: 'center' }}><span style={{ display: 'flex', alignItems: 'center', flexShrink: 0, lineHeight: 0 }}><Mail className="t3-contact-icon" style={{ width: '12px', height: '12px', display: 'block', verticalAlign: 'middle' }}/></span> <span style={{ lineHeight: '1.2' }}>{data.personalInfo.email}</span></div>}
-                {data.personalInfo.phone && <div className="t3-contact-item" style={{ alignItems: 'center' }}><span style={{ display: 'flex', alignItems: 'center', flexShrink: 0, lineHeight: 0 }}><Phone className="t3-contact-icon" style={{ width: '12px', height: '12px', display: 'block', verticalAlign: 'middle' }}/></span> <span style={{ lineHeight: '1.2' }}>{data.personalInfo.phone}</span></div>}
-                {data.personalInfo.location && <div className="t3-contact-item" style={{ alignItems: 'center' }}><span style={{ display: 'flex', alignItems: 'center', flexShrink: 0, lineHeight: 0 }}><MapPin className="t3-contact-icon" style={{ width: '12px', height: '12px', display: 'block', verticalAlign: 'middle' }}/></span> <span style={{ lineHeight: '1.2' }}>{data.personalInfo.location}</span></div>}
+                {data.personalInfo.email && <div key="email" className="t3-contact-item" style={{ alignItems: 'center' }}><span style={{ display: 'flex', alignItems: 'center', flexShrink: 0, lineHeight: 0 }}><Mail className="t3-contact-icon" style={{ width: '12px', height: '12px', display: 'block', verticalAlign: 'middle' }}/></span> <span style={{ lineHeight: '1.2' }}>{data.personalInfo.email}</span></div>}
+                {data.personalInfo.phone && <div key="phone" className="t3-contact-item" style={{ alignItems: 'center' }}><span style={{ display: 'flex', alignItems: 'center', flexShrink: 0, lineHeight: 0 }}><Phone className="t3-contact-icon" style={{ width: '12px', height: '12px', display: 'block', verticalAlign: 'middle' }}/></span> <span style={{ lineHeight: '1.2' }}>{data.personalInfo.phone}</span></div>}
+                {data.personalInfo.location && <div key="loc" className="t3-contact-item" style={{ alignItems: 'center' }}><span style={{ display: 'flex', alignItems: 'center', flexShrink: 0, lineHeight: 0 }}><MapPin className="t3-contact-icon" style={{ width: '12px', height: '12px', display: 'block', verticalAlign: 'middle' }}/></span> <span style={{ lineHeight: '1.2' }}>{data.personalInfo.location}</span></div>}
               </div>
            </div>
            
@@ -1124,8 +1136,8 @@ const ResumeRenderer = ({ data, templateId }: { data: ResumeData; templateId: Te
                    <div>
                       <div className="t3-section-title">Habilidades</div>
                       <div>
-                        {data.skills.map(s => (
-                           <div key={s.id} className="t3-skill-item">
+                        {data.skills.map((s, idx) => (
+                           <div key={s.id || `skill-${idx}`} className="t3-skill-item">
                               <span className="t3-skill-label">{s.name}</span>
                               <span className="t3-skill-level">{s.level}</span>
                            </div>
@@ -1138,8 +1150,8 @@ const ResumeRenderer = ({ data, templateId }: { data: ResumeData; templateId: Te
                    <div>
                       <div className="t3-section-title">Idiomas</div>
                       <div>
-                        {data.languages.map(l => (
-                           <div key={l.id} className="t3-skill-item">
+                        {data.languages.map((l, idx) => (
+                           <div key={l.id || `lang-${idx}`} className="t3-skill-item">
                               <span className="t3-skill-label">{l.name}</span>
                               <span className="t3-skill-level">{l.level}</span>
                            </div>
@@ -1214,17 +1226,17 @@ const ResumeRenderer = ({ data, templateId }: { data: ResumeData; templateId: Te
                 <div>
                    <h3 className="text-xl font-bold mb-5 pb-2 text-white border-b-2 border-white/20 inline-block pr-6">Contacto</h3>
                      <div className="flex flex-col text-[13px] opacity-90">
-                       {data.personalInfo.email && <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}><span style={{ display: 'flex', alignItems: 'center', flexShrink: 0, lineHeight: 0 }}><Mail style={{ width: '16px', height: '16px', opacity: 0.7, display: 'block', verticalAlign: 'middle' }}/></span> <span style={{ lineHeight: '1.2' }}>{data.personalInfo.email}</span></div>}
-                       {data.personalInfo.phone && <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}><span style={{ display: 'flex', alignItems: 'center', flexShrink: 0, lineHeight: 0 }}><Phone style={{ width: '16px', height: '16px', opacity: 0.7, display: 'block', verticalAlign: 'middle' }}/></span> <span style={{ lineHeight: '1.2' }}>{data.personalInfo.phone}</span></div>}
-                       {data.personalInfo.location && <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}><span style={{ display: 'flex', alignItems: 'center', flexShrink: 0, lineHeight: 0 }}><MapPin style={{ width: '16px', height: '16px', opacity: 0.7, display: 'block', verticalAlign: 'middle' }}/></span> <span style={{ lineHeight: '1.2' }}>{data.personalInfo.location}</span></div>}
+                       {data.personalInfo.email && <div key="email" style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}><span style={{ display: 'flex', alignItems: 'center', flexShrink: 0, lineHeight: 0 }}><Mail style={{ width: '16px', height: '16px', opacity: 0.7, display: 'block', verticalAlign: 'middle' }}/></span> <span style={{ lineHeight: '1.2' }}>{data.personalInfo.email}</span></div>}
+                       {data.personalInfo.phone && <div key="phone" style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}><span style={{ display: 'flex', alignItems: 'center', flexShrink: 0, lineHeight: 0 }}><Phone style={{ width: '16px', height: '16px', opacity: 0.7, display: 'block', verticalAlign: 'middle' }}/></span> <span style={{ lineHeight: '1.2' }}>{data.personalInfo.phone}</span></div>}
+                       {data.personalInfo.location && <div key="loc" style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}><span style={{ display: 'flex', alignItems: 'center', flexShrink: 0, lineHeight: 0 }}><MapPin style={{ width: '16px', height: '16px', opacity: 0.7, display: 'block', verticalAlign: 'middle' }}/></span> <span style={{ lineHeight: '1.2' }}>{data.personalInfo.location}</span></div>}
                      </div>
                 </div>
                 {data.languages && data.languages.length > 0 && (
                   <div>
                      <h3 className="text-xl font-bold mb-5 pb-2 text-white border-b-2 border-white/20 inline-block pr-6">Idiomas</h3>
                      <div className="flex flex-col gap-3 text-[13px] opacity-90">
-                       {data.languages.map(l => (
-                          <div key={l.id} className="flex flex-col gap-0.5">
+                       {data.languages.map((l, idx) => (
+                          <div key={l.id || `lang-${idx}`} className="flex flex-col gap-0.5">
                              <div className="font-bold flex items-center gap-2">• {l.name}</div>
                              <div className="pl-4 text-[11px] opacity-70 uppercase tracking-widest">{l.level}</div>
                           </div>
@@ -1247,8 +1259,8 @@ const ResumeRenderer = ({ data, templateId }: { data: ResumeData; templateId: Te
                   <h2 className="text-[28px] font-black mb-4 leading-tight" style={{ color: '#111827' }}>Experiência Profissional</h2>
                   <div className="w-12 h-1.5 bg-gray-200 mb-8 rounded-full"></div>
                   <div className="flex flex-col gap-10">
-                     {data.experience.map(ex => (
-                       <div key={ex.id} className="flex gap-4">
+                     {data.experience.map((ex, idx) => (
+                       <div key={ex.id || `exp-${idx}`} className="flex gap-4">
                           <div className="flex flex-col items-center pt-2">
                              <div className="w-3 h-3 rounded-full border-2 border-gray-200"></div>
                              <div className="w-0.5 flex-1 bg-gray-50 my-1"></div>
@@ -1271,7 +1283,7 @@ const ResumeRenderer = ({ data, templateId }: { data: ResumeData; templateId: Te
                   <h2 className="text-[28px] font-black mb-4 leading-tight" style={{ color: '#111827' }}>Habilidades</h2>
                   <div className="w-12 h-1.5 bg-gray-200 mb-6 rounded-full"></div>
                   <div className="flex flex-wrap gap-x-6 gap-y-2 text-[13px] leading-[1.8] font-serif" style={{ color: '#374151' }}>
-                    {data.skills.map(s => <span key={s.id} className="flex items-center gap-2 font-bold">• {s.name}</span>)}
+                    {data.skills.map((s, idx) => <span key={s.id || `skill-${idx}`} className="flex items-center gap-2 font-bold">• {s.name}</span>)}
                   </div>
                </div>
              )}
@@ -1280,8 +1292,8 @@ const ResumeRenderer = ({ data, templateId }: { data: ResumeData; templateId: Te
                   <h2 className="text-[28px] font-black mb-4 leading-tight" style={{ color: '#111827' }}>Formação</h2>
                   <div className="w-12 h-1.5 bg-gray-200 mb-6 rounded-full"></div>
                   <div className="flex flex-col gap-6">
-                    {data.education.map(e => (
-                      <div key={e.id}>
+                    {data.education.map((e, idx) => (
+                      <div key={e.id || `edu-${idx}`}>
                          <div className="flex justify-between items-center mb-1">
                             <h4 className="text-[15px] font-bold" style={{ color: '#1f2937' }}>{e.degree}</h4>
                             <span className="text-[12px] font-bold text-gray-400">{e.startDate} - {e.endDate}</span>
@@ -1333,9 +1345,9 @@ const ResumeRenderer = ({ data, templateId }: { data: ResumeData; templateId: Te
                      <h3 className="text-[12px] font-black uppercase tracking-[0.2em]" style={{ color: c.primary }}>Contacto</h3>
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', fontSize: '13px', width: '100%', fontWeight: '500', color: '#374151' }}>
-                     {data.personalInfo.phone && <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}><span style={{ display: 'flex', alignItems: 'center', flexShrink: 0, lineHeight: 0 }}><Phone style={{ opacity: 0.7, width: '16px', height: '16px', flexShrink: 0, display: 'block', verticalAlign: 'middle' }} color={c.primary}/></span> <span style={{ lineHeight: '1.2' }}>{data.personalInfo.phone}</span></div>}
-                     {data.personalInfo.email && <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}><span style={{ display: 'flex', alignItems: 'center', flexShrink: 0, lineHeight: 0 }}><Mail style={{ opacity: 0.7, width: '16px', height: '16px', flexShrink: 0, display: 'block', verticalAlign: 'middle' }} color={c.primary}/></span> <span className="break-all" style={{ lineHeight: '1.2' }}>{data.personalInfo.email}</span></div>}
-                     {data.personalInfo.location && <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}><span style={{ display: 'flex', alignItems: 'center', flexShrink: 0, lineHeight: 0 }}><MapPin style={{ opacity: 0.7, width: '16px', height: '16px', flexShrink: 0, display: 'block', verticalAlign: 'middle' }} color={c.primary}/></span> <span style={{ lineHeight: '1.2' }}>{data.personalInfo.location}</span></div>}
+                     {data.personalInfo.phone && <div key="phone" style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}><span style={{ display: 'flex', alignItems: 'center', flexShrink: 0, lineHeight: 0 }}><Phone style={{ opacity: 0.7, width: '16px', height: '16px', flexShrink: 0, display: 'block', verticalAlign: 'middle' }} color={c.primary}/></span> <span style={{ lineHeight: '1.2' }}>{data.personalInfo.phone}</span></div>}
+                     {data.personalInfo.email && <div key="email" style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}><span style={{ display: 'flex', alignItems: 'center', flexShrink: 0, lineHeight: 0 }}><Mail style={{ opacity: 0.7, width: '16px', height: '16px', flexShrink: 0, display: 'block', verticalAlign: 'middle' }} color={c.primary}/></span> <span className="break-all" style={{ lineHeight: '1.2' }}>{data.personalInfo.email}</span></div>}
+                     {data.personalInfo.location && <div key="loc" style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}><span style={{ display: 'flex', alignItems: 'center', flexShrink: 0, lineHeight: 0 }}><MapPin style={{ opacity: 0.7, width: '16px', height: '16px', flexShrink: 0, display: 'block', verticalAlign: 'middle' }} color={c.primary}/></span> <span style={{ lineHeight: '1.2' }}>{data.personalInfo.location}</span></div>}
                   </div>
                 </div>
 
@@ -1345,8 +1357,8 @@ const ResumeRenderer = ({ data, templateId }: { data: ResumeData; templateId: Te
                        <h3 className="text-[12px] font-black uppercase tracking-[0.2em]" style={{ color: c.primary }}>Habilidades</h3>
                     </div>
                     <div className="flex flex-col gap-3">
-                       {data.skills.map(s => (
-                         <div key={s.id} className="font-semibold text-[13px] flex items-center gap-2" style={{ color: '#374151' }}>
+                       {data.skills.map((s, idx) => (
+                         <div key={s.id || `skill-${idx}`} className="font-semibold text-[13px] flex items-center gap-2" style={{ color: '#374151' }}>
                             <div className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{backgroundColor: c.primary}}></div>
                             {s.name}
                          </div>
@@ -1361,8 +1373,8 @@ const ResumeRenderer = ({ data, templateId }: { data: ResumeData; templateId: Te
                        <h3 className="text-[12px] font-black uppercase tracking-[0.2em]" style={{ color: c.primary }}>Formação</h3>
                     </div>
                     <div className="flex flex-col gap-6" style={{ color: '#374151' }}>
-                       {data.education.map(e => (
-                         <div key={e.id}>
+                       {data.education.map((e, idx) => (
+                         <div key={e.id || `edu-${idx}`}>
                             <div className="font-black mb-1 text-[13px] leading-tight" style={{ color: c.primary }}>{e.institution}</div>
                             <div className="font-medium text-[13px]">{e.degree}</div>
                             <div className="text-[11px] font-bold opacity-60 mt-1 uppercase tracking-wider">{e.startDate} - {e.endDate}</div>
@@ -1395,8 +1407,8 @@ const ResumeRenderer = ({ data, templateId }: { data: ResumeData; templateId: Te
                 <div>
                    <h2 className="text-[18px] font-black uppercase tracking-[0.15em] mb-6 border-b pb-4" style={{ color: '#111827', borderColor: '#F3F4F6' }}>Experiência Profissional</h2>
                    <div className="flex flex-col gap-8">
-                     {data.experience.map(ex => (
-                       <div key={ex.id} className="flex gap-4">
+                     {data.experience.map((ex, idx) => (
+                       <div key={ex.id || `exp-${idx}`} className="flex gap-4">
                           <div className="flex flex-col items-center pt-2">
                              <div className="w-2.5 h-2.5 rounded-full border-2" style={{ borderColor: c.primary }}></div>
                              <div className="w-0.5 flex-1 bg-gray-50 my-1"></div>
@@ -1465,6 +1477,8 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
   const [tempLanguage, setTempLanguage] = useState("");
   const [showPreviewModal, setShowPreviewModal] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
+  const [isImporting, setIsImporting] = useState(false);
+  const [importProgress, setImportProgress] = useState("");
 
   const [template, setTemplate] = useState<TemplateType>(() => {
     return (localStorage.getItem('cv_lab_template') as TemplateType) || 't1_executive';
@@ -1488,6 +1502,10 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
     "https://i.supaimg.com/6bc04951-8cbe-4706-9f0c-a01f9ea9a6c4/d25d88cc-8de9-4afc-8385-0ed21b0e333b.png",
     "https://i.supaimg.com/6bc04951-8cbe-4706-9f0c-a01f9ea9a6c4/4406a25d-b692-476b-955d-409d5a851e46.jpg"
   ];
+
+  useEffect(() => {
+    console.log("PDFJS Initial Check:", !!pdfjsLib, "Version:", (pdfjsLib as any).version);
+  }, []);
 
   const nextBanner = () => setCurrentBanner((prev) => (prev + 1) % banners.length);
   const prevBanner = () => setCurrentBanner((prev) => (prev - 1 + banners.length) % banners.length);
@@ -1589,118 +1607,48 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
 
   // Actual download function replacing old handleDownloadPdf
   const executeDownloadPdf = async () => {
-    // Determine the element early so we know it exists
-    const elementId = isCoverLetterMode ? 'cover-letter-content' : 'resume-content';
-    const element = document.getElementById(elementId);
-    if (!element) return;
-
     setIsDownloading(true);
 
     try {
-      // Force scroll to top and wait for fonts
-      window.scrollTo(0, 0);
-      await document.fonts.ready;
+      const filename = isCoverLetterMode 
+        ? 'Carta_Apresentacao.pdf' 
+        : `${resumeData.personalInfo.fullName.replace(/\s+/g, '_')}_Curriculo.pdf`;
 
-      // We explicitly instruct html2canvas to capture exactly at 794x1122
-      // No state previewScale change needed, eliminating race conditions.
-      const opt = {
-        margin:       0,
-        filename:     isCoverLetterMode ? 'Carta_Apresentacao.pdf' : `${resumeData.personalInfo.fullName.replace(/\s+/g, '_')}_Curriculo.pdf`,
-        image:        { type: 'jpeg' as const, quality: 1.0 },
-        html2canvas:  { 
-          scale: 3, 
-          useCORS: true, 
-          letterRendering: true,
-          scrollY: 0,
-          scrollX: 0,
-          width: 794,
-          height: 1122,
-          windowWidth: 794,
-          windowHeight: 1122,
-          logging: false,
-          backgroundColor: '#FFFFFF',
-          onclone: (clonedDoc: any) => {
-            const clonedElement = clonedDoc.getElementById(elementId);
-            if (clonedElement) {
-               // ABSOLUTE DIMENSION LOCKING & CLEANUP
-               Object.assign(clonedElement.style, {
-                 transform: 'none',
-                 transition: 'none',
-                 animation: 'none',
-                 width: '794px',
-                 height: '1122px',
-                 position: 'absolute',
-                 top: '0px',
-                 left: '0px',
-                 overflow: 'hidden',
-                 margin: '0px',
-                 padding: isCoverLetterMode ? '80px' : '0px',
-                 boxShadow: 'none',
-                 border: 'none',
-                 display: 'block',
-                 backgroundColor: '#FFFFFF'
-               });
-
-               const allElements = clonedElement.getElementsByTagName('*');
-               for (let i = 0; i < allElements.length; i++) {
-                 const el = allElements[i] as HTMLElement;
-                 el.style.transition = 'none';
-                 el.style.animation = 'none';
-                 
-                 // Remove shadows that cause artifacts in PDF
-                 if (el.style.boxShadow || el.className.includes('shadow')) {
-                   el.style.boxShadow = 'none';
-                 }
-
-                 // CRITICAL FIX: Align icons with text
-                 // Detect rows that contain both icons (SVG) and text
-                 if (el.style.display === 'flex' || el.className.includes('flex')) {
-                    el.style.display = 'flex !important';
-                    el.style.alignItems = 'center !important';
-                 }
-                 
-                 // CRITICAL FIX: Initial centering in circles
-                 const isAvatarCircle = el.style.borderRadius === '50%' || el.className.includes('rounded-full');
-                 if (isAvatarCircle && el.innerText && el.innerText.length <= 2) {
-                    el.style.display = 'flex';
-                    el.style.alignItems = 'center';
-                    el.style.justifyContent = 'center';
-                    el.style.lineHeight = '0'; // Reset line height to prevent font-baseline shifting
-                    el.style.paddingTop = '2px'; // Fine-tune centering
-                 }
-                 
-                 // Fix for images
-                 if (el.tagName.toLowerCase() === 'img') {
-                   const img = el as HTMLImageElement;
-                   img.style.objectFit = 'cover';
-                   img.style.objectPosition = 'top center';
-                   img.style.display = 'block';
-                   // Force re-eval of dimensions to prevent flattening
-                   const currentWidth = img.offsetWidth;
-                   const currentHeight = img.offsetHeight;
-                   if (currentWidth && currentHeight) {
-                      img.style.width = `${currentWidth}px`;
-                      img.style.height = `${currentHeight}px`;
-                   }
-                 }
-                 
-                 // Fix for Lucide icons
-                 if (el.tagName.toLowerCase() === 'svg') {
-                   el.style.display = 'inline-block';
-                   el.style.verticalAlign = 'middle';
-                   el.style.flexShrink = '0';
-                 }
-               }
-            }
-          }
-        },
-        jsPDF: { unit: 'px', format: [794, 1122] as [number, number], orientation: 'portrait' as const, compress: true, precision: 16 }
+      // Map Template
+      const templateMap: Record<TemplateType, number> = {
+        't1_executive': 1,
+        't2_geometric': 2,
+        't3_modern': 3,
+        't4_barnabas': 4,
+        't5_jonathan': 5
       };
-      
-      await html2pdf().set(opt).from(element).save();
 
-    } catch (err) {
-      console.error("Erro ao gerar PDF:", err);
+      const templateId = templateMap[template] || 1;
+
+      console.log("Gerando PDF Vectorial...");
+
+      const blob = await pdf(
+        <PdfDocument 
+          data={isCoverLetterMode ? { content: generatedLetter, personalInfo: resumeData.personalInfo } : resumeData} 
+          templateId={templateId} 
+          type={isCoverLetterMode ? 'cover_letter' : 'resume'}
+        />
+      ).toBlob();
+
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+
+      console.log("PDF Vectorial baixado com sucesso.");
+
+    } catch (err: any) {
+      console.error("Erro ao gerar PDF Vectorial:", err);
+      alert("Houve um erro ao gerar o PDF Vectorial. Erro: " + err.message);
     } finally {
       setIsDownloading(false);
     }
@@ -1793,6 +1741,72 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
       ...prev,
       personalInfo: { ...prev.personalInfo, [field]: value }
     }));
+  };
+
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    console.log("Arquivo selecionado para upload:", file?.name, "Tipo:", file?.type);
+    if (!file) return;
+    
+    // Alerta imediato para feedback do utilizador
+    console.log("Evento de upload disparado com sucesso.");
+
+    // Be more permissive with PDF check (check extension if type is empty/generic)
+    const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
+    if (!isPdf) {
+      alert("Por favor, selecione um arquivo PDF.");
+      return;
+    }
+
+    setIsImporting(true);
+    setImportProgress("Lendo arquivo PDF...");
+    
+    try {
+      console.log("Iniciando extração de texto do PDF...");
+      const pdfData = await extractTextFromPDF(file);
+      console.log("PDF processado. Texto:", !!pdfData.text, "Imagem Fallback:", !!pdfData.image);
+      
+      if (!pdfData.text.trim() && !pdfData.image) {
+        throw new Error("Não foi possível extrair informação deste PDF.");
+      }
+
+      setImportProgress("IA analisando seu currículo...");
+      console.log("Enviando dados para a Gemini AI (Visão + Texto)...");
+      
+      const parsedData = await parseResumeFromText(pdfData.text, pdfData.image);
+      console.log("Dados processados pela IA recebidos:", !!parsedData);
+      
+      // Update resume data
+      setResumeData(prev => ({
+        ...prev,
+        personalInfo: {
+          ...prev.personalInfo,
+          fullName: parsedData.personalInfo?.fullName || prev.personalInfo.fullName,
+          title: parsedData.personalInfo?.title || prev.personalInfo.title,
+          email: parsedData.personalInfo?.email || prev.personalInfo.email,
+          phone: parsedData.personalInfo?.phone || prev.personalInfo.phone,
+          location: parsedData.personalInfo?.location || prev.personalInfo.location,
+          summary: parsedData.personalInfo?.summary || prev.personalInfo.summary
+        },
+        experience: parsedData.experience?.length ? parsedData.experience : prev.experience,
+        education: parsedData.education?.length ? parsedData.education : prev.education,
+        skills: parsedData.skills?.length ? parsedData.skills : prev.skills,
+        languages: parsedData.languages?.length ? parsedData.languages : prev.languages,
+        interests: parsedData.interests?.length ? parsedData.interests : prev.interests,
+        certifications: parsedData.certifications?.length ? parsedData.certifications : prev.certifications
+      }));
+      
+      alert("Currículo importado e otimizado com sucesso pela nossa IA!");
+      setActiveStep(1); // Jump to first data step after import
+    } catch (error: any) {
+      console.error("Erro no upload/importação:", error);
+      alert("Erro ao importar currículo: " + error.message);
+    } finally {
+      setIsImporting(false);
+      setImportProgress("");
+      // Clear input
+      event.target.value = '';
+    }
   };
 
   const addExperience = () => {
@@ -2820,6 +2834,53 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
 
               {activeStep === 0 && ( /* Personal info */
                 <div className="space-y-6">
+                  {/* AI Import Block */}
+                  <div className="p-8 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-[2.5rem] shadow-xl shadow-blue-500/20 relative overflow-hidden group mb-4">
+                    <div className="absolute top-0 right-0 w-40 h-40 bg-white/10 rounded-full -mr-10 -mt-10 blur-2xl group-hover:bg-white/20 transition-all duration-700"></div>
+                    <div className="absolute bottom-0 left-0 w-32 h-32 bg-indigo-400/20 rounded-full -ml-16 -mb-16 blur-xl"></div>
+                    
+                    <div className="relative z-10 flex flex-col md:flex-row items-center gap-8">
+                      <div className="w-16 h-16 bg-white/10 backdrop-blur-md rounded-2xl flex items-center justify-center text-white border border-white/20 shadow-inner group-hover:scale-110 transition-transform duration-500 shrink-0">
+                        {isImporting ? (
+                           <div className="w-8 h-8 border-4 border-white/30 border-t-white rounded-full animate-spin"></div>
+                        ) : (
+                           <Sparkles size={32} className="text-white fill-white/20 animate-pulse" />
+                        )}
+                      </div>
+                      
+                      <div className="flex-1 text-center md:text-left space-y-2">
+                        <h3 className="text-2xl font-black text-white tracking-tight">Importação Mágica <span className="text-[10px] bg-white/20 px-2 py-0.5 rounded-full ml-1 tabular-nums">IA</span></h3>
+                        <p className="text-blue-100 text-sm font-medium leading-relaxed max-w-sm">
+                          Carregue o seu currículo antigo em PDF e deixe a nossa IA preencher tudo automaticamente e otimizar cada campo para si.
+                        </p>
+                      </div>
+
+                      <div className="shrink-0 w-full md:w-auto">
+                        <label className={`w-full group/btn relative flex items-center justify-center gap-3 bg-white text-blue-700 px-8 py-4 rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-black/10 hover:bg-blue-50 active:scale-95 transition-all cursor-pointer ${isImporting ? 'opacity-50 pointer-events-none' : ''}`}>
+                          {isImporting ? (
+                            <span className="flex items-center gap-2">
+                              <div className="w-3 h-3 border-2 border-blue-600/30 border-t-blue-600 rounded-full animate-spin"></div>
+                              {importProgress}
+                            </span>
+                          ) : (
+                            <>
+                              <Upload size={18} className="group-hover/btn:-translate-y-0.5 transition-transform" />
+                              IMPORTAR PDF
+                            </>
+                          )}
+                          <input 
+                            type="file" 
+                            accept=".pdf,application/pdf" 
+                            className="hidden" 
+                            onChange={handleFileUpload} 
+                            disabled={isImporting} 
+                          />
+                        </label>
+                        <p className="text-[9px] text-blue-200 mt-2 text-center font-bold uppercase tracking-widest opacity-60">Apenas ficheiros .PDF</p>
+                      </div>
+                    </div>
+                  </div>
+
                   {/* Enhanced Photo Upload UI */}
                   <div className="flex flex-col gap-4 p-6 bg-primary-blue/5 rounded-3xl border-2 border-dashed border-primary-blue/20 relative overflow-hidden group hover:border-primary-blue/40 transition-all">
                      <div className="flex items-center gap-6">
@@ -3260,7 +3321,7 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
       </main>
 
       {/* WhatsApp Support Floating Button - Only on Landing Page */}
-      {view === 'landing' && (
+      {((view as any) === 'landing' || (view as any) === '') && (
         <motion.a
           href="https://wa.me/message/PMCAAS2LKZBSM1"
           target="_blank"
