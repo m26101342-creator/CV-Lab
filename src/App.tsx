@@ -27,7 +27,9 @@ import {
   MessageCircle,
   Facebook,
   Instagram,
-  Shield
+  Shield,
+  LogOut,
+  Search
 } from 'lucide-react';
 import { AdSenseUnit } from './components/AdSenseUnit';
 import { ResumeData, INITIAL_RESUME_DATA, TemplateType } from './types.ts';
@@ -148,57 +150,96 @@ const ProfilePage = ({ user, isAdmin, setView, onLogout }: { user: any, isAdmin:
                 <User size={40} className="text-gray-400" />
             </div>
             <h2 className="text-2xl font-black text-deep-blue">Acesso Restrito</h2>
-            <p className="text-text-muted">Você está navegando como convidado. Entre com sua conta Google para salvar seus currículos.</p>
+            <p className="text-text-muted">Você está navegando como convidado. Entre com sua conta Google para aceder ao seu perfil premium.</p>
             <Button onClick={loginWithGoogle} className="px-8 shadow-xl">Entrar com Google</Button>
         </div>
     );
 
     return (
-        <div className="max-w-xl mx-auto py-10 px-6 space-y-8">
-            <div className="bg-white p-8 rounded-[32px] shadow-2xl border border-border-main text-center space-y-6">
-                <div className="relative inline-block">
-                    <img 
-                        src={user.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.displayName || user.email || 'U')}&background=0D8ABC&color=fff`} 
-                        className="w-24 h-24 rounded-full border-4 border-white shadow-xl mx-auto" 
-                        alt="Avatar"
-                        referrerPolicy="no-referrer"
-                    />
-                    {isAdmin && (
-                        <div className="absolute -bottom-1 -right-1 bg-red-500 text-white text-[10px] font-black px-2 py-1 rounded-lg shadow-lg uppercase tracking-widest border-2 border-white">
-                            Admin
-                        </div>
-                    )}
-                </div>
+        <div className="max-w-4xl mx-auto py-12 px-6">
+            {/* Header / Cover */}
+            <div className="relative bg-gradient-to-tr from-primary-blue via-blue-800 to-[#121c36] rounded-[3rem] p-10 overflow-hidden shadow-2xl mb-8">
+                <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10"></div>
+                <div className="absolute -top-32 -right-32 w-80 h-80 bg-blue-400/20 rounded-full blur-[80px]"></div>
                 
-                <div>
-                    <h2 className="text-2xl font-black text-deep-blue">{user.displayName || 'Usuário'}</h2>
-                    <p className="text-sm font-medium text-text-muted">{user.email}</p>
+                <div className="flex flex-col md:flex-row items-center gap-8 relative z-10">
+                    <div className="relative group">
+                        <div className="absolute -inset-1 bg-gradient-to-r from-blue-400 to-indigo-400 rounded-full blur opacity-25 group-hover:opacity-60 transition duration-1000 group-hover:duration-200"></div>
+                        <img 
+                            src={user.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.displayName || user.email || 'U')}&background=fff&color=0D8ABC`} 
+                            className="w-32 h-32 rounded-full border-[6px] border-white/20 shadow-2xl object-cover relative backdrop-blur-sm" 
+                            alt="Avatar"
+                            referrerPolicy="no-referrer"
+                        />
+                        {isAdmin && (
+                            <div className="absolute -bottom-2 -right-2 bg-red-500 text-white text-[10px] font-black px-3 py-1.5 rounded-xl shadow-xl uppercase tracking-widest border-2 border-white flex items-center gap-1">
+                                <Shield size={12} /> ADMIN
+                            </div>
+                        )}
+                    </div>
+                    
+                    <div className="text-center md:text-left space-y-2">
+                        <h2 className="text-4xl font-black text-white tracking-tight">{user.displayName || 'Utilizador CV LAB'}</h2>
+                        <div className="flex items-center justify-center md:justify-start gap-2 text-blue-100/80">
+                            <Mail size={16} />
+                            <p className="text-sm font-medium tracking-wide">{user.email}</p>
+                        </div>
+                        <div className="pt-2 flex flex-wrap gap-2 justify-center md:justify-start">
+                            <span className="px-3 py-1 bg-white/10 text-white text-[10px] font-bold uppercase tracking-widest rounded-lg border border-white/10">Conta Verificada</span>
+                            <span className="px-3 py-1 bg-blue-500/20 text-blue-200 text-[10px] font-bold uppercase tracking-widest rounded-lg border border-blue-400/20">Acesso Vitalício (CV)</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
+                {/* Lateral Navigation Actions */}
+                <div className="col-span-1 md:col-span-5 space-y-4">
+                    <div className="bg-white rounded-[2rem] p-6 shadow-sm border border-gray-100 space-y-3">
+                        <h3 className="text-[11px] font-black tracking-widest uppercase text-gray-400 mb-4 px-2">Suas Ações</h3>
+                        
+                        <Button 
+                            variant="outline" 
+                            onClick={() => setView('my-resumes')} 
+                            className="w-full h-16 rounded-2xl border-gray-200 hover:border-primary-blue hover:bg-soft-blue flex items-center justify-start px-6 gap-4 text-deep-blue font-bold tracking-wide group transition-all"
+                        >
+                            <div className="w-10 h-10 rounded-xl bg-gray-50 flex items-center justify-center group-hover:bg-white group-hover:text-primary-blue transition-colors">
+                                <Briefcase size={20} />
+                            </div>
+                            Acessar Meus Currículos
+                        </Button>
+
+                        {isAdmin && (
+                            <Button 
+                                onClick={() => setView('admin')} 
+                                className="w-full h-16 rounded-2xl bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white shadow-xl shadow-red-500/20 flex items-center justify-start px-6 gap-4 font-bold tracking-wide border-none group"
+                            >
+                                <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center group-hover:bg-white/30 transition-colors backdrop-blur-md">
+                                    <Shield size={20} />
+                                </div>
+                                Painel Administrativo
+                            </Button>
+                        )}
+                    </div>
+                    
+                    <div className="bg-red-50 rounded-[2rem] p-6 border border-red-100">
+                        <button 
+                            onClick={onLogout}
+                            className="w-full h-12 flex items-center justify-center gap-2 text-xs font-black text-red-600 uppercase tracking-widest hover:bg-red-100 rounded-xl transition-colors"
+                        >
+                            <LogOut size={16} /> Encerrar Sessão
+                        </button>
+                    </div>
                 </div>
 
-                <div className="pt-4 space-y-3">
-                    {isAdmin && (
-                        <Button 
-                            onClick={() => setView('admin')} 
-                            className="w-full h-14 bg-red-500 hover:bg-red-600 border-transparent text-white shadow-xl flex items-center justify-center gap-2 font-black uppercase text-xs tracking-widest"
-                        >
-                            <Shield size={18} /> Aceder ao Painel Administrativo
-                        </Button>
-                    )}
-                    
-                    <Button 
-                        variant="outline" 
-                        onClick={() => setView('my-resumes')} 
-                        className="w-full h-14 border-border-main text-deep-blue hover:bg-bg-main flex items-center justify-center gap-2 font-black uppercase text-xs tracking-widest"
-                    >
-                        <FileText size={18} /> Meus Currículos e Pedidos
-                    </Button>
-
-                    <button 
-                        onClick={onLogout}
-                        className="w-full py-4 text-xs font-black text-red-500 uppercase tracking-widest hover:bg-red-50 rounded-2xl transition-colors mt-6"
-                    >
-                        Sair da Conta
-                    </button>
+                {/* Dashboard Stats */}
+                <div className="col-span-1 md:col-span-7 space-y-4">
+                     <div className="bg-white p-8 rounded-[2rem] shadow-sm border border-gray-100 flex items-center gap-6 h-full min-h-[220px]">
+                        <div className="flex-1 space-y-2">
+                           <h3 className="text-xl font-black text-deep-blue">Seu Progresso</h3>
+                           <p className="text-sm text-gray-500 leading-relaxed">Continue atualizando seu perfil e gerando currículos para alcançar as melhores oportunidades do mercado. A consistência é a chave.</p>
+                        </div>
+                     </div>
                 </div>
             </div>
         </div>
@@ -337,33 +378,38 @@ const MyResumesPage = ({ user, setView }: { user: any, setView: (v: any) => void
     });
 
     return (
-        <div className="max-w-4xl mx-auto py-10 px-6 space-y-8 relative">
-            <header className="space-y-2">
-                <h2 className="text-3xl font-black text-deep-blue text-center md:text-left">Meus Documentos</h2>
-                <p className="text-sm text-text-muted text-center md:text-left">Acompanhe o estado dos seus currículos e cartas de apresentação.</p>
+        <div className="max-w-4xl mx-auto py-12 px-6 relative">
+            <header className="mb-10 flex flex-col items-center md:items-start space-y-3 pb-8 border-b border-slate-200/50">
+                <h2 className="text-4xl font-black text-slate-900 tracking-tight">Meus Documentos</h2>
+                <div className="flex items-center gap-2 bg-blue-50 px-4 py-2 rounded-xl border border-blue-100/50">
+                    <span className="w-2 h-2 rounded-full bg-blue-600 animate-pulse"></span>
+                    <p className="text-[10px] font-black text-blue-800 uppercase tracking-widest">Painel de Controlo</p>
+                </div>
             </header>
 
-            <div className="grid gap-4">
+            <div className="grid gap-6">
                 {expandedItems.map((item, idx) => (
-                    <div key={`${item.id}-${item.subType}-${idx}`} className="bg-white p-6 rounded-3xl border border-border-main shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4 transition-all hover:border-primary-blue/30">
-                        <div className="space-y-2">
-                            <div className="flex items-center gap-2">
-                                <span className={`w-2 h-2 rounded-full ${item.status === 'approved' ? 'bg-green-500' : 'bg-amber-500 animate-pulse'}`}></span>
-                                <span className="text-[10px] uppercase font-black tracking-widest text-text-muted">Pedido {item.id.slice(0, 8)}...</span>
+                    <div key={`${item.id}-${item.subType}-${idx}`} className="bg-white p-6 md:p-8 rounded-[2rem] border border-slate-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_20px_40px_rgb(0,0,0,0.08)] flex flex-col md:flex-row md:items-center justify-between gap-6 transition-all group overflow-hidden relative">
+                        <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-slate-50 to-transparent -mr-10 -mt-10 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                        
+                        <div className="space-y-3 relative z-10 w-full md:w-auto">
+                            <div className="flex items-center gap-3">
+                                <span className={`w-2.5 h-2.5 rounded-full ${item.status === 'approved' ? 'bg-green-500 shadow-[0_0_10px_rgba(34,197,94,0.5)]' : 'bg-amber-500 animate-pulse shadow-[0_0_10px_rgba(245,158,11,0.5)]'}`}></span>
+                                <span className="text-[10px] uppercase font-black tracking-widest text-slate-400">Ref: {item.id.slice(0, 8)}</span>
                             </div>
-                            <h3 className="font-black text-lg text-deep-blue">
+                            <h3 className="font-black text-xl text-slate-900 tracking-tight">
                                 {item.displayName}
                             </h3>
-                            <p className="text-[11px] text-text-muted font-bold opacity-60">Solicitado em {new Date(item.createdAt).toLocaleDateString('pt-BR')}</p>
+                            <p className="text-xs text-slate-500 font-bold flex items-center gap-1.5"><FileText size={12}/> Gerado a {new Date(item.createdAt).toLocaleDateString('pt-BR')}</p>
                         </div>
 
-                        <div className="flex flex-col sm:flex-row items-center gap-4">
-                            <div className={`px-4 py-2 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] ${
+                        <div className="flex flex-col sm:flex-row items-center gap-4 relative z-10 w-full md:w-auto justify-end">
+                            <div className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest border ${
                                 item.status === 'approved' 
-                                ? 'bg-green-50 text-green-600' 
-                                : 'bg-amber-50 text-amber-600'
+                                ? 'bg-green-50 text-green-700 border-green-100' 
+                                : 'bg-amber-50 text-amber-700 border-amber-100'
                             }`}>
-                                {item.status === 'approved' ? 'Aprovado' : 'Aguardando Pagamento'}
+                                {item.status === 'approved' ? 'Liberado para Download' : 'Aguardando Aprovação'}
                             </div>
                             
                             {item.status === 'approved' && (
@@ -371,15 +417,15 @@ const MyResumesPage = ({ user, setView }: { user: any, setView: (v: any) => void
                                     size="sm" 
                                     onClick={() => downloadPDF(item, item.subType)} 
                                     disabled={!!isGenerating}
-                                    className="bg-primary-blue text-white hover:bg-deep-blue h-12 px-8 rounded-2xl shadow-xl shadow-primary-blue/20 w-full sm:w-auto"
+                                    className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white h-12 px-8 rounded-xl shadow-lg shadow-blue-500/30 w-full sm:w-auto border-none font-bold tracking-wide"
                                 >
                                    {isGenerating === `${item.id}-${item.subType}` ? (
                                        <div className="flex items-center gap-2">
                                            <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                                           <span>Baixando...</span>
+                                           <span>PROCESSANDO...</span>
                                        </div>
                                    ) : (
-                                       <><Download size={16} className="mr-2" /> Baixar PDF</>
+                                       <><Download size={16} className="mr-2" /> BAIXAR AGORA</>
                                    )}
                                 </Button>
                             )}
@@ -388,15 +434,18 @@ const MyResumesPage = ({ user, setView }: { user: any, setView: (v: any) => void
                 ))}
                 
                 {myOrders.length === 0 && (
-                    <div className="bg-white p-20 rounded-[48px] border border-border-main text-center space-y-6 shadow-sm">
-                        <div className="w-20 h-20 bg-soft-blue/20 rounded-3xl flex items-center justify-center mx-auto">
-                            <FileText size={40} className="text-primary-blue/30" />
+                    <div className="bg-white p-16 rounded-[3rem] border border-slate-100 text-center space-y-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative overflow-hidden">
+                        <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-[0.02]"></div>
+                        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-blue-50 rounded-full blur-[80px]"></div>
+                        
+                        <div className="w-24 h-24 bg-gradient-to-tr from-blue-500 to-indigo-500 rounded-[2rem] flex items-center justify-center mx-auto shadow-xl shadow-blue-500/20 relative z-10 rotate-3 hover:rotate-6 transition-transform">
+                            <FileText size={40} className="text-white" />
                         </div>
-                        <div className="space-y-2">
-                            <h3 className="text-2xl font-black text-deep-blue">Nenhum currículo ainda</h3>
-                            <p className="text-sm text-text-muted max-w-xs mx-auto">Sua jornada para o emprego ideal começa com um currículo impecável.</p>
+                        <div className="space-y-4 relative z-10">
+                            <h3 className="text-3xl font-black text-slate-900 tracking-tight">Painel Vazio</h3>
+                            <p className="text-sm text-slate-500 max-w-sm mx-auto font-medium leading-relaxed">Você ainda não gerou nenhum documento através da plataforma. Inicie a sua jornada agora.</p>
                         </div>
-                        <Button onClick={() => setView('editor')} className="px-10 h-14 rounded-2xl">Criar Meu Primeiro CV</Button>
+                        <Button onClick={() => setView('editor')} className="px-10 h-14 rounded-xl bg-gradient-to-r from-slate-900 to-black hover:from-black hover:to-slate-900 text-white shadow-xl shadow-slate-900/20 uppercase tracking-widest text-[11px] border-none relative z-10">Começar Currículo</Button>
                     </div>
                 )}
             </div>
@@ -550,120 +599,133 @@ const AdminPanel = () => {
     const totalPages = Math.ceil(displayOrders.length / itemsPerPage);
 
     return (
-        <div className="flex flex-col md:flex-row min-h-screen bg-[#FDFDFE] font-sans">
-            {/* Sidebar */}
-            <aside className="w-full md:w-72 bg-white border-r border-gray-100 p-8 flex flex-col">
-                <div className="flex items-center gap-3 mb-12">
-                    <div className="w-10 h-10 bg-[#0D8ABC] rounded-xl flex items-center justify-center text-white font-black text-xl shadow-lg shadow-[#0D8ABC]/10">L</div>
+        <div className="flex flex-col md:flex-row min-h-screen bg-[#F8FAFC] font-sans">
+            {/* Sidebar Premium */}
+            <aside className="w-full md:w-80 bg-gradient-to-b from-[#0F172A] via-[#1E293B] to-[#0F172A] p-8 flex flex-col relative overflow-hidden shadow-2xl z-20 shrink-0">
+                <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-5"></div>
+                <div className="absolute -top-32 -left-32 w-64 h-64 bg-blue-500/20 rounded-full blur-[80px]"></div>
+                
+                <div className="flex items-center gap-4 mb-12 relative z-10">
+                    <div className="w-12 h-12 bg-gradient-to-tr from-blue-500 to-indigo-500 rounded-2xl flex items-center justify-center text-white font-black text-2xl shadow-xl shadow-blue-500/30">L</div>
                     <div>
-                        <h2 className="text-sm font-black text-[#111827] leading-none uppercase tracking-tighter">CV LAB</h2>
-                        <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Painel Admin</span>
+                        <h2 className="text-lg font-black text-white leading-none tracking-tight">CV LAB</h2>
+                        <span className="text-[10px] text-blue-200/60 font-bold uppercase tracking-widest">Painel Admin</span>
                     </div>
                 </div>
 
-                <nav className="space-y-1.5 flex-1">
+                <nav className="space-y-2 flex-1 relative z-10">
                     {[
-                        { id: 'overview', label: 'Monitor Geral', icon: Globe },
-                        { id: 'orders', label: 'Pedidos Pendentes', icon: CreditCard },
-                        { id: 'visitors', label: 'Usuários Online', icon: User },
+                        { id: 'overview', label: 'Dashboard', icon: Globe },
+                        { id: 'orders', label: 'Pagamentos', icon: CreditCard },
+                        { id: 'visitors', label: 'Trafego Online', icon: User },
                     ].map(tab => (
                         <button
                             key={tab.id}
                             onClick={() => { setActiveTab(tab.id as any); setPage(1); }}
-                            className={`w-full flex items-center gap-3 px-5 py-4 rounded-2xl text-[13px] font-bold transition-all duration-300 ${
+                            className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl text-sm font-bold transition-all duration-300 ${
                                 activeTab === tab.id 
-                                ? 'bg-[#0D8ABC] text-white shadow-xl shadow-[#0D8ABC]/20 translate-x-1' 
-                                : 'text-gray-400 hover:bg-gray-50 hover:text-gray-600'
+                                ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg shadow-blue-500/20 scale-[1.02]' 
+                                : 'text-slate-400 hover:bg-white/5 hover:text-white'
                             }`}
                         >
-                            <tab.icon size={18} strokeWidth={2.5} />
+                            <div className={`${activeTab === tab.id ? 'text-white' : 'text-slate-500'}`}>
+                                <tab.icon size={20} strokeWidth={2.5} />
+                            </div>
                             {tab.label}
                         </button>
                     ))}
                 </nav>
 
-                <div className="pt-8 border-t border-gray-50">
-                    <div className="bg-gray-50 p-5 rounded-2xl border border-gray-100">
-                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5 opacity-60">Fatura Total</p>
-                        <p className="text-xl font-black text-[#111827]">{stats.revenue.toLocaleString()} Kzs</p>
+                <div className="pt-8 relative z-10">
+                    <div className="bg-slate-800/50 backdrop-blur-sm p-6 rounded-[2rem] border border-white/5 relative overflow-hidden">
+                        <div className="absolute top-0 right-0 w-24 h-24 bg-green-500/10 rounded-bl-full -mr-4 -mt-4"></div>
+                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Fatura Líquida</p>
+                        <p className="text-2xl font-black text-white tracking-tight">{stats.revenue.toLocaleString()} Kzs</p>
                     </div>
                 </div>
             </aside>
 
             {/* Main Area */}
-            <main className="flex-1 p-6 md:p-12 space-y-10 overflow-y-auto max-h-screen">
-                <header className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-                    <div className="space-y-1">
-                        <h1 className="text-2xl font-black text-[#111827] tracking-tight">
-                            {activeTab === 'overview' ? 'Monitor em Tempo Real' : activeTab === 'orders' ? 'Gestão de Pagamentos' : 'Fluxo de Visitantes'}
+            <main className="flex-1 p-6 md:p-12 space-y-10 overflow-y-auto max-h-screen relative">
+                <div className="absolute top-0 left-0 w-full h-64 bg-slate-100/50 -z-10"></div>
+                
+                <header className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-6 mt-4 border-b border-slate-200/50">
+                    <div className="space-y-2">
+                        <h1 className="text-3xl font-black text-slate-900 tracking-tight">
+                            {activeTab === 'overview' ? 'Monitoramento em Tempo Real' : activeTab === 'orders' ? 'Gestão de Liberações' : 'Métricas de Usuários'}
                         </h1>
-                        <p className="text-[12px] text-gray-400 font-bold uppercase tracking-widest opacity-60">Sistema de Inteligência CV LAB</p>
+                        <p className="text-[11px] text-slate-500 font-bold uppercase tracking-widest flex items-center gap-2">
+                            <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
+                            Sistema de Inteligência Operacional
+                        </p>
                     </div>
                     
                     {activeTab === 'orders' && (
-                        <div className="relative w-full md:w-72">
+                        <div className="relative w-full md:w-80">
+                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
                             <input 
                                 type="text" 
                                 value={searchQuery}
                                 onChange={e => {setSearchQuery(e.target.value); setPage(1);}}
-                                placeholder="Filtrar por email..." 
-                                className="w-full px-5 py-3 text-sm border-none bg-white rounded-2xl shadow-sm outline-none ring-1 ring-gray-100 focus:ring-2 focus:ring-[#0D8ABC]/50 transition-all font-medium"
+                                placeholder="Buscar por email..." 
+                                className="w-full pl-12 pr-5 py-4 text-sm font-bold bg-white rounded-[1.5rem] shadow-[0_8px_30px_rgb(0,0,0,0.04)] outline-none border border-slate-100 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all"
                             />
                         </div>
                     )}
                 </header>
 
                 {activeTab === 'overview' && (
-                    <div className="space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                    <div className="space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-500 relative z-10">
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                             {[
-                                { label: 'Online Atualmente', val: stats.online, color: 'text-green-600', icon: Globe, highlight: true },
-                                { label: 'Trafégo Único (Vida)', val: stats.totalVisitors, color: 'text-[#111827]', icon: User },
+                                { label: 'Online Atualmente', val: stats.online, color: 'text-green-500', icon: Globe, highlight: true },
+                                { label: 'Trafégo Único (Vida)', val: stats.totalVisitors, color: 'text-slate-800', icon: User },
                                 { label: 'Taxa de Conversão', val: `${stats.conversion.toFixed(1)}%`, color: 'text-amber-500', icon: BarChart },
-                                { label: 'Aguardando Pagamento', val: stats.pending, color: 'text-[#0D8ABC]', icon: CreditCard },
+                                { label: 'Aguardando Pagamento', val: stats.pending, color: 'text-blue-600', icon: CreditCard },
                             ].map((s, i) => (
-                                <div key={i} className="bg-white p-7 rounded-[32px] shadow-sm border border-gray-50 flex flex-col items-center text-center hover:shadow-xl hover:translate-y-[-4px] transition-all duration-500">
-                                    <div className="w-12 h-12 bg-gray-50 rounded-2xl flex items-center justify-center mb-4">
-                                        <s.icon size={20} className={s.highlight ? 'text-green-500' : 'text-gray-300'} strokeWidth={2.5} />
+                                <div key={i} className="bg-white p-7 rounded-[2rem] shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 flex flex-col items-center text-center hover:shadow-[0_20px_40px_rgb(0,0,0,0.08)] hover:-translate-y-1 transition-all duration-300 relative overflow-hidden group">
+                                    <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-bl from-slate-50 to-transparent -mr-8 -mt-8 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                                    <div className="w-14 h-14 bg-slate-50 rounded-2xl flex items-center justify-center mb-5 group-hover:scale-110 transition-transform duration-500">
+                                        <s.icon size={24} className={s.highlight ? 'text-green-500' : 'text-slate-400'} strokeWidth={2} />
                                     </div>
-                                    <span className="text-[10px] uppercase font-black tracking-widest text-gray-400 mb-2">{s.label}</span>
+                                    <span className="text-[10px] uppercase font-black tracking-widest text-slate-400 mb-2">{s.label}</span>
                                     <div className="flex items-center gap-2">
-                                        {s.highlight && <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>}
-                                        <span className={`text-3xl font-black ${s.color}`}>{s.val}</span>
+                                        {s.highlight && <div className="w-2.5 h-2.5 bg-green-500 rounded-full animate-pulse shadow-[0_0_10px_rgba(34,197,94,0.5)]"></div>}
+                                        <span className={`text-4xl font-black tracking-tighter ${s.color}`}>{s.val}</span>
                                     </div>
                                 </div>
                             ))}
                         </div>
 
-                        <div className="bg-white p-10 rounded-[40px] shadow-sm border border-gray-50">
-                            <div className="flex items-center justify-between mb-10">
+                        <div className="bg-white p-10 rounded-[2.5rem] shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 relative overflow-hidden">
+                            <div className="absolute top-0 right-0 w-96 h-96 bg-blue-50/50 rounded-full blur-[100px] -mr-20 -mt-20"></div>
+                            
+                            <div className="flex flex-col md:flex-row md:items-center justify-between mb-12 relative z-10 gap-4">
                                 <div>
-                                    <h3 className="font-black text-[#111827] text-lg tracking-tight">Atividade de Pedidos</h3>
-                                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Últimos 7 dias de operação</p>
+                                    <h3 className="font-black text-slate-900 text-2xl tracking-tight">Atividade de Pedidos</h3>
+                                    <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mt-1">Últimos 7 dias de operação</p>
                                 </div>
-                                <div className="flex items-center gap-3">
-                                    <div className="flex items-center gap-1.5">
-                                        <div className="w-2.5 h-2.5 bg-[#0D8ABC] rounded-full"></div>
-                                        <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Volume de Pedidos</span>
-                                    </div>
+                                <div className="flex items-center gap-2 bg-slate-50 px-4 py-2 rounded-xl">
+                                    <div className="w-3 h-3 bg-blue-600 rounded-full shadow-[0_0_10px_rgba(37,99,235,0.4)]"></div>
+                                    <span className="text-[10px] font-black text-slate-600 uppercase tracking-widest">Volume Registado</span>
                                 </div>
                             </div>
-                            <div className="w-full h-[320px]">
+                            <div className="w-full h-[360px] relative z-10">
                                 <ResponsiveContainer width="100%" height="100%">
                                     <AreaChart data={chartData}>
                                         <defs>
                                             <linearGradient id="colorPed" x1="0" y1="0" x2="0" y2="1">
-                                                <stop offset="5%" stopColor="#0D8ABC" stopOpacity={0.15}/>
-                                                <stop offset="95%" stopColor="#0D8ABC" stopOpacity={0}/>
+                                                <stop offset="5%" stopColor="#2563EB" stopOpacity={0.2}/>
+                                                <stop offset="95%" stopColor="#2563EB" stopOpacity={0}/>
                                             </linearGradient>
                                         </defs>
-                                        <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{fontSize: 10, fontWeight: 800, fill: '#D1D5DB'}} dy={10} />
-                                        <YAxis axisLine={false} tickLine={false} tick={{fontSize: 10, fontWeight: 800, fill: '#D1D5DB'}} dx={-10} />
+                                        <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{fontSize: 11, fontWeight: 700, fill: '#94A3B8'}} dy={15} />
+                                        <YAxis axisLine={false} tickLine={false} tick={{fontSize: 11, fontWeight: 700, fill: '#94A3B8'}} dx={-15} />
                                         <Tooltip 
-                                            contentStyle={{borderRadius: '20px', border: 'none', padding: '15px', boxShadow: '0 20px 40px -10px rgba(0,0,0,0.1)'}} 
-                                            itemStyle={{color: '#0D8ABC', fontWeight: 'bold', fontSize: '12px'}}
+                                            contentStyle={{borderRadius: '1.5rem', border: '1px solid #F1F5F9', padding: '16px 20px', boxShadow: '0 20px 40px -10px rgba(0,0,0,0.1)'}} 
+                                            itemStyle={{color: '#2563EB', fontWeight: '900', fontSize: '14px', textTransform: 'uppercase', letterSpacing: '0.05em'}}
                                         />
-                                        <Area type="monotone" dataKey="pedidos" stroke="#0D8ABC" strokeWidth={4} fillOpacity={1} fill="url(#colorPed)" animationDuration={2000} />
+                                        <Area type="monotone" dataKey="pedidos" stroke="#2563EB" strokeWidth={5} fillOpacity={1} fill="url(#colorPed)" animationDuration={2000} />
                                     </AreaChart>
                                 </ResponsiveContainer>
                             </div>
@@ -672,40 +734,40 @@ const AdminPanel = () => {
                 )}
 
                 {activeTab === 'orders' && (
-                    <div className="bg-white rounded-[40px] border border-gray-50 overflow-hidden shadow-sm animate-in slide-in-from-right-4 duration-500">
+                    <div className="bg-white rounded-[2rem] border border-slate-100 overflow-hidden shadow-[0_8px_30px_rgb(0,0,0,0.04)] animate-in slide-in-from-right-4 duration-500 relative z-10">
                         <div className="overflow-x-auto">
                             <table className="w-full text-left text-sm whitespace-nowrap">
-                                <thead className="bg-gray-50/50 text-[10px] font-black uppercase tracking-widest text-gray-400">
+                                <thead className="bg-slate-50 border-b border-slate-100 text-[10px] font-black uppercase tracking-widest text-slate-400">
                                     <tr>
-                                        <th className="px-8 py-6">Data de Criação</th>
-                                        <th className="px-8 py-6">E-mail do Cliente</th>
-                                        <th className="px-8 py-6">Documento</th>
-                                        <th className="px-8 py-6 text-center">Estado</th>
-                                        <th className="px-8 py-6 text-right">Controle</th>
+                                        <th className="px-8 py-5">Data de Criação</th>
+                                        <th className="px-8 py-5">E-mail do Cliente</th>
+                                        <th className="px-8 py-5">Documento</th>
+                                        <th className="px-8 py-5 text-center">Estado</th>
+                                        <th className="px-8 py-5 text-right">Controle</th>
                                     </tr>
                                 </thead>
-                                <tbody className="divide-y divide-gray-50">
+                                <tbody className="divide-y divide-slate-50">
                                     {paginatedOrders.map(o => (
-                                        <tr key={o.id} className="group hover:bg-gray-50/50 transition-colors duration-300">
-                                            <td className="px-8 py-6 text-gray-400 font-bold">{new Date(o.createdAt).toLocaleDateString()}</td>
-                                            <td className="px-8 py-6 font-black text-[#111827]">{o.contactEmail}</td>
+                                        <tr key={o.id} className="group hover:bg-blue-50/30 transition-colors duration-300">
+                                            <td className="px-8 py-6 text-slate-500 font-bold">{new Date(o.createdAt).toLocaleDateString()}</td>
+                                            <td className="px-8 py-6 font-black text-slate-900">{o.contactEmail}</td>
                                             <td className="px-8 py-6">
-                                                <span className="text-[10px] font-black uppercase tracking-tighter bg-gray-100 text-gray-400 px-3 py-1.5 rounded-xl">
+                                                <span className="text-[10px] font-black uppercase tracking-tighter bg-slate-100 text-slate-500 px-3 py-1.5 rounded-lg border border-slate-200">
                                                     {o.documentType === 'combo' ? 'Combo Premium' : (o.documentType === 'resume' ? 'Currículo' : 'Carta Ref.')}
                                                 </span>
                                             </td>
                                             <td className="px-8 py-6 text-center">
                                                 <span className={`text-[10px] font-black uppercase tracking-widest px-4 py-1.5 rounded-full ${
-                                                    o.status === 'pending' ? 'bg-amber-50 text-amber-600' : 'bg-green-50 text-green-600'
+                                                    o.status === 'pending' ? 'bg-amber-100 text-amber-700' : 'bg-green-100 text-green-700'
                                                 }`}>
                                                     {o.status === 'pending' ? 'Aguardando' : 'Liberado'}
                                                 </span>
                                             </td>
                                             <td className="px-8 py-6 text-right">
                                                 {o.status === 'pending' ? (
-                                                    <button onClick={() => approveOrder(o)} className="bg-green-500 hover:bg-green-600 text-white h-10 px-6 rounded-2xl text-[11px] font-black uppercase tracking-widest shadow-lg shadow-green-500/20 active:scale-95 transition-all">Validar</button>
+                                                    <button onClick={() => approveOrder(o)} className="bg-blue-600 hover:bg-blue-700 text-white h-10 px-6 rounded-xl text-[11px] font-black uppercase tracking-widest shadow-lg shadow-blue-500/20 active:scale-95 transition-all">Validar</button>
                                                 ) : (
-                                                    <div className="flex items-center justify-end gap-2 text-green-500 font-black text-[11px] uppercase">
+                                                    <div className="flex items-center justify-end gap-2 text-green-600 font-black text-[11px] uppercase">
                                                         <CheckCircle size={16} /> Finalizado
                                                     </div>
                                                 )}
@@ -716,11 +778,11 @@ const AdminPanel = () => {
                             </table>
                         </div>
                         {totalPages > 1 && (
-                            <div className="p-8 border-t border-gray-50 flex items-center justify-between">
-                                <span className="text-[11px] font-black text-gray-300 uppercase tracking-widest">Página {page} de {totalPages}</span>
+                            <div className="p-8 border-t border-slate-100 flex items-center justify-between bg-slate-50/50">
+                                <span className="text-[11px] font-black text-slate-400 uppercase tracking-widest bg-white px-3 py-1.5 rounded-lg border border-slate-200 shadow-sm">Página {page} de {totalPages}</span>
                                 <div className="flex gap-2">
-                                    <button disabled={page === 1} onClick={() => setPage(page - 1)} className="w-10 h-10 rounded-xl border border-gray-100 flex items-center justify-center hover:bg-gray-50 disabled:opacity-20 transition-all"><ChevronLeft size={18}/></button>
-                                    <button disabled={page === totalPages} onClick={() => setPage(page + 1)} className="w-10 h-10 rounded-xl border border-gray-100 flex items-center justify-center hover:bg-gray-50 disabled:opacity-20 transition-all"><ChevronRight size={18}/></button>
+                                    <button disabled={page === 1} onClick={() => setPage(page - 1)} className="w-10 h-10 rounded-xl border border-slate-200 bg-white flex items-center justify-center hover:bg-slate-50 disabled:opacity-30 hover:border-blue-300 hover:text-blue-600 transition-all shadow-sm"><ChevronLeft size={18}/></button>
+                                    <button disabled={page === totalPages} onClick={() => setPage(page + 1)} className="w-10 h-10 rounded-xl border border-slate-200 bg-white flex items-center justify-center hover:bg-slate-50 disabled:opacity-30 hover:border-blue-300 hover:text-blue-600 transition-all shadow-sm"><ChevronRight size={18}/></button>
                                 </div>
                             </div>
                         )}
@@ -728,42 +790,42 @@ const AdminPanel = () => {
                 )}
 
                 {activeTab === 'visitors' && (
-                    <div className="bg-white rounded-[40px] border border-gray-50 overflow-hidden shadow-sm animate-in slide-in-from-left-4 duration-500">
+                    <div className="bg-white rounded-[2rem] border border-slate-100 overflow-hidden shadow-[0_8px_30px_rgb(0,0,0,0.04)] animate-in slide-in-from-left-4 duration-500 relative z-10">
                         <div className="overflow-x-auto">
                             <table className="w-full text-left text-sm whitespace-nowrap">
-                                <thead className="bg-gray-50/50 text-[10px] font-black uppercase tracking-widest text-gray-400">
+                                <thead className="bg-slate-50 border-b border-slate-100 text-[10px] font-black uppercase tracking-widest text-slate-400">
                                     <tr>
-                                        <th className="px-8 py-6">Utilizador</th>
-                                        <th className="px-8 py-6">Página Atual</th>
-                                        <th className="px-8 py-6 text-right">Sinal</th>
+                                        <th className="px-8 py-5">Utilizador</th>
+                                        <th className="px-8 py-5">Página Atual</th>
+                                        <th className="px-8 py-5 text-right">Sinal</th>
                                     </tr>
                                 </thead>
-                                <tbody className="divide-y divide-gray-50">
+                                <tbody className="divide-y divide-slate-50">
                                     {onlineUsers.map(u => (
-                                        <tr key={u.id} className="hover:bg-gray-50/50 transition-colors duration-300">
+                                        <tr key={u.id} className="hover:bg-blue-50/30 transition-colors duration-300">
                                             <td className="px-8 py-6">
                                                 <div className="flex items-center gap-4">
-                                                    <div className={`w-10 h-10 rounded-2xl flex items-center justify-center text-[11px] font-black ${u.isAnonymous ? 'bg-gray-100 text-gray-400' : 'bg-[#0D8ABC] text-white'}`}>
+                                                    <div className={`w-10 h-10 rounded-2xl flex items-center justify-center text-[11px] font-black shadow-sm ${u.isAnonymous ? 'bg-slate-100 text-slate-500 border border-slate-200' : 'bg-gradient-to-tr from-blue-500 to-blue-600 text-white'}`}>
                                                         {u.isAnonymous ? 'VIS' : (u.email?.[0]?.toUpperCase() || 'USR')}
                                                     </div>
                                                     <div className="flex flex-col">
-                                                        <span className="font-black text-[#111827] text-sm tracking-tight">{u.email || 'Explorando Anónimo'}</span>
-                                                        <span className="text-[10px] text-gray-300 font-mono italic">{new Date(u.lastSeen).toLocaleTimeString()}</span>
+                                                        <span className="font-black text-slate-900 text-sm tracking-tight">{u.email || 'Explorando Anónimo'}</span>
+                                                        <span className="text-[10px] text-slate-400 font-mono font-bold">{new Date(u.lastSeen).toLocaleTimeString()}</span>
                                                     </div>
                                                 </div>
                                             </td>
-                                            <td className="px-8 py-6 lowercase italic text-gray-400 font-medium">#{u.view || 'navegando...'}</td>
+                                            <td className="px-8 py-6 lowercase italic text-slate-500 font-bold">#{u.view || 'navegando...'}</td>
                                             <td className="px-8 py-6 text-right">
-                                                <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-green-50 text-green-500">
-                                                    <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-ping"></div>
-                                                    <span className="text-[10px] font-black uppercase tracking-widest leading-none">Online</span>
+                                                <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-green-50 text-green-600 border border-green-100">
+                                                    <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(34,197,94,0.6)]"></div>
+                                                    <span className="text-[10px] font-black uppercase tracking-widest leading-none mt-0.5">Online</span>
                                                 </div>
                                             </td>
                                         </tr>
                                     ))}
                                     {onlineUsers.length === 0 && (
                                         <tr>
-                                            <td colSpan={3} className="px-8 py-20 text-center text-gray-300 font-bold uppercase text-[11px] tracking-widest italic">Nenhum rastro de presença detetado.</td>
+                                            <td colSpan={3} className="px-8 py-24 text-center text-slate-400 font-bold uppercase text-[11px] tracking-widest">Nenhum rastro de presença detetado recentemente.</td>
                                         </tr>
                                     )}
                                 </tbody>
@@ -1665,7 +1727,7 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
         });
 
         const waMessage = encodeURIComponent(`Olá CV LAB, fiz o pedido de emissão (ID: ${orderRef.id}) e aqui está o meu comprovativo de pagamento.`);
-        window.open(`https://wa.me/244954748806?text=${waMessage}`, '_blank');
+        window.open(`https://wa.me/+244954748806?text=${waMessage}`, '_blank');
         
     } catch(e) {
         console.error(e);
@@ -2457,64 +2519,65 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
                <h2 className="text-2xl font-black text-deep-blue text-center mb-2 tracking-tight">Combo (CV + Carta): 1.150 Kzs</h2>
                <p className="text-sm text-text-muted text-center mb-6 font-medium">O pagamento único de 1.150 Kzs libera tanto o seu Currículo quanto a sua Carta de Apresentação simultaneamente.</p>
 
-               {orderStatus === 'pending' ? (
-                 <div className="text-center space-y-6">
-                    <div className="bg-yellow-50 border border-yellow-100 p-4 rounded-xl">
-                      <p className="text-yellow-700 font-bold text-sm mb-1">Aguardando Pagamento</p>
-                      <p className="text-xs text-yellow-600">ID do Pedido: <span className="font-mono">{currentOrderId}</span></p>
-                    </div>
-                    
-                    <p className="text-xs text-gray-500 font-medium">Se você ainda não enviou o comprovativo, envie para o nosso WhatsApp:</p>
-                    
-                    <Button onClick={() => window.open(`https://wa.me/244954748806?text=${encodeURIComponent(`Olá CV LAB, fiz o pedido de emissão (ID: ${currentOrderId}) e aqui está o meu comprovativo de pagamento.`)}`, '_blank')} className="w-full bg-[#25D366] hover:bg-[#128C7E] shadow-none h-12 text-white">
-                      <MessageCircle size={18} /> Enviar Comprovativo
-                    </Button>
+                {orderStatus === 'pending' ? (
+                  <div className="text-center space-y-6">
+                     <div className="bg-gradient-to-r from-amber-50 to-amber-100 border border-amber-200 p-5 rounded-2xl relative overflow-hidden">
+                       <div className="absolute top-0 right-0 w-20 h-20 bg-amber-500/10 rounded-bl-full -mr-4 -mt-4"></div>
+                       <p className="text-amber-800 font-bold text-sm mb-1">Aguardando Validação</p>
+                       <p className="text-xs text-amber-700">ID do Pedido: <span className="font-mono bg-white/50 px-2 py-0.5 rounded ml-1">{currentOrderId}</span></p>
+                     </div>
+                     
+                     <p className="text-sm text-gray-600 font-medium leading-relaxed">Seu pedido foi registado com sucesso! Envie agora o comprovativo para o nosso WhatsApp para liberação imediata.</p>
+                     
+                     <Button onClick={() => window.open(`https://wa.me/+244954748806?text=${encodeURIComponent(`Olá CV LAB, fiz o pedido de emissão (ID: ${currentOrderId}) e aqui está o meu comprovativo de pagamento.`)}`, '_blank')} className="w-full bg-gradient-to-r from-[#25D366] to-[#1DA851] hover:from-[#128C7E] hover:to-[#128C7E] shadow-lg shadow-green-500/30 h-14 rounded-xl text-white font-bold text-sm tracking-wide group">
+                       <MessageCircle size={18} className="group-hover:scale-110 transition-transform" /> ENVIAR COMPROVATIVO AGORA
+                     </Button>
 
-                    <div className="flex items-center justify-center gap-2 mt-4 text-[10px] uppercase font-bold tracking-widest text-gray-400">
-                      <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 2, ease: 'linear' }}><Settings size={12} /></motion.div>
-                      Aguardando Liberação do ADM...
-                    </div>
-                 </div>
-               ) : (
-                 <form onSubmit={(e) => { e.preventDefault(); createOrder(); }} className="space-y-4">
-                    <Input 
-                       label="Seu Email de Contacto" 
-                       type="email" 
-                       required 
-                       value={contactEmail} 
-                       onChange={setContactEmail} 
-                       icon={Mail} 
-                       placeholder="exemplo@email.com" 
-                    />
-                    
-                    <div className="bg-gray-50 p-4 rounded-xl border border-gray-100 mt-4 flex flex-col gap-3">
-                       <h3 className="text-[10px] font-black uppercase text-gray-400 tracking-wider">Dados para Pagamento</h3>
-                       
-                       <div className="flex items-center gap-3 bg-white p-3 rounded-lg border border-gray-100 shadow-sm">
-                         <img src="https://i.supaimg.com/6bc04951-8cbe-4706-9f0c-a01f9ea9a6c4/1c1795b0-8faf-4c4d-a939-e439d7e7903e.png" alt="Multicaixa Express" className="h-8 w-12 object-contain" referrerPolicy="no-referrer" />
-                         <div className="text-xs">
-                            <p className="text-gray-500 font-medium leading-none mb-1">Multicaixa Express</p>
-                            <p className="font-black text-gray-800 text-sm leading-none">954748806</p>
-                         </div>
-                       </div>
-
-                       <div className="bg-white p-3 rounded-lg border border-gray-100 shadow-sm text-xs">
-                          <p className="text-gray-500 font-medium mb-1">Transferência Bancária</p>
-                          <p className="font-mono text-gray-800 font-bold mb-0.5 text-[11px]">IBAN: 0040 0000 82177395101 67</p>
-                          <p className="text-gray-600 font-medium text-[11px]">Jelson Monteiro Francisco</p>
-                       </div>
-                    </div>
-
-                    <Button type="submit" disabled={loading} className="w-full h-12 text-base shadow-xl shadow-primary-blue/20 mt-2">
-                      {loading ? (
-                        <div className="flex items-center gap-2">
-                           <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                           <span>Processando...</span>
+                     <div className="flex items-center justify-center gap-2 mt-4 text-[10px] uppercase font-bold tracking-widest text-gray-400">
+                       <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 2, ease: 'linear' }}><Settings size={12} /></motion.div>
+                       Aguardando Liberação do ADM...
+                     </div>
+                  </div>
+                ) : (
+                  <form onSubmit={(e) => { e.preventDefault(); createOrder(); }} className="space-y-5">
+                     <Input 
+                        label="Seu Email de Contacto" 
+                        type="email" 
+                        required 
+                        value={contactEmail} 
+                        onChange={setContactEmail} 
+                        icon={Mail} 
+                        placeholder="exemplo@email.com" 
+                     />
+                     
+                     <div className="bg-gray-50/50 p-5 rounded-2xl border border-gray-100 flex flex-col gap-4">
+                        <h3 className="text-[10px] font-black uppercase text-gray-400 tracking-wider text-center">Dados para Pagamento Seguros</h3>
+                        
+                        <div className="flex items-center gap-4 bg-white py-3 px-4 rounded-xl border border-gray-100 shadow-sm hover:border-primary-blue/30 transition-colors">
+                          <img src="https://i.supaimg.com/6bc04951-8cbe-4706-9f0c-a01f9ea9a6c4/1c1795b0-8faf-4c4d-a939-e439d7e7903e.png" alt="Multicaixa Express" className="h-8 w-12 object-contain" referrerPolicy="no-referrer" />
+                          <div className="text-left flex-1">
+                             <p className="text-gray-400 font-bold text-[10px] uppercase tracking-wider mb-0.5">Telefone (Express)</p>
+                             <p className="font-black text-gray-900 text-base leading-none">954 748 806</p>
+                          </div>
                         </div>
-                      ) : "Já Paguei, Enviar Comprovativo"}
-                    </Button>
-                 </form>
-               )}
+
+                        <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm text-xs hover:border-primary-blue/30 transition-colors">
+                           <p className="text-gray-400 font-bold text-[10px] uppercase tracking-wider mb-1.5 flex items-center justify-between">Transferência Bancária <CreditCard size={14} className="text-primary-blue/50" /></p>
+                           <p className="font-mono text-gray-900 font-black mb-1 text-[12px] bg-gray-50 p-1.5 rounded text-center tracking-wider">AO06 0040 0000 8217 7395 1016 7</p>
+                           <p className="text-gray-500 font-medium text-[11px] text-center mt-2 uppercase">Jelson Monteiro Francisco</p>
+                        </div>
+                     </div>
+
+                     <Button type="submit" disabled={loading} className="w-full h-14 rounded-xl bg-gradient-to-r from-gray-900 to-black hover:from-black hover:to-gray-900 text-white shadow-xl shadow-gray-900/20 mt-4 tracking-wide text-sm font-bold border-0">
+                       {loading ? (
+                         <div className="flex items-center gap-2">
+                            <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                            <span>GERANDO PEDIDO...</span>
+                         </div>
+                       ) : "JÁ PAGUEI, PROSSEGUIR"}
+                     </Button>
+                  </form>
+                )}
             </motion.div>
           </div>
         )}
@@ -2582,7 +2645,7 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
                           }
                           setShowAuthModal(false);
                           setShowPaymentModal(true);
-                          setContactEmail(auth.currentUser?.email || authEmail);
+                          setContactEmail(auth?.currentUser?.email || authEmail);
                        } catch (e: any) {
                           if (e.code === 'auth/email-already-in-use') setAuthError("Email já cadastrado. Tente fazer login.");
                           else if (e.code === 'auth/weak-password') setAuthError("A senha deve ter pelo menos 6 caracteres.");
@@ -2607,7 +2670,7 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
                    onClick={async () => {
                      await loginWithGoogle();
                      setShowAuthModal(false);
-                     if (auth.currentUser && !auth.currentUser.isAnonymous) {
+                     if (auth?.currentUser && !auth.currentUser.isAnonymous) {
                         setShowPaymentModal(true);
                         setContactEmail(auth.currentUser.email || '');
                      }

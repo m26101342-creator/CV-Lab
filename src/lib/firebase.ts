@@ -29,8 +29,8 @@ try {
         app = initializeApp(firebaseConfig);
         auth = getAuth(app);
         
-        // Initialize Firestore normally
-        db = getFirestore(app);
+        // Initialize Firestore normally with explicit database ID
+        db = getFirestore(app, firebaseConfig.firestoreDatabaseId);
 
         // Connection test as per critical guidelines
         const testDoc = doc(db, '_connection_test_', 'ping');
@@ -92,20 +92,24 @@ export const useAuth = () => {
         const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
             if (currentUser) {
                 setUser(currentUser);
-                // Check if admin
+                
+                // Immediately check hardcoded admins
+                const isHardcodedAdmin = currentUser.email === 'suportecvlab@gmail.com' || currentUser.email === 'm26101342@gmail.com';
+                setIsAdmin(isHardcodedAdmin);
+
+                // Check if admin in DB (for runtime role assignments)
                 try {
                     const userDocRef = doc(db, 'users', currentUser.uid);
                     const userDoc = await getDoc(userDocRef);
                     if (userDoc.exists()) {
-                        setIsAdmin(userDoc.data().role === 'admin' || currentUser.email === 'suportecvlab@gmail.com' || currentUser.email === 'm26101342@gmail.com');
+                        if(userDoc.data().role === 'admin') setIsAdmin(true);
                     } else {
                         // Create basic user profile if not exists
                         await setDoc(userDocRef, {
                             email: currentUser.email || 'anonymous',
-                            role: (currentUser.email === 'suportecvlab@gmail.com' || currentUser.email === 'm26101342@gmail.com') ? 'admin' : 'user',
+                            role: isHardcodedAdmin ? 'admin' : 'user',
                             createdAt: new Date().toISOString()
                         }, { merge: true });
-                        setIsAdmin(currentUser.email === 'suportecvlab@gmail.com' || currentUser.email === 'm26101342@gmail.com');
                     }
                 } catch (error: any) {
                     if (error?.message?.includes('offline') || error?.code === 'unavailable') {
@@ -113,7 +117,7 @@ export const useAuth = () => {
                     } else {
                         console.error("Error fetching user role:", error);
                     }
-                    setIsAdmin(false);
+                    if(!isHardcodedAdmin) setIsAdmin(false);
                 }
             } else {
                 // Auto sign in anonymously for guests
