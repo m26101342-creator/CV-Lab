@@ -110,8 +110,7 @@ service cloud.firestore {
       allow get, list: if isAdmin();
       
       allow create: if isValidId(mailId)
-                    && isSignedIn()
-                    && isValidMail(incoming());
+                    && (isAdmin() || (isSignedIn() && isValidMail(incoming())));
     }
 
     match /presence/{userId} {

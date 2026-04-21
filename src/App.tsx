@@ -266,9 +266,9 @@ const CoverLetterRenderer = ({ content, personalInfo, themeColor }: { content: s
            </p>
          </div>
          <div className="text-right space-y-2 text-gray-500 font-medium text-[11px] bg-gray-50/50 p-4 rounded-xl border border-gray-100">
-           {info.email && <div className="flex items-center justify-end gap-2 text-gray-700"><span>{info.email}</span><Mail size={12} className="opacity-60"/></div>}
-           {info.phone && <div className="flex items-center justify-end gap-2 text-gray-700"><span>{info.phone}</span><Phone size={12} className="opacity-60"/></div>}
-           {info.location && <div className="flex items-center justify-end gap-2 text-gray-700"><span>{info.location}</span><MapPin size={12} className="opacity-60"/></div>}
+           {info.email && <div className="flex items-center justify-end gap-2 text-gray-700"><span style={{ lineHeight: '1.2' }}>{info.email}</span><span style={{ display: 'flex', alignItems: 'center', flexShrink: 0, lineHeight: 0 }}><Mail style={{ width: '12px', height: '12px', display: 'block', verticalAlign: 'middle' }} className="opacity-60"/></span></div>}
+           {info.phone && <div className="flex items-center justify-end gap-2 text-gray-700"><span style={{ lineHeight: '1.2' }}>{info.phone}</span><span style={{ display: 'flex', alignItems: 'center', flexShrink: 0, lineHeight: 0 }}><Phone style={{ width: '12px', height: '12px', display: 'block', verticalAlign: 'middle' }} className="opacity-60"/></span></div>}
+           {info.location && <div className="flex items-center justify-end gap-2 text-gray-700"><span style={{ lineHeight: '1.2' }}>{info.location}</span><span style={{ display: 'flex', alignItems: 'center', flexShrink: 0, lineHeight: 0 }}><MapPin style={{ width: '12px', height: '12px', display: 'block', verticalAlign: 'middle' }} className="opacity-60"/></span></div>}
          </div>
        </div>
 
@@ -343,11 +343,27 @@ const MyResumesPage = ({ user, setView }: { user: any, setView: (v: any) => void
                 margin: 0,
                 filename: specificType === 'resume' ? 'Curriculo_CVLAB.pdf' : 'Carta_Apresentacao_CVLAB.pdf',
                 image: { type: 'jpeg' as const, quality: 0.98 },
-                html2canvas: { scale: 2, useCORS: true, letterRendering: true, backgroundColor: '#ffffff' },
+                html2canvas: {
+                  scale: 2,
+                  useCORS: true,
+                  letterRendering: true,
+                  backgroundColor: '#ffffff',
+                  logging: false,
+                  allowTaint: true,
+                  imageTimeout: 0,
+                  onclone: (clonedDoc: Document) => {
+                    clonedDoc.querySelectorAll('svg').forEach((svg: SVGElement) => {
+                      svg.style.display = 'block';
+                      svg.style.verticalAlign = 'middle';
+                      svg.style.overflow = 'visible';
+                    });
+                  }
+                },
                 jsPDF: { unit: 'px', format: [794, 1122] as [number, number], orientation: 'portrait' as const, compress: true }
               };
               
               try {
+                  await document.fonts.ready;
                   // @ts-ignore
                   await html2pdf().set(opt).from(element).save();
               } catch (err) {
@@ -492,6 +508,7 @@ const AdminPanel = () => {
     const itemsPerPage = 8;
     
     useEffect(() => {
+        console.log("Admin Status:", isAdmin, "User Email:", auth?.currentUser?.email);
         if (!isAdmin) return;
         
         // Fetch all orders to keep stats and search accurate
@@ -575,18 +592,43 @@ const AdminPanel = () => {
     }, [isAdmin]);
 
     const approveOrder = async (order: any) => {
-        if (!window.confirm("Liberar PDF?")) return;
+        console.log("Tentando aprovar pedido:", order.id, "Usuário Logado:", auth?.currentUser?.email);
+        const startTime = Date.now();
         try {
-            await updateDoc(doc(db, 'orders', order.id), { status: 'approved', updatedAt: new Date().toISOString() });
-            await addDoc(collection(db, 'mail'), {
-                to: [order.contactEmail],
-                message: {
-                    subject: 'CV LAB - Documento Liberado',
-                    html: `<p>Seu documento foi aprovado. Acesse o site para baixar.</p>`
+            if (!db) throw new Error("Database not initialized");
+            if (!order?.id) throw new Error("Order ID is missing");
+
+            // Update order status using setDoc with merge for robustness
+            const orderRef = doc(db, 'orders', order.id);
+            await setDoc(orderRef, { 
+                status: 'approved', 
+                updatedAt: new Date().toISOString() 
+            }, { merge: true });
+            
+            console.log(`Status do pedido ${order.id} atualizado para approved em ${Date.now() - startTime}ms`);
+            
+            // Try to send email but don't block if it fails
+            try {
+                if (order.contactEmail) {
+                    await addDoc(collection(db, 'mail'), {
+                        to: [order.contactEmail],
+                        message: {
+                            subject: 'CV LAB - Documento Liberado',
+                            html: `<p>Seu documento foi aprovado. Acesse o site para baixar.</p>`
+                        }
+                    });
+                    console.log("E-mail de notificação enfileirado");
                 }
-            });
-            alert("Aprovado!");
-        } catch (e) { alert("Erro ao aprovar."); }
+            } catch (mailError) {
+                console.warn("Falha ao enfileirar e-mail:", mailError);
+            }
+            
+            alert("Pedido aprovado com sucesso!");
+        } catch (e: any) { 
+            console.error("ERRO NA APROVAÇÃO:", e);
+            const errorMsg = e.code ? `[${e.code}] ${e.message}` : e.message;
+            alert("Erro ao aprovar: " + (errorMsg || 'Erro desconhecido. Verifique o console.')); 
+        }
     };
 
     if (!isAdmin) return <div className="p-20 text-center font-bold text-red-500 font-sans uppercase tracking-widest text-xs">Acesso Restrito.</div>;
@@ -872,9 +914,9 @@ const ResumeRenderer = ({ data, templateId }: { data: ResumeData; templateId: Te
               <div style={{ marginBottom: '32px' }}>
                 <div className="t1-section-title">Contacto</div>
                 <div style={{ display: 'flex', flexDirection: 'column' }}>
-                  {data.personalInfo.email && <div className="t1-contact-item" style={{ alignItems: 'flex-start' }}><span className="t1-contact-icon" style={{ display: 'flex', marginTop: '2px' }}><Mail style={{ width: '12px', height: '12px', display: 'block' }} /></span><span className="t1-contact-text">{data.personalInfo.email}</span></div>}
-                  {data.personalInfo.phone && <div className="t1-contact-item" style={{ alignItems: 'flex-start' }}><span className="t1-contact-icon" style={{ display: 'flex', marginTop: '2px' }}><Phone style={{ width: '12px', height: '12px', display: 'block' }} /></span><span className="t1-contact-text">{data.personalInfo.phone}</span></div>}
-                  {data.personalInfo.location && <div className="t1-contact-item" style={{ alignItems: 'flex-start' }}><span className="t1-contact-icon" style={{ display: 'flex', marginTop: '2px' }}><MapPin style={{ width: '12px', height: '12px', display: 'block' }} /></span><span className="t1-contact-text">{data.personalInfo.location}</span></div>}
+                  {data.personalInfo.email && <div className="t1-contact-item" style={{ alignItems: 'center' }}><span className="t1-contact-icon" style={{ display: 'flex', alignItems: 'center', flexShrink: 0, lineHeight: 0 }}><Mail style={{ width: '12px', height: '12px', display: 'block', verticalAlign: 'middle' }} /></span><span className="t1-contact-text" style={{ lineHeight: '1.2' }}>{data.personalInfo.email}</span></div>}
+                  {data.personalInfo.phone && <div className="t1-contact-item" style={{ alignItems: 'center' }}><span className="t1-contact-icon" style={{ display: 'flex', alignItems: 'center', flexShrink: 0, lineHeight: 0 }}><Phone style={{ width: '12px', height: '12px', display: 'block', verticalAlign: 'middle' }} /></span><span className="t1-contact-text" style={{ lineHeight: '1.2' }}>{data.personalInfo.phone}</span></div>}
+                  {data.personalInfo.location && <div className="t1-contact-item" style={{ alignItems: 'center' }}><span className="t1-contact-icon" style={{ display: 'flex', alignItems: 'center', flexShrink: 0, lineHeight: 0 }}><MapPin style={{ width: '12px', height: '12px', display: 'block', verticalAlign: 'middle' }} /></span><span className="t1-contact-text" style={{ lineHeight: '1.2' }}>{data.personalInfo.location}</span></div>}
                 </div>
               </div>
               
@@ -977,9 +1019,9 @@ const ResumeRenderer = ({ data, templateId }: { data: ResumeData; templateId: Te
                 <div className="t2-section">
                    <div className="t2-section-title">Contacto</div>
                    <div className="flex flex-col gap-3">
-                     {data.personalInfo.email && <div className="t2-contact-row" style={{ alignItems: 'flex-start' }}><span className="t2-contact-icon flex items-center justify-center flex-shrink-0" style={{ marginTop: '2px' }}><Mail size={14} style={{ display: 'block' }}/></span> <span className="t2-contact-text">{data.personalInfo.email}</span></div>}
-                     {data.personalInfo.phone && <div className="t2-contact-row" style={{ alignItems: 'flex-start' }}><span className="t2-contact-icon flex items-center justify-center flex-shrink-0" style={{ marginTop: '2px' }}><Phone size={14} style={{ display: 'block' }}/></span> <span className="t2-contact-text">{data.personalInfo.phone}</span></div>}
-                     {data.personalInfo.location && <div className="t2-contact-row" style={{ alignItems: 'flex-start' }}><span className="t2-contact-icon flex items-center justify-center flex-shrink-0" style={{ marginTop: '2px' }}><MapPin size={14} style={{ display: 'block' }}/></span> <span className="t2-contact-text">{data.personalInfo.location}</span></div>}
+                     {data.personalInfo.email && <div className="t2-contact-row" style={{ alignItems: 'center' }}><span className="t2-contact-icon" style={{ display: 'flex', alignItems: 'center', flexShrink: 0, lineHeight: 0 }}><Mail style={{ width: '14px', height: '14px', display: 'block', verticalAlign: 'middle' }} /></span> <span className="t2-contact-text" style={{ lineHeight: '1.2' }}>{data.personalInfo.email}</span></div>}
+                     {data.personalInfo.phone && <div className="t2-contact-row" style={{ alignItems: 'center' }}><span className="t2-contact-icon" style={{ display: 'flex', alignItems: 'center', flexShrink: 0, lineHeight: 0 }}><Phone style={{ width: '14px', height: '14px', display: 'block', verticalAlign: 'middle' }} /></span> <span className="t2-contact-text" style={{ lineHeight: '1.2' }}>{data.personalInfo.phone}</span></div>}
+                     {data.personalInfo.location && <div className="t2-contact-row" style={{ alignItems: 'center' }}><span className="t2-contact-icon" style={{ display: 'flex', alignItems: 'center', flexShrink: 0, lineHeight: 0 }}><MapPin style={{ width: '14px', height: '14px', display: 'block', verticalAlign: 'middle' }} /></span> <span className="t2-contact-text" style={{ lineHeight: '1.2' }}>{data.personalInfo.location}</span></div>}
                    </div>
                 </div>
                 
@@ -1057,9 +1099,9 @@ const ResumeRenderer = ({ data, templateId }: { data: ResumeData; templateId: Te
               {data.personalInfo.summary && <div className="t3-bio">{renderText(data.personalInfo.summary)}</div>}
               
               <div className="t3-contact-row">
-                {data.personalInfo.email && <div className="t3-contact-item" style={{ alignItems: 'flex-start' }}><span style={{ display: 'flex', marginTop: '2px' }}><Mail size={12} className="t3-contact-icon" style={{ display: 'block' }}/></span> <span>{data.personalInfo.email}</span></div>}
-                {data.personalInfo.phone && <div className="t3-contact-item" style={{ alignItems: 'flex-start' }}><span style={{ display: 'flex', marginTop: '2px' }}><Phone size={12} className="t3-contact-icon" style={{ display: 'block' }}/></span> <span>{data.personalInfo.phone}</span></div>}
-                {data.personalInfo.location && <div className="t3-contact-item" style={{ alignItems: 'flex-start' }}><span style={{ display: 'flex', marginTop: '2px' }}><MapPin size={12} className="t3-contact-icon" style={{ display: 'block' }}/></span> <span>{data.personalInfo.location}</span></div>}
+                {data.personalInfo.email && <div className="t3-contact-item" style={{ alignItems: 'center' }}><span style={{ display: 'flex', alignItems: 'center', flexShrink: 0, lineHeight: 0 }}><Mail className="t3-contact-icon" style={{ width: '12px', height: '12px', display: 'block', verticalAlign: 'middle' }}/></span> <span style={{ lineHeight: '1.2' }}>{data.personalInfo.email}</span></div>}
+                {data.personalInfo.phone && <div className="t3-contact-item" style={{ alignItems: 'center' }}><span style={{ display: 'flex', alignItems: 'center', flexShrink: 0, lineHeight: 0 }}><Phone className="t3-contact-icon" style={{ width: '12px', height: '12px', display: 'block', verticalAlign: 'middle' }}/></span> <span style={{ lineHeight: '1.2' }}>{data.personalInfo.phone}</span></div>}
+                {data.personalInfo.location && <div className="t3-contact-item" style={{ alignItems: 'center' }}><span style={{ display: 'flex', alignItems: 'center', flexShrink: 0, lineHeight: 0 }}><MapPin className="t3-contact-icon" style={{ width: '12px', height: '12px', display: 'block', verticalAlign: 'middle' }}/></span> <span style={{ lineHeight: '1.2' }}>{data.personalInfo.location}</span></div>}
               </div>
            </div>
            
@@ -1172,9 +1214,9 @@ const ResumeRenderer = ({ data, templateId }: { data: ResumeData; templateId: Te
                 <div>
                    <h3 className="text-xl font-bold mb-5 pb-2 text-white border-b-2 border-white/20 inline-block pr-6">Contacto</h3>
                      <div className="flex flex-col text-[13px] opacity-90">
-                       {data.personalInfo.email && <div style={{ display: 'flex', alignItems: 'flex-start', marginBottom: '16px' }}><span style={{ display: 'flex', marginTop: '2px', marginRight: '12px' }}><Mail style={{ width: '16px', height: '16px', opacity: 0.7, display: 'block' }}/></span> <span>{data.personalInfo.email}</span></div>}
-                       {data.personalInfo.phone && <div style={{ display: 'flex', alignItems: 'flex-start', marginBottom: '16px' }}><span style={{ display: 'flex', marginTop: '2px', marginRight: '12px' }}><Phone style={{ width: '16px', height: '16px', opacity: 0.7, display: 'block' }}/></span> <span>{data.personalInfo.phone}</span></div>}
-                       {data.personalInfo.location && <div style={{ display: 'flex', alignItems: 'flex-start', marginBottom: '16px' }}><span style={{ display: 'flex', marginTop: '2px', marginRight: '12px' }}><MapPin style={{ width: '16px', height: '16px', opacity: 0.7, display: 'block' }}/></span> <span>{data.personalInfo.location}</span></div>}
+                       {data.personalInfo.email && <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}><span style={{ display: 'flex', alignItems: 'center', flexShrink: 0, lineHeight: 0 }}><Mail style={{ width: '16px', height: '16px', opacity: 0.7, display: 'block', verticalAlign: 'middle' }}/></span> <span style={{ lineHeight: '1.2' }}>{data.personalInfo.email}</span></div>}
+                       {data.personalInfo.phone && <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}><span style={{ display: 'flex', alignItems: 'center', flexShrink: 0, lineHeight: 0 }}><Phone style={{ width: '16px', height: '16px', opacity: 0.7, display: 'block', verticalAlign: 'middle' }}/></span> <span style={{ lineHeight: '1.2' }}>{data.personalInfo.phone}</span></div>}
+                       {data.personalInfo.location && <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}><span style={{ display: 'flex', alignItems: 'center', flexShrink: 0, lineHeight: 0 }}><MapPin style={{ width: '16px', height: '16px', opacity: 0.7, display: 'block', verticalAlign: 'middle' }}/></span> <span style={{ lineHeight: '1.2' }}>{data.personalInfo.location}</span></div>}
                      </div>
                 </div>
                 {data.languages && data.languages.length > 0 && (
@@ -1291,9 +1333,9 @@ const ResumeRenderer = ({ data, templateId }: { data: ResumeData; templateId: Te
                      <h3 className="text-[12px] font-black uppercase tracking-[0.2em]" style={{ color: c.primary }}>Contacto</h3>
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', fontSize: '13px', width: '100%', fontWeight: '500', color: '#374151' }}>
-                     {data.personalInfo.phone && <div style={{ display: 'flex', alignItems: 'flex-start', marginBottom: '16px' }}><span style={{ display: 'flex', marginTop: '2px', marginRight: '12px' }}><Phone style={{ opacity: 0.7, width: '16px', height: '16px', flexShrink: 0, display: 'block' }} color={c.primary}/></span> <span>{data.personalInfo.phone}</span></div>}
-                     {data.personalInfo.email && <div style={{ display: 'flex', alignItems: 'flex-start', marginBottom: '16px' }}><span style={{ display: 'flex', marginTop: '2px', marginRight: '12px' }}><Mail style={{ opacity: 0.7, width: '16px', height: '16px', flexShrink: 0, display: 'block' }} color={c.primary}/></span> <span className="break-all">{data.personalInfo.email}</span></div>}
-                     {data.personalInfo.location && <div style={{ display: 'flex', alignItems: 'flex-start', marginBottom: '16px' }}><span style={{ display: 'flex', marginTop: '2px', marginRight: '12px' }}><MapPin style={{ opacity: 0.7, width: '16px', height: '16px', flexShrink: 0, display: 'block' }} color={c.primary}/></span> <span>{data.personalInfo.location}</span></div>}
+                     {data.personalInfo.phone && <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}><span style={{ display: 'flex', alignItems: 'center', flexShrink: 0, lineHeight: 0 }}><Phone style={{ opacity: 0.7, width: '16px', height: '16px', flexShrink: 0, display: 'block', verticalAlign: 'middle' }} color={c.primary}/></span> <span style={{ lineHeight: '1.2' }}>{data.personalInfo.phone}</span></div>}
+                     {data.personalInfo.email && <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}><span style={{ display: 'flex', alignItems: 'center', flexShrink: 0, lineHeight: 0 }}><Mail style={{ opacity: 0.7, width: '16px', height: '16px', flexShrink: 0, display: 'block', verticalAlign: 'middle' }} color={c.primary}/></span> <span className="break-all" style={{ lineHeight: '1.2' }}>{data.personalInfo.email}</span></div>}
+                     {data.personalInfo.location && <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}><span style={{ display: 'flex', alignItems: 'center', flexShrink: 0, lineHeight: 0 }}><MapPin style={{ opacity: 0.7, width: '16px', height: '16px', flexShrink: 0, display: 'block', verticalAlign: 'middle' }} color={c.primary}/></span> <span style={{ lineHeight: '1.2' }}>{data.personalInfo.location}</span></div>}
                   </div>
                 </div>
 
