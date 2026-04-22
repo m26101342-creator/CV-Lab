@@ -6,12 +6,12 @@ import { ResumeData } from '../types';
 Font.register({
   family: 'Inter',
   fonts: [
-    { src: 'https://cdn.jsdelivr.net/npm/inter-ui@3.19.3/Inter%20(Hinted)/Inter-Regular.ttf', fontWeight: 400 },
-    { src: 'https://cdn.jsdelivr.net/npm/inter-ui@3.19.3/Inter%20(Hinted)/Inter-Italic.ttf', fontWeight: 400, fontStyle: 'italic' },
-    { src: 'https://cdn.jsdelivr.net/npm/inter-ui@3.19.3/Inter%20(Hinted)/Inter-Bold.ttf', fontWeight: 700 },
-    { src: 'https://cdn.jsdelivr.net/npm/inter-ui@3.19.3/Inter%20(Hinted)/Inter-BoldItalic.ttf', fontWeight: 700, fontStyle: 'italic' },
-    { src: 'https://cdn.jsdelivr.net/npm/inter-ui@3.19.3/Inter%20(Hinted)/Inter-Black.ttf', fontWeight: 900 },
-    { src: 'https://cdn.jsdelivr.net/npm/inter-ui@3.19.3/Inter%20(Hinted)/Inter-BlackItalic.ttf', fontWeight: 900, fontStyle: 'italic' }
+    { src: 'https://cdn.jsdelivr.net/gh/rsms/inter@master/fonts/ttf/Inter-Regular.ttf', fontWeight: 400 },
+    { src: 'https://cdn.jsdelivr.net/gh/rsms/inter@master/fonts/ttf/Inter-Italic.ttf', fontWeight: 400, fontStyle: 'italic' },
+    { src: 'https://cdn.jsdelivr.net/gh/rsms/inter@master/fonts/ttf/Inter-Bold.ttf', fontWeight: 700 },
+    { src: 'https://cdn.jsdelivr.net/gh/rsms/inter@master/fonts/ttf/Inter-BoldItalic.ttf', fontWeight: 700, fontStyle: 'italic' },
+    { src: 'https://cdn.jsdelivr.net/gh/rsms/inter@master/fonts/ttf/Inter-Black.ttf', fontWeight: 900 },
+    { src: 'https://cdn.jsdelivr.net/gh/rsms/inter@master/fonts/ttf/Inter-BlackItalic.ttf', fontWeight: 900, fontStyle: 'italic' }
   ]
 });
 

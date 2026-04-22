@@ -3323,7 +3323,7 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
       {/* WhatsApp Support Floating Button - Only on Landing Page */}
       {((view as any) === 'landing' || (view as any) === '') && (
         <motion.a
-          href="https://wa.me/message/PMCAAS2LKZBSM1"
+          href="https://wa.me/+244954748806"
           target="_blank"
           rel="noopener noreferrer"
           initial={{ scale: 0, opacity: 0 }}
