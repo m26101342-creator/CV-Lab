@@ -49,7 +49,7 @@ export async function optimizeResumeText(text: string, type: 'summary' | 'experi
   try {
     const engine = getEngine();
     const response = await engine.models.generateContent({
-      model: "gemini-3-flash-preview",
+      model: "gemini-3.5-flash",
       contents: prompt,
       config: {
         thinkingConfig: { thinkingLevel: ThinkingLevel.LOW },
@@ -87,7 +87,7 @@ export async function generateCoverLetter(resumeData: any, jobTitle: string): Pr
   try {
     const engine = getEngine();
     const response = await engine.models.generateContent({
-      model: "gemini-3-flash-preview",
+      model: "gemini-3.5-flash",
       contents: prompt,
       config: {
         temperature: 0.8,
@@ -130,7 +130,7 @@ export async function generateFullResume(personalInfo: any): Promise<any> {
   try {
     const engine = getEngine();
     const response = await engine.models.generateContent({
-      model: "gemini-3-flash-preview",
+      model: "gemini-3.5-flash",
       contents: prompt,
       config: {
         responseMimeType: "application/json",
@@ -146,40 +146,216 @@ export async function generateFullResume(personalInfo: any): Promise<any> {
   }
 }
 
+function cleanAndNormalizeParsedData(parsedData: any): any {
+  if (!parsedData) parsedData = {};
+
+  const cleanId = () => Math.random().toString(36).substring(7);
+
+  // 1. Personal Info
+  const inputPI = parsedData.personalInfo || {};
+  const personalInfo = {
+    fullName: String(inputPI.fullName || '').trim(),
+    email: String(inputPI.email || '').trim(),
+    phone: String(inputPI.phone || '').trim(),
+    location: String(inputPI.location || '').trim(),
+    website: String(inputPI.website || '').trim(),
+    title: String(inputPI.title || '').trim(),
+    summary: String(inputPI.summary || '').trim(),
+  };
+
+  // 2. Experience
+  const experience: any[] = [];
+  if (Array.isArray(parsedData.experience)) {
+    parsedData.experience.forEach((exp: any) => {
+      if (exp && (exp.company || exp.position || exp.description)) {
+        experience.push({
+          id: exp.id || cleanId(),
+          company: String(exp.company || '').trim(),
+          position: String(exp.position || '').trim(),
+          startDate: String(exp.startDate || '').trim(),
+          endDate: String(exp.endDate || '').trim(),
+          description: String(exp.description || '').trim(),
+          current: !!exp.current
+        });
+      }
+    });
+  }
+
+  // 3. Education
+  const education: any[] = [];
+  if (Array.isArray(parsedData.education)) {
+    parsedData.education.forEach((edu: any) => {
+      if (edu && (edu.institution || edu.degree)) {
+        education.push({
+          id: edu.id || cleanId(),
+          institution: String(edu.institution || '').trim(),
+          degree: String(edu.degree || '').trim(),
+          field: String(edu.field || '').trim(),
+          startDate: String(edu.startDate || '').trim(),
+          endDate: String(edu.endDate || '').trim()
+        });
+      }
+    });
+  }
+
+  // 4. Skills
+  const skills: any[] = [];
+  if (Array.isArray(parsedData.skills)) {
+    parsedData.skills.forEach((sk: any) => {
+      if (!sk) return;
+      if (typeof sk === 'string') {
+        skills.push({
+          id: cleanId(),
+          name: sk.trim(),
+          level: 'Avançado'
+        });
+      } else if (typeof sk === 'object') {
+        const nameVal = sk.name || sk.skill || sk.title || '';
+        if (nameVal) {
+          let lvl: any = sk.level || 'Avançado';
+          if (!['Básico', 'Intermédio', 'Avançado', 'Especialista'].includes(lvl)) {
+            lvl = 'Avançado';
+          }
+          skills.push({
+            id: sk.id || cleanId(),
+            name: String(nameVal).trim(),
+            level: lvl
+          });
+        }
+      }
+    });
+  }
+
+  // 5. Languages
+  const languages: any[] = [];
+  if (Array.isArray(parsedData.languages)) {
+    parsedData.languages.forEach((lang: any) => {
+      if (!lang) return;
+      if (typeof lang === 'string') {
+        languages.push({
+          id: cleanId(),
+          name: lang.trim(),
+          level: 'Fluente'
+        });
+      } else if (typeof lang === 'object') {
+        const nameVal = lang.name || lang.language || '';
+        if (nameVal) {
+          let lvl: any = lang.level || 'Fluente';
+          if (!['Básico', 'Intermédio', 'Avançado', 'Fluente', 'Nativo'].includes(lvl)) {
+            lvl = 'Fluente';
+          }
+          languages.push({
+            id: lang.id || cleanId(),
+            name: String(nameVal).trim(),
+            level: lvl
+          });
+        }
+      }
+    });
+  }
+
+  // 6. Certifications
+  const certifications: any[] = [];
+  if (Array.isArray(parsedData.certifications)) {
+    parsedData.certifications.forEach((cert: any) => {
+      if (!cert) return;
+      if (typeof cert === 'string') {
+        certifications.push({
+          id: cleanId(),
+          name: cert.trim(),
+          date: ''
+        });
+      } else if (typeof cert === 'object') {
+        const nameVal = cert.name || cert.title || '';
+        if (nameVal) {
+          certifications.push({
+            id: cert.id || cleanId(),
+            name: String(nameVal).trim(),
+            date: String(cert.date || cert.year || '').trim()
+          });
+        }
+      }
+    });
+  }
+
+  // 7. Interests
+  let interests: string[] = [];
+  if (Array.isArray(parsedData.interests)) {
+    interests = parsedData.interests.map((itm: any) => String(itm || '').trim()).filter(Boolean);
+  }
+
+  return {
+    personalInfo,
+    experience,
+    education,
+    skills,
+    languages,
+    certifications,
+    interests
+  };
+}
+
 export async function parseResumeFromText(rawText: string, imageData?: string): Promise<any> {
-    console.log("parseResumeFromText: Enviando dados. Texto:", !!rawText, "Imagem:", !!imageData);
+    console.log("parseResumeFromText: Enviando dados para processamento. Texto:", !!rawText, "Imagem:", !!imageData);
     
     const textPart = {
       text: `
-        Analise o currículo fornecido e extraia as informações no formato JSON estruturado.
-        
-        SINTAXE DO JSON:
+        Você é o principal algoritmo de Inteligência Artificial para extração e classificação de currículos profissionais na Língua Portuguesa.
+        Sua missão é ler e analisar minuciosamente o currículo, reconhecendo e classificando com precisão cirúrgica as informações de contato, resumo profissional, histórico de trabalho, formação académica, habilidades e certificações.
+
+        INSTRUÇÕES DE CLASSIFICAÇÃO:
+        1. "personalInfo": Extraia o nome completo do candidato, o seu cargo ou título desejado/atual, e-mail, telemóvel/telefone, localização e um Resumo Profissional ("summary"). Caso não exista um resumo profissional explícito, fabrique um parágrafo executivo profissional impecável focado no perfil e experiências extraídos.
+        2. "experience": Mapeie todo o histórico de trabalho. Identifique rigorosamente a empresa ("company"), o cargo ("position"), as datas de início e fim ("startDate", "endDate" - ex: "10/2021" ou "2021"), e o detalhamento das funções executivas ("description").
+        3. "education": Mapeie todos os estudos, escolas ou universidades ("institution"), graus académicos ("degree" - Licenciatura/Mestrado/Técnico), área de estudo ("field") e períodos.
+        4. "skills": Extraia todas as competências profissionais, técnicas, operacionais ou comportamentais. Retorne uma lista de strings contendo apenas os nomes das habilidades de maneira limpa (ex: "Excel Avançado", "Liderança").
+        5. "languages": Identifique todos os idiomas mencionados e mapeie os seus níveis.
+        6. "certifications": Extraia certificados de cursos livres, formações rápidas com o nome e, se houver, a data ou ano.
+
+        SINTAXE DO RETORNO JSON ESPERADO:
         {
           "personalInfo": {
             "fullName": "Nome Completo",
             "title": "Cargo ou Título Profissional",
-            "email": "E-mail",
-            "phone": "Telemóvel/Telefone",
-            "location": "Cidade/País",
-            "summary": "Resumo Profissional extraído ou sintetizado"
+            "email": "E-mail de contato",
+            "phone": "Telemóvel/Telefone principal",
+            "location": "Cidade, País (ou apenas Cidade/Província)",
+            "summary": "Resumo executivo de alto impacto"
           },
           "experience": [
-            { "company": "Empresa", "position": "Cargo", "startDate": "Data", "endDate": "Data", "description": "Resumo das funções" }
+            {
+              "company": "Nome da Empresa ou Instituição",
+              "position": "Cargo ocupado",
+              "startDate": "Mês/Ano ou Ano de Início",
+              "endDate": "Mês/Ano, Ano de Fim ou 'Presente'/'Atual'",
+              "description": "Explicação fluida e detalhada do que fez",
+              "current": false
+            }
           ],
           "education": [
-            { "institution": "Escola/Universidade", "degree": "Grau", "field": "Área de Estudo", "startDate": "Data", "endDate": "Data" }
+            {
+              "institution": "Universidade, Escola ou Instituto",
+              "degree": "Grau obtido (Licenciatura, Técnico, etc.)",
+              "field": "Área de Estudo / Curso",
+              "startDate": "Ano de Início",
+              "endDate": "Ano de Fim ou 'Frequentando' / 'Em curso'"
+            }
           ],
-          "skills": ["Habilidade 1"],
-          "languages": ["Idioma 1"],
-          "certifications": ["Certificado 1"],
-          "interests": ["Interesse 1"]
+          "skills": ["Habilidade 1", "Habilidade 2", "Habilidade 3", "Habilidade 4", "Habilidade 5"],
+          "languages": [
+            { "name": "Nome do Idioma", "level": "Nível (ex: Avançado, Fluente, Intermédio, Nativo, Básico)" }
+          ],
+          "certifications": [
+            { "name": "Nome da Certificação ou Curso Livre", "date": "Ano ou Data" }
+          ],
+          "interests": ["Interesse 1", "Interesse 2"]
         }
 
-        REGRAS:
-        1. Retorne APENAS o JSON.
-        2. Melhore o tom para ser profissional.
-        3. Se houver imagem, use-a para OCR se o texto estiver em falta ou confuso.
-        4. Texto extraído (se houver):
+        REGRAS RIGOROSAS:
+        1. Retorne APENAS o JSON. Sem blocos ou wraps de código adicionais (\`\`\`json).
+        2. Certifique-se de preencher as secções "personalInfo", "experience", "education" e "skills" com dedicação máxima.
+        3. Se houver uma imagem anexa, faça OCR e leitura visual dela para garantir consistência perfeita.
+        
+        TEXTO ENVIADO PELO CANDIDATO:
         "${rawText}"
       `
     };
@@ -198,7 +374,7 @@ export async function parseResumeFromText(rawText: string, imageData?: string): 
     try {
         const engine = getEngine();
         const response = await engine.models.generateContent({
-            model: "gemini-3-flash-preview",
+            model: "gemini-3.5-flash",
             contents: { parts },
             config: {
                 responseMimeType: "application/json",
@@ -206,10 +382,16 @@ export async function parseResumeFromText(rawText: string, imageData?: string): 
             }
         });
         
-        const result = response.text?.trim() || "{}";
-        return JSON.parse(result);
+        const rawResult = response.text?.trim() || "{}";
+        const parsed = JSON.parse(rawResult);
+        
+        // Normalize immediately so it is 100% compliant with React structures and types
+        const normalized = cleanAndNormalizeParsedData(parsed);
+        console.log("parseResumeFromText: Dados limpos e normalizados com sucesso:", normalized);
+        return normalized;
     } catch (error) {
         console.error("Erro ao analisar currículo com IA (Multimodal):", error);
         throw error;
     }
 }
+

@@ -1,0 +1,284 @@
+75:        const pageText = textContent.items.map((item: any) => (item as any).str).join(" ");
+76-        fullText += pageText + "\n";
+77-    }
+78-
+79-    let imageBase64: string | undefined = undefined;
+--
+366:            const fetched = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+367-            setMyOrders(fetched.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
+368-            setLoading(false);
+369-        });
+370-
+--
+440:                {expandedItems.map((item, idx) => (
+441-                    <div key={`${item.id}-${item.subType}-${idx}`} className="bg-white p-6 md:p-8 rounded-[2rem] border border-slate-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_20px_40px_rgb(0,0,0,0.08)] flex flex-col md:flex-row md:items-center justify-between gap-6 transition-all group overflow-hidden relative">
+442-                        <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-slate-50 to-transparent -mr-10 -mt-10 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"></div>
+443-                        
+444-                        <div className="space-y-3 relative z-10 w-full md:w-auto">
+--
+535:            const fetchedOrders = snapshot.docs.map(doc => {
+536-                const data: any = {id: doc.id, ...doc.data()};
+537-                if (data.status === 'pending') pendingCount++;
+538-                if (data.status === 'approved') approvedCount++;
+539-                
+--
+549:                .map(date => ({ date, pedidos: dailyData[date] }))
+550-                .sort((a, b) => {
+551-                    const [d1, m1] = a.date.split('/');
+552-                    const [d2, m2] = b.date.split('/');
+553-                    return new Date(2026, parseInt(m1)-1, parseInt(d1)).getTime() - new Date(2026, parseInt(m2)-1, parseInt(d2)).getTime();
+--
+595:            const active = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
+596-                .filter((p: any) => new Date(p.lastSeen) > fiveMinutesAgo);
+597-            
+598-            setOnlineUsers(active.sort((a: any, b: any) => new Date(b.lastSeen).getTime() - new Date(a.lastSeen).getTime()));
+599-            setStats(s => ({ ...s, online: active.length }));
+--
+677:                    ].map(tab => (
+678-                        <button
+679-                            key={tab.id}
+680-                            onClick={() => { setActiveTab(tab.id as any); setPage(1); }}
+681-                            className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl text-sm font-bold transition-all duration-300 ${
+--
+741:                            ].map((s, i) => (
+742-                                <div key={i} className="bg-white p-7 rounded-[2rem] shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 flex flex-col items-center text-center hover:shadow-[0_20px_40px_rgb(0,0,0,0.08)] hover:-translate-y-1 transition-all duration-300 relative overflow-hidden group">
+743-                                    <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-bl from-slate-50 to-transparent -mr-8 -mt-8 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"></div>
+744-                                    <div className="w-14 h-14 bg-slate-50 rounded-2xl flex items-center justify-center mb-5 group-hover:scale-110 transition-transform duration-500">
+745-                                        <s.icon size={24} className={s.highlight ? 'text-green-500' : 'text-slate-400'} strokeWidth={2} />
+--
+806:                                    {paginatedOrders.map(o => (
+807-                                        <tr key={o.id} className="group hover:bg-blue-50/30 transition-colors duration-300">
+808-                                            <td className="px-8 py-6 text-slate-500 font-bold">{new Date(o.createdAt).toLocaleDateString()}</td>
+809-                                            <td className="px-8 py-6 font-black text-slate-900">{o.contactEmail}</td>
+810-                                            <td className="px-8 py-6">
+--
+860:                                    {onlineUsers.map(u => (
+861-                                        <tr key={u.id} className="hover:bg-blue-50/30 transition-colors duration-300">
+862-                                            <td className="px-8 py-6">
+863-                                                <div className="flex items-center gap-4">
+864-                                                    <div className={`w-10 h-10 rounded-2xl flex items-center justify-center text-[11px] font-black shadow-sm ${u.isAnonymous ? 'bg-slate-100 text-slate-500 border border-slate-200' : 'bg-gradient-to-tr from-blue-500 to-blue-600 text-white'}`}>
+--
+941:                    {data.education.map((e, idx) => (
+942-                      <div key={e.id || `edu-${idx}`} className="t1-edu-item" style={{ marginBottom: idx === data.education.length - 1 ? 0 : '18px' }}>
+943-                        <div className="t1-edu-degree">{e.degree}</div>
+944-                        <div className="t1-edu-school">{e.institution}</div>
+945-                        <div className="t1-edu-year">{e.startDate} - {e.endDate}</div>
+--
+956:                    {data.skills.map((s, idx) => (
+957-                       <span key={s.id || `skill-${idx}`} className="t1-skill-tag">{s.name}</span>
+958-                    ))}
+959-                  </div>
+960-                </div>
+--
+967:                    {data.languages.map((l, idx) => (
+968-                       <div key={l.id || `lang-${idx}`} className="flex justify-between items-center text-[12px] opacity-90" style={{ marginBottom: idx === data.languages.length - 1 ? 0 : '12px' }}>
+969-                         <span className="font-bold">{l.name}</span>
+970-                         <span className="opacity-60 italic text-[10px] uppercase font-black tracking-widest">{l.level}</span>
+971-                       </div>
+--
+989:                    {data.experience.map((ex, idx) => (
+990-                      <div key={ex.id || `exp-${idx}`} className="t1-exp-item">
+991-                        <div className="flex flex-col items-center pt-1.5 flex-shrink-0">
+992-                          <div className="t1-exp-dot"></div>
+993-                          <div className="flex-1 w-0.5 bg-gray-100 my-1"></div>
+--
+1046:                       {data.education.map(e => (
+1047-                         <div key={e.id} className="t2-edu-item">
+1048-                           <div className="t2-edu-degree">{e.degree}</div>
+1049-                           <div className="t2-edu-school">{e.institution}</div>
+1050-                           <div className="t2-edu-year">{e.startDate} - {e.endDate}</div>
+--
+1061:                       {data.skills.map(s => (
+1062-                         <div key={s.id} className="t2-skill-item px-3 py-1 bg-white border border-gray-100 rounded shadow-sm text-xs font-bold text-gray-700">
+1063-                           {s.name}
+1064-                         </div>
+1065-                       ))}
+--
+1074:                       {data.languages.map(l => (
+1075-                         <div key={l.id} className="flex justify-between items-center text-[12px]">
+1076-                            <div className="font-semibold text-gray-800">{l.name}</div>
+1077-                            <div className="font-bold text-gray-400 uppercase tracking-widest text-[9px]">{l.level}</div>
+1078-                         </div>
+--
+1090:                       {data.experience.map(ex => (
+1091-                          <div key={ex.id} className="t2-exp-item">
+1092-                             <div className="t2-exp-header">
+1093-                                <div className="t2-exp-company">{ex.company}</div>
+1094-                                <div className="t2-exp-period">{ex.startDate} - {ex.current ? "Presente" : ex.endDate}</div>
+--
+1127:                     {data.education.map(e => (
+1128-                       <div key={e.id} className="t3-edu-item">
+1129-                          <div className="t3-edu-school">{e.institution}</div>
+1130-                          <div className="t3-edu-degree">{e.degree}</div>
+1131-                          <div className="t3-edu-year">{e.startDate} - {e.endDate}</div>
+--
+1141:                        {data.skills.map((s, idx) => (
+1142-                           <div key={s.id || `skill-${idx}`} className="t3-skill-item">
+1143-                              <span className="t3-skill-label">{s.name}</span>
+1144-                              <span className="t3-skill-level">{s.level}</span>
+1145-                           </div>
+--
+1155:                        {data.languages.map((l, idx) => (
+1156-                           <div key={l.id || `lang-${idx}`} className="t3-skill-item">
+1157-                              <span className="t3-skill-label">{l.name}</span>
+1158-                              <span className="t3-skill-level">{l.level}</span>
+1159-                           </div>
+--
+1170:                      {data.experience.map(ex => (
+1171-                         <div key={ex.id} className="t3-exp-item">
+1172-                            <div className="t3-exp-header">
+1173-                               <div className="t3-exp-company">{ex.company}</div>
+1174-                               <div className="t3-exp-period">{ex.startDate} - {ex.current ? "Presente" : ex.endDate}</div>
+--
+1240:                       {data.languages.map((l, idx) => (
+1241-                          <div key={l.id || `lang-${idx}`} className="flex flex-col gap-0.5">
+1242-                             <div className="font-bold flex items-center gap-2">• {l.name}</div>
+1243-                             <div className="pl-4 text-[11px] opacity-70 uppercase tracking-widest">{l.level}</div>
+1244-                          </div>
+--
+1264:                     {data.experience.map((ex, idx) => (
+1265-                       <div key={ex.id || `exp-${idx}`} className="flex gap-4">
+1266-                          <div className="flex flex-col items-center pt-2">
+1267-                             <div className="w-3 h-3 rounded-full border-2 border-gray-200"></div>
+1268-                             <div className="w-0.5 flex-1 bg-gray-50 my-1"></div>
+--
+1288:                    {data.skills.map((s, idx) => <span key={s.id || `skill-${idx}`} className="flex items-center gap-2 font-bold">• {s.name}</span>)}
+1289-                  </div>
+1290-               </div>
+1291-             )}
+1292-             {data.education.length > 0 && (
+--
+1297:                    {data.education.map((e, idx) => (
+1298-                      <div key={e.id || `edu-${idx}`}>
+1299-                         <div className="flex justify-between items-center mb-1">
+1300-                            <h4 className="text-[15px] font-bold" style={{ color: '#1f2937' }}>{e.degree}</h4>
+1301-                            <span className="text-[12px] font-bold text-gray-400">{e.startDate} - {e.endDate}</span>
+--
+1362:                       {data.skills.map((s, idx) => (
+1363-                         <div key={s.id || `skill-${idx}`} className="font-semibold text-[13px] flex items-center gap-2" style={{ color: '#374151' }}>
+1364-                            <div className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{backgroundColor: c.primary}}></div>
+1365-                            {s.name}
+1366-                         </div>
+--
+1378:                       {data.education.map((e, idx) => (
+1379-                         <div key={e.id || `edu-${idx}`}>
+1380-                            <div className="font-black mb-1 text-[13px] leading-tight" style={{ color: c.primary }}>{e.institution}</div>
+1381-                            <div className="font-medium text-[13px]">{e.degree}</div>
+1382-                            <div className="text-[11px] font-bold opacity-60 mt-1 uppercase tracking-wider">{e.startDate} - {e.endDate}</div>
+--
+1412:                     {data.experience.map((ex, idx) => (
+1413-                       <div key={ex.id || `exp-${idx}`} className="flex gap-4">
+1414-                          <div className="flex flex-col items-center pt-2">
+1415-                             <div className="w-2.5 h-2.5 rounded-full border-2" style={{ borderColor: c.primary }}></div>
+1416-                             <div className="w-0.5 flex-1 bg-gray-50 my-1"></div>
+--
+1913:        experience: data.experience.map((e: any) => ({ ...e, id: Math.random().toString(36).substring(7) })),
+1914:        education: data.education.map((e: any) => ({ ...e, id: Math.random().toString(36).substring(7) })),
+1915:        skills: data.skills.map((s: string) => ({ name: s, id: Math.random().toString(36).substring(7), level: 'Intermédio' })),
+1916:        languages: (data.languages || []).map((s: string) => ({ name: s, id: Math.random().toString(36).substring(7), level: 'Fluente' }))
+1917-      }));
+1918-      alert("Currículo gerado com sucesso! Você pode ajustar os detalhes agora.");
+1919-    } catch (err) {
+1920-      alert("Erro ao auto-completar. Verifique sua conexão.");
+--
+2018:            {banners.map((_, i) => (
+2019-              <div 
+2020-                key={i} 
+2021-                className={`w-2 h-2 rounded-full transition-all ${currentBanner === i ? 'bg-primary-blue w-6' : 'bg-primary-blue/30'}`}
+2022-              />
+--
+2054:                  ].map((url, i) => (
+2055-                    <img key={i} src={url} alt="User" className="w-10 h-10 rounded-full border-2 border-white ring-1 ring-border-main object-cover" referrerPolicy="no-referrer" />
+2056-                  ))}
+2057-                </div>
+2058-                <div className="text-xs font-bold text-text-muted">
+--
+2115:              ].map((stat, i) => (
+2116-                <div key={i} className="flex flex-col items-center justify-center p-4 rounded-2xl hover:bg-bg-main transition-colors duration-300">
+2117-                  <h3 className="text-4xl md:text-5xl font-black text-deep-blue tracking-tighter mb-1">
+2118-                    {stat.val}
+2119-                  </h3>
+--
+2156:              ].map((item, i) => (
+2157-                <motion.div 
+2158-                  key={i}
+2159-                  initial={{ opacity: 0, y: 20 }}
+2160-                  whileInView={{ opacity: 1, y: 0 }}
+--
+2200:                   ].map((t, i) => (
+2201-                      <div key={i} className="bg-white/10 backdrop-blur-lg border border-white/10 p-8 rounded-[32px] text-white">
+2202-                         <div className="flex items-center gap-4 mb-6">
+2203-                            <div className="w-12 h-12 rounded-full bg-primary-blue flex items-center justify-center font-black text-xl">
+2204-                               {t.name.charAt(0)}
+--
+2223:                {['UNITEL', 'SONANGOL', 'BAI', 'BFA', 'ENSA', 'AFRICELL', 'CARRINHO'].map(brand => (
+2224-                  <span key={brand} className="text-xl md:text-2xl font-black tracking-tighter text-deep-blue hover:text-primary-blue cursor-default">{brand}</span>
+2225-                ))}
+2226-              </div>
+2227-            </div>
+--
+2367:                ].map((tip, idx) => (
+2368-                  <motion.div 
+2369-                    key={idx}
+2370-                    initial={{ opacity: 0, x: -20 }}
+2371-                    animate={{ opacity: 1, x: 0 }}
+--
+2407:                ].map((item, idx) => (
+2408-                  <motion.div 
+2409-                    key={idx}
+2410-                    whileHover={{ scale: 1.02 }}
+2411-                    className="bg-white rounded-[32px] border border-border-main overflow-hidden shadow-sm hover:shadow-2xl transition-all cursor-pointer group"
+--
+2468:                ].map((item, idx) => (
+2469-                  <motion.div 
+2470-                    initial={{ opacity: 0, y: 10 }}
+2471-                    animate={{ opacity: 1, y: 0 }}
+2472-                    transition={{ delay: idx * 0.1 }}
+--
+2518:                ].map((stat, i) => (
+2519-                  <div key={i} className="space-y-2 p-6 bg-white rounded-3xl border border-border-main shadow-sm">
+2520-                    <h4 className="text-lg font-black text-primary-blue uppercase tracking-tight">{stat.label}</h4>
+2521-                    <p className="text-sm text-text-muted font-medium">{stat.desc}</p>
+2522-                  </div>
+--
+2799:            {editorSteps.map((step, idx) => {
+2800-              const StepIcon = step.icon;
+2801-              const isActive = activeStep === idx;
+2802-              const isPast = activeStep > idx;
+2803-              
+--
+3023:                  {resumeData.experience.map((ex, i) => (
+3024-                    <div key={ex.id} className="p-5 bg-bg-main rounded-2xl border border-border-main space-y-5 relative group">
+3025-                      <button onClick={() => removeExperience(ex.id)} className="absolute top-4 right-4 text-red-500 opacity-0 group-hover:opacity-100 transition-opacity">
+3026-                         <Trash2 size={16} />
+3027-                      </button>
+--
+3053:                  {resumeData.education.map((ed, i) => (
+3054-                    <div key={ed.id} className="p-5 bg-bg-main rounded-2xl border border-border-main space-y-5">
+3055-                       <Input label="Instituição" value={ed.institution} onChange={(v: string) => {
+3056-                         const n = [...resumeData.education]; n[i].institution = v; setResumeData(p => ({...p, education: n}));
+3057-                       }} />
+--
+3091:                       {resumeData.skills.map(s => (
+3092-                         <span key={s.id} className="px-3 py-1.5 bg-soft-blue text-primary-blue rounded-lg font-bold text-xs flex items-center gap-2">
+3093-                           {s.name}
+3094-                           <button onClick={() => setResumeData(p => ({...p, skills: p.skills.filter(sk => sk.id !== s.id)}))}><X size={12} /></button>
+3095-                         </span>
+--
+3114:                       {resumeData.languages.map(l => (
+3115-                         <span key={l.id} className="px-3 py-1.5 bg-soft-blue text-primary-blue rounded-lg font-bold text-xs flex items-center gap-2">
+3116-                           {l.name}
+3117-                           <button onClick={() => setResumeData(p => ({...p, languages: p.languages.filter(lk => lk.id !== l.id)}))}><X size={12} /></button>
+3118-                         </span>
+--
+3136:                          {['#1B2A4A', '#064E3B', '#7F1D1D', '#0369A1', '#0D4A45', '#4A4C53'].map(color => (
+3137-                            <button 
+3138-                              key={color}
+3139-                              onClick={() => setResumeData(p => ({ ...p, themeColor: color }))}
+3140-                              className={`w-6 h-6 rounded-full border-2 transition-all ${resumeData.themeColor === color ? 'border-primary-blue scale-125' : 'border-transparent'}`}
+--
+3157:                    {Object.entries(TEMPLATES).map(([id, t]) => (
+3158-                      <button
+3159-                        key={id}
+3160-                        onClick={() => setTemplate(id as TemplateType)}
+3161-                        className={`group relative flex items-center gap-4 p-4 rounded-3xl border-2 transition-all duration-300 ${template === id ? 'border-primary-blue bg-soft-blue/10 shadow-md' : 'border-border-main hover:border-primary-blue/20 bg-white'}`}

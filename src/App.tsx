@@ -133,7 +133,7 @@ const Input = ({ label, value, onChange, placeholder, type = 'text', icon: Icon,
       <input
         {...props}
         type={type}
-        value={value}
+        value={value ?? ''}
         onChange={(e) => onChange?.(e.target.value)}
         placeholder={placeholder}
         disabled={disabled}
@@ -191,7 +191,11 @@ const TEMPLATES: Record<TemplateType, { name: string; layout: string; colors: an
   t2_geometric: { name: 'Geométrico Mod', layout: 'custom-t2', colors: { primary: '#1B2A4A', text: '#4B5563', heading: '#1B2A4A', soft: '#F9FAFB', lines: '#F3F4F6' } },
   t3_modern: { name: 'Corporate Clean', layout: 'custom-t3', colors: { primary: '#2D3748', text: '#4A5568', heading: '#1A202C', soft: '#F7FAFC', lines: '#E2E8F0', dark: '#1A202C' } },
   t4_barnabas: { name: 'Sidebar Limpa', layout: 'custom-t4', colors: { primary: '#2D313A', text: '#3E4249', heading: '#333333', soft: '#2D313A', lines: '#E5E7EB' } },
-  t5_jonathan: { name: 'Escritor Arches', layout: 'custom-t5', colors: { primary: '#4A4C53', text: '#555555', heading: '#222222', soft: '#F3F4F6', lines: '#D1D5DB' } }
+  t5_jonathan: { name: 'Escritor Arches', layout: 'custom-t5', colors: { primary: '#4A4C53', text: '#555555', heading: '#222222', soft: '#F3F4F6', lines: '#D1D5DB' } },
+  t6_creative: { name: 'Criativo', layout: 'custom-t6', colors: { primary: '#34495E', text: '#333', heading: '#111', soft: '#F4F6F6', lines: '#D1D5DB' } },
+  t7_professional: { name: 'Profissional', layout: 'custom-t7', colors: { primary: '#186A3B', text: '#333', heading: '#111', soft: '#E9F7EF', lines: '#D1D5DB' } },
+  t8_geometric_blue: { name: 'Azul Geométrico', layout: 'custom-t8', colors: { primary: '#1E40AF', text: '#475569', heading: '#1E3A8A', soft: '#EFF6FF', lines: '#E2E8F0' } },
+  t9_emerald_pill: { name: 'Sólido Esmeralda', layout: 'custom-t9', colors: { primary: '#0F766E', text: '#374151', heading: '#111827', soft: '#F0FDF4', lines: '#E5E7EB' } }
 };
 
 // --- Helpers ---
@@ -300,7 +304,7 @@ const ProfilePage = ({ user, isAdmin, setView, onLogout }: { user: any, isAdmin:
     );
 };
 
-const CoverLetterRenderer = ({ content, personalInfo, themeColor }: { content: string; personalInfo: any; themeColor?: string }) => {
+const CoverLetterRenderer = React.memo(({ content, personalInfo, themeColor }: { content: string; personalInfo: any; themeColor?: string }) => {
   const c = { primary: themeColor || '#1B2A4A' };
   const info = personalInfo || {};
   
@@ -319,10 +323,10 @@ const CoverLetterRenderer = ({ content, personalInfo, themeColor }: { content: s
              {info.title || 'Seu Cargo'}
            </p>
          </div>
-         <div className="text-right space-y-2 text-gray-500 font-medium text-[11px] bg-gray-50/50 p-4 rounded-xl border border-gray-100">
-           {info.email && <div className="flex items-center justify-end gap-2 text-gray-700"><span style={{ lineHeight: '1.2' }}>{info.email}</span><span style={{ display: 'flex', alignItems: 'center', flexShrink: 0, lineHeight: 0 }}><Mail style={{ width: '12px', height: '12px', display: 'block', verticalAlign: 'middle' }} className="opacity-60"/></span></div>}
-           {info.phone && <div className="flex items-center justify-end gap-2 text-gray-700"><span style={{ lineHeight: '1.2' }}>{info.phone}</span><span style={{ display: 'flex', alignItems: 'center', flexShrink: 0, lineHeight: 0 }}><Phone style={{ width: '12px', height: '12px', display: 'block', verticalAlign: 'middle' }} className="opacity-60"/></span></div>}
-           {info.location && <div className="flex items-center justify-end gap-2 text-gray-700"><span style={{ lineHeight: '1.2' }}>{info.location}</span><span style={{ display: 'flex', alignItems: 'center', flexShrink: 0, lineHeight: 0 }}><MapPin style={{ width: '12px', height: '12px', display: 'block', verticalAlign: 'middle' }} className="opacity-60"/></span></div>}
+         <div className="flex flex-col gap-2 text-gray-500 font-medium text-[11px] bg-slate-50/70 p-4 rounded-xl border border-slate-100/50 min-w-[200px]">
+           {info.email && <div className="flex items-center gap-2 text-gray-700"><Mail size={12} className="opacity-60 shrink-0 text-slate-500" /><span className="truncate leading-none">{info.email}</span></div>}
+           {info.phone && <div className="flex items-center gap-2 text-gray-700"><Phone size={12} className="opacity-60 shrink-0 text-slate-500" /><span className="leading-none">{info.phone}</span></div>}
+           {info.location && <div className="flex items-center gap-2 text-gray-700"><MapPin size={12} className="opacity-60 shrink-0 text-slate-500" /><span className="leading-none">{info.location}</span></div>}
          </div>
        </div>
 
@@ -345,7 +349,7 @@ const CoverLetterRenderer = ({ content, personalInfo, themeColor }: { content: s
        </div>
     </div>
   );
-};
+});
 
 const MyResumesPage = ({ user, setView }: { user: any, setView: (v: any) => void }) => {
     const [myOrders, setMyOrders] = useState<any[]>([]);
@@ -376,7 +380,7 @@ const MyResumesPage = ({ user, setView }: { user: any, setView: (v: any) => void
         try {
             const filename = specificType === 'resume' ? 'Curriculo_CVLAB.pdf' : 'Carta_Apresentacao_CVLAB.pdf';
             const templateMap: Record<TemplateType, number> = {
-                't1_executive': 1, 't2_geometric': 2, 't3_modern': 3, 't4_barnabas': 4, 't5_jonathan': 5
+                't1_executive': 1, 't2_geometric': 2, 't3_modern': 3, 't4_barnabas': 4, 't5_jonathan': 5, 't6_creative': 6, 't7_professional': 7, 't8_geometric_blue': 8, 't9_emerald_pill': 9
             };
             
             // Extract correct data based on type
@@ -719,7 +723,7 @@ const AdminPanel = () => {
                             <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
                             <input 
                                 type="text" 
-                                value={searchQuery}
+                                value={searchQuery ?? ''}
                                 onChange={e => {setSearchQuery(e.target.value); setPage(1);}}
                                 placeholder="Buscar por email..." 
                                 className="w-full pl-12 pr-5 py-4 text-sm font-bold bg-white rounded-[1.5rem] shadow-[0_8px_30px_rgb(0,0,0,0.04)] outline-none border border-slate-100 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all"
@@ -892,7 +896,7 @@ const AdminPanel = () => {
     );
 };
 
-const ResumeRenderer = ({ data, templateId }: { data: ResumeData; templateId: TemplateType }) => {
+const ResumeRenderer = React.memo(({ data, templateId }: { data: ResumeData; templateId: TemplateType }) => {
   const theme = TEMPLATES[templateId] || TEMPLATES.t1_executive;
   const c = { ...theme.colors, primary: data.themeColor || theme.colors.primary };
 
@@ -926,9 +930,9 @@ const ResumeRenderer = ({ data, templateId }: { data: ResumeData; templateId: Te
               <div style={{ marginBottom: '32px' }}>
                 <div className="t1-section-title">Contacto</div>
                 <div style={{ display: 'flex', flexDirection: 'column' }}>
-                  {data.personalInfo.email && <div key="email" className="t1-contact-item" style={{ alignItems: 'center' }}><span className="t1-contact-icon" style={{ display: 'flex', alignItems: 'center', flexShrink: 0, lineHeight: 0 }}><Mail style={{ width: '12px', height: '12px', display: 'block', verticalAlign: 'middle' }} /></span><span className="t1-contact-text" style={{ lineHeight: '1.2' }}>{data.personalInfo.email}</span></div>}
-                  {data.personalInfo.phone && <div key="phone" className="t1-contact-item" style={{ alignItems: 'center' }}><span className="t1-contact-icon" style={{ display: 'flex', alignItems: 'center', flexShrink: 0, lineHeight: 0 }}><Phone style={{ width: '12px', height: '12px', display: 'block', verticalAlign: 'middle' }} /></span><span className="t1-contact-text" style={{ lineHeight: '1.2' }}>{data.personalInfo.phone}</span></div>}
-                  {data.personalInfo.location && <div key="loc" className="t1-contact-item" style={{ alignItems: 'center' }}><span className="t1-contact-icon" style={{ display: 'flex', alignItems: 'center', flexShrink: 0, lineHeight: 0 }}><MapPin style={{ width: '12px', height: '12px', display: 'block', verticalAlign: 'middle' }} /></span><span className="t1-contact-text" style={{ lineHeight: '1.2' }}>{data.personalInfo.location}</span></div>}
+                  {data.personalInfo.email && <div key="email" className="t1-contact-item flex items-center gap-2.5"><span className="t1-contact-icon flex items-center justify-center shrink-0"><Mail size={12} /></span><span className="t1-contact-text leading-none">{data.personalInfo.email}</span></div>}
+                  {data.personalInfo.phone && <div key="phone" className="t1-contact-item flex items-center gap-2.5"><span className="t1-contact-icon flex items-center justify-center shrink-0"><Phone size={12} /></span><span className="t1-contact-text leading-none">{data.personalInfo.phone}</span></div>}
+                  {data.personalInfo.location && <div key="loc" className="t1-contact-item flex items-center gap-2.5"><span className="t1-contact-icon flex items-center justify-center shrink-0"><MapPin size={12} /></span><span className="t1-contact-text leading-none">{data.personalInfo.location}</span></div>}
                 </div>
               </div>
               
@@ -1031,9 +1035,9 @@ const ResumeRenderer = ({ data, templateId }: { data: ResumeData; templateId: Te
                 <div className="t2-section">
                    <div className="t2-section-title">Contacto</div>
                    <div className="flex flex-col gap-3">
-                     {data.personalInfo.email && <div key="email" className="t2-contact-row" style={{ alignItems: 'center' }}><span className="t2-contact-icon" style={{ display: 'flex', alignItems: 'center', flexShrink: 0, lineHeight: 0 }}><Mail style={{ width: '14px', height: '14px', display: 'block', verticalAlign: 'middle' }} /></span> <span className="t2-contact-text" style={{ lineHeight: '1.2' }}>{data.personalInfo.email}</span></div>}
-                     {data.personalInfo.phone && <div key="phone" className="t2-contact-row" style={{ alignItems: 'center' }}><span className="t2-contact-icon" style={{ display: 'flex', alignItems: 'center', flexShrink: 0, lineHeight: 0 }}><Phone style={{ width: '14px', height: '14px', display: 'block', verticalAlign: 'middle' }} /></span> <span className="t2-contact-text" style={{ lineHeight: '1.2' }}>{data.personalInfo.phone}</span></div>}
-                     {data.personalInfo.location && <div key="loc" className="t2-contact-row" style={{ alignItems: 'center' }}><span className="t2-contact-icon" style={{ display: 'flex', alignItems: 'center', flexShrink: 0, lineHeight: 0 }}><MapPin style={{ width: '14px', height: '14px', display: 'block', verticalAlign: 'middle' }} /></span> <span className="t2-contact-text" style={{ lineHeight: '1.2' }}>{data.personalInfo.location}</span></div>}
+                     {data.personalInfo.email && <div key="email" className="t2-contact-row flex items-center gap-2.5"><span className="t2-contact-icon flex items-center justify-center shrink-0"><Mail size={14} /></span> <span className="t2-contact-text" style={{ lineHeight: '1.2' }}>{data.personalInfo.email}</span></div>}
+                     {data.personalInfo.phone && <div key="phone" className="t2-contact-row flex items-center gap-2.5"><span className="t2-contact-icon flex items-center justify-center shrink-0"><Phone size={14} /></span> <span className="t2-contact-text" style={{ lineHeight: '1.2' }}>{data.personalInfo.phone}</span></div>}
+                     {data.personalInfo.location && <div key="loc" className="t2-contact-row flex items-center gap-2.5"><span className="t2-contact-icon flex items-center justify-center shrink-0"><MapPin size={14} /></span> <span className="t2-contact-text" style={{ lineHeight: '1.2' }}>{data.personalInfo.location}</span></div>}
                    </div>
                 </div>
                 
@@ -1041,8 +1045,8 @@ const ResumeRenderer = ({ data, templateId }: { data: ResumeData; templateId: Te
                   <div className="t2-section">
                      <div className="t2-section-title">Formação</div>
                      <div className="flex flex-col gap-4">
-                       {data.education.map(e => (
-                         <div key={e.id} className="t2-edu-item">
+                       {data.education.map((e, idx) => (
+                         <div key={e.id || `edu-${idx}`} className="t2-edu-item">
                            <div className="t2-edu-degree">{e.degree}</div>
                            <div className="t2-edu-school">{e.institution}</div>
                            <div className="t2-edu-year">{e.startDate} - {e.endDate}</div>
@@ -1056,8 +1060,8 @@ const ResumeRenderer = ({ data, templateId }: { data: ResumeData; templateId: Te
                   <div className="t2-section">
                      <div className="t2-section-title">Habilidades</div>
                      <div className="flex flex-wrap gap-2">
-                       {data.skills.map(s => (
-                         <div key={s.id} className="t2-skill-item px-3 py-1 bg-white border border-gray-100 rounded shadow-sm text-xs font-bold text-gray-700">
+                       {data.skills.map((s, idx) => (
+                         <div key={s.id || `skill-${idx}`} className="t2-skill-item px-3 py-1 bg-white border border-gray-100 rounded shadow-sm text-xs font-bold text-gray-700">
                            {s.name}
                          </div>
                        ))}
@@ -1069,8 +1073,8 @@ const ResumeRenderer = ({ data, templateId }: { data: ResumeData; templateId: Te
                   <div className="t2-section">
                      <div className="t2-section-title">Idiomas</div>
                      <div className="flex flex-col gap-2">
-                       {data.languages.map(l => (
-                         <div key={l.id} className="flex justify-between items-center text-[12px]">
+                       {data.languages.map((l, idx) => (
+                         <div key={l.id || `lang-${idx}`} className="flex justify-between items-center text-[12px]">
                             <div className="font-semibold text-gray-800">{l.name}</div>
                             <div className="font-bold text-gray-400 uppercase tracking-widest text-[9px]">{l.level}</div>
                          </div>
@@ -1085,8 +1089,8 @@ const ResumeRenderer = ({ data, templateId }: { data: ResumeData; templateId: Te
                   <div className="t2-section">
                      <div className="t2-section-title">Experiência Profissional</div>
                      <div className="flex flex-col gap-8">
-                       {data.experience.map(ex => (
-                          <div key={ex.id} className="t2-exp-item">
+                       {data.experience.map((ex, idx) => (
+                          <div key={ex.id || `exp-${idx}`} className="t2-exp-item">
                              <div className="t2-exp-header">
                                 <div className="t2-exp-company">{ex.company}</div>
                                 <div className="t2-exp-period">{ex.startDate} - {ex.current ? "Presente" : ex.endDate}</div>
@@ -1111,9 +1115,9 @@ const ResumeRenderer = ({ data, templateId }: { data: ResumeData; templateId: Te
               {data.personalInfo.summary && <div className="t3-bio">{renderText(data.personalInfo.summary)}</div>}
               
               <div className="t3-contact-row">
-                {data.personalInfo.email && <div key="email" className="t3-contact-item" style={{ alignItems: 'center' }}><span style={{ display: 'flex', alignItems: 'center', flexShrink: 0, lineHeight: 0 }}><Mail className="t3-contact-icon" style={{ width: '12px', height: '12px', display: 'block', verticalAlign: 'middle' }}/></span> <span style={{ lineHeight: '1.2' }}>{data.personalInfo.email}</span></div>}
-                {data.personalInfo.phone && <div key="phone" className="t3-contact-item" style={{ alignItems: 'center' }}><span style={{ display: 'flex', alignItems: 'center', flexShrink: 0, lineHeight: 0 }}><Phone className="t3-contact-icon" style={{ width: '12px', height: '12px', display: 'block', verticalAlign: 'middle' }}/></span> <span style={{ lineHeight: '1.2' }}>{data.personalInfo.phone}</span></div>}
-                {data.personalInfo.location && <div key="loc" className="t3-contact-item" style={{ alignItems: 'center' }}><span style={{ display: 'flex', alignItems: 'center', flexShrink: 0, lineHeight: 0 }}><MapPin className="t3-contact-icon" style={{ width: '12px', height: '12px', display: 'block', verticalAlign: 'middle' }}/></span> <span style={{ lineHeight: '1.2' }}>{data.personalInfo.location}</span></div>}
+                {data.personalInfo.email && <div key="email" className="t3-contact-item flex items-center gap-1.5"><Mail size={12} className="t3-contact-icon shrink-0" /> <span style={{ lineHeight: '1.2' }}>{data.personalInfo.email}</span></div>}
+                {data.personalInfo.phone && <div key="phone" className="t3-contact-item flex items-center gap-1.5"><Phone size={12} className="t3-contact-icon shrink-0" /> <span style={{ lineHeight: '1.2' }}>{data.personalInfo.phone}</span></div>}
+                {data.personalInfo.location && <div key="loc" className="t3-contact-item flex items-center gap-1.5"><MapPin size={12} className="t3-contact-icon shrink-0" /> <span style={{ lineHeight: '1.2' }}>{data.personalInfo.location}</span></div>}
               </div>
            </div>
            
@@ -1122,8 +1126,8 @@ const ResumeRenderer = ({ data, templateId }: { data: ResumeData; templateId: Te
                  {data.education.length > 0 && (
                    <div>
                      <div className="t3-section-title">Formação Académica</div>
-                     {data.education.map(e => (
-                       <div key={e.id} className="t3-edu-item">
+                     {data.education.map((e, idx) => (
+                       <div key={e.id || `edu-${idx}`} className="t3-edu-item">
                           <div className="t3-edu-school">{e.institution}</div>
                           <div className="t3-edu-degree">{e.degree}</div>
                           <div className="t3-edu-year">{e.startDate} - {e.endDate}</div>
@@ -1165,8 +1169,8 @@ const ResumeRenderer = ({ data, templateId }: { data: ResumeData; templateId: Te
                  {data.experience.length > 0 && (
                    <div>
                       <div className="t3-section-title">Experiência Profissional</div>
-                      {data.experience.map(ex => (
-                         <div key={ex.id} className="t3-exp-item">
+                      {data.experience.map((ex, idx) => (
+                         <div key={ex.id || `exp-${idx}`} className="t3-exp-item">
                             <div className="t3-exp-header">
                                <div className="t3-exp-company">{ex.company}</div>
                                <div className="t3-exp-period">{ex.startDate} - {ex.current ? "Presente" : ex.endDate}</div>
@@ -1226,9 +1230,9 @@ const ResumeRenderer = ({ data, templateId }: { data: ResumeData; templateId: Te
                 <div>
                    <h3 className="text-xl font-bold mb-5 pb-2 text-white border-b-2 border-white/20 inline-block pr-6">Contacto</h3>
                      <div className="flex flex-col text-[13px] opacity-90">
-                       {data.personalInfo.email && <div key="email" style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}><span style={{ display: 'flex', alignItems: 'center', flexShrink: 0, lineHeight: 0 }}><Mail style={{ width: '16px', height: '16px', opacity: 0.7, display: 'block', verticalAlign: 'middle' }}/></span> <span style={{ lineHeight: '1.2' }}>{data.personalInfo.email}</span></div>}
-                       {data.personalInfo.phone && <div key="phone" style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}><span style={{ display: 'flex', alignItems: 'center', flexShrink: 0, lineHeight: 0 }}><Phone style={{ width: '16px', height: '16px', opacity: 0.7, display: 'block', verticalAlign: 'middle' }}/></span> <span style={{ lineHeight: '1.2' }}>{data.personalInfo.phone}</span></div>}
-                       {data.personalInfo.location && <div key="loc" style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}><span style={{ display: 'flex', alignItems: 'center', flexShrink: 0, lineHeight: 0 }}><MapPin style={{ width: '16px', height: '16px', opacity: 0.7, display: 'block', verticalAlign: 'middle' }}/></span> <span style={{ lineHeight: '1.2' }}>{data.personalInfo.location}</span></div>}
+                       {data.personalInfo.email && <div key="email" className="flex items-center gap-2 mb-4"><Mail size={14} className="opacity-75 shrink-0" /> <span style={{ lineHeight: '1.2' }}>{data.personalInfo.email}</span></div>}
+                       {data.personalInfo.phone && <div key="phone" className="flex items-center gap-2 mb-4"><Phone size={14} className="opacity-75 shrink-0" /> <span style={{ lineHeight: '1.2' }}>{data.personalInfo.phone}</span></div>}
+                       {data.personalInfo.location && <div key="loc" className="flex items-center gap-2 mb-4"><MapPin size={14} className="opacity-75 shrink-0" /> <span style={{ lineHeight: '1.2' }}>{data.personalInfo.location}</span></div>}
                      </div>
                 </div>
                 {data.languages && data.languages.length > 0 && (
@@ -1345,9 +1349,9 @@ const ResumeRenderer = ({ data, templateId }: { data: ResumeData; templateId: Te
                      <h3 className="text-[12px] font-black uppercase tracking-[0.2em]" style={{ color: c.primary }}>Contacto</h3>
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', fontSize: '13px', width: '100%', fontWeight: '500', color: '#374151' }}>
-                     {data.personalInfo.phone && <div key="phone" style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}><span style={{ display: 'flex', alignItems: 'center', flexShrink: 0, lineHeight: 0 }}><Phone style={{ opacity: 0.7, width: '16px', height: '16px', flexShrink: 0, display: 'block', verticalAlign: 'middle' }} color={c.primary}/></span> <span style={{ lineHeight: '1.2' }}>{data.personalInfo.phone}</span></div>}
-                     {data.personalInfo.email && <div key="email" style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}><span style={{ display: 'flex', alignItems: 'center', flexShrink: 0, lineHeight: 0 }}><Mail style={{ opacity: 0.7, width: '16px', height: '16px', flexShrink: 0, display: 'block', verticalAlign: 'middle' }} color={c.primary}/></span> <span className="break-all" style={{ lineHeight: '1.2' }}>{data.personalInfo.email}</span></div>}
-                     {data.personalInfo.location && <div key="loc" style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}><span style={{ display: 'flex', alignItems: 'center', flexShrink: 0, lineHeight: 0 }}><MapPin style={{ opacity: 0.7, width: '16px', height: '16px', flexShrink: 0, display: 'block', verticalAlign: 'middle' }} color={c.primary}/></span> <span style={{ lineHeight: '1.2' }}>{data.personalInfo.location}</span></div>}
+                     {data.personalInfo.phone && <div key="phone" className="flex items-center gap-2.5 mb-4 text-gray-700 font-semibold"><Phone size={14} className="opacity-75 shrink-0" style={{ color: c.primary }} /> <span style={{ lineHeight: '1.2' }}>{data.personalInfo.phone}</span></div>}
+                     {data.personalInfo.email && <div key="email" className="flex items-center gap-2.5 mb-4 text-gray-700 font-semibold"><Mail size={14} className="opacity-75 shrink-0" style={{ color: c.primary }} /> <span className="break-all" style={{ lineHeight: '1.2' }}>{data.personalInfo.email}</span></div>}
+                     {data.personalInfo.location && <div key="loc" className="flex items-center gap-2.5 mb-4 text-gray-700 font-semibold"><MapPin size={14} className="opacity-75 shrink-0" style={{ color: c.primary }} /> <span style={{ lineHeight: '1.2' }}>{data.personalInfo.location}</span></div>}
                   </div>
                 </div>
 
@@ -1431,9 +1435,545 @@ const ResumeRenderer = ({ data, templateId }: { data: ResumeData; templateId: Te
            </div>
         </div>
       )}
+
+      {theme.layout === 'custom-t6' && (
+        <div className="flex flex-col w-full h-[1122px] bg-[#fcfcfc] p-12 font-sans overflow-hidden text-left relative" style={{ border: `16px solid ${c.primary}` }}>
+          <div className="flex flex-col items-center pb-6 mb-6 border-b-2" style={{ borderColor: c.primary }}>
+            {data.personalInfo.photo && (
+              <img 
+                src={data.personalInfo.photo} 
+                referrerPolicy="no-referrer" 
+                className="object-cover object-top mb-4 shadow" 
+                style={{ 
+                  borderRadius: data.personalInfo.photoStyle === 'circle' ? '50%' : '15px',
+                  width: `${data.personalInfo.photoSize || 100}px`,
+                  height: `${data.personalInfo.photoSize || 100}px`
+                }} 
+              />
+            )}
+            <h1 className="text-3xl font-black uppercase tracking-wider mb-2" style={{ color: c.primary }}>{data.personalInfo.fullName || "Seu Nome"}</h1>
+            <p className="text-xs font-bold text-gray-500 uppercase tracking-[0.25em]">{data.personalInfo.title || "Cargo Desejado"}</p>
+            <div className="flex items-center gap-4 mt-4 text-[11px] font-bold text-gray-500 uppercase tracking-widest">
+              {data.personalInfo.phone && <span className="flex items-center gap-1"><Phone size={11} /> {data.personalInfo.phone}</span>}
+              {(data.personalInfo.phone && data.personalInfo.email) && <span>•</span>}
+              {data.personalInfo.email && <span className="flex items-center gap-1"><Mail size={11} /> {data.personalInfo.email}</span>}
+              {(data.personalInfo.email && data.personalInfo.location) && <span>•</span>}
+              {data.personalInfo.location && <span className="flex items-center gap-1"><MapPin size={11} /> {data.personalInfo.location}</span>}
+            </div>
+          </div>
+
+          {data.personalInfo.summary && (
+            <p className="text-xs italic text-gray-600 font-medium text-center max-w-2xl mx-auto leading-relaxed mb-6 font-serif">
+              "{renderText(data.personalInfo.summary)}"
+            </p>
+          )}
+
+          <div className="grid grid-cols-2 gap-8 flex-1 overflow-hidden">
+            <div className="space-y-6">
+              {data.experience.length > 0 && (
+                <div>
+                  <h3 className="text-sm font-black uppercase tracking-wider mb-4" style={{ color: '#111827' }}>Experiência</h3>
+                  <div className="space-y-4">
+                    {data.experience.map((ex, idx) => (
+                      <div key={ex.id || `exp-${idx}`} className="pl-3 border-l-2 space-y-1" style={{ borderColor: c.primary }}>
+                        <h4 className="text-xs font-black text-gray-955">{ex.position}</h4>
+                        <div className="text-[10px] font-bold text-gray-400">
+                          {ex.company} | {ex.startDate} - {ex.current ? "Presente" : ex.endDate}
+                        </div>
+                        <p className="text-[11px] leading-relaxed text-gray-600 mt-1">{renderText(ex.description)}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="space-y-6">
+              {data.education.length > 0 && (
+                <div>
+                  <h3 className="text-sm font-black uppercase tracking-wider mb-4" style={{ color: '#111827' }}>Formação</h3>
+                  <div className="space-y-3">
+                    {data.education.map((e, idx) => (
+                      <div key={e.id || `edu-${idx}`} className="p-3 bg-white border border-gray-100 rounded-xl shadow-sm space-y-1">
+                        <h4 className="text-xs font-black text-gray-900">{e.degree}</h4>
+                        <p className="text-[11px] text-gray-600 font-medium">{e.institution}</p>
+                        <p className="text-[9px] font-black text-gray-400">{e.startDate} - {e.endDate}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {data.skills.length > 0 && (
+                <div>
+                  <h3 className="text-sm font-black uppercase tracking-wider mb-4" style={{ color: '#111827' }}>Habilidades</h3>
+                  <div className="flex flex-wrap gap-1.5">
+                    {data.skills.map((s, idx) => (
+                      <span key={s.id || `skill-${idx}`} className="px-2.5 py-1 bg-white border border-gray-100 rounded-lg text-[10px] font-bold text-gray-700 shadow-sm">
+                        {s.name}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {data.languages && data.languages.length > 0 && (
+                <div>
+                  <h3 className="text-sm font-black uppercase tracking-wider mb-3" style={{ color: '#111827' }}>Idiomas</h3>
+                  <div className="space-y-2">
+                    {data.languages.map((l, idx) => (
+                      <div key={l.id || `lang-${idx}`} className="flex justify-between items-center text-[11px]">
+                        <span className="font-bold text-gray-800">{l.name}</span>
+                        <span className="text-[9px] font-black text-gray-400 uppercase tracking-wider">{l.level}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {theme.layout === 'custom-t7' && (
+        <div className="flex flex-col w-full h-[1122px] bg-white text-left font-sans overflow-hidden relative">
+          <div className="flex justify-between items-center p-10 pb-12 text-white" style={{ backgroundColor: c.primary }}>
+            <div className="max-w-[70%] space-y-2">
+              <h1 className="text-3xl font-black uppercase tracking-wider">{data.personalInfo.fullName || "Seu Nome"}</h1>
+              <p className="text-xs font-bold uppercase tracking-[0.2em] opacity-90">{data.personalInfo.title || "Cargo Desejado"}</p>
+            </div>
+            {data.personalInfo.photo && (
+              <img 
+                src={data.personalInfo.photo} 
+                referrerPolicy="no-referrer" 
+                className="object-cover object-top border-4 border-white shadow-md shrink-0" 
+                style={{ 
+                  borderRadius: data.personalInfo.photoStyle === 'circle' ? '50%' : '12px',
+                  width: `${data.personalInfo.photoSize || 80}px`,
+                  height: `${data.personalInfo.photoSize || 80}px`
+                }} 
+              />
+            )}
+          </div>
+
+          <div className="bg-gray-100/80 px-10 py-3.5 flex flex-wrap gap-x-6 gap-y-1.5 text-[10px] font-black text-gray-500 uppercase tracking-widest">
+            {data.personalInfo.phone && <span className="flex items-center gap-1"><Phone size={11} className="shrink-0" /> {data.personalInfo.phone}</span>}
+            {data.personalInfo.email && <span className="flex items-center gap-1"><Mail size={11} className="shrink-0" /> {data.personalInfo.email}</span>}
+            {data.personalInfo.location && <span className="flex items-center gap-1"><MapPin size={11} className="shrink-0" /> {data.personalInfo.location}</span>}
+          </div>
+
+          <div className="flex flex-row gap-8 p-10 flex-1 overflow-hidden">
+            <div className="w-[60%] border-r border-gray-100 pr-8 space-y-6">
+              {data.personalInfo.summary && (
+                <div>
+                  <h3 className="text-xs font-black uppercase tracking-wider mb-3 text-gray-900">Síntese</h3>
+                  <p className="text-xs leading-relaxed text-gray-600 font-medium font-serif">{renderText(data.personalInfo.summary)}</p>
+                </div>
+              )}
+
+              {data.experience.length > 0 && (
+                <div>
+                  <h3 className="text-xs font-black uppercase tracking-wider mb-4 text-gray-900">Experiência</h3>
+                  <div className="space-y-5">
+                    {data.experience.map((ex, idx) => (
+                      <div key={ex.id || `exp-${idx}`} className="space-y-1">
+                        <div className="flex justify-between items-baseline">
+                          <h4 className="text-xs font-black text-gray-950">{ex.position}</h4>
+                          <span className="text-[10px] font-black text-gray-400 uppercase">{ex.startDate} - {ex.current ? "Presente" : ex.endDate}</span>
+                        </div>
+                        <p className="text-[11px] font-black uppercase tracking-tight" style={{ color: c.primary }}>{ex.company}</p>
+                        <p className="text-[11px] leading-relaxed text-gray-600 mt-1">{renderText(ex.description)}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="w-[40%] space-y-6">
+              {data.skills.length > 0 && (
+                <div>
+                  <h3 className="text-xs font-black uppercase tracking-wider mb-4 text-gray-900">Habilidades</h3>
+                  <div className="space-y-3.5">
+                    {data.skills.filter(s => s && s.name).map((s, idx) => (
+                      <div key={s.id || `skill-${idx}`} className="space-y-1">
+                        <p className="text-[10px] font-bold text-gray-700">{s.name}</p>
+                        <div className="w-full h-1 bg-gray-100 rounded-full overflow-hidden">
+                          <div 
+                            className="h-full rounded-full transition-all duration-500" 
+                            style={{ 
+                              backgroundColor: c.primary,
+                              width: s.level === 'Especialista' ? '100%' : s.level === 'Avançado' ? '80%' : s.level === 'Intermédio' ? '60%' : '40%'
+                            }} 
+                          />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {data.education.length > 0 && (
+                <div>
+                  <h3 className="text-xs font-black uppercase tracking-wider mb-3 text-gray-900">Educação</h3>
+                  <div className="space-y-3">
+                    {data.education.map((e, idx) => (
+                      <div key={e.id || `edu-${idx}`} className="space-y-1">
+                        <h4 className="text-xs font-black text-gray-950">{e.degree}</h4>
+                        <p className="text-[11px] text-gray-500 font-semibold">{e.institution}</p>
+                        <p className="text-[9px] font-bold text-gray-400">{e.startDate} - {e.endDate}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {data.languages && data.languages.length > 0 && (
+                <div>
+                  <h3 className="text-xs font-black uppercase tracking-wider mb-3 text-gray-900">Idiomas</h3>
+                  <div className="space-y-2">
+                    {data.languages.map((l, idx) => (
+                      <div key={l.id || `lang-${idx}`} className="flex justify-between items-center text-[11px]">
+                        <span className="font-bold text-gray-800">{l.name}</span>
+                        <span className="text-[9px] font-black text-gray-400 uppercase tracking-wider">{l.level}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {theme.layout === 'custom-t8' && (
+        <div className="flex flex-row w-full h-[1122px] bg-white text-left font-sans overflow-hidden relative">
+          {/* Top Geometric Accent */}
+          <div className="absolute top-0 left-0 right-0 h-44 bg-gradient-to-r from-blue-900 to-blue-700 pointer-events-none" style={{ clipPath: 'polygon(0 0, 100% 0, 100% 40%, 0% 100%)', backgroundColor: c.primary }}></div>
+          <div className="absolute top-0 left-0 right-0 h-44 bg-sky-400/30 pointer-events-none" style={{ clipPath: 'polygon(0 0, 100% 0, 100% 15%, 0% 85%)' }}></div>
+          
+          {/* Bottom Geometric Accent */}
+          <div className="absolute bottom-0 left-0 right-0 h-10 pointer-events-none" style={{ clipPath: 'polygon(0 100%, 100% 100%, 100% 0, 0% 100%)', backgroundColor: c.primary }}></div>
+          <div className="absolute bottom-0 left-0 right-0 h-10 bg-sky-400/20 pointer-events-none" style={{ clipPath: 'polygon(0 100%, 100% 100%, 100% 30%, 0% 100%)' }}></div>
+
+          {/* Left Column (Light Gray Background / Sidebar) */}
+          <div className="w-[35%] bg-gray-50 h-full p-8 pt-10 flex flex-col relative z-10 border-r border-gray-100 shrink-0">
+            {/* Avatar Wrap */}
+            <div className="flex flex-col items-center mb-8 relative">
+              <div 
+                className="rounded-full border-4 shadow-lg overflow-hidden flex items-center justify-center bg-white" 
+                style={{ 
+                  borderColor: '#38BDF8', // Cyan border
+                  width: `${data.personalInfo.photoSize || 110}px`,
+                  height: `${data.personalInfo.photoSize || 110}px`
+                }} 
+              >
+                {data.personalInfo.photo ? (
+                  <img 
+                    src={data.personalInfo.photo} 
+                    referrerPolicy="no-referrer" 
+                    className="object-cover object-top w-full h-full" 
+                  />
+                ) : (
+                  <div className="text-3xl font-black text-gray-300">
+                    {data.personalInfo.fullName ? data.personalInfo.fullName.charAt(0).toUpperCase() : 'CV'}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* CONTACT Section */}
+            <div className="mb-8">
+              <h3 className="text-sm font-black uppercase tracking-wider mb-4 text-center pb-1 border-b-2 border-sky-400/50" style={{ color: c.primary }}>Contacto</h3>
+              <div className="space-y-3">
+                {data.personalInfo.email && (
+                  <div className="flex items-center gap-3 text-[10px] font-bold text-gray-700">
+                    <span className="w-6 h-6 rounded-full bg-sky-400 flex items-center justify-center text-white shrink-0 shadow-sm"><Mail size={11} /></span>
+                    <span className="truncate">{data.personalInfo.email}</span>
+                  </div>
+                )}
+                {data.personalInfo.phone && (
+                  <div className="flex items-center gap-3 text-[10px] font-bold text-gray-700">
+                    <span className="w-6 h-6 rounded-full bg-sky-400 flex items-center justify-center text-white shrink-0 shadow-sm"><Phone size={11} /></span>
+                    <span>{data.personalInfo.phone}</span>
+                  </div>
+                )}
+                {data.personalInfo.location && (
+                  <div className="flex items-center gap-3 text-[10px] font-bold text-gray-700">
+                    <span className="w-6 h-6 rounded-full bg-sky-400 flex items-center justify-center text-white shrink-0 shadow-sm"><MapPin size={11} /></span>
+                    <span>{data.personalInfo.location}</span>
+                  </div>
+                )}
+                {data.personalInfo.website && (
+                  <div className="flex items-center gap-3 text-[10px] font-bold text-gray-700">
+                    <span className="w-6 h-6 rounded-full bg-sky-400 flex items-center justify-center text-white shrink-0 shadow-sm"><Globe size={11} /></span>
+                    <span className="truncate">{data.personalInfo.website}</span>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* SKILLS Section with Rating Dots */}
+            {data.skills.length > 0 && (
+              <div className="mb-8">
+                <h3 className="text-sm font-black uppercase tracking-wider mb-4 text-center pb-1 border-b-2 border-sky-400/50" style={{ color: c.primary }}>Habilidades</h3>
+                <div className="space-y-2.5">
+                  {data.skills.filter(s => s && s.name).map((s, idx) => {
+                    const dotsCount = s.level === 'Especialista' ? 5 : s.level === 'Avançado' ? 4 : s.level === 'Intermédio' ? 3 : 2;
+                    return (
+                      <div key={s.id || `skill-${idx}`} className="flex justify-between items-center text-[10px]">
+                        <span className="font-bold text-gray-700 mr-2 truncate">{s.name}</span>
+                        <div className="flex gap-1 shrink-0">
+                          {[1, 2, 3, 4, 5].map(dot => (
+                            <div 
+                              key={dot} 
+                              className={`w-2 h-2 rounded-full transition-colors duration-300 ${dot <= dotsCount ? 'bg-sky-400' : 'bg-gray-200'}`}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* HOBBIES / INTERESTS Section */}
+            {data.interests && data.interests.length > 0 && (
+              <div>
+                <h3 className="text-sm font-black uppercase tracking-wider mb-4 text-center pb-1 border-b-2 border-sky-400/50" style={{ color: c.primary }}>Interesses</h3>
+                <div className="flex flex-wrap gap-1.5 justify-center">
+                  {data.interests.map((interest, idx) => (
+                    <span key={idx} className="px-2.5 py-1 bg-white border border-gray-200 rounded-full text-[9px] font-bold text-gray-600 shadow-sm">
+                      {interest}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Right Column (White Background) */}
+          <div className="w-[65%] h-full p-8 pt-6 flex flex-col relative z-20 overflow-hidden">
+            {/* Header / Name Block */}
+            <div className="mb-8 mt-4">
+              <h1 className="text-3xl font-black text-white drop-shadow-md tracking-wider uppercase mb-1">{data.personalInfo.fullName || "Seu Nome"}</h1>
+              <p className="text-xs font-bold text-sky-300 tracking-[0.25em] uppercase">{data.personalInfo.title || "Cargo Desejado"}</p>
+            </div>
+
+            <div className="space-y-6 flex-1 overflow-hidden mt-6">
+              {/* ABOUT ME Section */}
+              {data.personalInfo.summary && (
+                <div>
+                  <div className="inline-block py-1.5 px-5 rounded-full text-[10px] font-black uppercase tracking-wider text-white mb-3" style={{ backgroundColor: c.primary }}>
+                    Sobre Mim
+                  </div>
+                  <p className="text-xs leading-relaxed text-gray-600 font-medium">{renderText(data.personalInfo.summary)}</p>
+                </div>
+              )}
+
+              {/* EDUCATION Section */}
+              {data.education.length > 0 && (
+                <div>
+                  <div className="inline-block py-1.5 px-5 rounded-full text-[10px] font-black uppercase tracking-wider text-white mb-4" style={{ backgroundColor: c.primary }}>
+                    Formação Académica
+                  </div>
+                  <div className="space-y-4">
+                    {data.education.map((e, idx) => (
+                      <div key={e.id || `edu-${idx}`} className="relative pl-6 border-l-2 border-sky-400/30">
+                        <div className="absolute -left-1.5 top-1.5 w-3 h-3 rounded-full border-2 border-white shadow bg-sky-400" />
+                        <div className="flex justify-between items-baseline mb-0.5">
+                          <h4 className="text-xs font-black text-gray-900">{e.degree}</h4>
+                          <span className="text-[9px] font-black text-sky-500 uppercase tracking-tight shrink-0">{e.startDate} - {e.endDate}</span>
+                        </div>
+                        <p className="text-[10px] text-gray-500 font-bold">{e.institution}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* EXPERIENCE Section */}
+              {data.experience.length > 0 && (
+                <div>
+                  <div className="inline-block py-1.5 px-5 rounded-full text-[10px] font-black uppercase tracking-wider text-white mb-4" style={{ backgroundColor: c.primary }}>
+                    Experiência Profissional
+                  </div>
+                  <div className="space-y-4">
+                    {data.experience.map((ex, idx) => (
+                      <div key={ex.id || `exp-${idx}`} className="relative pl-6 border-l-2 border-sky-400/30">
+                        <div className="absolute -left-1.5 top-1.5 w-3 h-3 rounded-full border-2 border-white shadow bg-sky-400" />
+                        <div className="flex justify-between items-baseline mb-1">
+                          <h4 className="text-xs font-black text-gray-955">{ex.position}</h4>
+                          <span className="text-[9px] font-black text-sky-500 uppercase tracking-tight shrink-0">{ex.startDate} - {ex.current ? "Presente" : ex.endDate}</span>
+                        </div>
+                        <p className="text-[10px] font-bold uppercase tracking-tight mb-2" style={{ color: c.primary }}>{ex.company}</p>
+                        <p className="text-[11px] leading-relaxed text-gray-600 font-medium">{renderText(ex.description)}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {theme.layout === 'custom-t9' && (
+        <div className="flex flex-col w-full h-[1122px] bg-white text-left font-sans overflow-hidden relative">
+          {/* Top Emerald Header Block with speech-bubble layout */}
+          <div className="flex justify-between items-center p-8 pb-10 text-white relative" style={{ backgroundColor: c.primary }}>
+            <div className="max-w-[65%] pl-6 space-y-2 relative z-10">
+              <h1 className="text-3xl font-black uppercase tracking-wider">{data.personalInfo.fullName || "Seu Nome"}</h1>
+              <p className="text-xs font-bold uppercase tracking-[0.2em] text-emerald-200">{data.personalInfo.title || "Cargo Desejado"}</p>
+            </div>
+            
+            {/* Custom mask matching the speech bubble design */}
+            <div className="relative pr-6 z-10">
+              <div 
+                className="border-4 border-white shadow-xl bg-white overflow-hidden flex items-center justify-center p-0.5" 
+                style={{ 
+                  borderRadius: '35% 35% 0 35%', // Curve style matching the second uploaded image
+                  width: `${data.personalInfo.photoSize || 100}px`,
+                  height: `${data.personalInfo.photoSize || 100}px`
+                }} 
+              >
+                {data.personalInfo.photo ? (
+                  <img 
+                    src={data.personalInfo.photo} 
+                    referrerPolicy="no-referrer" 
+                    className="object-cover object-top w-full h-full" 
+                  />
+                ) : (
+                  <div className="text-3xl font-black text-gray-300">
+                    {data.personalInfo.fullName ? data.personalInfo.fullName.charAt(0).toUpperCase() : 'CV'}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          <div className="flex flex-row flex-1 overflow-hidden">
+            {/* Left Sidebar (Dark Emerald/Green Color Block) */}
+            <div className="w-[35%] h-full p-6 text-white flex flex-col shrink-0" style={{ backgroundColor: '#073E3A' /* Dark Emerald sidebar background */ }}>
+              {/* Contact Block */}
+              <div className="mb-6">
+                <div className="bg-emerald-800/60 px-4 py-1.5 rounded-full text-center text-[10px] font-black uppercase tracking-wider mb-3">
+                  Contacto
+                </div>
+                <div className="space-y-2.5 pl-2">
+                  {data.personalInfo.email && <div className="flex items-center gap-2.5 text-[9px] font-bold"><Mail size={11} className="text-emerald-300 shrink-0" /> <span className="break-all">{data.personalInfo.email}</span></div>}
+                  {data.personalInfo.phone && <div className="flex items-center gap-2.5 text-[9px] font-bold"><Phone size={11} className="text-emerald-300 shrink-0" /> <span>{data.personalInfo.phone}</span></div>}
+                  {data.personalInfo.location && <div className="flex items-center gap-2.5 text-[9px] font-bold"><MapPin size={11} className="text-emerald-300 shrink-0" /> <span>{data.personalInfo.location}</span></div>}
+                  {data.personalInfo.website && <div className="flex items-center gap-2.5 text-[9px] font-bold"><Globe size={11} className="text-emerald-300 shrink-0" /> <span className="break-all">{data.personalInfo.website}</span></div>}
+                </div>
+              </div>
+
+              {/* Education block inside sidebar */}
+              {data.education.length > 0 && (
+                <div className="mb-6">
+                  <div className="bg-emerald-800/60 px-4 py-1.5 rounded-full text-center text-[10px] font-black uppercase tracking-wider mb-3">
+                    Formação
+                  </div>
+                  <div className="space-y-3 pl-2">
+                    {data.education.map((e, idx) => (
+                      <div key={e.id || `edu-${idx}`} className="space-y-0.5">
+                        <h4 className="text-[10px] font-black text-white">{e.degree}</h4>
+                        <p className="text-[9px] text-emerald-300 font-semibold">{e.institution}</p>
+                        <p className="text-[8px] font-bold text-emerald-400">{e.startDate} - {e.endDate}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Awards/Certificações Section mapping */}
+              {data.certifications && data.certifications.length > 0 && (
+                <div>
+                  <div className="bg-emerald-800/60 px-4 py-1.5 rounded-full text-center text-[10px] font-black uppercase tracking-wider mb-3">
+                    Prêmios
+                  </div>
+                  <div className="space-y-3 pl-2">
+                    {data.certifications.map((cVal, idx) => (
+                      <div key={cVal.id || `cert-${idx}`} className="space-y-0.5">
+                        <h4 className="text-[10px] font-black text-white">{cVal.name}</h4>
+                        <p className="text-[8px] font-bold text-emerald-400">{cVal.date}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Right Work Content Block (White Background) */}
+            <div className="w-[65%] h-full p-8 space-y-6 overflow-hidden">
+              {/* Summary Section */}
+              {data.personalInfo.summary && (
+                <div>
+                  <div className="inline-block px-5 py-1.5 rounded-full text-[10px] font-black uppercase tracking-wider text-white mb-3" style={{ backgroundColor: c.primary }}>
+                    Sobre Mim
+                  </div>
+                  <p className="text-xs leading-relaxed text-gray-600 font-medium font-serif italic">"{renderText(data.personalInfo.summary)}"</p>
+                </div>
+              )}
+
+              {/* Work Experience Section */}
+              {data.experience.length > 0 && (
+                <div>
+                  <div className="inline-block px-5 py-1.5 rounded-full text-[10px] font-black uppercase tracking-wider text-white mb-3" style={{ backgroundColor: c.primary }}>
+                    Experiência Profissional
+                  </div>
+                  <div className="space-y-4">
+                    {data.experience.map((ex, idx) => (
+                      <div key={ex.id || `exp-${idx}`} className="space-y-1">
+                        <div className="flex justify-between items-baseline">
+                          <h4 className="text-xs font-black text-gray-900">{ex.position}</h4>
+                          <span className="text-[9px] font-black text-gray-400 uppercase">{ex.startDate} - {ex.current ? "Presente" : ex.endDate}</span>
+                        </div>
+                        <p className="text-[10px] font-bold uppercase tracking-tight" style={{ color: c.primary }}>{ex.company}</p>
+                        <p className="text-[11px] leading-relaxed text-gray-600 mt-1">{renderText(ex.description)}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Skills Section with segment Progress Bars */}
+              {data.skills.length > 0 && (
+                <div>
+                  <div className="inline-block px-5 py-1.5 rounded-full text-[10px] font-black uppercase tracking-wider text-white mb-3.5" style={{ backgroundColor: c.primary }}>
+                    Habilidades
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    {data.skills.map((s, idx) => {
+                      const value = s.level === 'Especialista' ? 100 : s.level === 'Avançado' ? 80 : s.level === 'Intermédio' ? 60 : 40;
+                      return (
+                        <div key={s.id || `skill-${idx}`} className="space-y-1">
+                          <p className="text-[10px] font-bold text-gray-700">{s.name}</p>
+                          <div className="w-full h-2.5 bg-gray-100 rounded-full flex gap-0.5 overflow-hidden p-0.5">
+                            {[20, 40, 60, 80, 100].map(segment => (
+                              <div 
+                                key={segment} 
+                                className="h-full flex-1 rounded-full transition-colors duration-300"
+                                style={{ 
+                                  backgroundColor: value >= segment ? c.primary : '#E5E7EB'
+                                }}
+                              />
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
-};
+});
 
 
 // --- Main Application ---
@@ -1455,8 +1995,13 @@ export default function App() {
   const [view, setView] = useState<'landing' | 'editor' | 'faq' | 'about' | 'terms' | 'tips' | 'showcase' | 'admin' | 'profile' | 'my-resumes'>('landing');
   const [activeStep, setActiveStep] = useState(0);
   const [resumeData, setResumeData] = useState<ResumeData>(() => {
-    const saved = localStorage.getItem('cv_lab_data');
-    return saved ? JSON.parse(saved) : INITIAL_RESUME_DATA;
+    try {
+      const saved = localStorage.getItem('cv_lab_data');
+      return saved ? JSON.parse(saved) : INITIAL_RESUME_DATA;
+    } catch (e) {
+      console.error("Error loading saved data:", e);
+      return INITIAL_RESUME_DATA;
+    }
   });
   const [loading, setLoading] = useState(false);
   const [optimizingId, setOptimizingId] = useState<string | null>(null);
@@ -1479,13 +2024,18 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
   const [isDownloading, setIsDownloading] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
   const [importProgress, setImportProgress] = useState("");
+  const [aiImportTab, setAiImportTab] = useState<'pdf' | 'text'>('pdf');
+  const [rawText, setRawText] = useState("");
 
   const [template, setTemplate] = useState<TemplateType>(() => {
     return (localStorage.getItem('cv_lab_template') as TemplateType) || 't1_executive';
   });
 
   useEffect(() => {
-    localStorage.setItem('cv_lab_data', JSON.stringify(resumeData));
+    const timer = setTimeout(() => {
+      localStorage.setItem('cv_lab_data', JSON.stringify(resumeData));
+    }, 500);
+    return () => clearTimeout(timer);
   }, [resumeData]);
 
   useEffect(() => {
@@ -1493,7 +2043,10 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
   }, [template]);
 
   useEffect(() => {
-    localStorage.setItem('cv_lab_letter', generatedLetter);
+    const timer = setTimeout(() => {
+      localStorage.setItem('cv_lab_letter', generatedLetter);
+    }, 500);
+    return () => clearTimeout(timer);
   }, [generatedLetter]);
   const [previewScale, setPreviewScale] = useState(1);
   const [currentBanner, setCurrentBanner] = useState(0);
@@ -1513,20 +2066,26 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
   useEffect(() => {
     const handleResize = () => {
       const width = window.innerWidth;
-      // Pre-visualização deve caber na largura da tela com margem
-      if (width < 850) {
-        const availableWidth = width - 40; // 20px padding cada lado
+      const isDesktop = width >= 1024;
+      
+      if (isDesktop && !showPreviewModal) {
+        // Layout lado-a-lado no PC: subtrai a largura correspondente do editor sidebar
+        const sidebarWidth = width >= 1280 ? 600 : 500;
+        const availableWidth = width - sidebarWidth - 64; // Margem e padding confortáveis
         const scale = availableWidth / 794;
         setPreviewScale(Math.min(scale, 1));
       } else {
-        setPreviewScale(1);
+        // Layout modal no mobile/tablet
+        const availableWidth = width - 40; // 20px padding de cada lado
+        const scale = availableWidth / 794;
+        setPreviewScale(Math.min(scale, 1));
       }
     };
     
     handleResize();
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
-  }, []);
+  }, [showPreviewModal]);
 
   // Presence & Visitor Tracking
   useEffect(() => {
@@ -1585,7 +2144,7 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
       }, 4500);
     }
     return () => clearInterval(interval);
-  }, [view, currentBanner]);
+  }, [view]); // Only track view changes
 
   // Firebase Order Listener
   useEffect(() => {
@@ -1620,7 +2179,11 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
         't2_geometric': 2,
         't3_modern': 3,
         't4_barnabas': 4,
-        't5_jonathan': 5
+        't5_jonathan': 5,
+        't6_creative': 6,
+        't7_professional': 7,
+        't8_geometric_blue': 8,
+        't9_emerald_pill': 9
       };
 
       const templateId = templateMap[template] || 1;
@@ -1655,12 +2218,7 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
   };
 
   const handleDownloadPdf = () => {
-    if (!user || user.isAnonymous) {
-      setShowAuthModal(true);
-      return;
-    }
-    setShowPaymentModal(true);
-    setContactEmail(user.email || '');
+    executeDownloadPdf();
   };
 
   const createOrder = async () => {
@@ -1741,6 +2299,52 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
       ...prev,
       personalInfo: { ...prev.personalInfo, [field]: value }
     }));
+  };
+
+  const handleRawTextParse = async () => {
+    if (!rawText.trim()) {
+      alert("Por favor, introduza algum texto ou informação para analisar.");
+      return;
+    }
+    
+    setIsImporting(true);
+    setImportProgress("IA categorizando seus dados...");
+    
+    try {
+      console.log("Enviando texto bruto para a Gemini AI...");
+      const parsedData = await parseResumeFromText(rawText);
+      console.log("Dados processados recebidos:", parsedData);
+      
+      // Update resume data
+      setResumeData(prev => ({
+        ...prev,
+        personalInfo: {
+          ...prev.personalInfo,
+          fullName: parsedData.personalInfo?.fullName || prev.personalInfo.fullName,
+          title: parsedData.personalInfo?.title || prev.personalInfo.title,
+          email: parsedData.personalInfo?.email || prev.personalInfo.email,
+          phone: parsedData.personalInfo?.phone || prev.personalInfo.phone,
+          location: parsedData.personalInfo?.location || prev.personalInfo.location,
+          summary: parsedData.personalInfo?.summary || prev.personalInfo.summary
+        },
+        experience: parsedData.experience?.length ? parsedData.experience : prev.experience,
+        education: parsedData.education?.length ? parsedData.education : prev.education,
+        skills: parsedData.skills?.length ? parsedData.skills : prev.skills,
+        languages: parsedData.languages?.length ? parsedData.languages : prev.languages,
+        interests: parsedData.interests?.length ? parsedData.interests : prev.interests,
+        certifications: parsedData.certifications?.length ? parsedData.certifications : prev.certifications
+      }));
+      
+      alert("Suas informações foram analisadas e organizadas em cada secção!");
+      setActiveStep(1); // Jump to first data step after import
+      setRawText("");
+    } catch (error: any) {
+      console.error("Erro ao analisar texto bruto:", error);
+      alert("Erro ao interpretar dados: " + error.message);
+    } finally {
+      setIsImporting(false);
+      setImportProgress("");
+    }
   };
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -2552,7 +3156,7 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
   const c = { ...currentTheme.colors, primary: resumeData.themeColor || currentTheme.colors.primary };
 
   return (
-    <div className="min-h-screen bg-bg-main flex flex-col md:flex-row justify-center md:h-screen md:overflow-hidden print:bg-white print:h-auto print:overflow-visible">
+    <div className="min-h-screen bg-bg-main flex flex-col lg:flex-row justify-start lg:h-screen lg:overflow-hidden print:bg-white print:h-auto print:overflow-visible">
       
       {/* Payment Modal Overlay */}
       <AnimatePresence>
@@ -2659,7 +3263,7 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
                
                <div className="space-y-1">
                  <h2 className="text-xl font-black text-deep-blue tracking-tight">{isAuthModeLogin ? "Fazer Login" : "Criar Conta"}</h2>
-                 <p className="text-xs text-text-muted font-medium leading-relaxed">Guarde seu progresso para baixar o currículo.</p>
+                 <p className="text-xs text-text-muted font-medium leading-relaxed">Guarde seu progresso na nuvem e aceda de qualquer dispositivo.</p>
                </div>
                
                <div className="space-y-3 pt-2 text-left">
@@ -2763,7 +3367,7 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
       </AnimatePresence>
 
       {/* Sidebar Editor */}
-      <aside className={`w-full max-w-3xl mx-auto md:w-[600px] bg-white border-x border-border-main flex flex-col shadow-2xl z-30 print:hidden shrink-0 ${showPreviewModal ? 'hidden' : 'flex'}`}>
+      <aside className={`w-full max-w-3xl mx-auto lg:max-w-none lg:mx-0 lg:w-[500px] xl:w-[600px] bg-white border-r border-border-main flex flex-col shadow-2xl z-30 print:hidden shrink-0 ${showPreviewModal ? 'hidden' : 'flex'}`}>
         <header className="p-4 border-b border-border-main flex items-center justify-between sticky top-0 bg-white z-40 shadow-sm">
           <div className="flex items-center gap-3">
              <button onClick={() => setView('landing')} className="p-2 hover:bg-bg-main rounded-xl transition-colors text-text-muted">
@@ -2778,7 +3382,7 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
           </div>
           <div className="flex items-center gap-2">
             <div className="px-3 py-1 bg-soft-blue text-primary-blue text-[9px] font-black rounded-full hidden md:block">PASSO {activeStep + 1}/6</div>
-            <Button variant="outline" className="h-9 px-4 text-xs font-bold" onClick={() => setShowPreviewModal(true)} icon={ExternalLink}>Ver currículo</Button>
+            <Button variant="outline" className="h-9 px-4 text-xs font-bold lg:hidden" onClick={() => setShowPreviewModal(true)} icon={ExternalLink}>Ver currículo</Button>
             <Button className="h-9 px-4 text-xs font-bold hidden sm:flex" onClick={handleDownloadPdf} disabled={isDownloading} icon={Download}>{isDownloading ? 'Baixando...' : 'Baixar'}</Button>
           </div>
         </header>
@@ -2839,45 +3443,118 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
                     <div className="absolute top-0 right-0 w-40 h-40 bg-white/10 rounded-full -mr-10 -mt-10 blur-2xl group-hover:bg-white/20 transition-all duration-700"></div>
                     <div className="absolute bottom-0 left-0 w-32 h-32 bg-indigo-400/20 rounded-full -ml-16 -mb-16 blur-xl"></div>
                     
-                    <div className="relative z-10 flex flex-col md:flex-row items-center gap-8">
-                      <div className="w-16 h-16 bg-white/10 backdrop-blur-md rounded-2xl flex items-center justify-center text-white border border-white/20 shadow-inner group-hover:scale-110 transition-transform duration-500 shrink-0">
-                        {isImporting ? (
-                           <div className="w-8 h-8 border-4 border-white/30 border-t-white rounded-full animate-spin"></div>
-                        ) : (
-                           <Sparkles size={32} className="text-white fill-white/20 animate-pulse" />
-                        )}
-                      </div>
-                      
-                      <div className="flex-1 text-center md:text-left space-y-2">
-                        <h3 className="text-2xl font-black text-white tracking-tight">Importação Mágica <span className="text-[10px] bg-white/20 px-2 py-0.5 rounded-full ml-1 tabular-nums">IA</span></h3>
-                        <p className="text-blue-100 text-sm font-medium leading-relaxed max-w-sm">
-                          Carregue o seu currículo antigo em PDF e deixe a nossa IA preencher tudo automaticamente e otimizar cada campo para si.
-                        </p>
-                      </div>
+                    {/* Tabs navigation */}
+                    <div className="relative z-10 flex border-b border-white/15 mb-6 pb-2 justify-start gap-4">
+                      <button 
+                        onClick={() => setAiImportTab('pdf')} 
+                        className={`text-[10px] uppercase font-black tracking-widest pb-2 border-b-2 transition-all flex items-center gap-1.5 ${aiImportTab === 'pdf' ? 'border-white text-white' : 'border-transparent text-blue-200 hover:text-white'}`}
+                      >
+                        📄 IMPORTAR PDF
+                      </button>
+                      <button 
+                        onClick={() => setAiImportTab('text')} 
+                        className={`text-[10px] uppercase font-black tracking-widest pb-2 border-b-2 transition-all flex items-center gap-1.5 ${aiImportTab === 'text' ? 'border-white text-white' : 'border-transparent text-blue-200 hover:text-white'}`}
+                      >
+                        ✍️ COLAR TEXTO SOLTO (IA)
+                      </button>
+                    </div>
 
-                      <div className="shrink-0 w-full md:w-auto">
-                        <label className={`w-full group/btn relative flex items-center justify-center gap-3 bg-white text-blue-700 px-8 py-4 rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-black/10 hover:bg-blue-50 active:scale-95 transition-all cursor-pointer ${isImporting ? 'opacity-50 pointer-events-none' : ''}`}>
-                          {isImporting ? (
-                            <span className="flex items-center gap-2">
-                              <div className="w-3 h-3 border-2 border-blue-600/30 border-t-blue-600 rounded-full animate-spin"></div>
-                              {importProgress}
-                            </span>
-                          ) : (
-                            <>
-                              <Upload size={18} className="group-hover/btn:-translate-y-0.5 transition-transform" />
-                              IMPORTAR PDF
-                            </>
-                          )}
-                          <input 
-                            type="file" 
-                            accept=".pdf,application/pdf" 
-                            className="hidden" 
-                            onChange={handleFileUpload} 
-                            disabled={isImporting} 
-                          />
-                        </label>
-                        <p className="text-[9px] text-blue-200 mt-2 text-center font-bold uppercase tracking-widest opacity-60">Apenas ficheiros .PDF</p>
-                      </div>
+                    <div className="relative z-10">
+                      {aiImportTab === 'pdf' ? (
+                        <div className="flex flex-col md:flex-row items-center gap-8 animate-fadeIn">
+                          <div className="w-16 h-16 bg-white/10 backdrop-blur-md rounded-2xl flex items-center justify-center text-white border border-white/20 shadow-inner group-hover:scale-110 transition-transform duration-500 shrink-0">
+                            {isImporting ? (
+                               <div className="w-8 h-8 border-4 border-white/30 border-t-white rounded-full animate-spin"></div>
+                            ) : (
+                               <Sparkles size={32} className="text-white fill-white/20 animate-pulse" />
+                            )}
+                          </div>
+                          
+                          <div className="flex-1 text-center md:text-left space-y-2">
+                            <h3 className="text-2xl font-black text-white tracking-tight">Importação Mágica <span className="text-[10px] bg-white/20 px-2 py-0.5 rounded-full ml-1 tabular-nums">IA</span></h3>
+                            <p className="text-blue-100 text-sm font-medium leading-relaxed max-w-sm">
+                              Carregue o seu currículo antigo em PDF e deixe a nossa IA preencher tudo automaticamente e otimizar cada campo para si.
+                            </p>
+                          </div>
+
+                          <div className="shrink-0 w-full md:w-auto">
+                            <label className={`w-full group/btn relative flex items-center justify-center gap-3 bg-white text-blue-700 px-8 py-4 rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-black/10 hover:bg-blue-50 active:scale-95 transition-all cursor-pointer ${isImporting ? 'opacity-50 pointer-events-none' : ''}`}>
+                              {isImporting ? (
+                                <span className="flex items-center gap-2">
+                                  <div className="w-3 h-3 border-2 border-blue-600/30 border-t-blue-600 rounded-full animate-spin"></div>
+                                  {importProgress}
+                                </span>
+                              ) : (
+                                <>
+                                  <Upload size={18} className="group-hover/btn:-translate-y-0.5 transition-transform" />
+                                  IMPORTAR PDF
+                                </>
+                              )}
+                              <input 
+                                type="file" 
+                                accept=".pdf,application/pdf" 
+                                className="hidden" 
+                                onChange={handleFileUpload} 
+                                disabled={isImporting} 
+                              />
+                            </label>
+                            <p className="text-[9px] text-blue-200 mt-2 text-center font-bold uppercase tracking-widest opacity-60">Apenas ficheiros .PDF</p>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="space-y-4 animate-fadeIn">
+                          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 border-b border-white/10 pb-4">
+                            <div className="space-y-1">
+                              <h3 className="text-xl font-black text-white tracking-tight flex items-center gap-2">
+                                Interpretador Inteligente IA
+                              </h3>
+                              <p className="text-blue-100 text-xs font-semibold max-w-md">
+                                Não precisa de organizar as informações! Escreva ou cole os seus dados desorganizados abaixo e a IA tratará do resto.
+                              </p>
+                            </div>
+                            <div className="shrink-0">
+                              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[9px] font-black uppercase bg-emerald-500 text-white tracking-widest animate-pulse">
+                                <Zap size={10} className="fill-white" /> DIGITALIZAÇÃO DIRETA
+                              </span>
+                            </div>
+                          </div>
+
+                          <div className="space-y-4">
+                            <textarea
+                              rows={5}
+                              value={rawText}
+                              onChange={(e) => setRawText(e.target.value)}
+                              placeholder={`Cole quaisquer dados soltos aqui. Exemplo:\n\n"Chamo-me Ricardo Fernandes. Trabalhei como programador de 2021 a 2024 na Unitel. Licenciei-me no ISPTEC em 2020. Falo Inglês fluente. Meus contactos são ricardo@email.com e +244912345678."`}
+                              className="w-full bg-white/10 border border-white/20 rounded-2xl p-4 text-white placeholder-blue-100/40 text-xs focus:ring-2 focus:ring-white focus:outline-none resize-none font-medium leading-relaxed min-h-[140px]"
+                              disabled={isImporting}
+                            />
+                            
+                            <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+                              <p className="text-[10px] text-blue-100/80 font-bold uppercase tracking-wider text-center sm:text-left">
+                                ✨ Preenche automaticamente Perfil, Experiência, Educação e mais!
+                              </p>
+                              
+                              <button
+                                onClick={handleRawTextParse}
+                                disabled={isImporting || !rawText.trim()}
+                                className={`w-full sm:w-auto flex items-center justify-center gap-2 bg-white text-blue-700 hover:bg-blue-50 active:scale-95 transition-all text-xs font-black uppercase tracking-widest px-8 py-3.5 rounded-2xl shadow-xl shadow-black/10 ${isImporting || !rawText.trim() ? 'opacity-50 pointer-events-none' : ''}`}
+                              >
+                                {isImporting ? (
+                                  <>
+                                    <div className="w-3 h-3 border-2 border-blue-600/30 border-t-blue-600 rounded-full animate-spin"></div>
+                                    <span>{importProgress}</span>
+                                  </>
+                                ) : (
+                                  <>
+                                    <Sparkles size={14} className="animate-pulse fill-blue-700/20" />
+                                    <span>ORGANIZAR TUDO COM IA</span>
+                                  </>
+                                )}
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
 
@@ -3011,7 +3688,7 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
               {activeStep === 1 && ( /* Experience */
                 <div className="space-y-6">
                   {resumeData.experience.map((ex, i) => (
-                    <div key={ex.id} className="p-5 bg-bg-main rounded-2xl border border-border-main space-y-5 relative group">
+                    <div key={ex.id || `exp-${i}`} className="p-5 bg-bg-main rounded-2xl border border-border-main space-y-5 relative group">
                       <button onClick={() => removeExperience(ex.id)} className="absolute top-4 right-4 text-red-500 opacity-0 group-hover:opacity-100 transition-opacity">
                          <Trash2 size={16} />
                       </button>
@@ -3041,7 +3718,7 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
               {activeStep === 2 && ( /* Education */
                 <div className="space-y-6">
                   {resumeData.education.map((ed, i) => (
-                    <div key={ed.id} className="p-5 bg-bg-main rounded-2xl border border-border-main space-y-5">
+                    <div key={ed.id || `edu-${i}`} className="p-5 bg-bg-main rounded-2xl border border-border-main space-y-5">
                        <Input label="Instituição" value={ed.institution} onChange={(v: string) => {
                          const n = [...resumeData.education]; n[i].institution = v; setResumeData(p => ({...p, education: n}));
                        }} />
@@ -3078,8 +3755,8 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
                        }}>Adicionar</Button>
                     </div>
                     <div className="flex flex-wrap gap-2">
-                       {resumeData.skills.map(s => (
-                         <span key={s.id} className="px-3 py-1.5 bg-soft-blue text-primary-blue rounded-lg font-bold text-xs flex items-center gap-2">
+                       {resumeData.skills.map((s, idx) => (
+                         <span key={s.id || `sk-${idx}`} className="px-3 py-1.5 bg-soft-blue text-primary-blue rounded-lg font-bold text-xs flex items-center gap-2">
                            {s.name}
                            <button onClick={() => setResumeData(p => ({...p, skills: p.skills.filter(sk => sk.id !== s.id)}))}><X size={12} /></button>
                          </span>
@@ -3101,8 +3778,8 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
                        }}>Adicionar</Button>
                     </div>
                     <div className="flex flex-wrap gap-2">
-                       {resumeData.languages.map(l => (
-                         <span key={l.id} className="px-3 py-1.5 bg-soft-blue text-primary-blue rounded-lg font-bold text-xs flex items-center gap-2">
+                       {resumeData.languages.map((l, idx) => (
+                         <span key={l.id || `la-${idx}`} className="px-3 py-1.5 bg-soft-blue text-primary-blue rounded-lg font-bold text-xs flex items-center gap-2">
                            {l.name}
                            <button onClick={() => setResumeData(p => ({...p, languages: p.languages.filter(lk => lk.id !== l.id)}))}><X size={12} /></button>
                          </span>
@@ -3187,7 +3864,7 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
                    <div className="p-8 bg-primary-blue text-white rounded-3xl space-y-6 relative overflow-hidden shadow-2xl">
                       <div className="absolute -top-10 -right-10 w-32 h-32 bg-white/10 rounded-full blur-3xl"></div>
                       <h3 className="text-2xl font-black leading-tight">Documento Finalizado!</h3>
-                      <p className="text-sm opacity-80 font-medium text-balance">O seu combo profissional (CV + Carta) está pronto para ser enviado. Libere o download completo por apenas 1.150 Kzs.</p>
+                      <p className="text-sm opacity-80 font-medium text-balance">O seu combo profissional (CV + Carta) está pronto para ser enviado.</p>
                       
                       <Button variant="outline" className="w-full text-white border-white hover:bg-white/10" onClick={() => { setIsCoverLetterMode(false); setShowPreviewModal(true); }} icon={ExternalLink}>Ver currículo</Button>
                       <Button className="w-full bg-deep-blue text-white hover:bg-deep-blue/90 border-0" onClick={handleDownloadPdf} disabled={isDownloading} icon={Download}>
@@ -3230,7 +3907,7 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
                                 <FileText size={32} />
                              </div>
                              <h4 className="text-lg font-black text-deep-blue">Carta de Apresentação</h4>
-                             <p className="text-xs text-text-muted font-medium leading-relaxed">Destaque sua candidatura! Gere uma carta estratégica e personalizada para a vaga dos seus sonhos por apenas 1150 Kzs.</p>
+                             <p className="text-xs text-text-muted font-medium leading-relaxed">Destaque sua candidatura! Gere uma carta estratégica e personalizada para a vaga dos seus sonhos.</p>
                              
                              <Button variant="none" className="w-full bg-primary-blue text-white hover:bg-deep-blue h-12 text-sm font-black uppercase tracking-widest shadow-xl shadow-primary-blue/20 transition-all rounded-2xl" onClick={handleCreateCoverLetter} disabled={loading}>
                                 {loading ? (
@@ -3258,8 +3935,14 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
         </footer>
       </aside>
 
-      {/* Preview Section - Transformed to Modal explicitly on request/mobile, hidden standard */}
-      <main className={`flex-1 overflow-y-auto overflow-x-hidden w-full custom-scrollbar transition-all duration-300 print:flex print:bg-white print:p-0 print:m-0 print:overflow-visible flex-col items-center ${showPreviewModal ? 'fixed inset-0 z-50 bg-bg-main/95 backdrop-blur-md pt-20 pb-8 px-2 flex' : isDownloading ? 'fixed top-0 left-0 z-[-50] flex opacity-100 pointer-events-none' : 'hidden print:flex'}`}>
+      {/* Preview Section - Transformed to Modal explicitly on request/mobile, always visible and beautifully scaled on desktop/PC */}
+      <main className={`flex-1 overflow-y-auto overflow-x-hidden w-full custom-scrollbar transition-all duration-300 print:flex print:bg-white print:p-0 print:m-0 print:overflow-visible flex-col items-center ${
+        showPreviewModal 
+          ? 'fixed inset-0 z-50 bg-bg-main/95 backdrop-blur-md pt-20 pb-8 px-2 flex' 
+          : isDownloading 
+            ? 'fixed top-0 left-0 z-[-50] flex opacity-100 pointer-events-none' 
+            : 'hidden lg:flex lg:relative lg:bg-[#EEF2F6] lg:py-12 lg:px-6 print:flex'
+      }`}>
         
         {loading && (
           <div className="fixed inset-0 bg-white/60 backdrop-blur-md z-[100] flex flex-col items-center justify-center gap-6 print:hidden">
@@ -3288,12 +3971,12 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
         {/* Scaled Wrapper to prevent horizontal scroll and extra vertical whitespace */}
         <div 
           className="flex justify-center w-full"
-          style={{ height: showPreviewModal ? `${1122 * previewScale}px` : 'auto' }}
+          style={{ height: `${1122 * previewScale}px` }}
         >
           <div 
-            className={`origin-top transition-all duration-700 print:shadow-none print:w-full shadow-[0_60px_120px_-20px_rgba(0,0,0,0.2)]`}
+            className="origin-top transition-all duration-700 print:shadow-none print:w-full shadow-[0_60px_120px_-20px_rgba(0,0,0,0.2)]"
             style={{ 
-              transform: showPreviewModal ? `scale(${previewScale})` : 'none',
+              transform: `scale(${previewScale})`,
               width: '794px',
               height: '1122px',
               flexShrink: 0

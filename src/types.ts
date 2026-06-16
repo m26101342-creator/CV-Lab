@@ -64,4 +64,4 @@ export const INITIAL_RESUME_DATA: ResumeData = {
   themeColor: '#1B2A4A',
 };
 
-export type TemplateType = 't1_executive' | 't2_geometric' | 't3_modern' | 't4_barnabas' | 't5_jonathan';
+export type TemplateType = 't1_executive' | 't2_geometric' | 't3_modern' | 't4_barnabas' | 't5_jonathan' | 't6_creative' | 't7_professional' | 't8_geometric_blue' | 't9_emerald_pill';

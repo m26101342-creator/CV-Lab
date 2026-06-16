@@ -6,12 +6,12 @@ import { ResumeData } from '../types';
 Font.register({
   family: 'Inter',
   fonts: [
-    { src: 'https://cdn.jsdelivr.net/gh/rsms/inter@master/fonts/ttf/Inter-Regular.ttf', fontWeight: 400 },
-    { src: 'https://cdn.jsdelivr.net/gh/rsms/inter@master/fonts/ttf/Inter-Italic.ttf', fontWeight: 400, fontStyle: 'italic' },
-    { src: 'https://cdn.jsdelivr.net/gh/rsms/inter@master/fonts/ttf/Inter-Bold.ttf', fontWeight: 700 },
-    { src: 'https://cdn.jsdelivr.net/gh/rsms/inter@master/fonts/ttf/Inter-BoldItalic.ttf', fontWeight: 700, fontStyle: 'italic' },
-    { src: 'https://cdn.jsdelivr.net/gh/rsms/inter@master/fonts/ttf/Inter-Black.ttf', fontWeight: 900 },
-    { src: 'https://cdn.jsdelivr.net/gh/rsms/inter@master/fonts/ttf/Inter-BlackItalic.ttf', fontWeight: 900, fontStyle: 'italic' }
+    { src: 'https://cdn.jsdelivr.net/fontsource/fonts/inter@latest/latin-400-normal.ttf', fontWeight: 400 },
+    { src: 'https://cdn.jsdelivr.net/fontsource/fonts/inter@latest/latin-400-italic.ttf', fontWeight: 400, fontStyle: 'italic' },
+    { src: 'https://cdn.jsdelivr.net/fontsource/fonts/inter@latest/latin-700-normal.ttf', fontWeight: 700 },
+    { src: 'https://cdn.jsdelivr.net/fontsource/fonts/inter@latest/latin-700-italic.ttf', fontWeight: 700, fontStyle: 'italic' },
+    { src: 'https://cdn.jsdelivr.net/fontsource/fonts/inter@latest/latin-900-normal.ttf', fontWeight: 900 },
+    { src: 'https://cdn.jsdelivr.net/fontsource/fonts/inter@latest/latin-900-italic.ttf', fontWeight: 900, fontStyle: 'italic' }
   ]
 });
 
@@ -33,18 +33,18 @@ const commonStyles = StyleSheet.create({
 // Icons as SVG components for crisper rendering
 const Icons = {
   Mail: () => (
-    <Svg key="mail-svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <Svg key="mail-svg" style={{ marginRight: 4, alignSelf: 'center' }} width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <rect key="r1" width="20" height="16" x="2" y="4" rx="2" />
       <path key="p1" d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
     </Svg>
   ),
   Phone: () => (
-    <Svg key="phone-svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <Svg key="phone-svg" style={{ marginRight: 4, alignSelf: 'center' }} width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <path key="p1" d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
     </Svg>
   ),
   MapPin: () => (
-    <Svg key="map-svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <Svg key="map-svg" style={{ marginRight: 4, alignSelf: 'center' }} width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <path key="p1" d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" />
       <circle key="c1" cx="12" cy="10" r="3" />
     </Svg>
@@ -52,24 +52,26 @@ const Icons = {
 };
 
 const Template1 = ({ data }: { data: ResumeData }) => {
+  const cTheme = data.themeColor || '#1B2A4A';
   const styles = StyleSheet.create({
     container: { flexDirection: 'row', height: '100%' },
-    leftCol: { width: '35%', backgroundColor: '#1B2A4A', color: 'white', padding: 30 },
+    leftCol: { width: '35%', backgroundColor: cTheme, color: 'white', padding: 30 },
     rightCol: { width: '65%', padding: 40, backgroundColor: 'white' },
     avatar: { width: 120, height: 120, marginBottom: 20, alignSelf: 'center' },
     avatarText: { width: 120, height: 120, backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: 60, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 20, alignSelf: 'center' },
     sectionTitle: { fontSize: 12, fontWeight: 900, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 15, borderBottom: '1px solid rgba(255,255,255,0.2)', paddingBottom: 5 },
     contactRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 10, gap: 8 },
     contactText: { fontSize: 9 },
-    skillItem: { backgroundColor: 'rgba(255,255,255,0.1)', padding: '4px 10px', borderRadius: 4, marginBottom: 5, fontSize: 9 },
-    name: { fontSize: 32, fontWeight: 900, color: '#1B2A4A', marginBottom: 4 },
-    title: { fontSize: 14, fontWeight: 700, color: '#1B2A4A', opacity: 0.8, marginBottom: 15 },
-    divider: { height: 3, width: 40, backgroundColor: '#1B2A4A', marginBottom: 20 },
+    skillItem: { backgroundColor: 'rgba(255,255,255,0.1)', padding: '6px 10px', borderRadius: 4, marginBottom: 5 },
+    skillText: { fontSize: 9, color: '#FFFFFF' },
+    name: { fontSize: 32, fontWeight: 900, color: cTheme, marginBottom: 6, lineHeight: 1.15 },
+    title: { fontSize: 14, fontWeight: 700, color: '#4B5563', marginBottom: 15 },
+    divider: { height: 3, width: 40, backgroundColor: cTheme, marginBottom: 20 },
     summary: { fontSize: 10, lineHeight: 1.6, marginBottom: 30 },
-    mainSectionTitle: { fontSize: 13, fontWeight: 900, textTransform: 'uppercase', color: '#1B2A4A', marginBottom: 15 },
+    mainSectionTitle: { fontSize: 13, fontWeight: 900, textTransform: 'uppercase', color: cTheme, marginBottom: 15 },
     expItem: { marginBottom: 20, flexDirection: 'row' },
     expLine: { width: 1, backgroundColor: '#E5E7EB', marginHorizontal: 10, height: '100%' },
-    expDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: '#1B2A4A', position: 'absolute', left: -3, top: 4 },
+    expDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: cTheme, position: 'absolute', left: -3, top: 4 },
     expContent: { flex: 1 },
     expRole: { fontSize: 11, fontWeight: 700 },
     expPeriod: { fontSize: 8, color: '#9CA3AF', marginTop: 2, textTransform: 'uppercase' },
@@ -97,8 +99,10 @@ const Template1 = ({ data }: { data: ResumeData }) => {
         {data.skills.length > 0 && (
           <View style={{ marginBottom: 30 }}>
             <Text style={styles.sectionTitle}>Habilidades</Text>
-            {data.skills.map((s, idx) => (
-              <View key={s.id || `skill-${idx}`} style={styles.skillItem}><Text>{s.name}</Text></View>
+            {data.skills.filter(s => s?.name && s.name.trim() !== '').map((s, idx) => (
+              <View key={s.id || `skill-${idx}`} style={styles.skillItem}>
+                <Text style={styles.skillText}>{s.name.trim()}</Text>
+              </View>
             ))}
           </View>
         )}
@@ -143,18 +147,19 @@ const Template1 = ({ data }: { data: ResumeData }) => {
 };
 
 const Template2 = ({ data }: { data: ResumeData }) => {
+  const cTheme = data.themeColor || '#1B2A4A';
   const styles = StyleSheet.create({
     page: { padding: 0, backgroundColor: 'white' },
-    header: { backgroundColor: '#1B2A4A', padding: 40, color: 'white', flexDirection: 'row' },
+    header: { backgroundColor: cTheme, padding: 40, color: 'white', flexDirection: 'row' },
     avatar: { width: 100, height: 100, borderRadius: 50, marginRight: 30 },
     headerText: { flex: 1 },
-    name: { fontSize: 32, fontWeight: 900, marginBottom: 5 },
+    name: { fontSize: 32, fontWeight: 900, marginBottom: 5, lineHeight: 1.1 },
     title: { fontSize: 14, fontWeight: 700, opacity: 0.8, textTransform: 'uppercase' },
     divider: { height: 2, width: 30, backgroundColor: 'white', marginVertical: 15 },
     body: { padding: 40, flexDirection: 'row' },
     leftCol: { width: '35%', paddingRight: 30 },
     rightCol: { width: '65%' },
-    sectionTitle: { fontSize: 13, fontWeight: 900, textTransform: 'uppercase', borderBottom: '1px solid #1B2A4A', paddingBottom: 5, marginBottom: 15, color: '#1B2A4A' },
+    sectionTitle: { fontSize: 13, fontWeight: 900, textTransform: 'uppercase', borderBottom: `1px solid ${cTheme}`, paddingBottom: 5, marginBottom: 15, color: cTheme },
     contactItem: { flexDirection: 'row', alignItems: 'center', marginBottom: 10, gap: 10 },
     skillTag: { border: '1px solid #E5E7EB', padding: '4px 8px', borderRadius: 4, marginRight: 5, marginBottom: 5, fontSize: 9 }
   });
@@ -181,7 +186,7 @@ const Template2 = ({ data }: { data: ResumeData }) => {
             <View key="skills-section" style={{ marginTop: 30 }}>
               <Text style={styles.sectionTitle}>Habilidades</Text>
               <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
-                {data.skills.map((s, idx) => <View key={s.id || `skill-${idx}`} style={styles.skillTag}><Text>{s.name}</Text></View>)}
+                {data.skills.filter(s => s?.name && s.name.trim() !== '').map((s, idx) => <View key={s.id || `skill-${idx}`} style={styles.skillTag}><Text>{s.name.trim()}</Text></View>)}
               </View>
             </View>
           )}
@@ -191,7 +196,7 @@ const Template2 = ({ data }: { data: ResumeData }) => {
           {data.experience.map((ex, idx) => (
             <View key={ex.id || `exp-${idx}`} style={{ marginBottom: 20 }}>
               <Text style={{ fontSize: 11, fontWeight: 700 }}>{ex.position}</Text>
-              <Text style={{ fontSize: 10, color: '#1B2A4A', fontWeight: 900 }}>{ex.company}</Text>
+              <Text style={{ fontSize: 10, color: cTheme, fontWeight: 900 }}>{ex.company}</Text>
               <Text style={{ fontSize: 8, color: '#9CA3AF', marginVertical: 4 }}>{ex.startDate} - {ex.current ? "Presente" : ex.endDate}</Text>
               <Text style={{ fontSize: 10 }}>{ex.description.replace(/\*/g, '')}</Text>
             </View>
@@ -203,16 +208,17 @@ const Template2 = ({ data }: { data: ResumeData }) => {
 };
 
 const Template3 = ({ data }: { data: ResumeData }) => {
+  const cTheme = data.themeColor || '#2D3748';
   const styles = StyleSheet.create({
     header: { padding: 40, borderBottom: '1px solid #E5E7EB', alignItems: 'center' },
-    name: { fontSize: 36, fontWeight: 900, color: '#1B2A4A' },
-    title: { fontSize: 14, fontWeight: 700, color: '#1B2A4A', textTransform: 'uppercase', letterSpacing: 2, marginTop: 5 },
+    name: { fontSize: 36, fontWeight: 900, color: cTheme, lineHeight: 1.1 },
+    title: { fontSize: 14, fontWeight: 700, color: cTheme, textTransform: 'uppercase', letterSpacing: 2, marginTop: 5 },
     contactRow: { flexDirection: 'row', gap: 20, marginTop: 15, justifyContent: 'center' },
     contactItem: { flexDirection: 'row', alignItems: 'center', gap: 5, fontSize: 9 },
     body: { padding: 40, flexDirection: 'row' },
     leftCol: { width: '35%', paddingRight: 30 },
     rightCol: { width: '65%' },
-    sectionTitle: { fontSize: 11, fontWeight: 900, textTransform: 'uppercase', backgroundColor: '#F3F4F6', padding: '5px 10px', marginBottom: 15, color: '#1B2A4A' }
+    sectionTitle: { fontSize: 11, fontWeight: 900, textTransform: 'uppercase', backgroundColor: '#F3F4F6', padding: '5px 10px', marginBottom: 15, color: cTheme }
   });
 
   return (
@@ -243,7 +249,7 @@ const Template3 = ({ data }: { data: ResumeData }) => {
           {data.skills.length > 0 && (
             <View style={{ marginTop: 30 }}>
               <Text style={styles.sectionTitle}>Habilidades</Text>
-              {data.skills.map((s, idx) => <Text key={s.id || `skill-${idx}`} style={{ fontSize: 10, marginBottom: 5 }}>• {s.name}</Text>)}
+              {data.skills.filter(s => s?.name && s.name.trim() !== '').map((s, idx) => <Text key={s.id || `skill-${idx}`} style={{ fontSize: 10, marginBottom: 5 }}>• {s.name.trim()}</Text>)}
             </View>
           )}
         </View>
@@ -268,107 +274,250 @@ const Template3 = ({ data }: { data: ResumeData }) => {
 };
 
 const Template4 = ({ data }: { data: ResumeData }) => {
+  const cTheme = data.themeColor || '#323232';
   const styles = StyleSheet.create({
-    container: { flexDirection: 'row', height: '100%' },
-    sidebar: { width: '32%', backgroundColor: '#2D313A', color: 'white', padding: 30 },
-    main: { width: '68%', padding: 40 },
-    photo: { width: '100%', height: 250, alignSelf: 'center', marginBottom: 20, objectFit: 'cover' },
-    sidebarTitle: { fontSize: 18, fontWeight: 900, marginBottom: 5 },
-    sidebarLogo: { fontSize: 12, fontWeight: 700, color: 'rgba(255,255,255,0.7)', textTransform: 'uppercase', letterSpacing: 2, marginBottom: 30 },
-    sectionHeading: { fontSize: 24, fontWeight: 900, marginBottom: 10 },
-    decorationBar: { height: 6, width: 40, backgroundColor: '#E5E7EB', marginBottom: 20, borderRadius: 3 }
+    container: { flexDirection: 'row', height: '100%', backgroundColor: '#FFFFFF' },
+    sidebar: { width: '35%', backgroundColor: cTheme, color: '#FFFFFF', padding: '40 30' },
+    main: { width: '65%', padding: '40 40' },
+    headerBox: { marginBottom: 30, alignItems: 'center' },
+    name: { fontSize: 22, fontWeight: 900, textTransform: 'uppercase', marginBottom: 5, textAlign: 'center', lineHeight: 1.1 },
+    jobTitle: { fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 2, textAlign: 'center', color: '#E0E0E0' },
+    photoWrapper: { width: 130, height: 130, borderRadius: 65, borderWidth: 4, borderColor: 'rgba(255, 255, 255, 0.15)', overflow: 'hidden', marginBottom: 30, alignSelf: 'center' },
+    photo: { width: '100%', height: '100%', objectFit: 'cover' },
+    sectionTitleSidebar: { fontSize: 12, fontWeight: 900, textTransform: 'uppercase', letterSpacing: 1, textAlign: 'center', paddingBottom: 6, marginBottom: 15, borderBottomWidth: 1, borderBottomColor: 'rgba(255, 255, 255, 0.2)' },
+    sidebarText: { fontSize: 9, marginBottom: 6, textAlign: 'center', color: '#D1D5DB' },
+    sidebarSubHeading: { fontSize: 10, fontWeight: 700, textTransform: 'uppercase', color: '#FFFFFF', marginBottom: 2, textAlign: 'center', marginTop: 10 },
+    
+    sectionTitleMain: { fontSize: 14, fontWeight: 900, textTransform: 'uppercase', letterSpacing: 1, color: '#222222', paddingBottom: 4, marginBottom: 15, borderBottomWidth: 2, borderBottomColor: cTheme },
+    summaryText: { fontSize: 10, lineHeight: 1.6, color: '#4B5563', marginBottom: 25 },
+    
+    expBox: { marginBottom: 20 },
+    expHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 3 },
+    expTitle: { fontSize: 11, fontWeight: 900, color: '#222222' },
+    expDate: { fontSize: 9, color: '#6B7280', fontWeight: 700 },
+    expCompany: { fontSize: 10, fontWeight: 700, fontStyle: 'italic', color: '#4B5563', marginBottom: 5 },
+    expDesc: { fontSize: 9, lineHeight: 1.5, color: '#4B5563' },
+    
+    skillsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 25 },
+    skillItem: { width: '45%' },
+    skillName: { fontSize: 9, fontWeight: 700, color: '#222', marginBottom: 2 }
   });
 
   return (
     <View style={styles.container}>
       <View style={styles.sidebar}>
-        {data.personalInfo.photo && <Image src={data.personalInfo.photo} style={styles.photo} />}
-        <Text style={styles.sidebarTitle}>{data.personalInfo.fullName.replace(' ', '\n')}</Text>
-        <Text style={styles.sidebarLogo}>{data.personalInfo.title}</Text>
-        <View style={{ marginTop: 40 }}>
-          <Text style={{ fontWeight: 700, marginBottom: 15, borderBottom: '2px solid rgba(255,255,255,0.2)', paddingBottom: 5 }}>Contacto</Text>
-          <View style={{ gap: 10 }}>
-            <Text style={{ fontSize: 9 }}>{data.personalInfo.email}</Text>
-            <Text style={{ fontSize: 9 }}>{data.personalInfo.phone}</Text>
-            <Text style={{ fontSize: 9 }}>{data.personalInfo.location}</Text>
-          </View>
+        <View style={styles.headerBox}>
+          <Text style={styles.name}>{data.personalInfo.fullName}</Text>
+          <Text style={styles.jobTitle}>{data.personalInfo.title}</Text>
         </View>
-      </View>
-      <View style={styles.main}>
-        <Text style={styles.sectionHeading}>Perfil</Text>
-        <View style={styles.decorationBar} />
-        <Text style={{ fontSize: 11, lineHeight: 1.8, marginBottom: 40 }}>{data.personalInfo.summary.replace(/\*/g, '')}</Text>
 
-        <Text style={styles.sectionHeading}>Experiência</Text>
-        <View style={styles.decorationBar} />
-        {data.experience.map((ex, idx) => (
-          <View key={ex.id || `exp-${idx}`} style={{ marginBottom: 25 }}>
-            <Text style={{ fontSize: 13, fontWeight: 700 }}>{ex.position}</Text>
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginVertical: 4 }}>
-              <Text style={{ fontSize: 11, fontWeight: 700, color: '#4B5563' }}>{ex.company}</Text>
-              <Text style={{ fontSize: 10, color: '#9CA3AF' }}>{ex.startDate} - {ex.endDate}</Text>
-            </View>
-            <Text style={{ fontSize: 11, lineHeight: 1.6 }}>{ex.description.replace(/\*/g, '')}</Text>
+        {data.personalInfo.photo && (
+          <View style={styles.photoWrapper}>
+            <Image src={data.personalInfo.photo} style={styles.photo} />
           </View>
-        ))}
+        )}
+
+        <View style={{ marginBottom: 30 }}>
+          <Text style={styles.sectionTitleSidebar}>Contacto</Text>
+          <Text style={styles.sidebarText}>{data.personalInfo.email}</Text>
+          <Text style={styles.sidebarText}>{data.personalInfo.phone}</Text>
+          <Text style={styles.sidebarText}>{data.personalInfo.location}</Text>
+          {data.personalInfo.website && <Text style={styles.sidebarText}>{data.personalInfo.website}</Text>}
+        </View>
+
+        {data.education && data.education.length > 0 && (
+          <View style={{ marginBottom: 30 }}>
+            <Text style={styles.sectionTitleSidebar}>Educação</Text>
+            {data.education.map((edu, idx) => (
+              <View key={edu.id || `edu-${idx}`} style={{ marginBottom: 12 }}>
+                <Text style={styles.sidebarSubHeading}>{edu.institution}</Text>
+                <Text style={styles.sidebarText}>{edu.degree} - {edu.field}</Text>
+                <Text style={[styles.sidebarText, { fontSize: 8 }]}>{edu.startDate} - {edu.endDate}</Text>
+              </View>
+            ))}
+          </View>
+        )}
+      </View>
+
+      <View style={styles.main}>
+        {data.personalInfo.summary && (
+           <View>
+             <Text style={styles.sectionTitleMain}>Perfil</Text>
+             <Text style={styles.summaryText}>{data.personalInfo.summary.replace(/\*/g, '')}</Text>
+           </View>
+        )}
+
+        {data.experience && data.experience.length > 0 && (
+          <View>
+            <Text style={styles.sectionTitleMain}>Experiência</Text>
+            {data.experience.map((ex, idx) => (
+              <View key={ex.id || `exp-${idx}`} style={styles.expBox}>
+                <View style={styles.expHeader}>
+                  <Text style={styles.expTitle}>{ex.position}</Text>
+                  <Text style={styles.expDate}>{ex.startDate} - {ex.endDate}</Text>
+                </View>
+                <Text style={styles.expCompany}>{ex.company}</Text>
+                <Text style={styles.expDesc}>{ex.description.replace(/\*/g, '')}</Text>
+              </View>
+            ))}
+          </View>
+        )}
+
+        {data.skills && data.skills.length > 0 && (
+           <View style={{ marginTop: 5 }}>
+             <Text style={styles.sectionTitleMain}>Habilidades</Text>
+             <View style={styles.skillsGrid}>
+               {data.skills.filter(s => s?.name && s.name.trim() !== '').map((s, idx) => (
+                 <View key={s.id || `skill-${idx}`} style={styles.skillItem}>
+                   <Text style={styles.skillName}>• {s.name.trim()}</Text>
+                 </View>
+               ))}
+             </View>
+           </View>
+        )}
+
+        {data.languages && data.languages.length > 0 && (
+           <View style={{ marginTop: 5 }}>
+             <Text style={styles.sectionTitleMain}>Idiomas</Text>
+             <View style={styles.skillsGrid}>
+               {data.languages.filter(s => s?.name && s.name.trim() !== '').map((s, idx) => (
+                 <View key={s.id || `lang-${idx}`} style={styles.skillItem}>
+                   <Text style={styles.skillName}>• {s.name.trim()} - {s.level}</Text>
+                 </View>
+               ))}
+             </View>
+           </View>
+        )}
       </View>
     </View>
   );
 };
 
 const Template5 = ({ data }: { data: ResumeData }) => {
+  const cTheme = data.themeColor || '#1B2E4B';
   const styles = StyleSheet.create({
-    container: { flexDirection: 'row', height: '100%' },
-    sidebar: { width: '34%', backgroundColor: '#F3F4F6', padding: 30, alignItems: 'center' },
-    main: { width: '66%', padding: 40 },
-    photo: { width: 140, height: 140, borderRadius: 70, border: '5pt solid white', marginBottom: 30 },
-    sidebarSection: { width: '100%', marginBottom: 30 },
-    sidebarTitle: { fontSize: 11, fontWeight: 900, textTransform: 'uppercase', letterSpacing: 2, color: '#4A4C53', borderBottom: '2px solid rgba(74,76,83,0.2)', paddingBottom: 5, marginBottom: 15 },
-    name: { fontSize: 40, fontWeight: 900, color: '#4A4C53', marginBottom: 10 },
-    title: { fontSize: 14, fontWeight: 900, textTransform: 'uppercase', letterSpacing: 4, color: '#4A4C53', opacity: 0.8 },
-    mainSection: { marginBottom: 30 },
-    mainTitle: { fontSize: 16, fontWeight: 900, textTransform: 'uppercase', letterSpacing: 2, marginBottom: 15, borderBottom: '1px solid #F3F4F6', paddingBottom: 10 }
+    container: { height: '100%', backgroundColor: '#FFFFFF', padding: 30 },
+    header: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 20 },
+    headerLeft: { width: '55%', paddingTop: 20 },
+    name: { fontSize: 38, fontWeight: 900, color: cTheme, lineHeight: 1.1, textTransform: 'uppercase' },
+    title: { fontSize: 16, fontWeight: 700, color: '#4B5563', marginTop: 8 },
+    
+    headerRight: { width: '40%', alignItems: 'flex-end' },
+    photoWrapper: { width: 150, height: 180, overflow: 'hidden', borderBottomLeftRadius: 75, borderBottomRightRadius: 75, borderTopLeftRadius: 75, borderTopRightRadius: 75, backgroundColor: '#E2E8F0' },
+    photo: { width: '100%', height: '100%', objectFit: 'cover' },
+    
+    body: { flexDirection: 'row', height: '100%', flex: 1 },
+    
+    leftColumn: { width: '40%', backgroundColor: cTheme, borderTopRightRadius: 60, padding: 30, color: '#FFFFFF' },
+    leftSectionTitle: { fontSize: 16, fontWeight: 900, color: '#FFFFFF', marginBottom: 15, marginTop: 25 },
+    leftText: { fontSize: 9, color: 'rgba(255,255,255,0.8)', lineHeight: 1.6, marginBottom: 8 },
+    
+    rightColumn: { width: '60%', padding: '30 0 0 30' },
+    rightSectionTitle: { fontSize: 18, fontWeight: 900, color: cTheme, marginBottom: 15, paddingBottom: 5, borderBottomWidth: 1, borderBottomColor: '#E5E7EB', marginTop: 10 },
+    
+    expBox: { marginBottom: 20 },
+    expTitle: { fontSize: 11, fontWeight: 900, color: '#111827' },
+    expCompanyRow: { flexDirection: 'row', justifyContent: 'space-between', marginVertical: 3 },
+    expCompany: { fontSize: 10, fontWeight: 700, color: cTheme },
+    expDate: { fontSize: 9, fontWeight: 700, color: '#6B7280' },
+    expDesc: { fontSize: 9, color: '#4B5563', lineHeight: 1.5, marginTop: 4 },
+    
+    eduBox: { marginBottom: 15 },
+    eduTitle: { fontSize: 11, fontWeight: 900, color: '#111827' },
+    eduDegree: { fontSize: 10, color: '#4B5563', marginTop: 2 },
+    eduDate: { fontSize: 9, color: '#6B7280', marginTop: 2, fontWeight: 700 },
+    
+    skillCircleText: { fontSize: 8, color: '#FFFFFF' }
   });
 
   return (
     <View style={styles.container}>
-      <View style={styles.sidebar}>
-        {data.personalInfo.photo && <Image src={data.personalInfo.photo} style={styles.photo} />}
-        <View style={styles.sidebarSection}>
-          <Text style={styles.sidebarTitle}>Contacto</Text>
-          <Text style={{ fontSize: 10, marginBottom: 10 }}>{data.personalInfo.email}</Text>
-          <Text style={{ fontSize: 10, marginBottom: 10 }}>{data.personalInfo.phone}</Text>
-          <Text style={{ fontSize: 10 }}>{data.personalInfo.location}</Text>
+      <View style={styles.header}>
+        <View style={styles.headerLeft}>
+          <Text style={styles.name}>{data.personalInfo.fullName.split(' ')[0]}</Text>
+          <Text style={styles.name}>{data.personalInfo.fullName.split(' ').slice(1).join(' ')}</Text>
+          <Text style={styles.title}>{data.personalInfo.title}</Text>
         </View>
-        <View style={styles.sidebarSection}>
-          <Text style={styles.sidebarTitle}>Educação</Text>
-          {data.education.map((e, idx) => (
-            <View key={e.id || `edu-${idx}`} style={{ marginBottom: 15 }}>
-              <Text style={{ fontSize: 11, fontWeight: 700, color: '#4A4C53' }}>{e.institution}</Text>
-              <Text style={{ fontSize: 10 }}>{e.degree}</Text>
+        <View style={styles.headerRight}>
+          {data.personalInfo.photo && (
+            <View style={styles.photoWrapper}>
+              <Image src={data.personalInfo.photo} style={styles.photo} />
             </View>
-          ))}
+          )}
         </View>
       </View>
-      <View style={styles.main}>
-        <Text style={styles.name}>{data.personalInfo.fullName.split(' ')[0]}</Text>
-        <Text style={[styles.name, { fontWeight: 400, marginTop: -10 }]}>{data.personalInfo.fullName.split(' ').slice(1).join(' ')}</Text>
-        <Text style={styles.title}>{data.personalInfo.title}</Text>
-        
-        <View style={{ marginTop: 40 }}>
-          <Text style={styles.mainTitle}>Perfil</Text>
-          <Text style={{ fontSize: 11, lineHeight: 1.8, marginBottom: 30 }}>{data.personalInfo.summary.replace(/\*/g, '')}</Text>
-          <Text style={styles.mainTitle}>Experiência</Text>
-          {data.experience.map((ex, idx) => (
-            <View key={ex.id || `exp-${idx}`} style={{ marginBottom: 20 }}>
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 5 }}>
-                <Text style={{ fontWeight: 900, fontSize: 12 }}>{ex.position}</Text>
-                <Text style={{ fontSize: 8, backgroundColor: '#F3F4F6', padding: '2px 8px', borderRadius: 4 }}>{ex.startDate} - {ex.endDate}</Text>
-              </View>
-              <Text style={{ fontSize: 11, fontWeight: 700, color: '#4A4C53', marginBottom: 5 }}>{ex.company}</Text>
-              <Text style={{ fontSize: 10, lineHeight: 1.5 }}>{ex.description.replace(/\*/g, '')}</Text>
+
+      <View style={styles.body}>
+        <View style={styles.leftColumn}>
+          {data.personalInfo.summary && (
+            <View>
+              <Text style={[styles.leftSectionTitle, { marginTop: 0 }]}>Perfil</Text>
+              <Text style={styles.leftText}>{data.personalInfo.summary.replace(/\*/g, '')}</Text>
             </View>
-          ))}
+          )}
+          
+          <View>
+             <Text style={styles.leftSectionTitle}>Contacto</Text>
+             <Text style={styles.leftText}>{data.personalInfo.phone}</Text>
+             <Text style={styles.leftText}>{data.personalInfo.email}</Text>
+             <Text style={styles.leftText}>{data.personalInfo.location}</Text>
+             {data.personalInfo.website && <Text style={styles.leftText}>{data.personalInfo.website}</Text>}
+          </View>
+          
+          {data.skills && data.skills.length > 0 && (
+            <View>
+              <Text style={styles.leftSectionTitle}>Habilidades</Text>
+              <View style={{ gap: 6 }}>
+                {data.skills.filter(s => s?.name).map((s, idx) => (
+                  <Text key={s.id || `skill-${idx}`} style={styles.leftText}>• {s.name.trim()}</Text>
+                ))}
+              </View>
+            </View>
+          )}
+          
+          {data.languages && data.languages.length > 0 && (
+            <View>
+              <Text style={styles.leftSectionTitle}>Idiomas</Text>
+              <View style={{ gap: 6 }}>
+                {data.languages.filter(s => s?.name).map((s, idx) => (
+                  <Text key={s.id || `lang-${idx}`} style={styles.leftText}>• {s.name.trim()} - {s.level}</Text>
+                ))}
+              </View>
+            </View>
+          )}
+        </View>
+
+        <View style={styles.rightColumn}>
+          {data.experience && data.experience.length > 0 && (
+            <View>
+              <Text style={[styles.rightSectionTitle, { marginTop: 0 }]}>Experiência</Text>
+              {data.experience.map((ex, idx) => (
+                <View key={ex.id || `exp-${idx}`} style={styles.expBox}>
+                  <Text style={styles.expTitle}>{ex.position}</Text>
+                  <View style={styles.expCompanyRow}>
+                    <Text style={styles.expCompany}>{ex.company}</Text>
+                    <Text style={styles.expDate}>{ex.startDate} • {ex.endDate}</Text>
+                  </View>
+                  <Text style={styles.expDesc}>{ex.description.replace(/\*/g, '')}</Text>
+                </View>
+              ))}
+            </View>
+          )}
+          
+          {data.education && data.education.length > 0 && (
+            <View>
+              <Text style={styles.rightSectionTitle}>Educação</Text>
+              {data.education.map((e, idx) => (
+                <View key={e.id || `edu-${idx}`} style={styles.eduBox}>
+                   <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                     <Text style={styles.eduTitle}>{e.institution}</Text>
+                     <Text style={styles.expDate}>{e.startDate} • {e.endDate}</Text>
+                   </View>
+                   <Text style={styles.eduDegree}>{e.degree} - {e.field}</Text>
+                </View>
+              ))}
+            </View>
+          )}
         </View>
       </View>
     </View>
@@ -376,17 +525,19 @@ const Template5 = ({ data }: { data: ResumeData }) => {
 };
 
 const CoverLetter = ({ data }: { data: any }) => {
+  const cTheme = data.themeColor || '#1B2A4A';
   const styles = StyleSheet.create({
     container: { padding: 50, flex: 1 },
-    header: { marginBottom: 30, borderBottom: '1pt solid #E5E7EB', paddingBottom: 20 },
-    name: { fontSize: 24, fontWeight: 900, color: '#1B2A4A', marginBottom: 4 },
-    title: { fontSize: 10, fontWeight: 700, color: '#6B7280', textTransform: 'uppercase', letterSpacing: 1 },
-    contactRow: { flexDirection: 'row', justifyContent: 'flex-end', gap: 15, marginTop: -35 },
-    contactText: { fontSize: 9, color: '#4B5563' },
-    dateRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 40, marginTop: 40, fontSize: 10, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase' },
+    header: { marginBottom: 30, borderBottom: `1.5pt solid ${cTheme}40`, paddingBottom: 20 },
+    name: { fontSize: 24, fontWeight: 900, color: cTheme, marginBottom: 6, lineHeight: 1.1 },
+    title: { fontSize: 10, fontWeight: 700, color: '#6B7280', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 12 },
+    contactRow: { flexDirection: 'row', gap: 15, alignItems: 'center' },
+    contactItem: { flexDirection: 'row', alignItems: 'center' },
+    contactText: { fontSize: 9, color: '#4B5563', marginLeft: 4 },
+    dateRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 30, marginTop: 30, fontSize: 10, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase' },
     content: { fontSize: 12, lineHeight: 1.8, color: '#374151', textAlign: 'justify' },
     footer: { marginTop: 60, alignItems: 'flex-end' },
-    signature: { fontSize: 14, fontWeight: 900, color: '#1B2A4A', marginTop: 10, fontStyle: 'italic' }
+    signature: { fontSize: 14, fontWeight: 900, color: cTheme, marginTop: 10, fontStyle: 'italic' }
   });
 
   const info = data.personalInfo || {};
@@ -394,13 +545,27 @@ const CoverLetter = ({ data }: { data: any }) => {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <View>
-          <Text style={styles.name}>{info.fullName || 'Seu Nome'}</Text>
-          <Text style={styles.title}>{info.title || 'Seu Cargo'}</Text>
-        </View>
+        <Text style={styles.name}>{info.fullName || 'Seu Nome'}</Text>
+        <Text style={styles.title}>{info.title || 'Seu Cargo'}</Text>
         <View style={styles.contactRow}>
-          <Text style={styles.contactText}>{info.email}</Text>
-          <Text style={styles.contactText}>{info.phone}</Text>
+          {info.email && (
+            <View style={styles.contactItem}>
+              <Icons.Mail />
+              <Text style={styles.contactText}>{info.email}</Text>
+            </View>
+          )}
+          {info.phone && (
+            <View style={styles.contactItem}>
+              <Icons.Phone />
+              <Text style={styles.contactText}>{info.phone}</Text>
+            </View>
+          )}
+          {info.location && (
+            <View style={styles.contactItem}>
+              <Icons.MapPin />
+              <Text style={styles.contactText}>{info.location}</Text>
+            </View>
+          )}
         </View>
       </View>
 
@@ -421,6 +586,502 @@ const CoverLetter = ({ data }: { data: any }) => {
   );
 };
 
+const Template6 = ({ data }: { data: ResumeData }) => {
+  const cTheme = data.themeColor || '#34495E';
+  const styles = StyleSheet.create({
+    container: { padding: 40, flex: 1, backgroundColor: '#fcfcfc', border: `12pt solid ${cTheme}` },
+    header: { alignItems: 'center', borderBottom: `2pt solid ${cTheme}`, paddingBottom: 20, marginBottom: 20 },
+    photo: { width: 100, height: 100, borderRadius: 15, marginBottom: 15 },
+    name: { fontSize: 36, fontWeight: 900, color: cTheme, textTransform: 'uppercase', letterSpacing: 2, marginBottom: 8 },
+    title: { fontSize: 12, fontWeight: 700, color: '#6B7280', textTransform: 'uppercase', letterSpacing: 4 },
+    contactRow: { flexDirection: 'row', gap: 15, marginTop: 15, justifyContent: 'center' },
+    contactText: { fontSize: 9, fontWeight: 900, color: '#6B7280', textTransform: 'uppercase', letterSpacing: 1 },
+    body: { flexDirection: 'row', gap: 40 },
+    col: { flex: 1 },
+    sectionTitle: { fontSize: 14, fontWeight: 900, textTransform: 'uppercase', letterSpacing: 2, marginBottom: 15, color: '#111827' },
+    expBox: { marginBottom: 20, paddingLeft: 10, borderLeft: `2pt solid ${cTheme}` },
+    expTitle: { fontSize: 11, fontWeight: 900, color: '#111827' },
+    expCompany: { fontSize: 9, fontWeight: 700, color: '#6B7280', marginBottom: 2 },
+    expDesc: { fontSize: 9, lineHeight: 1.6, color: '#4B5563' },
+    summary: { fontSize: 11, fontStyle: 'italic', color: '#4B5563', textAlign: 'center', marginBottom: 30, lineHeight: 1.8 }
+  });
+
+  return (
+    <View style={styles.container}>
+      <View style={styles.header}>
+        {data.personalInfo.photo && <Image src={data.personalInfo.photo} style={styles.photo} />}
+        <Text style={styles.name}>{data.personalInfo.fullName}</Text>
+        <Text style={styles.title}>{data.personalInfo.title}</Text>
+        <View style={styles.contactRow}>
+          <Text style={styles.contactText}>{data.personalInfo.phone}</Text>
+          <Text style={styles.contactText}>•</Text>
+          <Text style={styles.contactText}>{data.personalInfo.email}</Text>
+        </View>
+      </View>
+      
+      {data.personalInfo.summary && (
+        <Text style={styles.summary}>"{data.personalInfo.summary.replace(/\*/g, '')}"</Text>
+      )}
+
+      <View style={styles.body}>
+        <View style={styles.col}>
+          {data.experience.length > 0 && (
+            <View style={{ marginBottom: 20 }}>
+              <Text style={styles.sectionTitle}>Experiência</Text>
+              {data.experience.map((ex, idx) => (
+                <View key={ex.id || `exp-${idx}`} style={styles.expBox}>
+                  <Text style={styles.expTitle}>{ex.position}</Text>
+                  <Text style={styles.expCompany}>{ex.company} | {ex.startDate} - {ex.endDate}</Text>
+                  <Text style={styles.expDesc}>{ex.description.replace(/\*/g, '')}</Text>
+                </View>
+              ))}
+            </View>
+          )}
+        </View>
+        <View style={styles.col}>
+          {data.education.length > 0 && (
+            <View style={{ marginBottom: 30 }}>
+              <Text style={styles.sectionTitle}>Formação</Text>
+              {data.education.map((e, idx) => (
+                <View key={e.id || `edu-${idx}`} style={{ marginBottom: 15, padding: 15, backgroundColor: '#FFFFFF', border: '1pt solid #E5E7EB', borderRadius: 8 }}>
+                  <Text style={{ fontSize: 11, fontWeight: 900, color: '#111827' }}>{e.degree}</Text>
+                  <Text style={{ fontSize: 9, color: '#4B5563', marginVertical: 2 }}>{e.institution}</Text>
+                  <Text style={{ fontSize: 8, fontWeight: 900, color: '#9CA3AF' }}>{e.startDate} - {e.endDate}</Text>
+                </View>
+              ))}
+            </View>
+          )}
+          {data.skills.length > 0 && (
+            <View>
+              <Text style={styles.sectionTitle}>Habilidades</Text>
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 5 }}>
+                {data.skills.filter(s => s?.name).map((s, idx) => (
+                  <Text key={s.id || `skill-${idx}`} style={{ padding: '4 8', backgroundColor: '#FFFFFF', border: '1pt solid #E5E7EB', borderRadius: 4, fontSize: 8, fontWeight: 700, color: '#374151' }}>{s.name.trim()}</Text>
+                ))}
+              </View>
+            </View>
+          )}
+        </View>
+      </View>
+    </View>
+  );
+};
+
+const Template7 = ({ data }: { data: ResumeData }) => {
+  const cTheme = data.themeColor || '#186A3B';
+  const styles = StyleSheet.create({
+    container: { flex: 1, backgroundColor: '#FFFFFF' },
+    header: { backgroundColor: cTheme, padding: 40, paddingBottom: 60, color: '#FFFFFF', flexDirection: 'row', justifyContent: 'space-between' },
+    name: { fontSize: 36, fontWeight: 900, textTransform: 'uppercase', marginBottom: 5 },
+    title: { fontSize: 14, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 2, opacity: 0.9 },
+    contactBar: { backgroundColor: '#F3F4F6', padding: '15 40', flexDirection: 'row', gap: 20 },
+    contactText: { fontSize: 9, fontWeight: 900, color: '#6B7280', textTransform: 'uppercase' },
+    body: { padding: 40, flexDirection: 'row', gap: 30 },
+    mainCol: { width: '60%', borderRight: '1pt solid #E5E7EB', paddingRight: 30 },
+    sideCol: { width: '40%' },
+    sectionTitle: { fontSize: 16, fontWeight: 900, textTransform: 'uppercase', color: '#111827', marginBottom: 15 },
+    expBox: { marginBottom: 20 },
+    expTitle: { fontSize: 12, fontWeight: 900, color: '#111827' },
+    expDate: { fontSize: 9, fontWeight: 900, color: '#9CA3AF', textTransform: 'uppercase' },
+    expCompany: { fontSize: 10, fontWeight: 900, color: cTheme, textTransform: 'uppercase', marginVertical: 3 },
+    expDesc: { fontSize: 10, lineHeight: 1.6, color: '#4B5563' }
+  });
+
+  return (
+    <View style={styles.container}>
+      <View style={styles.header}>
+        <View style={{ width: '70%' }}>
+          <Text style={styles.name}>{data.personalInfo.fullName}</Text>
+          <Text style={styles.title}>{data.personalInfo.title}</Text>
+        </View>
+        {data.personalInfo.photo && (
+          <Image src={data.personalInfo.photo} style={{ width: 80, height: 80, borderRadius: 40, border: '3pt solid white' }} />
+        )}
+      </View>
+      <View style={styles.contactBar}>
+        <Text style={styles.contactText}>{data.personalInfo.phone}</Text>
+        <Text style={styles.contactText}>{data.personalInfo.email}</Text>
+        <Text style={styles.contactText}>{data.personalInfo.location}</Text>
+      </View>
+      <View style={styles.body}>
+        <View style={styles.mainCol}>
+          {data.personalInfo.summary && (
+            <View style={{ marginBottom: 30 }}>
+              <Text style={styles.sectionTitle}>Síntese</Text>
+              <Text style={{ fontSize: 10, lineHeight: 1.6, color: '#4B5563' }}>{data.personalInfo.summary.replace(/\*/g, '')}</Text>
+            </View>
+          )}
+          {data.experience.length > 0 && (
+            <View>
+              <Text style={styles.sectionTitle}>Experiência</Text>
+              {data.experience.map((ex, idx) => (
+                <View key={ex.id || `exp-${idx}`} style={styles.expBox}>
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <Text style={styles.expTitle}>{ex.position}</Text>
+                    <Text style={styles.expDate}>{ex.startDate} - {ex.endDate}</Text>
+                  </View>
+                  <Text style={styles.expCompany}>{ex.company}</Text>
+                  <Text style={styles.expDesc}>{ex.description.replace(/\*/g, '')}</Text>
+                </View>
+              ))}
+            </View>
+          )}
+        </View>
+        <View style={styles.sideCol}>
+          {data.skills.length > 0 && (
+            <View style={{ marginBottom: 30 }}>
+              <Text style={styles.sectionTitle}>Habilidades</Text>
+              {data.skills.filter(s => s?.name).map((s, idx) => (
+                <View key={s.id || `skill-${idx}`} style={{ marginBottom: 8 }}>
+                  <Text style={{ fontSize: 9, fontWeight: 700, color: '#4B5563', marginBottom: 2 }}>{s.name.trim()}</Text>
+                  <View style={{ width: '100%', height: 4, backgroundColor: '#F3F4F6', borderRadius: 2 }}>
+                     <View style={{ height: 4, borderRadius: 2, backgroundColor: cTheme, width: s.level === 'Especialista' ? '100%' : s.level === 'Avançado' ? '80%' : s.level === 'Intermédio' ? '60%' : '40%' }} />
+                  </View>
+                </View>
+              ))}
+            </View>
+          )}
+          {data.education.length > 0 && (
+            <View>
+              <Text style={styles.sectionTitle}>Educação</Text>
+              {data.education.map((e, idx) => (
+                <View key={e.id || `edu-${idx}`} style={{ marginBottom: 15 }}>
+                  <Text style={{ fontSize: 10, fontWeight: 900, color: '#111827' }}>{e.degree}</Text>
+                  <Text style={{ fontSize: 9, color: '#4B5563', marginTop: 2 }}>{e.institution}</Text>
+                </View>
+              ))}
+            </View>
+          )}
+        </View>
+      </View>
+    </View>
+  );
+};
+
+const Template8 = ({ data }: { data: ResumeData }) => {
+  const cTheme = data.themeColor || '#1E40AF';
+  const styles = StyleSheet.create({
+    container: { flexDirection: 'row', height: '100%', backgroundColor: '#FFFFFF', position: 'relative' },
+    leftCol: { width: '35%', backgroundColor: '#F9FAFB', borderRight: '1pt solid #E5E7EB', padding: 20, paddingTop: 115 },
+    rightCol: { width: '65%', padding: 25, paddingTop: 30 },
+    avatar: { width: 90, height: 90, borderRadius: 45, border: '3pt solid #38BDF8', alignSelf: 'center', marginBottom: 20, objectFit: 'cover' },
+    avatarPlaceholder: { width: 90, height: 90, borderRadius: 45, backgroundColor: '#E5E7EB', alignSelf: 'center', marginBottom: 20, alignItems: 'center', justifyContent: 'center' },
+    avatarText: { fontSize: 24, fontWeight: 900, color: '#9CA3AF' },
+    sidebarTitle: { fontSize: 11, fontWeight: 900, textTransform: 'uppercase', letterSpacing: 1, color: cTheme, borderBottom: '1.5pt solid #38BDF8', paddingBottom: 4, marginBottom: 12, textAlign: 'center' },
+    contactItem: { flexDirection: 'row', alignItems: 'center', marginBottom: 8 },
+    contactBubble: { width: 14, height: 14, borderRadius: 7, backgroundColor: '#38BDF8', alignItems: 'center', justifyContent: 'center', marginRight: 6 },
+    contactText: { fontSize: 8, color: '#4B5563', flex: 1 },
+    skillRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 },
+    skillText: { fontSize: 8, color: '#4B5563', fontWeight: 700, width: '55%' },
+    skillDots: { flexDirection: 'row', gap: 3 },
+    skillDot: { width: 5, height: 5, borderRadius: 2.5 },
+    interestBadge: { padding: '3 6', backgroundColor: '#FFFFFF', border: '1pt solid #E5E7EB', borderRadius: 10, fontSize: 8, color: '#4B5563', marginRight: 4, marginBottom: 4 },
+    interestsWrap: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', marginTop: 5 },
+    
+    headerBlock: { marginBottom: 35, marginTop: 10 },
+    name: { fontSize: 24, fontWeight: 900, color: '#FFFFFF', textTransform: 'uppercase', marginBottom: 2 },
+    title: { fontSize: 10, fontWeight: 700, color: '#38BDF8', textTransform: 'uppercase', letterSpacing: 2 },
+    
+    sectionTitle: { fontSize: 10, fontWeight: 900, textTransform: 'uppercase', letterSpacing: 1, color: '#FFFFFF', backgroundColor: cTheme, padding: '4 12', borderRadius: 10, marginBottom: 10, marginTop: 12, alignSelf: 'flex-start' },
+    summary: { fontSize: 9, lineHeight: 1.6, color: '#4B5563', marginBottom: 10 },
+    
+    timelineItem: { position: 'relative', paddingLeft: 12, borderLeft: '1.5pt solid #38BDF8', marginBottom: 12, marginLeft: 4 },
+    timelineDot: { position: 'absolute', left: -4.5, top: 2, width: 7, height: 7, borderRadius: 3.5, backgroundColor: '#38BDF8', border: '1.5pt solid #FFFFFF' },
+    itemHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 2 },
+    itemTitle: { fontSize: 9, fontWeight: 900, color: '#111827' },
+    itemSubtitle: { fontSize: 8, fontWeight: 700, color: cTheme },
+    itemPeriod: { fontSize: 8, fontWeight: 900, color: '#38BDF8' },
+    itemDesc: { fontSize: 8.5, lineHeight: 1.5, color: '#4B5563', marginTop: 2 }
+  });
+
+  return (
+    <View style={styles.container}>
+      {/* Top Geometric Accent */}
+      <Svg style={{ position: 'absolute', top: 0, left: 0, width: 595, height: 130 }}>
+        <Path d="M0 0 L595 0 L595 18 L0 102 Z" fill="#38BDF8" opacity={0.3} />
+        <Path d="M0 0 L595 0 L595 48 L0 120 Z" fill={cTheme} />
+      </Svg>
+
+      {/* Bottom Geometric Accent */}
+      <Svg style={{ position: 'absolute', bottom: 0, left: 0, width: 595, height: 35 }}>
+        <Path d="M0 35 L595 35 L595 9 L0 35 Z" fill="#38BDF8" opacity={0.2} />
+        <Path d="M0 35 L595 35 L595 0 L0 35 Z" fill={cTheme} />
+      </Svg>
+
+      <View style={styles.leftCol}>
+        {data.personalInfo.photo ? (
+          <Image src={data.personalInfo.photo} style={styles.avatar} />
+        ) : (
+          <View style={styles.avatarPlaceholder}>
+            <Text style={styles.avatarText}>{data.personalInfo.fullName ? data.personalInfo.fullName.charAt(0).toUpperCase() : 'CV'}</Text>
+          </View>
+        )}
+
+        <View style={{ marginBottom: 20 }}>
+          <Text style={styles.sidebarTitle}>Contacto</Text>
+          <View style={{ gap: 4 }}>
+            {data.personalInfo.email && (
+              <View style={styles.contactItem}>
+                <View style={styles.contactBubble}><Icons.Mail /></View>
+                <Text style={styles.contactText}>{data.personalInfo.email}</Text>
+              </View>
+            )}
+            {data.personalInfo.phone && (
+              <View style={styles.contactItem}>
+                <View style={styles.contactBubble}><Icons.Phone /></View>
+                <Text style={styles.contactText}>{data.personalInfo.phone}</Text>
+              </View>
+            )}
+            {data.personalInfo.location && (
+              <View style={styles.contactItem}>
+                <View style={styles.contactBubble}><Icons.MapPin /></View>
+                <Text style={styles.contactText}>{data.personalInfo.location}</Text>
+              </View>
+            )}
+          </View>
+        </View>
+
+        {data.skills.length > 0 && (
+          <View style={{ marginBottom: 20 }}>
+            <Text style={styles.sidebarTitle}>Habilidades</Text>
+            {data.skills.filter(s => s && s.name).map((s, idx) => {
+              const count = s.level === 'Especialista' ? 5 : s.level === 'Avançado' ? 4 : s.level === 'Intermédio' ? 3 : 2;
+              return (
+                <View key={s.id || `skill-${idx}`} style={styles.skillRow}>
+                  <Text style={styles.skillText}>{s.name}</Text>
+                  <View style={styles.skillDots}>
+                    {[1, 2, 3, 4, 5].map(d => (
+                      <View key={d} style={[styles.skillDot, { backgroundColor: d <= count ? '#38BDF8' : '#E5E7EB' }]} />
+                    ))}
+                  </View>
+                </View>
+              );
+            })}
+          </View>
+        )}
+
+        {data.interests && data.interests.length > 0 && (
+          <View>
+            <Text style={styles.sidebarTitle}>Interesses</Text>
+            <View style={styles.interestsWrap}>
+              {data.interests.map((interest, idx) => (
+                <Text key={idx} style={styles.interestBadge}>{interest}</Text>
+              ))}
+            </View>
+          </View>
+        )}
+      </View>
+
+      <View style={styles.rightCol}>
+        <View style={styles.headerBlock}>
+          <Text style={styles.name}>{data.personalInfo.fullName || 'Seu Nome'}</Text>
+          <Text style={styles.title}>{data.personalInfo.title || 'Cargo Desejado'}</Text>
+        </View>
+
+        {data.personalInfo.summary && (
+          <View>
+            <Text style={styles.sectionTitle}>Sobre Mim</Text>
+            <Text style={styles.summary}>{data.personalInfo.summary.replace(/\*/g, '')}</Text>
+          </View>
+        )}
+
+        {data.education.length > 0 && (
+          <View>
+            <Text style={styles.sectionTitle}>Formação Académica</Text>
+            {data.education.map((e, idx) => (
+              <View key={e.id || `edu-${idx}`} style={styles.timelineItem}>
+                <View style={styles.timelineDot} />
+                <View style={styles.itemHeader}>
+                  <Text style={styles.itemTitle}>{e.degree}</Text>
+                  <Text style={styles.itemPeriod}>{e.startDate} - {e.endDate}</Text>
+                </View>
+                <Text style={styles.itemSubtitle}>{e.institution}</Text>
+              </View>
+            ))}
+          </View>
+        )}
+
+        {data.experience.length > 0 && (
+          <View>
+            <Text style={styles.sectionTitle}>Experiência Profissional</Text>
+            {data.experience.map((ex, idx) => (
+              <View key={ex.id || `exp-${idx}`} style={styles.timelineItem}>
+                <View style={styles.timelineDot} />
+                <View style={styles.itemHeader}>
+                  <Text style={styles.itemTitle}>{ex.position}</Text>
+                  <Text style={styles.itemPeriod}>{ex.startDate} - {ex.current ? "Presente" : ex.endDate}</Text>
+                </View>
+                <Text style={styles.itemSubtitle}>{ex.company}</Text>
+                <Text style={styles.itemDesc}>{ex.description.replace(/\*/g, '')}</Text>
+              </View>
+            ))}
+          </View>
+        )}
+      </View>
+    </View>
+  );
+};
+
+const Template9 = ({ data }: { data: ResumeData }) => {
+  const cTheme = data.themeColor || '#0F766E';
+  const styles = StyleSheet.create({
+    container: { flexDirection: 'column', height: '100%', backgroundColor: '#FFFFFF' },
+    header: { backgroundColor: cTheme, padding: 25, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+    headerText: { width: '65%' },
+    name: { fontSize: 24, fontWeight: 900, color: '#FFFFFF', textTransform: 'uppercase', marginBottom: 2 },
+    title: { fontSize: 10, fontWeight: 700, color: '#D1FAE5', textTransform: 'uppercase', letterSpacing: 2 },
+    avatar: { width: 80, height: 80, borderTopLeftRadius: 28, borderTopRightRadius: 28, borderBottomLeftRadius: 28, borderBottomRightRadius: 0, border: '3pt solid #FFFFFF', objectFit: 'cover' },
+    avatarPlaceholder: { width: 80, height: 80, borderTopLeftRadius: 28, borderTopRightRadius: 28, borderBottomLeftRadius: 28, borderBottomRightRadius: 0, backgroundColor: 'rgba(255, 255, 255, 0.2)', alignItems: 'center', justifyContent: 'center', border: '3pt solid #FFFFFF' },
+    avatarText: { fontSize: 24, fontWeight: 900, color: '#FFFFFF' },
+    
+    body: { flex: 1, flexDirection: 'row' },
+    leftCol: { width: '35%', backgroundColor: '#073E3A', padding: 20, color: '#FFFFFF' },
+    rightCol: { width: '65%', padding: 25 },
+    
+    sidebarSection: { marginBottom: 18 },
+    sidebarTitle: { fontSize: 9, fontWeight: 900, textTransform: 'uppercase', letterSpacing: 1, color: '#FFFFFF', backgroundColor: 'rgba(255,255,255,0.1)', padding: '3 8', borderRadius: 10, marginBottom: 8, textAlign: 'center' },
+    contactItem: { flexDirection: 'row', alignItems: 'center', marginBottom: 6 },
+    contactText: { fontSize: 8, color: '#E2E8F0', marginLeft: 4, flex: 1 },
+    sidebarItem: { marginBottom: 8 },
+    sidebarItemTitle: { fontSize: 8.5, fontWeight: 900, color: '#FFFFFF' },
+    sidebarItemSubtitle: { fontSize: 7.5, color: '#A7F3D0', fontWeight: 700 },
+    sidebarItemDate: { fontSize: 7, color: '#6EE7B7' },
+    
+    sectionTitle: { fontSize: 10, fontWeight: 900, textTransform: 'uppercase', letterSpacing: 1, color: '#FFFFFF', backgroundColor: cTheme, padding: '4 12', borderRadius: 10, marginBottom: 12, marginTop: 10, alignSelf: 'flex-start' },
+    summaryText: { fontSize: 9, lineHeight: 1.6, color: '#4B5563', fontStyle: 'italic', marginBottom: 12 },
+    expBox: { marginBottom: 14 },
+    expHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 2 },
+    expTitle: { fontSize: 9, fontWeight: 900, color: '#111827' },
+    expDate: { fontSize: 8, fontWeight: 900, color: '#9CA3AF' },
+    expCompany: { fontSize: 8.5, fontWeight: 900, color: cTheme, textTransform: 'uppercase', marginBottom: 3 },
+    expDesc: { fontSize: 8.5, lineHeight: 1.5, color: '#4B5563' },
+    
+    skillsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+    skillItem: { width: '47%', marginBottom: 6 },
+    skillName: { fontSize: 8, fontWeight: 700, color: '#374151', marginBottom: 2 },
+    skillBar: { height: 5, backgroundColor: '#E5E7EB', borderRadius: 2.5, flexDirection: 'row', gap: 1, padding: 0.5 },
+    skillSegment: { flex: 1, height: '100%', borderRadius: 2 }
+  });
+
+  return (
+    <View style={styles.container}>
+      <View style={styles.header}>
+        <View style={styles.headerText}>
+          <Text style={styles.name}>{data.personalInfo.fullName || 'Seu Nome'}</Text>
+          <Text style={styles.title}>{data.personalInfo.title || 'Cargo Desejado'}</Text>
+        </View>
+        {data.personalInfo.photo ? (
+          <Image src={data.personalInfo.photo} style={styles.avatar} />
+        ) : (
+          <View style={styles.avatarPlaceholder}>
+            <Text style={styles.avatarText}>{data.personalInfo.fullName ? data.personalInfo.fullName.charAt(0).toUpperCase() : 'CV'}</Text>
+          </View>
+        )}
+      </View>
+
+      <View style={styles.body}>
+        <View style={styles.leftCol}>
+          <View style={styles.sidebarSection}>
+            <Text style={styles.sidebarTitle}>Contacto</Text>
+            {data.personalInfo.email && (
+              <View style={styles.contactItem}>
+                <Icons.Mail />
+                <Text style={styles.contactText}>{data.personalInfo.email}</Text>
+              </View>
+            )}
+            {data.personalInfo.phone && (
+              <View style={styles.contactItem}>
+                <Icons.Phone />
+                <Text style={styles.contactText}>{data.personalInfo.phone}</Text>
+              </View>
+            )}
+            {data.personalInfo.location && (
+              <View style={styles.contactItem}>
+                <Icons.MapPin />
+                <Text style={styles.contactText}>{data.personalInfo.location}</Text>
+              </View>
+            )}
+          </View>
+
+          {data.education.length > 0 && (
+            <View style={styles.sidebarSection}>
+              <Text style={styles.sidebarTitle}>Formação</Text>
+              {data.education.map((e, idx) => (
+                <View key={e.id || `edu-${idx}`} style={styles.sidebarItem}>
+                  <Text style={styles.sidebarItemTitle}>{e.degree}</Text>
+                  <Text style={styles.sidebarItemSubtitle}>{e.institution}</Text>
+                  <Text style={styles.sidebarItemDate}>{e.startDate} - {e.endDate}</Text>
+                </View>
+              ))}
+            </View>
+          )}
+
+          {data.certifications && data.certifications.length > 0 && (
+            <View style={styles.sidebarSection}>
+              <Text style={styles.sidebarTitle}>Prêmios</Text>
+              {data.certifications.map((cVal, idx) => (
+                <View key={cVal.id || `cert-${idx}`} style={styles.sidebarItem}>
+                  <Text style={styles.sidebarItemTitle}>{cVal.name}</Text>
+                  <Text style={styles.sidebarItemDate}>{cVal.date}</Text>
+                </View>
+              ))}
+            </View>
+          )}
+        </View>
+
+        <View style={styles.rightCol}>
+          {data.personalInfo.summary && (
+            <View>
+              <Text style={styles.sectionTitle}>Sobre Mim</Text>
+              <Text style={styles.summaryText}>"{data.personalInfo.summary.replace(/\*/g, '')}"</Text>
+            </View>
+          )}
+
+          {data.experience.length > 0 && (
+            <View>
+              <Text style={styles.sectionTitle}>Experiência Profissional</Text>
+              {data.experience.map((ex, idx) => (
+                <View key={ex.id || `exp-${idx}`} style={styles.expBox}>
+                  <View style={styles.expHeader}>
+                    <Text style={styles.expTitle}>{ex.position}</Text>
+                    <Text style={styles.expDate}>{ex.startDate} - {ex.current ? "Presente" : ex.endDate}</Text>
+                  </View>
+                  <Text style={styles.expCompany}>{ex.company}</Text>
+                  <Text style={styles.expDesc}>{ex.description.replace(/\*/g, '')}</Text>
+                </View>
+              ))}
+            </View>
+          )}
+
+          {data.skills.length > 0 && (
+            <View>
+              <Text style={styles.sectionTitle}>Habilidades</Text>
+              <View style={styles.skillsGrid}>
+                {data.skills.filter(s => s && s.name).map((s, idx) => {
+                  const val = s.level === 'Especialista' ? 5 : s.level === 'Avançado' ? 4 : s.level === 'Intermédio' ? 3 : 2;
+                  return (
+                    <View key={s.id || `skill-${idx}`} style={styles.skillItem}>
+                      <Text style={styles.skillName}>{s.name}</Text>
+                      <View style={styles.skillBar}>
+                        {[1, 2, 3, 4, 5].map(seg => (
+                          <View 
+                            key={seg} 
+                            style={[styles.skillSegment, { backgroundColor: seg <= val ? cTheme : '#E5E7EB' }]} 
+                          />
+                        ))}
+                      </View>
+                    </View>
+                  );
+                })}
+              </View>
+            </View>
+          )}
+        </View>
+      </View>
+    </View>
+  );
+};
+
 export const PdfDocument = ({ data, templateId, type = 'resume' }: { data: any; templateId: number; type?: 'resume' | 'cover_letter' }) => (
   <Document title={type === 'resume' ? 'Currículo CV LAB' : 'Carta de Apresentação CV LAB'}>
     <Page size="A4" style={commonStyles.page} dpi={72}>
@@ -431,6 +1092,10 @@ export const PdfDocument = ({ data, templateId, type = 'resume' }: { data: any; 
           {templateId === 3 && <Template3 key="t3" data={data} />}
           {templateId === 4 && <Template4 key="t4" data={data} />}
           {templateId === 5 && <Template5 key="t5" data={data} />}
+          {templateId === 6 && <Template6 key="t6" data={data} />}
+          {templateId === 7 && <Template7 key="t7" data={data} />}
+          {templateId === 8 && <Template8 key="t8" data={data} />}
+          {templateId === 9 && <Template9 key="t9" data={data} />}
         </>
       ) : (
         <CoverLetter data={data} />
