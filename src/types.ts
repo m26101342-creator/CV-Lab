@@ -38,7 +38,7 @@ export interface ResumeData {
   languages: {
     id: string;
     name: string;
-    level: 'Básico' | 'Intermédio' | 'Avançado' | 'Fluente' | 'Nativo';
+    level: string;
   }[];
   interests?: string[];
   certifications?: { id: string; name: string; date: string }[];

@@ -2035,6 +2035,7 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
   });
   const [tempSkill, setTempSkill] = useState("");
   const [tempLanguage, setTempLanguage] = useState("");
+  const [tempLanguageLevel, setTempLanguageLevel] = useState("Fluente");
   const [showPreviewModal, setShowPreviewModal] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
@@ -2492,12 +2493,12 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
     }));
   };
 
-  const addLanguage = (name: string) => {
+  const addLanguage = (name: string, level: string = 'Fluente') => {
     if (!name.trim()) return;
     const id = Math.random().toString(36).substring(7);
     setResumeData(prev => ({
       ...prev,
-      languages: [...prev.languages, { id, name, level: 'Fluente' }]
+      languages: [...prev.languages, { id, name, level }]
     }));
   };
 
@@ -3821,25 +3822,71 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
 
                   <div className="space-y-6 pt-6 border-t border-border-main">
                     <h3 className="text-sm font-black uppercase tracking-[0.2em] text-primary-blue">Idiomas</h3>
-                    <div className="flex gap-2">
-                       <Input 
-                         placeholder="Ex: Inglês" 
-                         value={tempLanguage}
-                         onChange={setTempLanguage}
-                       />
-                       <Button onClick={() => {
-                         addLanguage(tempLanguage);
-                         setTempLanguage("");
-                       }}>Adicionar</Button>
+                    <div className="flex flex-col gap-3.5 bg-gray-50/50 p-4 rounded-2xl border border-gray-100">
+                      <div className="grid grid-cols-2 gap-3">
+                         <Input 
+                           placeholder="Ex: Inglês" 
+                           value={tempLanguage}
+                           onChange={setTempLanguage}
+                           label="Idioma"
+                         />
+                         <Input 
+                           placeholder="Ex: Fluente, Nativo..." 
+                           value={tempLanguageLevel}
+                           onChange={setTempLanguageLevel}
+                           label="Nível"
+                         />
+                      </div>
+                      <Button onClick={() => {
+                        if (!tempLanguage.trim()) return;
+                        addLanguage(tempLanguage, tempLanguageLevel || 'Fluente');
+                        setTempLanguage("");
+                        setTempLanguageLevel("Fluente");
+                      }} className="w-full">Adicionar Idioma</Button>
                     </div>
-                    <div className="flex flex-wrap gap-2">
-                       {resumeData.languages.map((l, idx) => (
-                         <span key={l.id || `la-${idx}`} className="px-3 py-1.5 bg-soft-blue text-primary-blue rounded-lg font-bold text-xs flex items-center gap-2">
-                           {l.name}
-                           <button onClick={() => setResumeData(p => ({...p, languages: p.languages.filter(lk => lk.id !== l.id)}))}><X size={12} /></button>
-                         </span>
-                       ))}
-                    </div>
+
+                    {resumeData.languages.length > 0 && (
+                      <div className="space-y-3">
+                        <label className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider pl-1">Idiomas de Trabalho e Níveis</label>
+                        <div className="space-y-3">
+                           {resumeData.languages.map((l, idx) => (
+                             <div key={l.id || `la-${idx}`} className="flex items-end gap-3.5 bg-white p-3.5 rounded-2xl border border-border-main shadow-sm">
+                               <div className="flex-1">
+                                 <Input 
+                                   label="Idioma"
+                                   placeholder="Idioma" 
+                                   value={l.name || ""} 
+                                   onChange={(newVal) => {
+                                     const updated = [...resumeData.languages];
+                                     updated[idx] = { ...updated[idx], name: newVal };
+                                     setResumeData(prev => ({ ...prev, languages: updated }));
+                                   }}
+                                 />
+                               </div>
+                               <div className="w-[120px]">
+                                 <Input 
+                                   label="Nível"
+                                   placeholder="Nível" 
+                                   value={l.level || ""} 
+                                   onChange={(newVal) => {
+                                     const updated = [...resumeData.languages];
+                                     updated[idx] = { ...updated[idx], level: newVal };
+                                     setResumeData(prev => ({ ...prev, languages: updated }));
+                                   }}
+                                 />
+                               </div>
+                               <button 
+                                 onClick={() => setResumeData(p => ({...p, languages: p.languages.filter(lk => lk.id !== l.id)}))}
+                                 className="p-3 text-red-500 hover:bg-red-50 rounded-lg transition-colors border border-transparent hover:border-red-100 hover:text-red-600 bg-gray-50 hover:bg-red-50/50 mb-[1px]"
+                                 title="Remover"
+                               >
+                                 <Trash2 size={16} />
+                               </button>
+                             </div>
+                           ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               )}
