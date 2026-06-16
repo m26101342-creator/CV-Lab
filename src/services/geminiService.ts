@@ -395,3 +395,62 @@ export async function parseResumeFromText(rawText: string, imageData?: string): 
     }
 }
 
+export async function translateResumeToEnglish(resumeData: any): Promise<any> {
+  const prompt = `
+    Você é um tradutor especialista de currículos e consultor de recrutamento internacional de alto nível.
+    Sua tarefa é traduzir o currículo estruturado abaixo COMPLETAMENTE para o Inglês Profissional (US).
+
+    DADOS DO CURRÍCULO ORIGINAIS (JSON):
+    ${JSON.stringify(resumeData, null, 2)}
+
+    INSTRUÇÕES DE TRADUÇÃO:
+    1. Traduza o cargo ("title") e o resumo profissional ("summary") de maneira sofisticada e de alto impacto no inglês de negócios corporativo.
+    2. Na secção "experience", traduza os cargos ("position") e as descrições ("description"). Por exemplo: "Diretor Geral" para "General Manager" ou "Managing Director", "Estagiário" para "Intern". Traduza as atividades, conquistas e responsabilidades descritas usando verbos de ação eficientes no passado (ex: Managed, Spearheaded, Developed, Coordinates se atual).
+    3. Na secção "education", traduza o grau académico ("degree") de forma equivalente (ex: "Licenciatura" para "Bachelor's Degree", "Mestrado" para "Master's Degree"). Traduza as áreas de estudo ("field") e as instituições ("institution") se estas possuírem nome internacional consolidado (como "Universidade de Luanda" para "University of Luanda"), caso contrário mantenha-as legíveis.
+    4. Na secção "skills", traduza de forma inteligente os nomes das habilidades ("name") para o jargão técnico internacional correto em inglês. Certifique-se de traduzir também o nível ("level") se este estiver em português (ex: "Básico" -> "Basic", "Intermédio" -> "Intermediate", "Avançado" -> "Advanced", "Especialista" -> "Expert").
+    5. Na secção "languages", traduza os nomes dos idiomas para inglês (ex: "Inglês" -> "English", "Português" -> "Portuguese", "Alemão" -> "German" etc.). Traduza os níveis deles para inglês profissional (ex: "Fluente" -> "Fluent", "Nativo" -> "Native", "Básico" -> "Conversational" ou "Basic", "Avançado" -> "Professional Working Proficiency" ou "Advanced").
+    6. Na secção "certifications", se houver, traduza o nome das certificações para os seus equivalentes universais em inglês quando aplicável (ex: "Curso de Gestão de Projetos" -> "Project Management Course").
+    7. Preserve TODOS os identificadores de dados ("id") e estruturas de controle ("themeColor", etc) idênticos. Não perca nenhum ID.
+
+    SINTAXE DO RETORNO JSON ESPERADO:
+    Retorne APENAS um JSON no mesmo formato que os dados originais recebidos. Sem blocos ou wraps de código adicionais (\`\`\`json).
+
+    REGRAS RIGOROSAS:
+    1. Retorne APENAS o JSON puro. Sem introduções. Sem comentários. Sem explicações ou desculpas.
+    2. A tradução deve ser impecável, profissional e adequada para recrutadores internacionais.
+  `;
+
+  try {
+    const engine = getEngine();
+    const response = await engine.models.generateContent({
+      model: "gemini-3.5-flash",
+      contents: prompt,
+      config: {
+        responseMimeType: "application/json",
+        temperature: 0.1
+      }
+    });
+
+    const rawResult = response.text?.trim() || "{}";
+    const parsed = JSON.parse(rawResult);
+    
+    // Normalizar ou garantir conformidade
+    return {
+      ...resumeData,
+      ...parsed,
+      personalInfo: {
+        ...resumeData.personalInfo,
+        ...(parsed.personalInfo || {}),
+        photo: resumeData.personalInfo?.photo,
+        photoStyle: resumeData.personalInfo?.photoStyle,
+        photoSize: resumeData.personalInfo?.photoSize
+      },
+      themeColor: resumeData.themeColor
+    };
+  } catch (error) {
+    console.error("Erro ao traduzir currículo para o Inglês com IA:", error);
+    throw error;
+  }
+}
+
+

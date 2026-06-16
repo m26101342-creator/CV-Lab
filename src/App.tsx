@@ -32,11 +32,13 @@ import {
   Search,
   Upload,
   Sparkles,
-  Zap
+  Zap,
+  Languages,
+  RotateCcw
 } from 'lucide-react';
 import { AdSenseUnit } from './components/AdSenseUnit';
 import { ResumeData, INITIAL_RESUME_DATA, TemplateType } from './types.ts';
-import { optimizeResumeText, generateCoverLetter, generateFullResume, parseResumeFromText } from './services/geminiService.ts';
+import { optimizeResumeText, generateCoverLetter, generateFullResume, parseResumeFromText, translateResumeToEnglish } from './services/geminiService.ts';
 import { pdf } from '@react-pdf/renderer';
 import { PdfDocument } from './pdf/PdfDocument';
 import * as pdfjsLib from 'pdfjs-dist';
@@ -2038,6 +2040,7 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
   const [tempLanguageLevel, setTempLanguageLevel] = useState("Fluente");
   const [showPreviewModal, setShowPreviewModal] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
+  const [isTranslating, setIsTranslating] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
   const [importProgress, setImportProgress] = useState("");
   const [aiImportTab, setAiImportTab] = useState<'pdf' | 'text'>('pdf');
@@ -2572,6 +2575,43 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
       setLoading(false);
     }
   };
+
+  const handleTranslateToEnglish = async () => {
+    if (!resumeData.personalInfo.fullName && resumeData.experience.length === 0 && resumeData.education.length === 0 && resumeData.skills.length === 0) {
+      alert("O seu currículo está vazio. Preencha algumas informações antes de traduzir!");
+      return;
+    }
+    
+    const confirmTranslate = window.confirm("Pretende mesmo traduzir o seu currículo para o Inglês de forma automática usando Inteligência Artificial?");
+    if (!confirmTranslate) return;
+
+    setIsTranslating(true);
+    setLoading(true);
+    try {
+      const translatedData = await translateResumeToEnglish(resumeData);
+      setResumeData(translatedData);
+      alert("O seu currículo foi traduzido com sucesso para a versão Inglesa!");
+    } catch (error: any) {
+      console.error(error);
+      alert("Houve um erro técnico ao traduzir o currículo. Verifique se a sua chave API do Gemini está configurada.");
+    } finally {
+      setIsTranslating(false);
+      setLoading(false);
+    }
+  };
+
+  const handleClearResumeData = () => {
+    const confirmClear = window.confirm("Deseja mesmo eliminar/limpar todos os dados inseridos no currículo? Esta ação é irreversível!");
+    if (!confirmClear) return;
+    
+    setResumeData(INITIAL_RESUME_DATA);
+    setGeneratedLetter("");
+    localStorage.removeItem('cv_lab_data');
+    localStorage.removeItem('cv_lab_letter');
+    setActiveStep(0);
+    alert("Todos os dados do currículo foram eliminados.");
+  };
+
 
   if (view === 'landing') {
     return (
@@ -3487,9 +3527,31 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
               exit={{ x: 10, opacity: 0 }}
               className="space-y-8"
             >
-              <div className="space-y-2">
-                <h2 className="text-2xl font-black text-deep-blue tracking-tight">{editorSteps[activeStep].title}</h2>
-                <div className="h-1 w-12 bg-primary-blue rounded-full"></div>
+              <div className="flex items-start justify-between flex-wrap gap-4 border-b border-gray-100 pb-4">
+                <div className="space-y-2">
+                  <h2 className="text-2xl font-black text-deep-blue tracking-tight">{editorSteps[activeStep].title}</h2>
+                  <div className="h-1 w-12 bg-primary-blue rounded-full"></div>
+                </div>
+                
+                <div className="flex gap-2">
+                  <button
+                    onClick={handleTranslateToEnglish}
+                    disabled={isTranslating}
+                    title="Traduzir Currículo para Inglês com IA"
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold rounded-xl text-xs transition-all border border-indigo-100/30 disabled:opacity-50 select-none shadow-sm cursor-pointer"
+                  >
+                    <Languages size={14} className={isTranslating ? "animate-spin" : ""} />
+                    <span>{isTranslating ? "Traduzindo..." : "Versão Inglesa (IA)"}</span>
+                  </button>
+                  <button
+                    onClick={handleClearResumeData}
+                    title="Limpar todos os dados do Currículo"
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-red-50 hover:bg-red-100 text-red-600 font-bold rounded-xl text-xs transition-all border border-red-100/30 select-none shadow-sm cursor-pointer"
+                  >
+                    <RotateCcw size={14} />
+                    <span>Limpar Tudo</span>
+                  </button>
+                </div>
               </div>
 
               {activeStep === 0 && ( /* Personal info */
