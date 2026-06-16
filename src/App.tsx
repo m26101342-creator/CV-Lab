@@ -311,7 +311,7 @@ const CoverLetterRenderer = React.memo(({ content, personalInfo, themeColor }: {
   return (
     <div 
       id="cover-letter-content"
-      className="bg-white h-[1122px] w-[794px] p-20 relative flex flex-col font-sans text-left shadow-2xl overflow-hidden"
+      className="bg-white min-h-[1122px] h-auto w-[794px] p-20 relative flex flex-col font-sans text-left shadow-2xl overflow-visible"
     >
        {/* Minimalist Professional Header */}
        <div className="flex justify-between items-start border-b-2 pb-8 mb-10 mt-4" style={{ borderColor: `${c.primary}30` }}>
@@ -901,7 +901,7 @@ const ResumeRenderer = React.memo(({ data, templateId }: { data: ResumeData; tem
   const c = { ...theme.colors, primary: data.themeColor || theme.colors.primary };
 
   return (
-    <div className={`bg-white h-[1122px] w-[794px] relative overflow-hidden print:shadow-none`} id="resume-content" style={{ color: '#1f2937' }}>
+    <div className={`bg-white min-h-[1122px] h-auto w-[794px] relative overflow-visible print:shadow-none`} id="resume-content" style={{ color: '#1f2937' }}>
       
       {/* Dynamic Layout Styles */}
       {theme.layout === 'custom-t1' && (
@@ -1187,7 +1187,7 @@ const ResumeRenderer = React.memo(({ data, templateId }: { data: ResumeData; tem
       )}
 
       {theme.layout === 'custom-t4' && (
-        <div className="flex w-full h-[1122px] bg-white text-left font-sans overflow-hidden relative border border-gray-100">
+        <div className="flex w-full min-h-[1122px] h-auto bg-white text-left font-sans overflow-visible relative border border-gray-100">
           <div className="w-[32%] flex flex-col relative z-10" style={{ backgroundColor: c.primary, color: 'white' }}>
              {data.personalInfo.photo ? (
                <div className="w-full flex justify-center py-8">
@@ -1313,7 +1313,7 @@ const ResumeRenderer = React.memo(({ data, templateId }: { data: ResumeData; tem
       )}
 
       {theme.layout === 'custom-t5' && (
-        <div className="flex w-full h-[1122px] bg-[#FAFAFA] text-left font-sans overflow-hidden relative">
+        <div className="flex w-full min-h-[1122px] h-auto bg-[#FAFAFA] text-left font-sans overflow-visible relative">
            <div className="w-[34%] flex flex-col relative z-20 pt-16" style={{ backgroundColor: c.soft || '#F3F4F6' }}>
              {/* Decorative header shape - simplified for PDF consistency */}
              <div className="absolute top-0 left-0 right-0 h-48 bg-white" style={{ borderRadius: '0 0 100px 100px', boxShadow: '0 10px 30px rgba(0,0,0,0.02)' }}></div>
@@ -1437,7 +1437,7 @@ const ResumeRenderer = React.memo(({ data, templateId }: { data: ResumeData; tem
       )}
 
       {theme.layout === 'custom-t6' && (
-        <div className="flex flex-col w-full h-[1122px] bg-[#fcfcfc] p-12 font-sans overflow-hidden text-left relative" style={{ border: `16px solid ${c.primary}` }}>
+        <div className="flex flex-col w-full min-h-[1122px] h-auto bg-[#fcfcfc] p-12 font-sans overflow-visible text-left relative" style={{ border: `16px solid ${c.primary}` }}>
           <div className="flex flex-col items-center pb-6 mb-6 border-b-2" style={{ borderColor: c.primary }}>
             {data.personalInfo.photo && (
               <img 
@@ -1536,27 +1536,27 @@ const ResumeRenderer = React.memo(({ data, templateId }: { data: ResumeData; tem
       )}
 
       {theme.layout === 'custom-t7' && (
-        <div className="flex flex-col w-full h-[1122px] bg-white text-left font-sans overflow-hidden relative">
-          <div className="flex justify-between items-center p-10 pb-12 text-white" style={{ backgroundColor: c.primary }}>
-            <div className="max-w-[70%] space-y-2">
-              <h1 className="text-3xl font-black uppercase tracking-wider">{data.personalInfo.fullName || "Seu Nome"}</h1>
-              <p className="text-xs font-bold uppercase tracking-[0.2em] opacity-90">{data.personalInfo.title || "Cargo Desejado"}</p>
-            </div>
+        <div className="flex flex-col w-full min-h-[1122px] h-auto bg-white text-center font-sans overflow-visible relative">
+          <div className="flex flex-col items-center p-10 pb-12 text-white relative" style={{ backgroundColor: c.primary }}>
             {data.personalInfo.photo && (
-              <img 
-                src={data.personalInfo.photo} 
-                referrerPolicy="no-referrer" 
-                className="object-cover object-top border-4 border-white shadow-md shrink-0" 
-                style={{ 
-                  borderRadius: data.personalInfo.photoStyle === 'circle' ? '50%' : '12px',
-                  width: `${data.personalInfo.photoSize || 80}px`,
-                  height: `${data.personalInfo.photoSize || 80}px`
-                }} 
-              />
+              <div className="mb-4">
+                <img 
+                  src={data.personalInfo.photo} 
+                  referrerPolicy="no-referrer" 
+                  className="object-cover object-top border-4 border-white shadow-md mx-auto" 
+                  style={{ 
+                    borderRadius: data.personalInfo.photoStyle === 'circle' ? '50%' : '12px',
+                    width: `${data.personalInfo.photoSize || 80}px`,
+                    height: `${data.personalInfo.photoSize || 80}px`
+                  }} 
+                />
+              </div>
             )}
+            <h1 className="text-3xl font-black uppercase tracking-wider">{data.personalInfo.fullName || "Seu Nome"}</h1>
+            <p className="text-xs font-bold uppercase tracking-[0.2em] opacity-90 mt-1">{data.personalInfo.title || "Cargo Desejado"}</p>
           </div>
 
-          <div className="bg-gray-100/80 px-10 py-3.5 flex flex-wrap gap-x-6 gap-y-1.5 text-[10px] font-black text-gray-500 uppercase tracking-widest">
+          <div className="bg-gray-100/80 px-10 py-3.5 flex flex-wrap justify-center gap-x-6 gap-y-1.5 text-[10px] font-black text-gray-500 uppercase tracking-widest">
             {data.personalInfo.phone && <span className="flex items-center gap-1"><Phone size={11} className="shrink-0" /> {data.personalInfo.phone}</span>}
             {data.personalInfo.email && <span className="flex items-center gap-1"><Mail size={11} className="shrink-0" /> {data.personalInfo.email}</span>}
             {data.personalInfo.location && <span className="flex items-center gap-1"><MapPin size={11} className="shrink-0" /> {data.personalInfo.location}</span>}
@@ -1647,7 +1647,7 @@ const ResumeRenderer = React.memo(({ data, templateId }: { data: ResumeData; tem
       )}
 
       {theme.layout === 'custom-t8' && (
-        <div className="flex flex-row w-full h-[1122px] bg-white text-left font-sans overflow-hidden relative">
+        <div className="flex flex-row w-full min-h-[1122px] h-auto bg-white text-left font-sans overflow-visible relative">
           {/* Top Geometric Accent */}
           <div className="absolute top-0 left-0 right-0 h-44 bg-gradient-to-r from-blue-900 to-blue-700 pointer-events-none" style={{ clipPath: 'polygon(0 0, 100% 0, 100% 40%, 0% 100%)', backgroundColor: c.primary }}></div>
           <div className="absolute top-0 left-0 right-0 h-44 bg-sky-400/30 pointer-events-none" style={{ clipPath: 'polygon(0 0, 100% 0, 100% 15%, 0% 85%)' }}></div>
@@ -1820,84 +1820,70 @@ const ResumeRenderer = React.memo(({ data, templateId }: { data: ResumeData; tem
       )}
 
       {theme.layout === 'custom-t9' && (
-        <div className="flex flex-col w-full h-[1122px] bg-white text-left font-sans overflow-hidden relative">
-          {/* Top Emerald Header Block with speech-bubble layout */}
-          <div className="flex justify-between items-center p-8 pb-10 text-white relative" style={{ backgroundColor: c.primary }}>
-            <div className="max-w-[65%] pl-6 space-y-2 relative z-10">
-              <h1 className="text-3xl font-black uppercase tracking-wider">{data.personalInfo.fullName || "Seu Nome"}</h1>
-              <p className="text-xs font-bold uppercase tracking-[0.2em] text-emerald-200">{data.personalInfo.title || "Cargo Desejado"}</p>
+        <div className="flex flex-col w-full min-h-[1122px] h-auto bg-white text-left font-sans overflow-visible relative">
+          {/* Professional Header */}
+          <div className="p-12 pb-8 border-b-4 border-gray-100 flex justify-between items-center" style={{ borderBottomColor: c.primary }}>
+            <div className="space-y-3">
+              <h1 className="text-4xl font-extrabold tracking-tight text-gray-900 leading-none">{data.personalInfo.fullName || "Seu Nome"}</h1>
+              <p className="text-sm font-semibold uppercase tracking-[0.2em]" style={{ color: c.primary }}>{data.personalInfo.title || "Cargo Desejado"}</p>
             </div>
             
-            {/* Custom mask matching the speech bubble design */}
-            <div className="relative pr-6 z-10">
-              <div 
-                className="border-4 border-white shadow-xl bg-white overflow-hidden flex items-center justify-center p-0.5" 
+            {data.personalInfo.photo && (
+              <img 
+                src={data.personalInfo.photo} 
+                referrerPolicy="no-referrer" 
+                className="object-cover object-top border-2 border-gray-100 shadow-md shrink-0" 
                 style={{ 
-                  borderRadius: '35% 35% 0 35%', // Curve style matching the second uploaded image
-                  width: `${data.personalInfo.photoSize || 100}px`,
-                  height: `${data.personalInfo.photoSize || 100}px`
+                  borderRadius: data.personalInfo.photoStyle === 'circle' ? '50%' : '8px',
+                  width: `${data.personalInfo.photoSize || 85}px`,
+                  height: `${data.personalInfo.photoSize || 85}px`
                 }} 
-              >
-                {data.personalInfo.photo ? (
-                  <img 
-                    src={data.personalInfo.photo} 
-                    referrerPolicy="no-referrer" 
-                    className="object-cover object-top w-full h-full" 
-                  />
-                ) : (
-                  <div className="text-3xl font-black text-gray-300">
-                    {data.personalInfo.fullName ? data.personalInfo.fullName.charAt(0).toUpperCase() : 'CV'}
-                  </div>
-                )}
-              </div>
-            </div>
+              />
+            )}
           </div>
 
-          <div className="flex flex-row flex-1 overflow-hidden">
-            {/* Left Sidebar (Dark Emerald/Green Color Block) */}
-            <div className="w-[35%] h-full p-6 text-white flex flex-col shrink-0" style={{ backgroundColor: '#073E3A' /* Dark Emerald sidebar background */ }}>
-              {/* Contact Block */}
-              <div className="mb-6">
-                <div className="bg-emerald-800/60 px-4 py-1.5 rounded-full text-center text-[10px] font-black uppercase tracking-wider mb-3">
-                  Contacto
-                </div>
-                <div className="space-y-2.5 pl-2">
-                  {data.personalInfo.email && <div className="flex items-center gap-2.5 text-[9px] font-bold"><Mail size={11} className="text-emerald-300 shrink-0" /> <span className="break-all">{data.personalInfo.email}</span></div>}
-                  {data.personalInfo.phone && <div className="flex items-center gap-2.5 text-[9px] font-bold"><Phone size={11} className="text-emerald-300 shrink-0" /> <span>{data.personalInfo.phone}</span></div>}
-                  {data.personalInfo.location && <div className="flex items-center gap-2.5 text-[9px] font-bold"><MapPin size={11} className="text-emerald-300 shrink-0" /> <span>{data.personalInfo.location}</span></div>}
-                  {data.personalInfo.website && <div className="flex items-center gap-2.5 text-[9px] font-bold"><Globe size={11} className="text-emerald-300 shrink-0" /> <span className="break-all">{data.personalInfo.website}</span></div>}
-                </div>
-              </div>
+          {/* Contact Bar */}
+          <div className="bg-gray-50/80 px-12 py-3.5 flex flex-wrap gap-x-6 gap-y-1.5 text-[10px] font-semibold text-gray-600 border-b border-gray-100">
+            {data.personalInfo.phone && <span className="flex items-center gap-1.5"><Phone size={11} className="shrink-0" style={{ color: c.primary }} /> {data.personalInfo.phone}</span>}
+            {data.personalInfo.email && <span className="flex items-center gap-1.5"><Mail size={11} className="shrink-0" style={{ color: c.primary }} /> {data.personalInfo.email}</span>}
+            {data.personalInfo.location && <span className="flex items-center gap-1.5"><MapPin size={11} className="shrink-0" style={{ color: c.primary }} /> {data.personalInfo.location}</span>}
+            {data.personalInfo.website && <span className="flex items-center gap-1.5"><Globe size={11} className="shrink-0" style={{ color: c.primary }} /> {data.personalInfo.website}</span>}
+          </div>
 
-              {/* Education block inside sidebar */}
-              {data.education.length > 0 && (
-                <div className="mb-6">
-                  <div className="bg-emerald-800/60 px-4 py-1.5 rounded-full text-center text-[10px] font-black uppercase tracking-wider mb-3">
-                    Formação
+          <div className="flex flex-row flex-1 p-12 gap-10">
+            {/* Left Column (63% width) */}
+            <div className="w-[63%] space-y-8">
+              {/* Summary */}
+              {data.personalInfo.summary && (
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <span className="w-1.5 h-4 rounded-full" style={{ backgroundColor: c.primary }}></span>
+                    <h3 className="text-sm font-extrabold uppercase tracking-wider text-gray-900">Sobre Mim</h3>
                   </div>
-                  <div className="space-y-3 pl-2">
-                    {data.education.map((e, idx) => (
-                      <div key={e.id || `edu-${idx}`} className="space-y-0.5">
-                        <h4 className="text-[10px] font-black text-white">{e.degree}</h4>
-                        <p className="text-[9px] text-emerald-300 font-semibold">{e.institution}</p>
-                        <p className="text-[8px] font-bold text-emerald-400">{e.startDate} - {e.endDate}</p>
-                      </div>
-                    ))}
-                  </div>
+                  <p className="text-xs leading-relaxed text-gray-600 font-medium font-serif italic pr-2">
+                    {renderText(data.personalInfo.summary)}
+                  </p>
                 </div>
               )}
 
-              {/* Awards/Certificações Section mapping */}
-              {data.certifications && data.certifications.length > 0 && (
-                <div>
-                  <div className="bg-emerald-800/60 px-4 py-1.5 rounded-full text-center text-[10px] font-black uppercase tracking-wider mb-3">
-                    Prêmios
+              {/* Experience */}
+              {data.experience.length > 0 && (
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2">
+                    <span className="w-1.5 h-4 rounded-full" style={{ backgroundColor: c.primary }}></span>
+                    <h3 className="text-sm font-extrabold uppercase tracking-wider text-gray-900">Experiência Profissional</h3>
                   </div>
-                  <div className="space-y-3 pl-2">
-                    {data.certifications.map((cVal, idx) => (
-                      <div key={cVal.id || `cert-${idx}`} className="space-y-0.5">
-                        <h4 className="text-[10px] font-black text-white">{cVal.name}</h4>
-                        <p className="text-[8px] font-bold text-emerald-400">{cVal.date}</p>
+                  <div className="space-y-6">
+                    {data.experience.map((ex, idx) => (
+                      <div key={ex.id || `exp-${idx}`} className="space-y-1.5 relative pl-4 border-l border-gray-100">
+                        {/* Dot indicator */}
+                        <div className="absolute -left-[5px] top-1.5 w-2.5 h-2.5 rounded-full border-2 border-white" style={{ backgroundColor: c.primary }}></div>
+                        <div className="flex justify-between items-baseline">
+                          <h4 className="text-xs font-bold text-gray-900 leading-tight">{ex.position}</h4>
+                          <span className="text-[9px] font-black text-gray-400 uppercase tracking-tight shrink-0">{ex.startDate} - {ex.current ? "Presente" : ex.endDate}</span>
+                        </div>
+                        <p className="text-[10px] font-black uppercase tracking-tight" style={{ color: c.primary }}>{ex.company}</p>
+                        <p className="text-[11px] leading-relaxed text-gray-500 mt-1 whitespace-pre-line">{renderText(ex.description)}</p>
                       </div>
                     ))}
                   </div>
@@ -1905,65 +1891,94 @@ const ResumeRenderer = React.memo(({ data, templateId }: { data: ResumeData; tem
               )}
             </div>
 
-            {/* Right Work Content Block (White Background) */}
-            <div className="w-[65%] h-full p-8 space-y-6 overflow-hidden">
-              {/* Summary Section */}
-              {data.personalInfo.summary && (
-                <div>
-                  <div className="inline-block px-5 py-1.5 rounded-full text-[10px] font-black uppercase tracking-wider text-white mb-3" style={{ backgroundColor: c.primary }}>
-                    Sobre Mim
-                  </div>
-                  <p className="text-xs leading-relaxed text-gray-600 font-medium font-serif italic">"{renderText(data.personalInfo.summary)}"</p>
-                </div>
-              )}
-
-              {/* Work Experience Section */}
-              {data.experience.length > 0 && (
-                <div>
-                  <div className="inline-block px-5 py-1.5 rounded-full text-[10px] font-black uppercase tracking-wider text-white mb-3" style={{ backgroundColor: c.primary }}>
-                    Experiência Profissional
-                  </div>
-                  <div className="space-y-4">
-                    {data.experience.map((ex, idx) => (
-                      <div key={ex.id || `exp-${idx}`} className="space-y-1">
-                        <div className="flex justify-between items-baseline">
-                          <h4 className="text-xs font-black text-gray-900">{ex.position}</h4>
-                          <span className="text-[9px] font-black text-gray-400 uppercase">{ex.startDate} - {ex.current ? "Presente" : ex.endDate}</span>
-                        </div>
-                        <p className="text-[10px] font-bold uppercase tracking-tight" style={{ color: c.primary }}>{ex.company}</p>
-                        <p className="text-[11px] leading-relaxed text-gray-600 mt-1">{renderText(ex.description)}</p>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Skills Section with segment Progress Bars */}
+            {/* Right Column (37% width) */}
+            <div className="w-[37%] space-y-8 border-l border-gray-100 pl-8">
+              {/* Skills */}
               {data.skills.length > 0 && (
-                <div>
-                  <div className="inline-block px-5 py-1.5 rounded-full text-[10px] font-black uppercase tracking-wider text-white mb-3.5" style={{ backgroundColor: c.primary }}>
-                    Habilidades
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2">
+                    <span className="w-1.5 h-4 rounded-full" style={{ backgroundColor: c.primary }}></span>
+                    <h3 className="text-sm font-extrabold uppercase tracking-wider text-gray-900">Habilidades</h3>
                   </div>
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-3">
                     {data.skills.map((s, idx) => {
                       const value = s.level === 'Especialista' ? 100 : s.level === 'Avançado' ? 80 : s.level === 'Intermédio' ? 60 : 40;
                       return (
                         <div key={s.id || `skill-${idx}`} className="space-y-1">
-                          <p className="text-[10px] font-bold text-gray-700">{s.name}</p>
-                          <div className="w-full h-2.5 bg-gray-100 rounded-full flex gap-0.5 overflow-hidden p-0.5">
-                            {[20, 40, 60, 80, 100].map(segment => (
-                              <div 
-                                key={segment} 
-                                className="h-full flex-1 rounded-full transition-colors duration-300"
-                                style={{ 
-                                  backgroundColor: value >= segment ? c.primary : '#E5E7EB'
-                                }}
-                              />
-                            ))}
+                          <div className="flex justify-between items-center text-[10px] font-bold text-gray-700">
+                            <span>{s.name}</span>
+                            <span className="text-[8px] opacity-75 font-black uppercase tracking-wider" style={{ color: c.primary }}>{s.level}</span>
+                          </div>
+                          <div className="w-full h-1 bg-gray-100 rounded-full overflow-hidden">
+                            <div 
+                              className="h-full rounded-full transition-all duration-500"
+                              style={{ 
+                                backgroundColor: c.primary,
+                                width: `${value}%`
+                              }}
+                            />
                           </div>
                         </div>
                       );
                     })}
+                  </div>
+                </div>
+              )}
+
+              {/* Education */}
+              {data.education.length > 0 && (
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2">
+                    <span className="w-1.5 h-4 rounded-full" style={{ backgroundColor: c.primary }}></span>
+                    <h3 className="text-sm font-extrabold uppercase tracking-wider text-gray-900">Formação Académica</h3>
+                  </div>
+                  <div className="space-y-4">
+                    {data.education.map((e, idx) => (
+                      <div key={e.id || `edu-${idx}`} className="space-y-1 relative pl-3 border-l border-gray-100">
+                        {/* Elegant vertical dot */}
+                        <div className="absolute -left-[4px] top-1.5 w-1.5 h-1.5 rounded-full" style={{ backgroundColor: c.primary }}></div>
+                        <h4 className="text-xs font-bold text-gray-900 leading-tight">{e.degree}</h4>
+                        <p className="text-[10px] text-gray-500 font-semibold">{e.institution}</p>
+                        <p className="text-[8px] font-black text-gray-400 uppercase tracking-widest">{e.startDate} - {e.endDate}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Languages */}
+              {data.languages && data.languages.length > 0 && (
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2">
+                    <span className="w-1.5 h-4 rounded-full" style={{ backgroundColor: c.primary }}></span>
+                    <h3 className="text-sm font-extrabold uppercase tracking-wider text-gray-900">Idiomas</h3>
+                  </div>
+                  <div className="space-y-2">
+                    {data.languages.map((l, idx) => (
+                      <div key={l.id || `lang-${idx}`} className="flex justify-between items-center text-[10px] font-bold text-gray-700">
+                        <span>{l.name}</span>
+                        <span className="text-[8px] font-black px-2 py-0.5 rounded uppercase tracking-wider bg-gray-50 text-gray-500 border border-gray-100">{l.level}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Certifications/Awards list */}
+              {data.certifications && data.certifications.length > 0 && (
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2">
+                    <span className="w-1.5 h-4 rounded-full" style={{ backgroundColor: c.primary }}></span>
+                    <h3 className="text-sm font-extrabold uppercase tracking-wider text-gray-900">Certificações</h3>
+                  </div>
+                  <div className="space-y-3">
+                    {data.certifications.map((cVal, idx) => (
+                      <div key={cVal.id || `cert-${idx}`} className="space-y-0.5 relative pl-3 border-l border-gray-100">
+                        <div className="absolute -left-[4px] top-1.5 w-1.5 h-1.5 rounded-full" style={{ backgroundColor: c.primary }}></div>
+                        <h4 className="text-xs font-bold text-gray-900 leading-tight">{cVal.name}</h4>
+                        <p className="text-[8px] font-black text-gray-400 uppercase tracking-widest">{cVal.date}</p>
+                      </div>
+                    ))}
                   </div>
                 </div>
               )}
@@ -2049,6 +2064,46 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
     return () => clearTimeout(timer);
   }, [generatedLetter]);
   const [previewScale, setPreviewScale] = useState(1);
+  const [resumeHeight, setResumeHeight] = useState(1122);
+
+  // Monitor and measure the actual height of the rendered content (Resume or Cover Letter)
+  useEffect(() => {
+    const handleMeasure = () => {
+      const element = document.getElementById(isCoverLetterMode ? 'cover-letter-content' : 'resume-content');
+      if (element) {
+        // Fallback to min-height 1122
+        const measured = Math.max(1122, element.scrollHeight);
+        setResumeHeight(measured);
+      } else {
+        setResumeHeight(1122);
+      }
+    };
+
+    // Measure on load and when dependency changes
+    const timer = setTimeout(handleMeasure, 200);
+    
+    // Also attach to window resize/render triggers
+    window.addEventListener('resize', handleMeasure);
+
+    // Dynamic resize observing the element
+    let resizeObserver: ResizeObserver | null = null;
+    const targetElement = document.getElementById(isCoverLetterMode ? 'cover-letter-content' : 'resume-content');
+    if (targetElement && typeof ResizeObserver !== 'undefined') {
+      resizeObserver = new ResizeObserver(() => {
+        handleMeasure();
+      });
+      resizeObserver.observe(targetElement);
+    }
+
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener('resize', handleMeasure);
+      if (resizeObserver) {
+        resizeObserver.disconnect();
+      }
+    };
+  }, [resumeData, template, isCoverLetterMode, generatedLetter, view, showPreviewModal]);
+
   const [currentBanner, setCurrentBanner] = useState(0);
 
   const banners = [
@@ -3971,14 +4026,14 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
         {/* Scaled Wrapper to prevent horizontal scroll and extra vertical whitespace */}
         <div 
           className="flex justify-center w-full"
-          style={{ height: `${1122 * previewScale}px` }}
+          style={{ height: `${resumeHeight * previewScale}px` }}
         >
           <div 
             className="origin-top transition-all duration-700 print:shadow-none print:w-full shadow-[0_60px_120px_-20px_rgba(0,0,0,0.2)]"
             style={{ 
               transform: `scale(${previewScale})`,
               width: '794px',
-              height: '1122px',
+              height: `${resumeHeight}px`,
               flexShrink: 0
             }}
           >

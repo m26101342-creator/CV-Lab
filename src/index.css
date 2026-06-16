@@ -71,8 +71,9 @@
   page-break-after: avoid;
   page-break-before: avoid;
   width: 794px !important;
-  height: 1122px !important;
-  overflow: hidden !important;
+  min-height: 1122px !important;
+  height: auto !important;
+  overflow: visible !important;
   box-sizing: border-box !important;
 }
 
@@ -116,9 +117,9 @@ img {
    TEMPLATE 1 — Executive Dark Sidebar
    (Using --primary, --text-main, etc.)
    ══════════════════════════════════════════════ */
-.t1 { display: flex; align-items: stretch; height: 1122px; overflow: hidden; font-family: 'DM Sans', sans-serif; background: #fff; width: 794px; text-align: left; }
-.t1-left { width: 254px; min-width: 254px; background: var(--primary, #1B2A4A); color: #fff; padding: 40px 24px; display: flex; flex-direction: column; gap: 32px; height: 1122px; overflow: hidden; }
-.t1-right { flex: 1; padding: 40px 48px; height: 1122px; overflow: hidden; }
+.t1 { display: flex; align-items: stretch; min-height: 1122px; height: auto; overflow: visible; font-family: 'DM Sans', sans-serif; background: #fff; width: 794px; text-align: left; }
+.t1-left { width: 254px; min-width: 254px; background: var(--primary, #1B2A4A); color: #fff; padding: 40px 24px; display: flex; flex-direction: column; gap: 32px; min-height: 1122px; height: auto; overflow: visible; }
+.t1-right { flex: 1; padding: 40px 48px; min-height: 1122px; height: auto; overflow: visible; }
 
 .t1-avatar-wrap { display: flex; justify-content: center; margin-bottom: 8px; }
 .t1-avatar { 
@@ -199,7 +200,7 @@ img {
 /* ══════════════════════════════════════════════
    TEMPLATE 2 — Modern Geometric
 ══════════════════════════════════════════════ */
-.t2 { display: block; height: 1122px; overflow: hidden; background: #fff; position: relative; font-family: 'DM Sans', sans-serif; width: 794px; text-align: left; }
+.t2 { display: block; min-height: 1122px; height: auto; overflow: visible; background: #fff; position: relative; font-family: 'DM Sans', sans-serif; width: 794px; text-align: left; }
 
 .t2-header {
   display: flex; align-items: center;
@@ -235,9 +236,9 @@ img {
 .t2-divider { display: none; }
 .t2-bio { font-size: 13px; color: #4B5563; line-height: 1.7; max-width: 600px; text-align: left; font-weight: 500; }
 
-.t2-body { display: flex; align-items: stretch; height: 900px; width: 100%; }
-.t2-left { width: 250px; min-width: 250px; padding: 40px 32px; background: var(--soft, #F9FAFB); border-right: 1px solid #F3F4F6; height: 100%; overflow: hidden; }
-.t2-right { flex: 1; padding: 40px 48px; height: 100%; overflow: hidden; }
+.t2-body { display: flex; align-items: stretch; min-height: 900px; height: auto; width: 100%; }
+.t2-left { width: 250px; min-width: 250px; padding: 40px 32px; background: var(--soft, #F9FAFB); border-right: 1px solid #F3F4F6; min-height: 100%; height: auto; overflow: visible; }
+.t2-right { flex: 1; padding: 40px 48px; min-height: 100%; height: auto; overflow: visible; }
 
 .t2-section { margin-bottom: 32px; }
 .t2-section-title {
@@ -271,7 +272,7 @@ img {
 /* ══════════════════════════════════════════════
    TEMPLATE 3 — Corporate Clean
 ══════════════════════════════════════════════ */
-.t3 { display: flex; flex-direction: column; height: 1122px; overflow: hidden; background: #fff; font-family: 'Inter', sans-serif; width: 794px; text-align: left; position: relative; padding: 48px; box-sizing: border-box; }
+.t3 { display: flex; flex-direction: column; min-height: 1122px; height: auto; overflow: visible; background: #fff; font-family: 'Inter', sans-serif; width: 794px; text-align: left; position: relative; padding: 48px; box-sizing: border-box; }
 
 .t3-header { text-align: center; border-bottom: 2px solid var(--primary, #2D3748); padding-bottom: 24px; margin-bottom: 28px; width: 100%; }
 .t3-name { font-size: 38px; font-weight: 900; color: var(--heading, #1A202C); text-transform: uppercase; letter-spacing: 2px; margin-bottom: 6px; }
