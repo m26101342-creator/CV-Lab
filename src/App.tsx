@@ -3117,8 +3117,8 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
         filename
       });
 
-      // Give React 650ms to mount and lay out the offscreen DOM cleanly
-      await new Promise((resolve) => setTimeout(resolve, 650));
+      // Give React 1000ms to completely mount and lay out the DOM cleanly, including all sub-layouts
+      await new Promise((resolve) => setTimeout(resolve, 1000));
 
       const html2pdf = await loadHtml2Pdf();
       const container = document.getElementById('temp-download-container');
@@ -3137,62 +3137,11 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
         });
       }));
 
-      // A4 dimensions in pixels at 96 dpi
-      const targetWidth = 794;
-      const targetHeight = 1122;
-
-      // Unset previous scaling styles to take a clean measurement
-      element.style.width = `${targetWidth}px`;
-      element.style.minHeight = `${targetHeight}px`;
-      element.style.height = 'auto';
-      element.style.transform = 'none';
-      element.style.transformOrigin = 'top left';
-
-      // Measure the initial natural scroll height of the resume
-      const naturalHeight = element.scrollHeight;
-      console.log(`Natural height of content before scaling: ${naturalHeight}px`);
-
-      let finalScale = 1.0;
-
-      if (naturalHeight > targetHeight) {
-        // Calculate factor and find optimal scale down to minimum of 0.55
-        for (let s = 0.98; s >= 0.55; s -= 0.02) {
-          const wRender = targetWidth / s;
-          const hRender = targetHeight / s;
-
-          element.style.width = `${wRender}px`;
-          element.style.minHeight = `${hRender}px`;
-          element.style.height = `${hRender}px`;
-
-          // Force browser to recalculate scrollHeight synchronously
-          const currentH = element.scrollHeight;
-          if (currentH <= hRender) {
-            finalScale = s;
-            console.log(`Fator de escala ideal encontrado: ${finalScale.toFixed(2)} (W: ${wRender.toFixed(0)}px, H: ${hRender.toFixed(0)}px)`);
-            break;
-          }
-
-          if (s <= 0.56) {
-            finalScale = 0.55;
-            console.log(`Atingida escala menor limite (0.55). Forçando escala...`);
-          }
-        }
-
-        // Apply visual transformation scaling to fit exactly 794x1122 wrapper
-        const wRender = targetWidth / finalScale;
-        const hRender = targetHeight / finalScale;
-        element.style.width = `${wRender}px`;
-        element.style.minHeight = `${hRender}px`;
-        element.style.height = `${hRender}px`;
-        element.style.transform = `scale(${finalScale})`;
-        element.style.transformOrigin = 'top left';
-      } else {
-        // Fits perfectly without scaling, force exactly the target dimensions so the canvas is exactly A4
-        element.style.width = `${targetWidth}px`;
-        element.style.minHeight = `${targetHeight}px`;
-        element.style.height = `${targetHeight}px`;
-        element.style.transform = 'none';
-      }
+      // Force absolute baseline layout dimensions for high resolution capture
+      element.style.width = '794px';
+      element.style.height = '1122px';
+      element.style.minHeight = '1122px';
+      element.style.maxHeight = '1122px';
 
       const opt = {
         margin: 0,
@@ -3202,13 +3151,17 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
           scale: 2.2, 
           useCORS: true, 
           letterRendering: true,
-          logging: false
+          logging: false,
+          scrollX: 0,
+          scrollY: 0,
+          windowWidth: 794,
+          windowHeight: 1122
         },
         jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
       };
 
-      // Generate & Download the PDF capturing the perfect 794x1122 wrapper container
-      await html2pdf().from(container).set(opt).save();
+      // Generate & Download the PDF capturing the perfect 794x1122 element directly (not the parent container)
+      await html2pdf().from(element).set(opt).save();
       console.log("PDF gerado e baixado com sucesso!");
     } catch (err: any) {
       console.error("Erro na conversão para PDF:", err);
@@ -5152,10 +5105,10 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
             top: '0px', 
             left: '0px', 
             width: '794px', 
-            height: '1122px',
+            height: '1122px', 
             minHeight: '1122px',
             overflow: 'hidden',
-            zIndex: -99999, 
+            zIndex: 99999, // Render inside viewport with high z-index under the loading overlay
             pointerEvents: 'none',
             backgroundColor: '#ffffff'
           }}
@@ -5174,6 +5127,14 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
           )}
         </div>,
         document.body
+      )}
+
+      {isDownloading && (
+        <div className="fixed inset-0 bg-slate-950/95 backdrop-blur-md flex flex-col items-center justify-center z-[100000] text-white select-none">
+          <div className="w-16 h-16 border-4 border-white/20 border-t-white rounded-full animate-spin mb-6"></div>
+          <p className="text-xl font-black uppercase tracking-[0.2em] text-white">Preparando Alta Definição</p>
+          <p className="text-xs text-slate-400 mt-2 font-bold tracking-wide uppercase">Organizando auto-escala e compilando página única perfeita...</p>
+        </div>
       )}
     </div>
   );
