@@ -190,17 +190,19 @@ const TextArea = ({ label, value, onChange, placeholder, onOptimize, isOptimizin
 // --- Resumes & Templates Configuration ---
 
 const TEMPLATES: Record<TemplateType, { name: string; layout: string; colors: any }> = {
-  t1_executive: { name: 'Executivo Classic', layout: 'custom-t1', colors: { primary: '#1B2A4A', text: '#4B5563', heading: '#1B2A4A', soft: '#1B2A4A', lines: '#E5E7EB' } },
-  t2_geometric: { name: 'Geométrico Mod', layout: 'custom-t2', colors: { primary: '#1B2A4A', text: '#4B5563', heading: '#1B2A4A', soft: '#F9FAFB', lines: '#F3F4F6' } },
-  t3_modern: { name: 'Corporate Clean', layout: 'custom-t3', colors: { primary: '#2D3748', text: '#4A5568', heading: '#1A202C', soft: '#F7FAFC', lines: '#E2E8F0', dark: '#1A202C' } },
-  t4_barnabas: { name: 'Sidebar Limpa', layout: 'custom-t4', colors: { primary: '#2D313A', text: '#3E4249', heading: '#333333', soft: '#2D313A', lines: '#E5E7EB' } },
-  t5_jonathan: { name: 'Escritor Arches', layout: 'custom-t5', colors: { primary: '#4A4C53', text: '#555555', heading: '#222222', soft: '#F3F4F6', lines: '#D1D5DB' } },
-  t6_creative: { name: 'Criativo', layout: 'custom-t6', colors: { primary: '#34495E', text: '#333', heading: '#111', soft: '#F4F6F6', lines: '#D1D5DB' } },
-  t7_professional: { name: 'Profissional', layout: 'custom-t7', colors: { primary: '#186A3B', text: '#333', heading: '#111', soft: '#E9F7EF', lines: '#D1D5DB' } },
-  t8_geometric_blue: { name: 'Azul Geométrico', layout: 'custom-t8', colors: { primary: '#1E40AF', text: '#475569', heading: '#1E3A8A', soft: '#EFF6FF', lines: '#E2E8F0' } },
-  t9_emerald_pill: { name: 'Sólido Esmeralda', layout: 'custom-t9', colors: { primary: '#0F766E', text: '#374151', heading: '#111827', soft: '#F0FDF4', lines: '#E5E7EB' } },
-  t10_johan: { name: 'Johan Bluestone', layout: 'custom-t10', colors: { primary: '#1A365D', text: '#4A5568', heading: '#111827', soft: '#F7FAFC', lines: '#E2E8F0' } },
-  t11_kelly: { name: 'Kelly Modern', layout: 'custom-t11', colors: { primary: '#EA580C', text: '#374151', heading: '#111827', soft: '#FFF7ED', lines: '#FFEDD5' } }
+  t1_executive: { name: 'Nath', layout: 'custom-t1', colors: { primary: '#1B2A4A', text: '#4B5563', heading: '#1B2A4A', soft: '#1B2A4A', lines: '#E5E7EB' } },
+  t2_geometric: { name: 'Dúnia', layout: 'custom-t2', colors: { primary: '#1B2A4A', text: '#4B5563', heading: '#1B2A4A', soft: '#F9FAFB', lines: '#F3F4F6' } },
+  t3_modern: { name: 'Daniel', layout: 'custom-t3', colors: { primary: '#2D3748', text: '#4A5568', heading: '#1A202C', soft: '#F7FAFC', lines: '#E2E8F0', dark: '#1A202C' } },
+  t4_barnabas: { name: 'Jack', layout: 'custom-t4', colors: { primary: '#2D313A', text: '#3E4249', heading: '#333333', soft: '#2D313A', lines: '#E5E7EB' } },
+  t5_jonathan: { name: 'Príncipe', layout: 'custom-t5', colors: { primary: '#4A4C53', text: '#555555', heading: '#222222', soft: '#F3F4F6', lines: '#D1D5DB' } },
+  t6_creative: { name: 'Lopera', layout: 'custom-t6', colors: { primary: '#34495E', text: '#333', heading: '#111', soft: '#F4F6F6', lines: '#D1D5DB' } },
+  t7_professional: { name: 'Ivânia', layout: 'custom-t7', colors: { primary: '#186A3B', text: '#333', heading: '#111', soft: '#E9F7EF', lines: '#D1D5DB' } },
+  t8_geometric_blue: { name: 'Josiel', layout: 'custom-t8', colors: { primary: '#1E40AF', text: '#475569', heading: '#1E3A8A', soft: '#EFF6FF', lines: '#E2E8F0' } },
+  t9_emerald_pill: { name: 'Isabel', layout: 'custom-t9', colors: { primary: '#0F766E', text: '#374151', heading: '#111827', soft: '#F0FDF4', lines: '#E5E7EB' } },
+  t10_johan: { name: 'Ronalma', layout: 'custom-t10', colors: { primary: '#1A365D', text: '#4A5568', heading: '#111827', soft: '#F7FAFC', lines: '#E2E8F0' } },
+  t11_kelly: { name: 'Bezinho', layout: 'custom-t11', colors: { primary: '#EA580C', text: '#374151', heading: '#111827', soft: '#FFF7ED', lines: '#FFEDD5' } },
+  t12_maria: { name: 'Maria', layout: 'custom-t12', colors: { primary: '#801D38', text: '#374151', heading: '#4C1021', soft: '#FFF5F6', lines: '#F5E1E4' } },
+  t13_tazi: { name: 'Tazi', layout: 'custom-t13', colors: { primary: '#0B4F6C', text: '#334155', heading: '#0F172A', soft: '#EBF5F8', lines: '#D0E5EB' } }
 };
 
 // --- Helpers ---
@@ -385,7 +387,7 @@ const MyResumesPage = ({ user, setView }: { user: any, setView: (v: any) => void
         try {
             const filename = specificType === 'resume' ? 'Curriculo_CVLAB.pdf' : 'Carta_Apresentacao_CVLAB.pdf';
             const templateMap: Record<TemplateType, number> = {
-                't1_executive': 1, 't2_geometric': 2, 't3_modern': 3, 't4_barnabas': 4, 't5_jonathan': 5, 't6_creative': 6, 't7_professional': 7, 't8_geometric_blue': 8, 't9_emerald_pill': 9, 't10_johan': 10, 't11_kelly': 11
+                't1_executive': 1, 't2_geometric': 2, 't3_modern': 3, 't4_barnabas': 4, 't5_jonathan': 5, 't6_creative': 6, 't7_professional': 7, 't8_geometric_blue': 8, 't9_emerald_pill': 9, 't10_johan': 10, 't11_kelly': 11, 't12_maria': 12, 't13_tazi': 13
             };
             
             // Extract correct data based on type
@@ -2397,6 +2399,316 @@ const ResumeRenderer = React.memo(({ data, templateId }: { data: ResumeData; tem
 
         </div>
       )}
+
+      {theme.layout === 'custom-t12' && (
+        <div className="flex flex-col w-full min-h-[1122px] h-auto bg-[#FFFDFB] text-left font-serif p-12 overflow-visible relative">
+          {/* Top minimal hair line accent */}
+          <div className="w-full h-1 mb-8" style={{ backgroundColor: c.primary }} />
+
+          {/* Centered top name card */}
+          <div className="text-center space-y-4 pb-8 border-b border-gray-100">
+            {data.personalInfo.photo && (
+              <div className="mx-auto overflow-hidden rounded-full border mb-4" style={{ width: `${data.personalInfo.photoSize || 80}px`, height: `${data.personalInfo.photoSize || 80}px`, borderColor: c.primary }}>
+                <img src={data.personalInfo.photo} referrerPolicy="no-referrer" className="object-cover object-top w-full h-full" />
+              </div>
+            )}
+            <h1 className="text-4xl font-extrabold tracking-tight text-slate-900 font-serif leading-none">{data.personalInfo.fullName || "Seu Nome"}</h1>
+            <p className="text-xs tracking-[0.25em] font-sans font-black uppercase" style={{ color: c.primary }}>{data.personalInfo.title || "Cargo Desejado"}</p>
+            
+            {/* Dynamic centered contact row */}
+            <div className="flex flex-wrap justify-center items-center gap-x-6 gap-y-1.5 pt-2 text-[10px] text-gray-500 font-sans font-bold">
+              {data.personalInfo.phone && <span className="flex items-center gap-1"><Phone size={10} style={{ color: c.primary }} /> {data.personalInfo.phone}</span>}
+              {data.personalInfo.email && <span className="flex items-center gap-1"><Mail size={10} style={{ color: c.primary }} /> {data.personalInfo.email}</span>}
+              {data.personalInfo.location && <span className="flex items-center gap-1"><MapPin size={10} style={{ color: c.primary }} /> {data.personalInfo.location}</span>}
+              {data.personalInfo.website && <span className="flex items-center gap-1"><Globe size={10} style={{ color: c.primary }} /> {data.personalInfo.website}</span>}
+            </div>
+          </div>
+
+          {/* Summary / Profile Section */}
+          {data.personalInfo.summary && (
+            <div className="py-6 border-b border-gray-100 max-w-3xl mx-auto text-center">
+              <p className="text-xs leading-relaxed text-slate-600 font-medium italic">
+                "{renderText(data.personalInfo.summary)}"
+              </p>
+            </div>
+          )}
+
+          {/* Main sections arranged in an elegant typography column */}
+          <div className="grid grid-cols-12 gap-8 pt-8 flex-1">
+            {/* Left Column (Skills & Languages) */}
+            <div className="col-span-4 space-y-6 select-none">
+              {/* Skills/Competences */}
+              {data.skills.length > 0 && (
+                <div className="space-y-3">
+                  <h3 className="text-xs font-black uppercase tracking-widest font-sans border-b pb-1 text-slate-800" style={{ borderColor: c.primary }}>Competências</h3>
+                  <div className="space-y-2">
+                    {data.skills.map((s, idx) => (
+                      <div key={s.id || `skill-${idx}`} className="flex justify-between items-baseline font-sans text-[10px]">
+                        <span className="font-bold text-slate-700">{s.name}</span>
+                        <span className="text-[8px] font-bold text-slate-400 capitalize">{s.level}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Languages */}
+              {data.languages && data.languages.length > 0 && (
+                <div className="space-y-3 pt-2">
+                  <h3 className="text-xs font-black uppercase tracking-widest font-sans border-b pb-1 text-slate-800" style={{ borderColor: c.primary }}>Idiomas</h3>
+                  <div className="space-y-2">
+                    {data.languages.map((l, idx) => (
+                      <div key={l.id || `lang-${idx}`} className="flex justify-between items-baseline font-sans text-[10px]">
+                        <span className="font-bold text-slate-700">{l.name}</span>
+                        <span className="text-[8px] font-black tracking-wider uppercase text-slate-400">{l.level}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Right Column (Experience & Education) */}
+            <div className="col-span-8 space-y-8">
+              {/* Experience */}
+              {data.experience.length > 0 && (
+                <div className="space-y-4">
+                  <h3 className="text-xs font-black uppercase tracking-widest font-sans border-b pb-1 text-slate-800" style={{ borderColor: c.primary }}>Experiência Profissional</h3>
+                  <div className="space-y-6">
+                    {data.experience.map((ex, idx) => (
+                      <div key={ex.id || `exp-${idx}`} className="space-y-1.5">
+                        <div className="flex justify-between items-baseline">
+                          <h4 className="text-xs font-extrabold text-slate-950 font-serif">{ex.position}</h4>
+                          <span className="text-[9px] font-black font-sans text-slate-400 shrink-0">{ex.startDate} - {ex.current ? "PRESENTE" : ex.endDate}</span>
+                        </div>
+                        <p className="text-[10px] font-bold tracking-wide font-sans text-slate-500 uppercase">{ex.company}</p>
+                        <p className="text-[11px] leading-relaxed text-slate-600 whitespace-pre-line font-medium pt-0.5">{renderText(ex.description)}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Education */}
+              {data.education.length > 0 && (
+                <div className="space-y-4">
+                  <h3 className="text-xs font-black uppercase tracking-widest font-sans border-b pb-1 text-slate-800" style={{ borderColor: c.primary }}>Formação Académica</h3>
+                  <div className="space-y-4">
+                    {data.education.map((e, idx) => (
+                      <div key={e.id || `edu-${idx}`} className="space-y-1">
+                        <div className="flex justify-between items-baseline">
+                          <h4 className="text-xs font-extrabold text-slate-950 font-serif">{e.degree}</h4>
+                          <span className="text-[9px] font-black font-sans text-slate-400 shrink-0">{e.startDate} - {e.endDate}</span>
+                        </div>
+                        <p className="text-[10px] font-bold font-sans text-slate-500">{e.institution}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Certifications & Awards */}
+              {data.certifications && data.certifications.length > 0 && (
+                <div className="space-y-4">
+                  <h3 className="text-xs font-black uppercase tracking-widest font-sans border-b pb-1 text-slate-800" style={{ borderColor: c.primary }}>Certificações & Prêmios</h3>
+                  <div className="grid grid-cols-2 gap-4">
+                    {data.certifications.map((cVal, idx) => (
+                      <div key={cVal.id || `cert-${idx}`} className="space-y-0.5">
+                        <h4 className="text-[10.5px] font-bold text-slate-800 font-serif leading-tight">{cVal.name}</h4>
+                        <p className="text-[8px] font-black font-sans text-slate-400 uppercase tracking-widest">{cVal.date}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Elegant minimalist bottom footer */}
+          <div className="border-t border-slate-100 pt-6 mt-12 text-center text-[8px] font-bold font-sans tracking-widest text-slate-400">
+             CURRÍCULO PROFISSIONAL • {data.personalInfo.fullName ? data.personalInfo.fullName.toUpperCase() : "CV"}
+          </div>
+        </div>
+      )}
+
+      {theme.layout === 'custom-t13' && (
+        <div className="flex flex-col w-full min-h-[1122px] h-auto bg-slate-50/50 text-left font-sans overflow-visible relative font-sans">
+          
+          {/* Top Banner Block */}
+          <div className="px-12 py-10 text-white flex justify-between items-center bg-slate-950 relative overflow-hidden shrink-0">
+            {/* Visual background accents */}
+            <div className="absolute -top-16 -right-16 w-48 h-48 rounded-full opacity-10" style={{ backgroundColor: c.primary }} />
+            <div className="absolute top-1/2 left-1/3 w-32 h-32 rounded-full opacity-5" style={{ backgroundColor: c.primary }} />
+
+            <div className="space-y-2 z-10 font-sans">
+              <h1 className="text-4xl font-extrabold tracking-tight uppercase leading-none">{data.personalInfo.fullName || "Seu Nome"}</h1>
+              <p className="text-xs font-black uppercase tracking-[0.25em]" style={{ color: c.primary }}>{data.personalInfo.title || "Cargo Desejado"}</p>
+            </div>
+
+            {data.personalInfo.photo && (
+              <div 
+                className="w-20 h-20 rounded-2xl overflow-hidden border-2 z-10 bg-black/20"
+                style={{ borderColor: c.primary }}
+              >
+                <img src={data.personalInfo.photo} referrerPolicy="no-referrer" className="object-cover object-top w-full h-full" />
+              </div>
+            )}
+          </div>
+
+          {/* Accent Line */}
+          <div className="h-2 w-full" style={{ backgroundColor: c.primary }} />
+
+          {/* Body structure with dual panel layout */}
+          <div className="flex flex-row flex-1 p-8 gap-8">
+            {/* Side Panel (Skills, Languages, Contact) */}
+            <div className="w-[32%] space-y-6 shrink-0">
+              
+              {/* Contact Card */}
+              <div className="p-5 bg-white rounded-2xl border border-slate-100 shadow-sm space-y-4">
+                <h3 className="text-xs font-mono font-black uppercase tracking-widest text-slate-800 border-b pb-1.5" style={{ borderBottomColor: c.primary }}>Contacto</h3>
+                <div className="space-y-2.5">
+                  {data.personalInfo.phone && (
+                    <div className="flex items-center gap-2 text-[10px] font-bold text-slate-600 animate-fade-in">
+                      <Phone size={11} className="shrink-0" style={{ color: c.primary }} />
+                      <span className="truncate">{data.personalInfo.phone}</span>
+                    </div>
+                  )}
+                  {data.personalInfo.email && (
+                    <div className="flex items-center gap-2 text-[10px] font-bold text-slate-600">
+                      <Mail size={11} className="shrink-0" style={{ color: c.primary }} />
+                      <span className="break-all">{data.personalInfo.email}</span>
+                    </div>
+                  )}
+                  {data.personalInfo.location && (
+                    <div className="flex items-center gap-2 text-[10px] font-bold text-slate-600">
+                      <MapPin size={11} className="shrink-0" style={{ color: c.primary }} />
+                      <span className="truncate">{data.personalInfo.location}</span>
+                    </div>
+                  )}
+                  {data.personalInfo.website && (
+                    <div className="flex items-center gap-2 text-[10px] font-bold text-slate-600">
+                      <Globe size={11} className="shrink-0" style={{ color: c.primary }} />
+                      <span className="break-all">{data.personalInfo.website}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Skills */}
+              {data.skills.length > 0 && (
+                <div className="p-5 bg-white rounded-2xl border border-slate-100 shadow-sm space-y-4 select-none">
+                  <h3 className="text-xs font-mono font-black uppercase tracking-widest text-slate-800 border-b pb-1.5" style={{ borderBottomColor: c.primary }}>Competências</h3>
+                  <div className="space-y-3">
+                    {data.skills.map((s, idx) => {
+                      return (
+                        <div key={s.id || `skill-${idx}`} className="space-y-1 font-sans">
+                          <div className="flex justify-between items-baseline text-[10px] font-bold text-slate-700">
+                            <span>{s.name}</span>
+                            <span className="text-[8px] opacity-70 uppercase tracking-tight">{s.level}</span>
+                          </div>
+                          <div className="w-full h-1 bg-slate-100 rounded-full overflow-hidden">
+                            <div className="h-full rounded-full transition-all duration-300" style={{ backgroundColor: c.primary, width: s.level === 'Especialista' ? '100%' : s.level === 'Avançado' ? '80%' : s.level === 'Intermédio' ? '60%' : '40%' }} />
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Languages */}
+              {data.languages && data.languages.length > 0 && (
+                <div className="p-5 bg-white rounded-2xl border border-slate-100 shadow-sm space-y-3 font-sans">
+                  <h3 className="text-xs font-mono font-black uppercase tracking-widest text-slate-800 border-b pb-1.5" style={{ borderBottomColor: c.primary }}>Idiomas</h3>
+                  <div className="space-y-2 font-sans">
+                    {data.languages.map((l, idx) => (
+                      <div key={l.id || `lang-${idx}`} className="flex justify-between items-baseline text-[10px] font-bold text-slate-700 font-sans font-sans">
+                        <span>{l.name}</span>
+                        <span className="text-[8px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded bg-slate-100 text-slate-400 font-sans">{l.level}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+            </div>
+
+            {/* Main pane containing summary, experience and education */}
+            <div className="w-[68%] space-y-6 font-sans">
+              
+              {/* Summary Card */}
+              {data.personalInfo.summary && (
+                <div className="p-6 bg-white rounded-2xl border border-slate-100 shadow-sm space-y-2.5">
+                  <h3 className="text-xs font-mono font-black uppercase tracking-widest text-slate-800">Resumo Profissional</h3>
+                  <p className="text-xs leading-relaxed text-slate-600 font-medium">
+                    {renderText(data.personalInfo.summary)}
+                  </p>
+                </div>
+              )}
+
+              {/* Experience Card */}
+              {data.experience.length > 0 && (
+                <div className="p-6 bg-white rounded-2xl border border-slate-100 shadow-sm space-y-4 font-sans">
+                  <h3 className="text-xs font-mono font-black uppercase tracking-widest text-slate-800 border-b pb-2" style={{ borderBottomColor: c.primary }}>Experiência de Trabalho</h3>
+                  <div className="space-y-4">
+                    {data.experience.map((ex, idx) => (
+                      <div key={ex.id || `exp-${idx}`} className="space-y-1 relative pl-4 border-l-2" style={{ borderLeftColor: c.primary }}>
+                        <div className="flex justify-between items-baseline gap-2">
+                          <h4 className="text-xs font-extrabold text-slate-900 leading-tight">{ex.position}</h4>
+                          <span className="text-[8px] font-black font-mono text-slate-400 uppercase tracking-tight shrink-0">{ex.startDate} - {ex.current ? "PRESENTE" : ex.endDate}</span>
+                        </div>
+                        <p className="text-[9px] font-black uppercase tracking-wider" style={{ color: c.primary }}>{ex.company}</p>
+                        <p className="text-[10.5px] leading-relaxed text-slate-600 whitespace-pre-line mt-1">{renderText(ex.description)}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Education Card */}
+              {data.education.length > 0 && (
+                <div className="p-6 bg-white rounded-2xl border border-slate-100 shadow-sm space-y-4 font-sans">
+                  <h3 className="text-xs font-mono font-black uppercase tracking-widest text-slate-800 border-b pb-2" style={{ borderBottomColor: c.primary }}>Educação</h3>
+                  <div className="space-y-4">
+                    {data.education.map((e, idx) => (
+                      <div key={e.id || `edu-${idx}`} className="space-y-1 relative pl-4 border-l-2" style={{ borderLeftColor: c.primary }}>
+                        <div className="flex justify-between items-baseline font-sans">
+                          <h4 className="text-xs font-extrabold text-slate-900 leading-tight">{e.degree}</h4>
+                          <span className="text-[8px] font-black font-mono text-slate-400 uppercase tracking-tight shrink-0">{e.startDate} - {e.endDate}</span>
+                        </div>
+                        <p className="text-[9.5px] font-bold text-slate-500">{e.institution}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Certifications and Awards */}
+              {data.certifications && data.certifications.length > 0 && (
+                <div className="p-6 bg-white rounded-2xl border border-slate-100 shadow-sm space-y-4">
+                  <h3 className="text-xs font-mono font-black uppercase tracking-widest text-slate-800 border-b pb-2" style={{ borderBottomColor: c.primary }}>Prémios & Certificações</h3>
+                  <div className="grid grid-cols-2 gap-4">
+                    {data.certifications.map((cVal, idx) => (
+                      <div key={cVal.id || `cert-${idx}`} className="space-y-1 font-sans">
+                        <h4 className="text-[10px] font-bold text-slate-800 leading-tight">{cVal.name}</h4>
+                        <p className="text-[7.5px] font-black tracking-widest text-slate-400 uppercase font-mono">{cVal.date}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+            </div>
+          </div>
+
+          {/* Graphical Minimal Footer Block */}
+          <div className="h-6 w-full mt-auto bg-slate-950 flex items-center justify-between px-8 text-[7.5px] text-slate-500 font-mono font-black uppercase tracking-widest shrink-0 font-mono">
+            <span>CV LAB AUTOMATED GENERATOR</span>
+            <span style={{ color: c.primary }}>● COMPLIANT WEB DESIGNS</span>
+          </div>
+
+        </div>
+      )}
     </div>
   );
 });
@@ -2653,7 +2965,9 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
         't8_geometric_blue': 8,
         't9_emerald_pill': 9,
         't10_johan': 10,
-        't11_kelly': 11
+        't11_kelly': 11,
+        't12_maria': 12,
+        't13_tazi': 13
       };
 
       const templateId = templateMap[template] || 1;
