@@ -1082,6 +1082,399 @@ const Template9 = ({ data }: { data: ResumeData }) => {
   );
 };
 
+const Template10 = ({ data }: { data: ResumeData }) => {
+  const cTheme = data.themeColor || '#1A365D';
+  const styles = StyleSheet.create({
+    container: { flexDirection: 'column', height: '100%', backgroundColor: '#FFFFFF' },
+    accentLine: { height: 10, backgroundColor: cTheme },
+    
+    header: { padding: '25 30', backgroundColor: '#F8FAFC', borderBottom: '1pt solid #E2E8F0', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+    headerLeft: { width: '65%' },
+    name: { fontSize: 24, fontWeight: 900, color: '#1E293B', textTransform: 'uppercase', marginBottom: 3 },
+    title: { fontSize: 9, fontWeight: 900, color: cTheme, textTransform: 'uppercase', letterSpacing: 2 },
+    summary: { fontSize: 8.5, color: '#64748B', fontStyle: 'italic', marginTop: 8, lineHeight: 1.5 },
+    
+    avatarContainer: { width: 75, height: 75, borderRadius: 37.5, border: `3pt solid ${cTheme}`, padding: 1, backgroundColor: '#FFFFFF', alignItems: 'center', justifyContent: 'center' },
+    avatar: { width: '100%', height: '100%', borderRadius: 37.5, objectFit: 'cover' },
+    avatarPlaceholder: { width: '100%', height: '100%', borderRadius: 37.5, backgroundColor: '#E2E8F0', alignItems: 'center', justifyContent: 'center' },
+    avatarText: { fontSize: 22, fontWeight: 900, color: '#94A3B8' },
+
+    body: { flex: 1, flexDirection: 'row' },
+    leftCol: { width: '35%', backgroundColor: '#1E293B', padding: 20, color: '#FFFFFF' },
+    rightCol: { width: '65%', padding: '25 20' },
+
+    sidebarSection: { marginBottom: 20 },
+    sidebarTitle: { fontSize: 9, fontWeight: 900, textTransform: 'uppercase', letterSpacing: 1.5, color: '#FFFFFF', backgroundColor: 'rgba(255, 255, 255, 0.1)', padding: '4 8', borderRadius: 4, marginBottom: 10 },
+    
+    contactItem: { flexDirection: 'row', alignItems: 'center', marginBottom: 8 },
+    contactText: { fontSize: 8, color: '#F1F5F9', marginLeft: 6, flex: 1 },
+    
+    skillItem: { marginBottom: 10 },
+    skillHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 3 },
+    skillName: { fontSize: 8, color: '#F1F5F9', fontWeight: 700 },
+    skillLevel: { fontSize: 7, color: '#94A3B8' },
+    skillBar: { height: 4, backgroundColor: '#475569', borderRadius: 2, flexDirection: 'row', gap: 1 },
+    skillSegment: { flex: 1, height: '100%', borderRadius: 1 },
+
+    langItem: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 },
+    langName: { fontSize: 8, color: '#F1F5F9', fontWeight: 700 },
+    langLevel: { fontSize: 7, color: '#CBD5E1' },
+
+    sectionHeader: { flexDirection: 'row', alignItems: 'center', borderBottom: '1.5pt solid #E2E8F0', paddingBottom: 4, marginBottom: 12, marginTop: 15 },
+    sectionTitle: { fontSize: 10, fontWeight: 900, textTransform: 'uppercase', letterSpacing: 2, color: '#1E293B' },
+    
+    expItem: { marginBottom: 12, borderLeft: `1.5pt solid ${cTheme}`, paddingLeft: 10, marginLeft: 2 },
+    expHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 2 },
+    expTitle: { fontSize: 9.5, fontWeight: 900, color: '#0F172A' },
+    expDate: { fontSize: 7.5, color: '#64748B', fontWeight: 700 },
+    expCompany: { fontSize: 8.5, fontWeight: 900, color: cTheme, textTransform: 'uppercase', marginBottom: 4 },
+    expDesc: { fontSize: 8, lineHeight: 1.5, color: '#334155' },
+
+    eduItem: { marginBottom: 10, borderLeft: `1.5pt solid ${cTheme}`, paddingLeft: 10, marginLeft: 2 },
+    eduHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 2 },
+    eduDegree: { fontSize: 9, fontWeight: 900, color: '#0F172A' },
+    eduDate: { fontSize: 7.5, color: '#64748B', fontWeight: 700 },
+    eduInstitution: { fontSize: 8, color: '#475569', fontWeight: 700 },
+
+    certGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+    certItem: { width: '47%', borderLeft: '1pt solid #E2E8F0', paddingLeft: 6, marginBottom: 6 },
+    certName: { fontSize: 8.5, fontWeight: 900, color: '#1E293B' },
+    certDate: { fontSize: 7, color: '#94A3B8', textTransform: 'uppercase' },
+
+    footerLine: { height: 10, backgroundColor: '#0F172A' }
+  });
+
+  return (
+    <View style={styles.container}>
+      <View style={styles.accentLine} />
+      
+      <View style={styles.header}>
+        <View style={styles.headerLeft}>
+          <Text style={styles.name}>{data.personalInfo.fullName || 'Seu Nome'}</Text>
+          <Text style={styles.title}>{data.personalInfo.title || 'Cargo Desejado'}</Text>
+          {data.personalInfo.summary && (
+            <Text style={styles.summary}>"{data.personalInfo.summary.replace(/\*/g, '')}"</Text>
+          )}
+        </View>
+        <View style={styles.avatarContainer}>
+          {data.personalInfo.photo ? (
+            <Image src={data.personalInfo.photo} style={styles.avatar} />
+          ) : (
+            <View style={styles.avatarPlaceholder}>
+              <Text style={styles.avatarText}>
+                {data.personalInfo.fullName ? data.personalInfo.fullName.charAt(0).toUpperCase() : 'CV'}
+              </Text>
+            </View>
+          )}
+        </View>
+      </View>
+
+      <View style={styles.body}>
+        <View style={styles.leftCol}>
+          <View style={styles.sidebarSection}>
+            <Text style={styles.sidebarTitle}>Contacto</Text>
+            {data.personalInfo.phone && (
+              <View style={styles.contactItem}>
+                <Icons.Phone />
+                <Text style={styles.contactText}>{data.personalInfo.phone}</Text>
+              </View>
+            )}
+            {data.personalInfo.email && (
+              <View style={styles.contactItem}>
+                <Icons.Mail />
+                <Text style={styles.contactText}>{data.personalInfo.email}</Text>
+              </View>
+            )}
+            {data.personalInfo.location && (
+              <View style={styles.contactItem}>
+                <Icons.MapPin />
+                <Text style={styles.contactText}>{data.personalInfo.location}</Text>
+              </View>
+            )}
+          </View>
+
+          {data.skills.length > 0 && (
+            <View style={styles.sidebarSection}>
+              <Text style={styles.sidebarTitle}>Habilidades</Text>
+              {data.skills.filter(s => s && s.name).map((s, idx) => {
+                const value = s.level === 'Especialista' ? 5 : s.level === 'Avançado' ? 4 : s.level === 'Intermédio' ? 3 : 2;
+                return (
+                  <View key={s.id || `skill-${idx}`} style={styles.skillItem}>
+                    <View style={styles.skillHeader}>
+                      <Text style={styles.skillName}>{s.name}</Text>
+                      <Text style={styles.skillLevel}>{s.level}</Text>
+                    </View>
+                    <View style={styles.skillBar}>
+                      {[1, 2, 3, 4, 5].map((seg) => (
+                        <View 
+                          key={seg} 
+                          style={[
+                            styles.skillSegment, 
+                            { backgroundColor: seg <= value ? cTheme : '#475569' }
+                          ]} 
+                        />
+                      ))}
+                    </View>
+                  </View>
+                );
+              })}
+            </View>
+          )}
+
+          {data.languages && data.languages.length > 0 && (
+            <View style={styles.sidebarSection}>
+              <Text style={styles.sidebarTitle}>Idiomas</Text>
+              {data.languages.map((l, idx) => (
+                <View key={l.id || `lang-${idx}`} style={styles.langItem}>
+                  <Text style={styles.langName}>{l.name}</Text>
+                  <Text style={styles.langLevel}>{l.level}</Text>
+                </View>
+              ))}
+            </View>
+          )}
+        </View>
+
+        <View style={styles.rightCol}>
+          {data.experience.length > 0 && (
+            <View>
+              <View style={styles.sectionHeader}>
+                <Text style={styles.sectionTitle}>Experiência Profissional</Text>
+              </View>
+              {data.experience.map((ex, idx) => (
+                <View key={ex.id || `exp-${idx}`} style={styles.expItem}>
+                  <View style={styles.expHeader}>
+                    <Text style={styles.expTitle}>{ex.position}</Text>
+                    <Text style={styles.expDate}>{ex.startDate} - {ex.current ? "Presente" : ex.endDate}</Text>
+                  </View>
+                  <Text style={styles.expCompany}>{ex.company}</Text>
+                  <Text style={styles.expDesc}>{ex.description.replace(/\*/g, '')}</Text>
+                </View>
+              ))}
+            </View>
+          )}
+
+          {data.education.length > 0 && (
+            <View>
+              <View style={styles.sectionHeader}>
+                <Text style={styles.sectionTitle}>Formação Académica</Text>
+              </View>
+              {data.education.map((e, idx) => (
+                <View key={e.id || `edu-${idx}`} style={styles.eduItem}>
+                  <View style={styles.eduHeader}>
+                    <Text style={styles.eduDegree}>{e.degree}</Text>
+                    <Text style={styles.eduDate}>{e.startDate} - {e.endDate}</Text>
+                  </View>
+                  <Text style={styles.eduInstitution}>{e.institution}</Text>
+                </View>
+              ))}
+            </View>
+          )}
+
+          {data.certifications && data.certifications.length > 0 && (
+            <View>
+              <View style={styles.sectionHeader}>
+                <Text style={styles.sectionTitle}>Certidões & Prêmios</Text>
+              </View>
+              <View style={styles.certGrid}>
+                {data.certifications.map((cVal, idx) => (
+                  <View key={cVal.id || `cert-${idx}`} style={styles.certItem}>
+                    <Text style={styles.certName}>{cVal.name}</Text>
+                    <Text style={styles.certDate}>{cVal.date}</Text>
+                  </View>
+                ))}
+              </View>
+            </View>
+          )}
+        </View>
+      </View>
+      <View style={styles.footerLine} />
+    </View>
+  );
+};
+
+const Template11 = ({ data }: { data: ResumeData }) => {
+  const cTheme = data.themeColor || '#EA580C';
+  const styles = StyleSheet.create({
+    container: { flexDirection: 'row', height: '100%', backgroundColor: '#FFFFFF' },
+    
+    // Left column contains main content (63% width)
+    leftCol: { width: '63%', padding: '25 20', borderRight: '1pt solid #F1F5F9' },
+    
+    profileHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 20 },
+    avatar: { width: 65, height: 65, borderRadius: 32.5, border: `2.5pt solid ${cTheme}`, marginRight: 12, objectFit: 'cover' },
+    avatarPlaceholder: { width: 65, height: 65, borderRadius: 32.5, backgroundColor: '#F1F5F9', border: `2.5pt solid ${cTheme}`, marginRight: 12, alignItems: 'center', justifyContent: 'center' },
+    avatarText: { fontSize: 20, fontWeight: 900, color: cTheme },
+    nameContainer: { flex: 1 },
+    name: { fontSize: 21, fontWeight: 900, color: '#0F172A', textTransform: 'uppercase', marginBottom: 2 },
+    title: { fontSize: 8.5, fontWeight: 900, color: cTheme, textTransform: 'uppercase', letterSpacing: 1.5 },
+
+    sectionTitleBanner: { backgroundColor: cTheme, color: '#FFFFFF', fontSize: 8, fontWeight: 900, textTransform: 'uppercase', letterSpacing: 1.5, padding: '4 8', borderRadius: 2, marginBottom: 12, marginTop: 15, alignSelf: 'flex-start' },
+    summaryText: { fontSize: 8.5, lineHeight: 1.5, color: '#475569', fontStyle: 'italic', marginBottom: 10 },
+
+    // Grid layout with year bar on left
+    rowItem: { flexDirection: 'row', gap: 10, marginBottom: 12 },
+    yearBox: { width: 75, fontSize: 7, fontWeight: 900, color: cTheme, backgroundColor: `${cTheme}15`, border: `1pt solid ${cTheme}30`, padding: '4 2', textTransform: 'uppercase', alignSelf: 'flex-start', textAlign: 'center', borderRadius: 3 },
+    rowContent: { flex: 1 },
+    rowHeading: { fontSize: 9, fontWeight: 900, color: '#0F172A' },
+    rowSubheading: { fontSize: 8, color: '#64748B', fontWeight: 700, marginVertical: 2 },
+    rowDesc: { fontSize: 8, lineHeight: 1.4, color: '#334155' },
+
+    // Right column as dark sidebar (37% width)
+    rightCol: { width: '37%', backgroundColor: '#18181B', padding: 20, color: '#FFFFFF', justifyContent: 'space-between' },
+    sidebarSection: { marginBottom: 18 },
+    sidebarSectionHeader: { fontSize: 8.5, fontWeight: 900, textTransform: 'uppercase', letterSpacing: 1.5, color: '#D4D4D8', borderBottom: '1pt solid #27272A', paddingBottom: 4, marginBottom: 10 },
+    
+    contactItem: { flexDirection: 'row', alignItems: 'center', marginBottom: 8 },
+    contactText: { fontSize: 7.5, color: '#E4E4E7', marginLeft: 6, flex: 1 },
+
+    skillItem: { marginBottom: 8 },
+    skillName: { fontSize: 8, color: '#E4E4E7', fontWeight: 700, marginBottom: 3 },
+    skillBar: { height: 4, backgroundColor: '#27272A', borderRadius: 2, overflow: 'hidden' },
+    skillValue: { height: '100%', backgroundColor: cTheme, borderRadius: 2 },
+
+    langItem: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 },
+    langName: { fontSize: 8, color: '#E4E4E7', fontWeight: 700 },
+    langLevel: { fontSize: 7.5, color: '#A1A1AA' },
+
+    certItem: { marginBottom: 8 },
+    certTitle: { fontSize: 8, fontWeight: 900, color: '#F4F4F5' },
+    certDate: { fontSize: 7, color: '#71717A' },
+
+    decorativeBox: { height: 3, width: 35, backgroundColor: cTheme, borderRadius: 1.5 }
+  });
+
+  return (
+    <View style={styles.container}>
+      {/* Left Main Content Block */}
+      <View style={styles.leftCol}>
+        <View style={styles.profileHeader}>
+          {data.personalInfo.photo ? (
+            <Image src={data.personalInfo.photo} style={styles.avatar} />
+          ) : (
+            <View style={styles.avatarPlaceholder}>
+              <Text style={styles.avatarText}>
+                {data.personalInfo.fullName ? data.personalInfo.fullName.charAt(0).toUpperCase() : 'CV'}
+              </Text>
+            </View>
+          )}
+          <View style={styles.nameContainer}>
+            <Text style={styles.name}>{data.personalInfo.fullName || 'Seu Nome'}</Text>
+            <Text style={styles.title}>{data.personalInfo.title || 'Cargo Desejado'}</Text>
+          </View>
+        </View>
+
+        {data.personalInfo.summary && (
+          <View>
+            <Text style={styles.sectionTitleBanner}>Sobre Mim</Text>
+            <Text style={styles.summaryText}>"{data.personalInfo.summary.replace(/\*/g, '')}"</Text>
+          </View>
+        )}
+
+        {data.education.length > 0 && (
+          <View>
+            <Text style={styles.sectionTitleBanner}>Formação acadêmica</Text>
+            {data.education.map((e, idx) => (
+              <View key={e.id || `edu-${idx}`} style={styles.rowItem}>
+                <Text style={styles.yearBox}>{e.startDate} - {e.endDate}</Text>
+                <View style={styles.rowContent}>
+                  <Text style={styles.rowHeading}>{e.degree}</Text>
+                  <Text style={styles.rowSubheading}>{e.institution}</Text>
+                </View>
+              </View>
+            ))}
+          </View>
+        )}
+
+        {data.experience.length > 0 && (
+          <View>
+            <Text style={styles.sectionTitleBanner}>Experiência Profissional</Text>
+            {data.experience.map((ex, idx) => (
+              <View key={ex.id || `exp-${idx}`} style={styles.rowItem}>
+                <Text style={styles.yearBox}>{ex.startDate} - {ex.current ? "PRES." : ex.endDate}</Text>
+                <View style={styles.rowContent}>
+                  <Text style={styles.rowHeading}>{ex.position}</Text>
+                  <Text style={[styles.rowSubheading, { color: cTheme }]}>{ex.company}</Text>
+                  <Text style={styles.rowDesc}>{ex.description.replace(/\*/g, '')}</Text>
+                </View>
+              </View>
+            ))}
+          </View>
+        )}
+      </View>
+
+      {/* Right Column (Dark Sidebar) */}
+      <View style={styles.rightCol}>
+        <View>
+          <View style={styles.sidebarSection}>
+            <Text style={styles.sidebarSectionHeader}>Contacto</Text>
+            {data.personalInfo.phone && (
+              <View style={styles.contactItem}>
+                <Icons.Phone />
+                <Text style={styles.contactText}>{data.personalInfo.phone}</Text>
+              </View>
+            )}
+            {data.personalInfo.email && (
+              <View style={styles.contactItem}>
+                <Icons.Mail />
+                <Text style={styles.contactText}>{data.personalInfo.email}</Text>
+              </View>
+            )}
+            {data.personalInfo.location && (
+              <View style={styles.contactItem}>
+                <Icons.MapPin />
+                <Text style={styles.contactText}>{data.personalInfo.location}</Text>
+              </View>
+            )}
+          </View>
+
+          {data.skills.length > 0 && (
+            <View style={styles.sidebarSection}>
+              <Text style={styles.sidebarSectionHeader}>Competências</Text>
+              {data.skills.filter(s => s && s.name).map((s, idx) => {
+                const value = s.level === 'Especialista' ? 100 : s.level === 'Avançado' ? 80 : s.level === 'Intermédio' ? 60 : 40;
+                return (
+                  <View key={s.id || `skill-${idx}`} style={styles.skillItem}>
+                    <Text style={styles.skillName}>{s.name}</Text>
+                    <View style={styles.skillBar}>
+                      <View style={[styles.skillValue, { width: `${value}%` }]} />
+                    </View>
+                  </View>
+                );
+              })}
+            </View>
+          )}
+
+          {data.languages && data.languages.length > 0 && (
+            <View style={styles.sidebarSection}>
+              <Text style={styles.sidebarSectionHeader}>Idiomas</Text>
+              {data.languages.map((l, idx) => (
+                <View key={l.id || `lang-${idx}`} style={styles.langItem}>
+                  <Text style={styles.langName}>{l.name}</Text>
+                  <Text style={styles.langLevel}>{l.level}</Text>
+                </View>
+              ))}
+            </View>
+          )}
+
+          {data.certifications && data.certifications.length > 0 && (
+            <View style={styles.sidebarSection}>
+              <Text style={styles.sidebarSectionHeader}>Prêmios</Text>
+              {data.certifications.map((cVal, idx) => (
+                <View key={cVal.id || `cert-${idx}`} style={styles.certItem}>
+                  <Text style={styles.certTitle}>{cVal.name}</Text>
+                  <Text style={styles.certDate}>{cVal.date}</Text>
+                </View>
+              ))}
+            </View>
+          )}
+        </View>
+
+        <View style={styles.decorativeBox} />
+      </View>
+    </View>
+  );
+};
+
 export const PdfDocument = ({ data, templateId, type = 'resume' }: { data: any; templateId: number; type?: 'resume' | 'cover_letter' }) => (
   <Document title={type === 'resume' ? 'Currículo CV LAB' : 'Carta de Apresentação CV LAB'}>
     <Page size="A4" style={commonStyles.page} dpi={72}>
@@ -1096,6 +1489,8 @@ export const PdfDocument = ({ data, templateId, type = 'resume' }: { data: any; 
           {templateId === 7 && <Template7 key="t7" data={data} />}
           {templateId === 8 && <Template8 key="t8" data={data} />}
           {templateId === 9 && <Template9 key="t9" data={data} />}
+          {templateId === 10 && <Template10 key="t10" data={data} />}
+          {templateId === 11 && <Template11 key="t11" data={data} />}
         </>
       ) : (
         <CoverLetter data={data} />
