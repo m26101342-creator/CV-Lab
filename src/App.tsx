@@ -4,6 +4,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   Plus, 
@@ -315,50 +316,81 @@ const CoverLetterRenderer = React.memo(({ content, personalInfo, themeColor }: {
   const c = { primary: themeColor || '#1B2A4A' };
   const info = personalInfo || {};
   
+  // Calculate a scaling factor dynamic for super long cover letters to keep them strictly on 1 page
+  const textLength = content ? content.length : 0;
+  const densityScale = textLength > 1200 ? Math.max(0.68, Math.min(1.0, 1 - (textLength - 1200) * 0.00025)) : 1.0;
+  
+  const wRender = 794 / densityScale;
+  const hRender = 1122 / densityScale;
+
   return (
     <div 
       id="cover-letter-content"
-      className="bg-white min-h-[1122px] h-auto w-[794px] p-20 relative flex flex-col font-sans text-left shadow-2xl overflow-visible"
+      className="bg-white relative overflow-hidden print:shadow-none shadow-2xl"
+      style={{ 
+        width: '794px', 
+        height: '1122px', 
+        minHeight: '1122px',
+        maxHeight: '1122px',
+        color: '#1f2937'
+      }}
     >
-       {/* Minimalist Professional Header */}
-       <div className="flex justify-between items-start border-b-2 pb-8 mb-10 mt-4" style={{ borderColor: `${c.primary}30` }}>
-         <div className="space-y-1.5 max-w-[60%]">
-           <h1 className="text-[32px] font-black tracking-tight leading-none" style={{ color: c.primary }}>
-             {info.fullName || 'Seu Nome'}
-           </h1>
-           <p className="text-gray-500 font-bold tracking-[0.1em] text-[11px] uppercase">
-             {info.title || 'Seu Cargo'}
-           </p>
-         </div>
-         <div className="flex flex-col gap-2 text-gray-500 font-medium text-[11px] bg-slate-50/70 p-4 rounded-xl border border-slate-100/50 min-w-[200px]">
-           {info.email && <div className="flex items-center gap-2 text-gray-700"><Mail size={12} className="opacity-60 shrink-0 text-slate-500" /><span className="truncate leading-none">{info.email}</span></div>}
-           {info.phone && <div className="flex items-center gap-2 text-gray-700"><Phone size={12} className="opacity-60 shrink-0 text-slate-500" /><span className="leading-none">{info.phone}</span></div>}
-           {info.location && <div className="flex items-center gap-2 text-gray-700"><MapPin size={12} className="opacity-60 shrink-0 text-slate-500" /><span className="leading-none">{info.location}</span></div>}
-         </div>
-       </div>
-
-       <div className="flex justify-between items-end mb-12 text-[12px] uppercase tracking-widest font-bold text-gray-400">
-         <span>Ref: Candidatura Espontânea</span>
-         <span>Luanda, {new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })}</span>
-       </div>
-       
-       <div className="flex-1 text-justify whitespace-pre-line text-[14px] leading-[2.1] text-gray-700 font-medium px-4">
-          {content ? content.replace(/\*/g, '') : ''}
-       </div>
-
-       <div className="mt-20 pt-10 flex flex-col justify-end items-end pr-4">
-          <div className="text-right">
-             <p className="text-[11px] text-gray-400 uppercase tracking-widest mb-4">Atentamente,</p>
-             <p className="text-[18px] font-black italic tracking-tighter" style={{ color: c.primary }}>
-                {info.fullName || 'Seu Nome'}
+      <div 
+        className="relative overflow-visible flex flex-col font-sans text-left"
+        style={{ 
+          width: `${wRender}px`,
+          height: `${hRender}px`,
+          minHeight: `${hRender}px`,
+          transform: `scale(${densityScale})`,
+          transformOrigin: 'top left',
+          padding: '80px',
+          boxSizing: 'border-box'
+        }}
+      >
+         {/* Minimalist Professional Header */}
+         <div className="flex justify-between items-start border-b-2 pb-8 mb-10 mt-4" style={{ borderColor: `${c.primary}30` }}>
+           <div className="space-y-1.5 max-w-[60%]">
+             <h1 className="text-[32px] font-black tracking-tight leading-none" style={{ color: c.primary }}>
+               {info.fullName || 'Seu Nome'}
+             </h1>
+             <p className="text-gray-500 font-bold tracking-[0.1em] text-[11px] uppercase">
+               {info.title || 'Seu Cargo'}
              </p>
-          </div>
-       </div>
+           </div>
+           <div className="flex flex-col gap-2 text-gray-500 font-medium text-[11px] bg-slate-50/70 p-4 rounded-xl border border-slate-100/50 min-w-[200px]">
+             {info.email && <div className="flex items-center gap-2 text-gray-700"><Mail size={12} className="opacity-60 shrink-0 text-slate-500" /><span className="truncate leading-none">{info.email}</span></div>}
+             {info.phone && <div className="flex items-center gap-2 text-gray-700"><Phone size={12} className="opacity-60 shrink-0 text-slate-500" /><span className="leading-none">{info.phone}</span></div>}
+             {info.location && <div className="flex items-center gap-2 text-gray-700"><MapPin size={12} className="opacity-60 shrink-0 text-slate-500" /><span className="leading-none">{info.location}</span></div>}
+           </div>
+         </div>
+
+         <div className="flex justify-between items-end mb-12 text-[12px] uppercase tracking-widest font-bold text-gray-400">
+           <span>Ref: Candidatura Espontânea</span>
+           <span>Luanda, {new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })}</span>
+         </div>
+         
+         <div className="flex-1 text-justify whitespace-pre-line text-[14px] leading-[2.1] text-gray-700 font-medium px-4">
+            {content ? content.replace(/\*/g, '') : ''}
+         </div>
+
+         <div className="mt-20 pt-10 flex flex-col justify-end items-end pr-4 mt-auto">
+            <div className="text-right">
+               <p className="text-[11px] text-gray-400 uppercase tracking-widest mb-4">Atentamente,</p>
+               <p className="text-[18px] font-black italic tracking-tighter" style={{ color: c.primary }}>
+                  {info.fullName || 'Seu Nome'}
+               </p>
+            </div>
+         </div>
+      </div>
     </div>
   );
 });
 
-const MyResumesPage = ({ user, setView }: { user: any, setView: (v: any) => void }) => {
+const MyResumesPage = ({ user, setView, onRequestDownload }: { 
+    user: any; 
+    setView: (v: any) => void;
+    onRequestDownload: (data: any, type: 'resume' | 'cover_letter', templateId: TemplateType, filename: string, setLocalGenerating: (b: boolean) => void) => Promise<void>;
+}) => {
     const [myOrders, setMyOrders] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [isGenerating, setIsGenerating] = useState<string | null>(null);
@@ -382,13 +414,10 @@ const MyResumesPage = ({ user, setView }: { user: any, setView: (v: any) => void
 
     const downloadPDF = async (order: any, specificType: 'resume' | 'cover_letter' = 'resume') => {
         if (isGenerating) return;
-        setIsGenerating(`${order.id}-${specificType}`);
+        const generationKey = `${order.id}-${specificType}`;
         
         try {
             const filename = specificType === 'resume' ? 'Curriculo_CVLAB.pdf' : 'Carta_Apresentacao_CVLAB.pdf';
-            const templateMap: Record<TemplateType, number> = {
-                't1_executive': 1, 't2_geometric': 2, 't3_modern': 3, 't4_barnabas': 4, 't5_jonathan': 5, 't6_creative': 6, 't7_professional': 7, 't8_geometric_blue': 8, 't9_emerald_pill': 9, 't10_johan': 10, 't11_kelly': 11, 't12_maria': 12, 't13_tazi': 13
-            };
             
             // Extract correct data based on type
             const documentData = order.documentType === 'combo'
@@ -396,24 +425,24 @@ const MyResumesPage = ({ user, setView }: { user: any, setView: (v: any) => void
                 : order.documentData;
 
             const resumeDataToUse = specificType === 'resume' ? (documentData.resume || documentData) : documentData;
-            const templateId = templateMap[resumeDataToUse?.template as TemplateType || 't1_executive'] || 1;
+            const templateId = resumeDataToUse?.template as TemplateType || 't1_executive';
 
-            const blob = await pdf(
-                <PdfDocument 
-                    data={documentData} 
-                    templateId={templateId} 
-                    type={specificType} 
-                />
-            ).toBlob();
-            
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url; a.download = filename; document.body.appendChild(a); a.click();
-            window.URL.revokeObjectURL(url); document.body.removeChild(a);
+            await onRequestDownload(
+                documentData, 
+                specificType, 
+                templateId, 
+                filename, 
+                (status: boolean) => {
+                    if (status) {
+                        setIsGenerating(generationKey);
+                    } else {
+                        setIsGenerating(null);
+                    }
+                }
+            );
         } catch (err) {
-            console.error("Erro ao gerar PDF vectorial:", err);
+            console.error("Erro ao solicitar download de PDF:", err);
             alert("Erro ao baixar o documento. Por favor, tente novamente.");
-        } finally {
             setIsGenerating(null);
         }
     };
@@ -907,10 +936,63 @@ const ResumeRenderer = React.memo(({ data, templateId }: { data: ResumeData; tem
   const theme = TEMPLATES[templateId] || TEMPLATES.t1_executive;
   const c = { ...theme.colors, primary: data.themeColor || theme.colors.primary };
 
+  // Dynamic scale calculation based on content size to ensure everything fits exactly on one page
+  const densityScale = React.useMemo(() => {
+    let score = 0;
+    if (data.personalInfo?.summary) {
+      score += data.personalInfo.summary.length * 0.16;
+    }
+    
+    if (data.experience) {
+      data.experience.forEach(exp => {
+        score += 120;
+        if (exp.description) score += exp.description.length * 0.15;
+      });
+    }
+    
+    if (data.education) {
+      data.education.forEach(edu => {
+        score += 80;
+        if (edu.degree) score += edu.degree.length * 0.08;
+      });
+    }
+    
+    if (data.skills) score += data.skills.length * 8;
+    if (data.languages) score += data.languages.length * 12;
+    
+    // Scale starts reducing if complexity exceeds 800
+    const maxNormalScore = 800;
+    const computedScale = maxNormalScore / Math.max(maxNormalScore, score);
+    return Math.max(0.65, Math.min(1.0, computedScale));
+  }, [data]);
+
+  const wRender = 794 / densityScale;
+  const hRender = 1122 / densityScale;
+
   return (
-    <div className={`bg-white min-h-[1122px] h-auto w-[794px] relative overflow-visible print:shadow-none`} id="resume-content" style={{ color: '#1f2937' }}>
-      
-      {/* Dynamic Layout Styles */}
+    <div 
+      className="bg-white relative overflow-hidden print:shadow-none shadow-[0_60px_120px_-20px_rgba(0,0,0,0.2)]" 
+      id="resume-content"
+      style={{ 
+        width: '794px', 
+        height: '1122px', 
+        minHeight: '1122px',
+        maxHeight: '1122px',
+        color: '#1f2937'
+      }}
+    >
+      <div 
+        className="relative overflow-visible"
+        style={{ 
+          width: `${wRender}px`,
+          height: `${hRender}px`,
+          minHeight: `${hRender}px`,
+          transform: `scale(${densityScale})`,
+          transformOrigin: 'top left'
+        }}
+      >
+        
+        {/* Dynamic Layout Styles */}
       {theme.layout === 'custom-t1' && (
         <div className="t1" style={{ '--primary': c.primary } as any}>
           <div className="t1-left">
@@ -2709,6 +2791,7 @@ const ResumeRenderer = React.memo(({ data, templateId }: { data: ResumeData; tem
 
         </div>
       )}
+      </div>
     </div>
   );
 });
@@ -2944,61 +3027,213 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
     return unsubscribe;
   }, [currentOrderId]);
 
-  // Actual download function replacing old handleDownloadPdf
-  const executeDownloadPdf = async () => {
+  const [tempDownloadData, setTempDownloadData] = useState<{
+    data: any;
+    type: 'resume' | 'cover_letter';
+    templateId: TemplateType;
+    filename: string;
+  } | null>(null);
+
+  const loadHtml2Pdf = async (): Promise<any> => {
+    if ((window as any).html2pdf) return (window as any).html2pdf;
+    return new Promise((resolve, reject) => {
+      const script = document.createElement('script');
+      script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';
+      script.crossOrigin = 'anonymous';
+      script.onload = () => resolve((window as any).html2pdf);
+      script.onerror = (e) => reject(e);
+      document.head.appendChild(script);
+    });
+  };
+
+  const downloadHtmlDocumentAsPdf = async (
+    data: any, 
+    type: 'resume' | 'cover_letter', 
+    templateId: TemplateType, 
+    filename: string,
+    setLocalGenerating?: (status: boolean) => void
+  ) => {
+    if (setLocalGenerating) setLocalGenerating(true);
     setIsDownloading(true);
-
+    
+    let originalGetComputedStyle: typeof window.getComputedStyle | null = null;
     try {
-      const filename = isCoverLetterMode 
-        ? 'Carta_Apresentacao.pdf' 
-        : `${resumeData.personalInfo.fullName.replace(/\s+/g, '_')}_Curriculo.pdf`;
-
-      // Map Template
-      const templateMap: Record<TemplateType, number> = {
-        't1_executive': 1,
-        't2_geometric': 2,
-        't3_modern': 3,
-        't4_barnabas': 4,
-        't5_jonathan': 5,
-        't6_creative': 6,
-        't7_professional': 7,
-        't8_geometric_blue': 8,
-        't9_emerald_pill': 9,
-        't10_johan': 10,
-        't11_kelly': 11,
-        't12_maria': 12,
-        't13_tazi': 13
+      console.log(`Iniciando geração de PDF para ${filename}...`);
+      
+      originalGetComputedStyle = window.getComputedStyle;
+      
+      // Override standard getComputedStyle during printing to intercept modern Tailwind v4 colors containing oklab/oklch
+      window.getComputedStyle = function (el: Element, pseudoElt?: string | null) {
+        const style = originalGetComputedStyle!(el, pseudoElt);
+        return new Proxy(style, {
+          get(target, prop) {
+            if (prop === 'getPropertyValue') {
+              return function (propertyName: string) {
+                if (propertyName && propertyName.startsWith('--')) {
+                  const val = target.getPropertyValue(propertyName);
+                  if (typeof val === 'string' && (val.includes('oklab') || val.includes('oklch'))) {
+                    return '';
+                  }
+                  return val;
+                }
+                const val = target.getPropertyValue(propertyName);
+                if (typeof val === 'string') {
+                  if (val.includes('oklab') || val.includes('oklch')) {
+                    return val.replace(/oklab\([^)]+\)/g, 'rgba(0,0,0,0)').replace(/oklch\([^)]+\)/g, 'rgba(0,0,0,0)');
+                  }
+                }
+                return val;
+              };
+            }
+            
+            // Critical fix: accessing property directly on target instead of using Reflect.get with proxy receiver prevents Illegal Invocation
+            const value = target[prop as any] as any;
+            if (typeof value === 'function') {
+              return value.bind(target);
+            }
+            if (typeof prop === 'string') {
+              if (prop.startsWith('--')) {
+                if (typeof value === 'string' && (value.includes('oklab') || value.includes('oklch'))) {
+                  return '';
+                }
+                return value;
+              }
+            }
+            if (typeof value === 'string') {
+              if (value.includes('oklab') || value.includes('oklch')) {
+                return value.replace(/oklab\([^)]+\)/g, 'rgba(0,0,0,0)').replace(/oklch\([^)]+\)/g, 'rgba(0,0,0,0)');
+              }
+            }
+            return value;
+          }
+        }) as CSSStyleDeclaration;
       };
 
-      const templateId = templateMap[template] || 1;
+      // Set state to trigger offscreen render
+      setTempDownloadData({
+        data,
+        type,
+        templateId,
+        filename
+      });
 
-      console.log("Gerando PDF Vectorial...");
+      // Give React 650ms to mount and lay out the offscreen DOM cleanly
+      await new Promise((resolve) => setTimeout(resolve, 650));
 
-      const blob = await pdf(
-        <PdfDocument 
-          data={isCoverLetterMode ? { content: generatedLetter, personalInfo: resumeData.personalInfo } : resumeData} 
-          templateId={templateId} 
-          type={isCoverLetterMode ? 'cover_letter' : 'resume'}
-        />
-      ).toBlob();
+      const html2pdf = await loadHtml2Pdf();
+      const container = document.getElementById('temp-download-container');
+      if (!container) throw new Error("Recipiente temporário de renderização não foi encontrado.");
+      
+      const element = container.querySelector(type === 'cover_letter' ? '#cover-letter-content' : '#resume-content') as HTMLElement;
+      if (!element) throw new Error("O elemento renderizado do PDF não foi encontrado no recipiente.");
 
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = filename;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
+      // Ensure all images are loaded completely before capturing
+      const images = Array.from(element.querySelectorAll('img'));
+      await Promise.all(images.map(img => {
+        if (img.complete) return Promise.resolve();
+        return new Promise(resolve => {
+          img.onload = resolve;
+          img.onerror = resolve; // Continue even if an image fails to load
+        });
+      }));
 
-      console.log("PDF Vectorial baixado com sucesso.");
+      // A4 dimensions in pixels at 96 dpi
+      const targetWidth = 794;
+      const targetHeight = 1122;
 
+      // Unset previous scaling styles to take a clean measurement
+      element.style.width = `${targetWidth}px`;
+      element.style.minHeight = `${targetHeight}px`;
+      element.style.height = 'auto';
+      element.style.transform = 'none';
+      element.style.transformOrigin = 'top left';
+
+      // Measure the initial natural scroll height of the resume
+      const naturalHeight = element.scrollHeight;
+      console.log(`Natural height of content before scaling: ${naturalHeight}px`);
+
+      let finalScale = 1.0;
+
+      if (naturalHeight > targetHeight) {
+        // Calculate factor and find optimal scale down to minimum of 0.55
+        for (let s = 0.98; s >= 0.55; s -= 0.02) {
+          const wRender = targetWidth / s;
+          const hRender = targetHeight / s;
+
+          element.style.width = `${wRender}px`;
+          element.style.minHeight = `${hRender}px`;
+          element.style.height = `${hRender}px`;
+
+          // Force browser to recalculate scrollHeight synchronously
+          const currentH = element.scrollHeight;
+          if (currentH <= hRender) {
+            finalScale = s;
+            console.log(`Fator de escala ideal encontrado: ${finalScale.toFixed(2)} (W: ${wRender.toFixed(0)}px, H: ${hRender.toFixed(0)}px)`);
+            break;
+          }
+
+          if (s <= 0.56) {
+            finalScale = 0.55;
+            console.log(`Atingida escala menor limite (0.55). Forçando escala...`);
+          }
+        }
+
+        // Apply visual transformation scaling to fit exactly 794x1122 wrapper
+        const wRender = targetWidth / finalScale;
+        const hRender = targetHeight / finalScale;
+        element.style.width = `${wRender}px`;
+        element.style.minHeight = `${hRender}px`;
+        element.style.height = `${hRender}px`;
+        element.style.transform = `scale(${finalScale})`;
+        element.style.transformOrigin = 'top left';
+      } else {
+        // Fits perfectly without scaling, force exactly the target dimensions so the canvas is exactly A4
+        element.style.width = `${targetWidth}px`;
+        element.style.minHeight = `${targetHeight}px`;
+        element.style.height = `${targetHeight}px`;
+        element.style.transform = 'none';
+      }
+
+      const opt = {
+        margin: 0,
+        filename: filename,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { 
+          scale: 2.2, 
+          useCORS: true, 
+          letterRendering: true,
+          logging: false
+        },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+      };
+
+      // Generate & Download the PDF capturing the perfect 794x1122 wrapper container
+      await html2pdf().from(container).set(opt).save();
+      console.log("PDF gerado e baixado com sucesso!");
     } catch (err: any) {
-      console.error("Erro ao gerar PDF Vectorial:", err);
-      alert("Houve um erro ao gerar o PDF Vectorial. Erro: " + err.message);
+      console.error("Erro na conversão para PDF:", err);
+      alert("Houve um erro ao gerar o PDF de alta definição: " + (err.message || err));
     } finally {
+      if (originalGetComputedStyle) {
+        window.getComputedStyle = originalGetComputedStyle;
+      }
+      setTempDownloadData(null);
       setIsDownloading(false);
+      if (setLocalGenerating) setLocalGenerating(false);
     }
+  };
+
+  // Actual download function replacing old handleDownloadPdf
+  const executeDownloadPdf = async () => {
+    const filename = isCoverLetterMode 
+      ? 'Carta_Apresentacao.pdf' 
+      : `${resumeData.personalInfo.fullName.replace(/\s+/g, '_')}_Curriculo.pdf`;
+
+    const data = isCoverLetterMode 
+      ? { content: generatedLetter, personalInfo: resumeData.personalInfo, themeColor: resumeData.themeColor } 
+      : resumeData;
+
+    await downloadHtmlDocumentAsPdf(data, isCoverLetterMode ? 'cover_letter' : 'resume', template, filename);
   };
 
   const handleDownloadPdf = () => {
@@ -3678,8 +3913,6 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
              <p className="text-[9px] text-text-muted opacity-40 uppercase tracking-widest mt-2">© 2026 CV LAB. Todos os direitos reservados para Lab Digital.</p>
            </div>
         </motion.footer>
-
-        {/* Floating WhatsApp Button - Already handled at landing page logic level or consolidate here if needed */}
       </div>
     );
   }
@@ -3744,7 +3977,7 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
             </button>
           )}
 
-          {view === 'my-resumes' && <MyResumesPage user={user} setView={setView} />}
+          {view === 'my-resumes' && <MyResumesPage user={user} setView={setView} onRequestDownload={downloadHtmlDocumentAsPdf} />}
 
           {view === 'profile' && <ProfilePage user={user} isAdmin={isAdmin} setView={setView} onLogout={logOut} />}
 
@@ -4909,6 +5142,38 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
             Suporte WhatsApp
           </span>
         </motion.a>
+      )}
+
+      {tempDownloadData && createPortal(
+        <div 
+          id="temp-download-container" 
+          style={{ 
+            position: 'fixed', 
+            top: '0px', 
+            left: '0px', 
+            width: '794px', 
+            height: '1122px',
+            minHeight: '1122px',
+            overflow: 'hidden',
+            zIndex: -99999, 
+            pointerEvents: 'none',
+            backgroundColor: '#ffffff'
+          }}
+        >
+          {tempDownloadData.type === 'resume' ? (
+            <ResumeRenderer 
+              data={tempDownloadData.data} 
+              templateId={tempDownloadData.templateId} 
+            />
+          ) : (
+            <CoverLetterRenderer 
+              content={tempDownloadData.data.content || tempDownloadData.data} 
+              personalInfo={tempDownloadData.data.personalInfo} 
+              themeColor={tempDownloadData.data.themeColor} 
+            />
+          )}
+        </div>,
+        document.body
       )}
     </div>
   );

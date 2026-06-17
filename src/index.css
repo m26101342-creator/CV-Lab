@@ -283,7 +283,7 @@ img {
 .t3-contact-item { display: flex; align-items: center; gap: 6px; }
 .t3-contact-icon { display: flex; align-items: center; justify-content: center; line-height: 0; flex-shrink: 0; }
 
-.t3-body { display: flex; gap: 36px; height: 100%; flex: 1; }
+.t3-body { display: flex; gap: 36px; height: auto !important; min-height: 100%; flex: 1; }
 .t3-left { width: 32%; min-width: 32%; display: flex; flex-direction: column; gap: 32px; border-right: 1px solid var(--primary-light, #E2E8F0); padding-right: 24px; }
 .t3-right { flex: 1; display: flex; flex-direction: column; gap: 32px; }
 
