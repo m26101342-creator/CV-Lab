@@ -8,6 +8,7 @@ import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   Plus, 
+  Minus,
   Trash2, 
   Download, 
   ChevronRight, 
@@ -2871,8 +2872,31 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
     }, 500);
     return () => clearTimeout(timer);
   }, [generatedLetter]);
-  const [previewScale, setPreviewScale] = useState(1);
+  const [previewScale, setPreviewScale] = useState(0.85);
   const [resumeHeight, setResumeHeight] = useState(1122);
+  const [isAutoFit, setIsAutoFit] = useState(true);
+
+  // Auto-fit previewScale on desktop resize if dynamic auto-fit is enabled
+  useEffect(() => {
+    const autoFit = () => {
+      if (!isAutoFit) return;
+      if (window.innerWidth >= 1024) {
+        const sidebarWidth = window.innerWidth >= 1280 ? 600 : 500;
+        const availableWidth = window.innerWidth - sidebarWidth - 48; // subtract side-padding
+        const optScale = availableWidth / 794;
+        const fittedScale = Math.min(1.05, Math.max(0.45, optScale));
+        setPreviewScale(fittedScale);
+      } else {
+        const availableWidth = window.innerWidth - 32;
+        const optScale = availableWidth / 794;
+        setPreviewScale(Math.min(1.0, Math.max(0.4, optScale)));
+      }
+    };
+
+    autoFit();
+    window.addEventListener('resize', autoFit);
+    return () => window.removeEventListener('resize', autoFit);
+  }, [view, isAutoFit]);
 
   // Monitor and measure the actual height of the rendered content (Resume or Cover Letter)
   useEffect(() => {
@@ -4163,7 +4187,7 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
   const c = { ...currentTheme.colors, primary: resumeData.themeColor || currentTheme.colors.primary };
 
   return (
-    <div className="min-h-screen bg-bg-main flex flex-col lg:flex-row justify-start lg:h-screen lg:overflow-hidden print:bg-white print:h-auto print:overflow-visible">
+    <div className="min-h-screen bg-bg-main flex flex-col lg:flex-row justify-start lg:h-screen lg:overflow-y-auto lg:overflow-x-hidden print:bg-white print:h-auto print:overflow-visible">
       
       {/* Payment Modal Overlay */}
       <AnimatePresence>
@@ -5075,6 +5099,64 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
                )}
              </AnimatePresence>
           </div>
+        </div>
+        {/* Floating Zoom & Scale Controls - Absolute positioning inside relative <main> */}
+        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 bg-white/90 backdrop-blur-md border border-gray-200/80 rounded-2xl px-4 py-2.5 flex items-center gap-3.5 shadow-[0_20px_50px_-12px_rgba(0,0,0,0.15)] z-40 print:hidden text-xs font-bold text-gray-700 select-none transition-all duration-300 hover:shadow-[0_24px_60px_-10px_rgba(0,0,0,0.22)]">
+          <button 
+            type="button"
+            onClick={() => {
+              setIsAutoFit(false);
+              setPreviewScale(prev => Math.max(0.4, Number((prev - 0.05).toFixed(2))));
+            }}
+            className="p-1.5 hover:bg-gray-100 active:bg-gray-200 rounded-xl transition-colors cursor-pointer text-gray-400 hover:text-gray-900"
+            title="Diminuir Zoom"
+          >
+            <Minus size={14} />
+          </button>
+          
+          <span className="min-w-[48px] text-center font-mono text-gray-800 text-xs">
+            {Math.round(previewScale * 100)}%
+          </span>
+          
+          <button 
+            type="button"
+            onClick={() => {
+              setIsAutoFit(false);
+              setPreviewScale(prev => Math.min(1.5, Number((prev + 0.05).toFixed(2))));
+            }}
+            className="p-1.5 hover:bg-gray-100 active:bg-gray-200 rounded-xl transition-colors cursor-pointer text-gray-400 hover:text-gray-900"
+            title="Aumentar Zoom"
+          >
+            <Plus size={14} />
+          </button>
+          
+          <div className="h-5 w-px bg-gray-200"></div>
+          
+          <button 
+            type="button"
+            onClick={() => {
+              setIsAutoFit(true);
+              // Force trigger refit
+              if (window.innerWidth >= 1024) {
+                 const sidebarWidth = window.innerWidth >= 1280 ? 600 : 500;
+                 const availableWidth = window.innerWidth - sidebarWidth - 48;
+                 const optScale = availableWidth / 794;
+                 setPreviewScale(Math.min(1.05, Math.max(0.45, optScale)));
+              } else {
+                 const availableWidth = window.innerWidth - 32;
+                 const optScale = availableWidth / 794;
+                 setPreviewScale(Math.min(1.0, Math.max(0.4, optScale)));
+              }
+            }}
+            className={`px-3 py-1.5 rounded-lg transition-all text-[10px] uppercase font-black tracking-wider cursor-pointer ${
+              isAutoFit 
+                ? 'bg-primary-blue text-white shadow-md shadow-primary-blue/20' 
+                : 'bg-soft-blue text-primary-line hover:bg-primary-blue/10 text-primary-blue'
+            }`}
+            title="Ajustar Automaticamente ao Ecrã"
+          >
+            Ajustar
+          </button>
         </div>
       </main>
 
