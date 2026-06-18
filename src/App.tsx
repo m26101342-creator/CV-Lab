@@ -327,12 +327,10 @@ const CoverLetterRenderer = React.memo(({ content, personalInfo, themeColor }: {
   return (
     <div 
       id="cover-letter-content"
-      className="bg-white relative overflow-hidden print:shadow-none shadow-2xl"
+      className="bg-white relative overflow-visible print:shadow-none shadow-2xl"
       style={{ 
         width: '794px', 
-        height: '1122px', 
         minHeight: '1122px',
-        maxHeight: '1122px',
         color: '#1f2937'
       }}
     >
@@ -340,7 +338,7 @@ const CoverLetterRenderer = React.memo(({ content, personalInfo, themeColor }: {
         className="relative overflow-visible flex flex-col font-sans text-left"
         style={{ 
           width: `${wRender}px`,
-          height: `${hRender}px`,
+          height: 'auto',
           minHeight: `${hRender}px`,
           transform: `scale(${densityScale})`,
           transformOrigin: 'top left',
@@ -972,13 +970,11 @@ const ResumeRenderer = React.memo(({ data, templateId }: { data: ResumeData; tem
 
   return (
     <div 
-      className="bg-white relative overflow-hidden print:shadow-none shadow-[0_60px_120px_-20px_rgba(0,0,0,0.2)]" 
+      className="bg-white relative overflow-visible print:shadow-none shadow-[0_60px_120px_-20px_rgba(0,0,0,0.2)]" 
       id="resume-content"
       style={{ 
         width: '794px', 
-        height: '1122px', 
         minHeight: '1122px',
-        maxHeight: '1122px',
         color: '#1f2937'
       }}
     >
@@ -986,7 +982,7 @@ const ResumeRenderer = React.memo(({ data, templateId }: { data: ResumeData; tem
         className="relative overflow-visible"
         style={{ 
           width: `${wRender}px`,
-          height: `${hRender}px`,
+          height: 'auto',
           minHeight: `${hRender}px`,
           transform: `scale(${densityScale})`,
           transformOrigin: 'top left'
@@ -1473,6 +1469,59 @@ const ResumeRenderer = React.memo(({ data, templateId }: { data: ResumeData; tem
                             <div className="font-medium text-[13px]">{e.degree}</div>
                             <div className="text-[11px] font-bold opacity-60 mt-1 uppercase tracking-wider">{e.startDate} - {e.endDate}</div>
                          </div>
+                       ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Languages Section */}
+                {data.languages && data.languages.length > 0 && (
+                  <div className="w-full mb-10">
+                    <div className="mb-6 border-b-2 pb-2" style={{ borderColor: `${c.primary}40` }}>
+                       <h3 className="text-[12px] font-black uppercase tracking-[0.2em]" style={{ color: c.primary }}>Idiomas</h3>
+                    </div>
+                    <div className="flex flex-col gap-3">
+                       {data.languages.map((l, idx) => (
+                         <div key={l.id || `lang-${idx}`} className="font-semibold text-[13px] flex justify-between items-center" style={{ color: '#374151' }}>
+                            <div className="flex items-center gap-2">
+                               <div className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{backgroundColor: c.primary}}></div>
+                               <span>{l.name}</span>
+                            </div>
+                            <span className="text-[10px] uppercase font-black tracking-wider opacity-60">{l.level}</span>
+                         </div>
+                       ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Certifications Section */}
+                {data.certifications && data.certifications.length > 0 && (
+                  <div className="w-full mb-10">
+                    <div className="mb-6 border-b-2 pb-2" style={{ borderColor: `${c.primary}40` }}>
+                       <h3 className="text-[12px] font-black uppercase tracking-[0.2em]" style={{ color: c.primary }}>Certificações</h3>
+                    </div>
+                    <div className="flex flex-col gap-4">
+                       {data.certifications.map((cert, idx) => (
+                         <div key={cert.id || `cert-${idx}`} style={{ color: '#374151' }}>
+                            <div className="font-bold text-[13px] leading-tight text-gray-800">{cert.name}</div>
+                            {cert.date && <div className="text-[11px] font-bold opacity-60 mt-0.5 uppercase tracking-wider">{cert.date}</div>}
+                         </div>
+                       ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Interests Section */}
+                {data.interests && data.interests.length > 0 && (
+                  <div className="w-full mb-10">
+                    <div className="mb-6 border-b-2 pb-2" style={{ borderColor: `${c.primary}40` }}>
+                       <h3 className="text-[12px] font-black uppercase tracking-[0.2em]" style={{ color: c.primary }}>Interesses</h3>
+                    </div>
+                    <div className="flex flex-wrap gap-1.5">
+                       {data.interests.map((interest, idx) => (
+                         <span key={idx} className="px-2.5 py-1 bg-white border border-gray-200/80 rounded-full text-[10px] font-bold text-gray-600 shadow-sm">
+                           {interest}
+                         </span>
                        ))}
                     </div>
                   </div>
@@ -3163,9 +3212,11 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
 
       // Force absolute baseline layout dimensions for high resolution capture
       element.style.width = '794px';
-      element.style.height = '1122px';
+      element.style.height = 'auto';
       element.style.minHeight = '1122px';
-      element.style.maxHeight = '1122px';
+      element.style.maxHeight = 'none';
+
+      const actualHeight = Math.max(1122, element.scrollHeight || element.offsetHeight);
 
       const opt = {
         margin: 0,
@@ -3179,7 +3230,7 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
           scrollX: 0,
           scrollY: 0,
           windowWidth: 794,
-          windowHeight: 1122
+          windowHeight: actualHeight
         },
         jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
       };
@@ -5187,9 +5238,9 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
             top: '0px', 
             left: '0px', 
             width: '794px', 
-            height: '1122px', 
+            height: 'auto', 
             minHeight: '1122px',
-            overflow: 'hidden',
+            overflow: 'visible',
             zIndex: 99999, // Render inside viewport with high z-index under the loading overlay
             pointerEvents: 'none',
             backgroundColor: '#ffffff'

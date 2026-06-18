@@ -485,6 +485,31 @@ const Template5 = ({ data }: { data: ResumeData }) => {
               </View>
             </View>
           )}
+
+          {data.certifications && data.certifications.length > 0 && (
+            <View>
+              <Text style={styles.leftSectionTitle}>Certificações</Text>
+              <View style={{ gap: 6 }}>
+                {data.certifications.filter(s => s?.name).map((s, idx) => (
+                  <View key={s.id || `cert-${idx}`} style={{ marginBottom: 4 }}>
+                    <Text style={[styles.leftText, { fontWeight: 'bold', color: '#FFFFFF', marginBottom: 2 }]}>• {s.name.trim()}</Text>
+                    {s.date && <Text style={[styles.leftText, { fontSize: 8, opacity: 0.7, paddingLeft: 8 }]}>{s.date}</Text>}
+                  </View>
+                ))}
+              </View>
+            </View>
+          )}
+
+          {data.interests && data.interests.length > 0 && (
+            <View>
+              <Text style={styles.leftSectionTitle}>Interesses</Text>
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 4 }}>
+                {data.interests.map((interest, idx) => (
+                  <Text key={idx} style={[styles.leftText, { backgroundColor: 'rgba(255,255,255,0.15)', padding: '2 6', borderRadius: 4, marginRight: 4, marginBottom: 4 }]}>{interest}</Text>
+                ))}
+              </View>
+            </View>
+          )}
         </View>
 
         <View style={styles.rightColumn}>
