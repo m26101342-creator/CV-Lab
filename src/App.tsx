@@ -37,7 +37,9 @@ import {
   Zap,
   Languages,
   RotateCcw,
-  Award
+  Award,
+  AlertTriangle,
+  Printer
 } from 'lucide-react';
 import { AdSenseUnit } from './components/AdSenseUnit';
 import { ResumeData, INITIAL_RESUME_DATA, TemplateType } from './types.ts';
@@ -931,9 +933,338 @@ const AdminPanel = () => {
     );
 };
 
-const ResumeRenderer = React.memo(({ data, templateId }: { data: ResumeData; templateId: TemplateType }) => {
+const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: { data: ResumeData; templateId: TemplateType; showGuides?: boolean; onChange?: React.Dispatch<React.SetStateAction<ResumeData>> }) => {
   const theme = TEMPLATES[templateId] || TEMPLATES.t1_executive;
   const c = { ...theme.colors, primary: data.themeColor || theme.colors.primary };
+
+  const style = data.styleConfig || {
+    fontSize: 13,
+    titleSize: 26,
+    sectionSpacing: 25,
+    itemSpacing: 10,
+    margins: 30,
+    lineHeight: 1.4,
+    alignment: 'left',
+    fontFamily: 'sans',
+    photoBorderRadius: 50
+  };
+
+  // Local state for direct touch and drag-to-resize/reorder action
+  const [dragState, setDragState] = React.useState<{
+    active: boolean;
+    type: string;
+    id: string;
+    index: number;
+    startX: number;
+    startY: number;
+    currentX: number;
+    currentY: number;
+    startVal: any;
+    currentVal: any;
+    secondaryStartVal?: any;
+    secondaryCurrentVal?: any;
+  }>({
+    active: false,
+    type: '',
+    id: '',
+    index: -1,
+    startX: 0,
+    startY: 0,
+    currentX: 0,
+    currentY: 0,
+    startVal: null,
+    currentVal: null,
+    secondaryStartVal: null,
+    secondaryCurrentVal: null
+  });
+
+  const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    // Check if clicking/touching editable fields
+    const target = e.target as HTMLElement;
+    
+    const nameEl = target.closest('.t1-name, .t2-name, .t3-name, h1, [class*="-name"]');
+    const avatarEl = target.closest('.t1-avatar, .t2-avatar, .t1-avatar-wrap, [class*="-avatar"], img');
+    const titleEl = target.closest('.t1-section-title, .t1-right-title, .t2-section-title, .t3-section-title, h3, h2, [class*="-title"]');
+    const expEl = target.closest('.t1-exp-item, .t2-exp-item, [class*="-exp-item"], [class*="exp-item"]');
+    const eduEl = target.closest('.t1-edu-item, .t2-edu-item, [class*="-edu-item"], [class*="edu-item"]');
+    const bioEl = target.closest('.t1-bio, .t2-bio, .t1-bio-wrap, p, [class*="-bio"]');
+    const contactEl = target.closest('.t1-contact-item, .t2-contact-row, .t1-contact-text, .t2-contact-text, [class*="contact-item"], [class*="contact-row"]');
+    const skillEl = target.closest('.t1-skill-tag, [class*="-skill-tag"], [class*="skill"]');
+    const langEl = target.closest('[class*="lang-item"], [class*="language"], .flex.justify-between.items-center');
+
+    let type = '';
+    let id = '';
+    let index = -1;
+    let interactiveEl: HTMLElement | null = null;
+
+    if (nameEl) {
+      type = 'name';
+      interactiveEl = nameEl as HTMLElement;
+    } else if (avatarEl) {
+      type = 'photo';
+      interactiveEl = avatarEl as HTMLElement;
+    } else if (expEl) {
+      type = 'experience';
+      interactiveEl = expEl as HTMLElement;
+      const parent = expEl.parentElement;
+      if (parent) {
+        index = Array.from(parent.children).indexOf(expEl);
+      }
+    } else if (eduEl) {
+      type = 'education';
+      interactiveEl = eduEl as HTMLElement;
+      const parent = eduEl.parentElement;
+      if (parent) {
+        index = Array.from(parent.children).indexOf(eduEl);
+      }
+    } else if (titleEl) {
+      type = 'sectionSpacing';
+      interactiveEl = titleEl as HTMLElement;
+    } else if (contactEl) {
+      type = 'contact';
+      interactiveEl = contactEl as HTMLElement;
+    } else if (skillEl) {
+      type = 'skills';
+      interactiveEl = skillEl as HTMLElement;
+    } else if (langEl) {
+      type = 'languages';
+      interactiveEl = langEl as HTMLElement;
+    } else if (bioEl) {
+      type = 'bio';
+      interactiveEl = bioEl as HTMLElement;
+    } else {
+      type = 'margins';
+      interactiveEl = document.getElementById('resume-content');
+    }
+
+    if (!type || !interactiveEl) return;
+
+    e.preventDefault();
+    try {
+      interactiveEl.setPointerCapture(e.pointerId);
+    } catch (err) {}
+
+    let startVal: any = null;
+    let secondaryStartVal: any = null;
+
+    if (type === 'name') {
+      startVal = style.titleSize || 26;
+    } else if (type === 'photo') {
+      startVal = data.personalInfo.photoSize || 100;
+      secondaryStartVal = style.photoBorderRadius !== undefined ? style.photoBorderRadius : 50;
+    } else if (type === 'bio') {
+      startVal = style.fontSize || 13;
+      secondaryStartVal = style.lineHeight || 1.4;
+    } else if (type === 'sectionSpacing') {
+      startVal = style.sectionSpacing || 25;
+      secondaryStartVal = style.fontSize || 13;
+    } else if (type === 'experience' || type === 'education') {
+      startVal = index;
+      secondaryStartVal = style.itemSpacing || 10;
+    } else if (type === 'contact') {
+      startVal = style.fontSize || 13;
+      secondaryStartVal = style.itemSpacing || 10;
+    } else if (type === 'skills') {
+      startVal = style.itemSpacing || 10;
+    } else if (type === 'languages') {
+      startVal = style.fontSize || 13;
+    } else if (type === 'margins') {
+      startVal = style.margins || 30;
+    }
+
+    const rect = document.getElementById('resume-content')?.getBoundingClientRect();
+    const x = rect ? e.clientX - rect.left : e.clientX;
+    const y = rect ? e.clientY - rect.top : e.clientY;
+
+    setDragState({
+      active: true,
+      type,
+      id,
+      index,
+      startX: e.clientX,
+      startY: e.clientY,
+      currentX: x,
+      currentY: y,
+      startVal,
+      currentVal: startVal,
+      secondaryStartVal
+    });
+  };
+
+  const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!dragState.active) return;
+    e.preventDefault();
+
+    const rect = document.getElementById('resume-content')?.getBoundingClientRect();
+    const x = rect ? e.clientX - rect.left : e.clientX;
+    const y = rect ? e.clientY - rect.top : e.clientY;
+
+    const dx = e.clientX - dragState.startX;
+    const dy = e.clientY - dragState.startY;
+
+    let currentVal = dragState.startVal;
+    let secondaryCurrentVal = dragState.secondaryStartVal;
+    let updatedStyle = { ...style };
+    let updatedPersonalInfo = { ...data.personalInfo };
+
+    if (dragState.type === 'name') {
+      currentVal = Math.max(16, Math.min(60, dragState.startVal + dx / 4));
+      updatedStyle.titleSize = Math.round(currentVal);
+      if (onChange) {
+        onChange((prev: any) => ({
+          ...prev,
+          styleConfig: { ...prev.styleConfig, titleSize: updatedStyle.titleSize }
+        }));
+      }
+    } else if (dragState.type === 'photo') {
+      currentVal = Math.max(40, Math.min(220, dragState.startVal + dx / 2));
+      updatedPersonalInfo.photoSize = Math.round(currentVal);
+      
+      const verticalOffset = dy / 1.5;
+      secondaryCurrentVal = Math.max(0, Math.min(50, dragState.secondaryStartVal + verticalOffset));
+      updatedStyle.photoBorderRadius = Math.round(secondaryCurrentVal);
+      
+      if (onChange) {
+        onChange((prev: any) => ({
+          ...prev,
+          personalInfo: { ...prev.personalInfo, photoSize: updatedPersonalInfo.photoSize },
+          styleConfig: { ...prev.styleConfig, photoBorderRadius: updatedStyle.photoBorderRadius }
+        }));
+      }
+    } else if (dragState.type === 'bio') {
+      currentVal = Math.max(9, Math.min(20, dragState.startVal + dx / 15));
+      updatedStyle.fontSize = Number(currentVal.toFixed(1));
+      
+      secondaryCurrentVal = Math.max(1.1, Math.min(2.0, dragState.secondaryStartVal + dy / 150));
+      updatedStyle.lineHeight = Number(secondaryCurrentVal.toFixed(2));
+      
+      if (onChange) {
+        onChange((prev: any) => ({
+          ...prev,
+          styleConfig: { 
+            ...prev.styleConfig, 
+            fontSize: updatedStyle.fontSize,
+            lineHeight: updatedStyle.lineHeight 
+          }
+        }));
+      }
+    } else if (dragState.type === 'sectionSpacing') {
+      currentVal = Math.max(5, Math.min(60, dragState.startVal + dy / 2));
+      updatedStyle.sectionSpacing = Math.round(currentVal);
+      
+      secondaryCurrentVal = Math.max(10, Math.min(30, (dragState.secondaryStartVal || 13) + dx / 10));
+      
+      if (onChange) {
+        onChange((prev: any) => ({
+          ...prev,
+          styleConfig: { 
+            ...prev.styleConfig, 
+            sectionSpacing: updatedStyle.sectionSpacing,
+          }
+        }));
+      }
+    } else if (dragState.type === 'experience' || dragState.type === 'education') {
+      const spaceVal = Math.max(2, Math.min(40, dragState.secondaryStartVal + dx / 5));
+      updatedStyle.itemSpacing = Math.round(spaceVal);
+      
+      const thresh = 65;
+      const step = Math.round(dy / thresh);
+      if (step !== 0) {
+        const moveIndex = dragState.index;
+        const targetIndex = moveIndex + step;
+        const listName = dragState.type;
+        const list = [...(data[listName] || [])];
+        
+        if (targetIndex >= 0 && targetIndex < list.length) {
+          const temp = list[moveIndex];
+          list[moveIndex] = list[targetIndex];
+          list[targetIndex] = temp;
+
+          if (onChange) {
+            onChange((prev: any) => ({
+              ...prev,
+              [listName]: list,
+              styleConfig: { ...prev.styleConfig, itemSpacing: updatedStyle.itemSpacing }
+            }));
+          }
+
+          setDragState(prev => ({
+            ...prev,
+            index: targetIndex,
+            startY: e.clientY
+          }));
+        }
+      } else {
+        if (onChange) {
+          onChange((prev: any) => ({
+            ...prev,
+            styleConfig: { ...prev.styleConfig, itemSpacing: updatedStyle.itemSpacing }
+          }));
+        }
+      }
+    } else if (dragState.type === 'contact') {
+      currentVal = Math.max(9, Math.min(18, dragState.startVal + dx / 15));
+      updatedStyle.fontSize = Number(currentVal.toFixed(1));
+      
+      secondaryCurrentVal = Math.max(2, Math.min(30, dragState.secondaryStartVal + dy / 6));
+      updatedStyle.itemSpacing = Math.round(secondaryCurrentVal);
+      
+      if (onChange) {
+        onChange((prev: any) => ({
+          ...prev,
+          styleConfig: { 
+            ...prev.styleConfig, 
+            fontSize: updatedStyle.fontSize,
+            itemSpacing: updatedStyle.itemSpacing
+          }
+        }));
+      }
+    } else if (dragState.type === 'skills') {
+      currentVal = Math.max(2, Math.min(35, dragState.startVal + dx / 5));
+      updatedStyle.itemSpacing = Math.round(currentVal);
+      if (onChange) {
+        onChange((prev: any) => ({
+          ...prev,
+          styleConfig: { ...prev.styleConfig, itemSpacing: updatedStyle.itemSpacing }
+        }));
+      }
+    } else if (dragState.type === 'languages') {
+      currentVal = Math.max(9, Math.min(18, dragState.startVal + dx / 15));
+      updatedStyle.fontSize = Number(currentVal.toFixed(1));
+      if (onChange) {
+        onChange((prev: any) => ({
+          ...prev,
+          styleConfig: { ...prev.styleConfig, fontSize: updatedStyle.fontSize }
+        }));
+      }
+    } else if (dragState.type === 'margins') {
+      currentVal = Math.max(10, Math.min(80, dragState.startVal + dx / 3));
+      updatedStyle.margins = Math.round(currentVal);
+      if (onChange) {
+        onChange((prev: any) => ({
+          ...prev,
+          styleConfig: { ...prev.styleConfig, margins: updatedStyle.margins }
+        }));
+      }
+    }
+
+    setDragState(prev => ({
+      ...prev,
+      currentX: x,
+      currentY: y,
+      currentVal,
+      secondaryCurrentVal
+    }));
+  };
+
+  const handlePointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!dragState.active) return;
+    const target = e.target as HTMLElement;
+    try {
+      target.releasePointerCapture(e.pointerId);
+    } catch (err) {}
+    setDragState(prev => ({ ...prev, active: false }));
+  };
 
   // Dynamic scale calculation based on content size to ensure everything fits exactly on one page
   const densityScale = React.useMemo(() => {
@@ -968,16 +1299,404 @@ const ResumeRenderer = React.memo(({ data, templateId }: { data: ResumeData; tem
   const wRender = 794 / densityScale;
   const hRender = 1122 / densityScale;
 
+  const fontFam = style.fontFamily === 'serif' ? 'Georgia, serif' : style.fontFamily === 'mono' ? 'monospace' : style.fontFamily === 'grotesk' ? '"Space Grotesk", sans-serif' : 'Inter, sans-serif';
+
   return (
     <div 
-      className="bg-white relative overflow-visible print:shadow-none shadow-[0_60px_120px_-20px_rgba(0,0,0,0.2)]" 
+      className={`bg-white relative overflow-visible print:shadow-none shadow-[0_60px_120px_-20px_rgba(0,0,0,0.2)] ${showGuides || dragState.active ? 'show-guides' : ''} ${dragState.active ? 'dragging-active' : ''}`} 
       id="resume-content"
+      onPointerDown={handlePointerDown}
+      onPointerMove={handlePointerMove}
+      onPointerUp={handlePointerUp}
+      onPointerCancel={handlePointerUp}
       style={{ 
         width: '794px', 
         minHeight: '1122px',
         color: '#1f2937'
       }}
     >
+      <style>{`
+        /* Overrides customizadas do painel de design */
+        #resume-content {
+          font-family: ${fontFam} !important;
+          text-align: ${style.alignment || 'left'} !important;
+        }
+        
+        /* Grelha de Alinhamento e Régua Seção */
+        #resume-content.show-guides {
+          outline: 2px dashed rgba(99, 102, 241, 0.5) !important;
+          outline-offset: -2px !important;
+          box-shadow: inset 0 0 0 1px rgba(99, 102, 241, 0.25) !important;
+        }
+
+        #resume-content.dragging-active {
+          touch-action: none !important;
+          user-select: none !important;
+        }
+        
+        /* Interatividade direta estilo Canva */
+        .t1-name, .t2-name, .t3-name, h1, [class*="-name"],
+        .t1-avatar, .t2-avatar, .t1-avatar-wrap, [class*="-avatar"], img,
+        .t1-bio, .t2-bio, .t1-bio-wrap, p, [class*="-bio"],
+        .t1-skill-tag, [class*="-skill-tag"], [class*="skill"],
+        [class*="lang-item"], [class*="language"],
+        .t1-contact-item, .t2-contact-row, .t1-contact-text, .t2-contact-text, [class*="contact-item"], [class*="contact-row"] {
+          position: relative !important;
+          user-select: none !important;
+          touch-action: none !important; 
+          cursor: pointer !important;
+          transition: box-shadow 0.2s ease, outline 0.2s ease !important;
+        }
+
+        .t1-section-title, .t1-right-title, .t2-section-title, .t3-section-title, h3, h2, [class*="-title"],
+        .t1-exp-item, .t2-exp-item, [class*="-exp-item"], [class*="exp-item"],
+        .t1-edu-item, [class*="-edu-item"], [class*="edu-item"] {
+          position: relative !important;
+          user-select: none !important;
+          touch-action: none !important; 
+          cursor: pointer !important;
+          transition: box-shadow 0.2s ease, outline 0.2s ease !important;
+        }
+
+        /* Hover outlines */
+        .t1-name:hover, .t2-name:hover, .t3-name:hover, h1:hover, [class*="-name"]:hover,
+        .t1-avatar:hover, .t2-avatar:hover, .t1-avatar-wrap:hover, [class*="-avatar"]:hover, img:hover,
+        .t1-section-title:hover, .t1-right-title:hover, .t2-section-title:hover, .t3-section-title:hover, h3:hover, h2:hover, [class*="-title"]:hover,
+        .t1-exp-item:hover, .t2-exp-item:hover, [class*="-exp-item"]:hover, [class*="exp-item"]:hover,
+        .t1-edu-item:hover, [class*="-edu-item"]:hover, [class*="edu-item"]:hover,
+        .t1-skill-tag:hover, [class*="-skill-tag"]:hover, [class*="skill"]:hover,
+        [class*="lang-item"]:hover, [class*="language"]:hover,
+        .t1-contact-item:hover, .t2-contact-row:hover, .t1-contact-text:hover, .t2-contact-text:hover, [class*="contact-item"]:hover, [class*="contact-row"]:hover,
+        .t1-bio:hover, .t2-bio:hover, .t1-bio-wrap:hover, p:hover, [class*="-bio"]:hover {
+          outline: 2px dashed rgba(99, 102, 241, 0.45) !important;
+          outline-offset: 4px !important;
+          background-color: rgba(99, 102, 241, 0.02) !important;
+        }
+
+        /* Help badges on hover */
+        [class*="-name"]:hover::after, h1:hover::after {
+          content: "↔️ Arraste p/ os lados (Tamanho Nome)" !important;
+          position: absolute !important;
+          bottom: -22px !important;
+          left: 50% !important;
+          transform: translateX(-50%) !important;
+          background: #4f46e5 !important;
+          color: white !important;
+          font-size: 8px !important;
+          font-family: sans-serif !important;
+          font-style: normal !important;
+          font-weight: bold !important;
+          padding: 2px 6px !important;
+          border-radius: 4px !important;
+          white-space: nowrap !important;
+          pointer-events: none !important;
+          z-index: 9999 !important;
+          box-shadow: 0 4px 6px rgba(0,0,0,0.1) !important;
+        }
+
+        .t1-avatar:hover::after, .t2-avatar:hover::after, img:hover::after {
+          content: "↔️ Tamanho da Foto | ↕️ Cantos Redondos" !important;
+          position: absolute !important;
+          bottom: -22px !important;
+          left: 50% !important;
+          transform: translateX(-50%) !important;
+          background: #312e81 !important;
+          color: white !important;
+          font-size: 8px !important;
+          font-family: sans-serif !important;
+          font-style: normal !important;
+          font-weight: bold !important;
+          padding: 2px 6px !important;
+          border-radius: 4px !important;
+          white-space: nowrap !important;
+          pointer-events: none !important;
+          z-index: 9999 !important;
+          box-shadow: 0 4px 6px rgba(0,0,0,0.1) !important;
+        }
+
+        .t1-section-title:hover::after, .t1-right-title:hover::after, .t2-section-title:hover::after, .t3-section-title:hover::after, h3:hover::after, h2:hover::after {
+          content: "↕️ Espaço abaixo | ↔️ Tamanho Título" !important;
+          position: absolute !important;
+          bottom: -22px !important;
+          left: 50% !important;
+          transform: translateX(-50%) !important;
+          background: #111827 !important;
+          color: white !important;
+          font-size: 8px !important;
+          font-family: sans-serif !important;
+          font-style: normal !important;
+          font-weight: bold !important;
+          padding: 2px 6px !important;
+          border-radius: 4px !important;
+          white-space: nowrap !important;
+          pointer-events: none !important;
+          z-index: 9999 !important;
+          box-shadow: 0 4px 6px rgba(0,0,0,0.1) !important;
+        }
+
+        [class*="exp-item"]:hover::after, [class*="edu-item"]:hover::after {
+          content: "↕️ Reordenar | ↔️ Espaçamento dos Itens" !important;
+          position: absolute !important;
+          top: 4px !important;
+          right: 4px !important;
+          background: #059669 !important;
+          color: white !important;
+          font-size: 8px !important;
+          font-family: sans-serif !important;
+          font-style: normal !important;
+          font-weight: bold !important;
+          padding: 2px 6px !important;
+          border-radius: 4px !important;
+          white-space: nowrap !important;
+          pointer-events: none !important;
+          z-index: 9999 !important;
+          box-shadow: 0 4px 6px rgba(0,0,0,0.1) !important;
+        }
+
+        .t1-skill-tag:hover::after, [class*="-skill-tag"]:hover::after, [class*="skill"]:hover::after {
+          content: "↔️ Espaçamento habilidades" !important;
+          position: absolute !important;
+          bottom: -22px !important;
+          left: 50% !important;
+          transform: translateX(-50%) !important;
+          background: #0284c7 !important;
+          color: white !important;
+          font-size: 8px !important;
+          font-family: sans-serif !important;
+          font-style: normal !important;
+          font-weight: bold !important;
+          padding: 2px 6px !important;
+          border-radius: 4px !important;
+          white-space: nowrap !important;
+          pointer-events: none !important;
+          z-index: 9999 !important;
+        }
+
+        [class*="lang-item"]:hover::after, [class*="language"]:hover::after {
+          content: "↔️ Tamanho do texto Idiomas" !important;
+          position: absolute !important;
+          bottom: -22px !important;
+          left: 50% !important;
+          transform: translateX(-50%) !important;
+          background: #7c3aed !important;
+          color: white !important;
+          font-size: 8px !important;
+          font-family: sans-serif !important;
+          font-style: normal !important;
+          font-weight: bold !important;
+          padding: 2px 6px !important;
+          border-radius: 4px !important;
+          white-space: nowrap !important;
+          pointer-events: none !important;
+          z-index: 9999 !important;
+        }
+
+        .t1-contact-item:hover::after, .t2-contact-row:hover::after, [class*="contact-item"]:hover::after {
+          content: "↔️ Tamanho Letras | ↕️ Espaço de Item" !important;
+          position: absolute !important;
+          bottom: -22px !important;
+          left: 50% !important;
+          transform: translateX(-50%) !important;
+          background: #ea580c !important;
+          color: white !important;
+          font-size: 8px !important;
+          font-family: sans-serif !important;
+          font-style: normal !important;
+          font-weight: bold !important;
+          padding: 2px 6px !important;
+          border-radius: 4px !important;
+          white-space: nowrap !important;
+          pointer-events: none !important;
+          z-index: 9999 !important;
+        }
+
+        .t1-bio:hover::after, .t2-bio:hover::after, p:hover::after {
+          content: "↔️ Tamanho Fonte | ↕️ Espaço de Linhas" !important;
+          position: absolute !important;
+          bottom: -22px !important;
+          left: 50% !important;
+          transform: translateX(-50%) !important;
+          background: #9333ea !important;
+          color: white !important;
+          font-size: 8px !important;
+          font-family: sans-serif !important;
+          font-style: normal !important;
+          font-weight: bold !important;
+          padding: 2px 6px !important;
+          border-radius: 4px !important;
+          white-space: nowrap !important;
+          pointer-events: none !important;
+          z-index: 9999 !important;
+          box-shadow: 0 4px 6px rgba(0,0,0,0.1) !important;
+        }
+        
+        #resume-content.show-guides::before {
+          content: "Maneio Interativo Total Ativo - Toque e arraste qualquer letra, foto ou detalhe livremente" !important;
+          position: absolute !important;
+          top: -24px !important;
+          left: 0 !important;
+          font-size: 10px !important;
+          font-family: ${fontFam} !important;
+          font-weight: bold !important;
+          color: #6366f1 !important;
+          text-transform: uppercase !important;
+          letter-spacing: 0.1em !important;
+          background: #f5f3ff !important;
+          padding: 2px 8px !important;
+          border-radius: 4px !important;
+          border: 1px solid #c7d2fe !important;
+          pointer-events: none !important;
+          z-index: 50 !important;
+        }
+
+        #resume-content.show-guides > div {
+          background-image: 
+            linear-gradient(rgba(99, 102, 241, 0.05) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(99, 102, 241, 0.05) 1px, transparent 1px) !important;
+          background-size: 20px 20px !important;
+        }
+
+        /* Profile image with custom interactive pointer rounded borders */
+        #resume-content img,
+        #resume-content .t1-avatar,
+        #resume-content .t2-avatar,
+        #resume-content .t1-avatar-wrap img,
+        #resume-content .t1-avatar img,
+        #resume-content .t2-avatar img,
+        #resume-content [class*="-avatar"] img {
+          border-radius: ${style.photoBorderRadius !== undefined ? style.photoBorderRadius : 50}% !important;
+        }
+        #resume-content .t1-avatar,
+        #resume-content .t2-avatar,
+        #resume-content .t1-avatar-wrap,
+        #resume-content [class*="-avatar"] {
+          border-radius: ${style.photoBorderRadius !== undefined ? style.photoBorderRadius : 50}% !important;
+          width: ${data.personalInfo.photoSize || 100}px !important;
+          height: ${data.personalInfo.photoSize || 100}px !important;
+        }
+
+        /* Text fonts size & line height overrides */
+        #resume-content p, 
+        #resume-content span:not(.t1-contact-icon), 
+        #resume-content div:not(.t1-name):not(.t2-name):not(.t3-name):not(.t1-left):not(.t2-header):not(.t1-avatar):not(.t2-avatar):not(.shrink-0), 
+        #resume-content li, 
+        #resume-content td {
+          font-size: ${style.fontSize}px !important;
+          line-height: ${style.lineHeight || 1.4} !important;
+        }
+
+        /* Sub-texts are slightly smaller to maintain visual hierarchy */
+        #resume-content .t1-exp-desc,
+        #resume-content .t1-contact-text,
+        #resume-content .t2-contact-text,
+        #resume-content .t1-edu-year,
+        #resume-content .t2-edu-year,
+        #resume-content .t1-edu-school {
+          font-size: ${Math.max(8, (style.fontSize || 13) - 2)}px !important;
+        }
+
+        /* Main Full-Name Overrides */
+        #resume-content .t1-name, 
+        #resume-content .t2-name, 
+        #resume-content .t3-name,
+        #resume-content .t1-left .t1-avatar-wrap + div .font-bold,
+        #resume-content h1 {
+          font-size: ${style.titleSize || 26}px !important;
+          line-height: 1.1 !important;
+        }
+
+        /* Section Title Margins and Size Overrides */
+        #resume-content .t1-section-title,
+        #resume-content .t1-right-title,
+        #resume-content .t2-section-title,
+        #resume-content h3,
+        #resume-content h2 {
+          font-size: ${Math.min(22, (style.fontSize || 13) + 3)}px !important;
+          margin-bottom: ${style.sectionSpacing}px !important;
+          margin-top: ${Math.max(10, (style.sectionSpacing || 25) - 5)}px !important;
+        }
+
+        /* Document margins padding control */
+        #resume-content .t1-left,
+        #resume-content .t2-left {
+          padding-top: ${style.margins}px !important;
+          padding-bottom: ${style.margins}px !important;
+          padding-left: calc(${style.margins}px * 0.6) !important;
+          padding-right: calc(${style.margins}px * 0.6) !important;
+        }
+        #resume-content .t1-right,
+        #resume-content .t2-right,
+        #resume-content .t2-header {
+          padding: ${style.margins}px ${style.margins}px !important;
+        }
+
+        /* List Items Margin Control */
+        #resume-content .t1-exp-item,
+        #resume-content .t2-edu-item,
+        #resume-content .t1-edu-item,
+        #resume-content .t1-contact-item,
+        #resume-content .t2-contact-row {
+          margin-bottom: ${style.itemSpacing}px !important;
+        }
+      `}</style>
+      
+      {/* Canva-style interactive guidelines overlay */}
+      {dragState.active && (
+        <div className="absolute inset-0 pointer-events-none z-[999]" style={{ width: '100%', height: '100%' }}>
+          {/* Left margin guideline */}
+          <div 
+            className="absolute top-0 bottom-0 border-l border-dashed border-indigo-500/80" 
+            style={{ left: `${style.margins}px` }}
+          >
+            <span className="absolute top-4 left-1 bg-indigo-600 text-white text-[8px] font-black uppercase px-2 py-0.5 rounded shadow whitespace-nowrap">Margem Esq. ({style.margins}px)</span>
+          </div>
+
+          {/* Right margin guideline */}
+          <div 
+            className="absolute top-0 bottom-0 border-l border-dashed border-indigo-500/80" 
+            style={{ right: `${style.margins}px` }}
+          >
+            <span className="absolute top-4 right-1 bg-indigo-600 text-white text-[8px] font-black uppercase px-2 py-0.5 rounded shadow whitespace-nowrap">Margem Dir. ({style.margins}px)</span>
+          </div>
+
+          {/* Vertical axis center guideline */}
+          <div 
+            className="absolute left-1/2 top-0 bottom-0 -translate-x-1/2 border-l border-dashed border-rose-500/80"
+          >
+            <span className="absolute top-1/4 -translate-x-1/2 bg-rose-600 text-white text-[8px] font-black uppercase px-2 py-0.5 rounded shadow whitespace-nowrap">Eixo Central</span>
+          </div>
+
+          {/* Horizontal coordinate tracking line with dynamic values */}
+          <div 
+            className="absolute left-0 right-0 border-t border-dashed border-indigo-500" 
+            style={{ top: `${dragState.currentY}px` }}
+          >
+            <div 
+              className="absolute bg-indigo-950 text-white text-[9px] font-black px-3 py-1 rounded-full shadow-2xl flex items-center gap-1.5 whitespace-nowrap"
+              style={{ 
+                left: `${Math.min(650, Math.max(50, dragState.currentX))}px`, 
+                top: '-24px',
+                transform: 'translateX(-50%)' 
+              }}
+            >
+              <span>✨</span>
+              <span className="uppercase tracking-wider">
+                {dragState.type === 'name' && `Tamanho do Nome: ${Math.round(dragState.currentVal)}px`}
+                {dragState.type === 'photo' && `Tamanho da Foto: ${Math.round(dragState.currentVal)}px | Cantos: ${Math.round(dragState.secondaryCurrentVal)}%`}
+                {dragState.type === 'bio' && `Tamanho Fonte: ${dragState.currentVal}px | Espaço Linhas: ${dragState.secondaryCurrentVal}`}
+                {dragState.type === 'sectionSpacing' && `Espaço Seções: ${Math.round(dragState.currentVal)}px`}
+                {dragState.type === 'experience' && `Reordenando Experiência #${dragState.index + 1} | Espaço: ${style.itemSpacing || 10}px`}
+                {dragState.type === 'education' && `Reordenando Formação #${dragState.index + 1} | Espaço: ${style.itemSpacing || 10}px`}
+                {dragState.type === 'contact' && `Fonte Contatos: ${dragState.currentVal}px | Espço Linhas: ${dragState.secondaryCurrentVal}px`}
+                {dragState.type === 'skills' && `Espaçamento Habilidades: ${Math.round(dragState.currentVal)}px`}
+                {dragState.type === 'languages' && `Tamanho Texto Idiomas: ${dragState.currentVal}px`}
+                {dragState.type === 'margins' && `Margem Documento: ${Math.round(dragState.currentVal)}px`}
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div 
         className="relative overflow-visible"
         style={{ 
@@ -2842,6 +3561,16 @@ const ResumeRenderer = React.memo(({ data, templateId }: { data: ResumeData; tem
         </div>
       )}
       </div>
+
+      {/* Dynamic Visual A4 Page cutoff border */}
+      <div 
+        className="absolute left-0 right-0 border-b-2 border-dashed border-red-500/70 pointer-events-none z-[100] print:hidden" 
+        style={{ top: '1122px', height: '0px' }}
+      >
+        <span className="absolute right-4 -top-3 bg-red-600 text-[8px] font-black uppercase text-white px-2 py-0.5 rounded shadow flex items-center gap-1 select-none">
+          ⚠️ FIM DA PÁGINA A4 (RODAPÉ)
+        </span>
+      </div>
     </div>
   );
 });
@@ -2922,6 +3651,113 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
     return () => clearTimeout(timer);
   }, [generatedLetter]);
   const [previewScale, setPreviewScale] = useState(0.85);
+  const [showAlignGuides, setShowAlignGuides] = useState(false);
+  const [activeVisualTab, setActiveVisualTab] = useState<'sizes' | 'reorder' | 'alignment'>('sizes');
+
+  const moveExperience = (index: number, direction: 'up' | 'down') => {
+    const newExp = [...resumeData.experience];
+    if (direction === 'up' && index > 0) {
+      const temp = newExp[index];
+      newExp[index] = newExp[index - 1];
+      newExp[index - 1] = temp;
+    } else if (direction === 'down' && index < newExp.length - 1) {
+      const temp = newExp[index];
+      newExp[index] = newExp[index + 1];
+      newExp[index + 1] = temp;
+    }
+    setResumeData(prev => ({ ...prev, experience: newExp }));
+  };
+
+  const moveEducation = (index: number, direction: 'up' | 'down') => {
+    const newEdu = [...resumeData.education];
+    if (direction === 'up' && index > 0) {
+      const temp = newEdu[index];
+      newEdu[index] = newEdu[index - 1];
+      newEdu[index - 1] = temp;
+    } else if (direction === 'down' && index < newEdu.length - 1) {
+      const temp = newEdu[index];
+      newEdu[index] = newEdu[index + 1];
+      newEdu[index + 1] = temp;
+    }
+    setResumeData(prev => ({ ...prev, education: newEdu }));
+  };
+
+  const moveSkill = (index: number, direction: 'up' | 'down') => {
+    const newSkills = [...resumeData.skills];
+    if (direction === 'up' && index > 0) {
+      const temp = newSkills[index];
+      newSkills[index] = newSkills[index - 1];
+      newSkills[index - 1] = temp;
+    } else if (direction === 'down' && index < newSkills.length - 1) {
+      const temp = newSkills[index];
+      newSkills[index] = newSkills[index + 1];
+      newSkills[index + 1] = temp;
+    }
+    setResumeData(prev => ({ ...prev, skills: newSkills }));
+  };
+
+  const handleAutoAlign = () => {
+    const element = document.getElementById(isCoverLetterMode ? 'cover-letter-content' : 'resume-content');
+    if (!element) return;
+    
+    const currentHeight = element.scrollHeight;
+    
+    const currentStyles = resumeData.styleConfig || {
+      fontSize: 13,
+      titleSize: 26,
+      sectionSpacing: 25,
+      itemSpacing: 10,
+      margins: 30,
+      lineHeight: 1.4,
+      alignment: 'left',
+      fontFamily: 'sans'
+    };
+
+    if (currentHeight <= 1122) {
+      if (currentHeight < 850) {
+        setResumeData(prev => ({
+          ...prev,
+          styleConfig: {
+            ...prev.styleConfig,
+            fontSize: 13.5,
+            titleSize: 28,
+            sectionSpacing: 28,
+            itemSpacing: 12,
+            margins: 35,
+            lineHeight: 1.45,
+            alignment: prev.styleConfig?.alignment || 'left',
+            fontFamily: prev.styleConfig?.fontFamily || 'sans'
+          }
+        }));
+      }
+      return;
+    }
+
+    // Calcular taxa de compressão exata para fazer caber abaixo de 1115px (limite seguro da folha A4)
+    const ratio = Math.max(0.68, Math.min(0.95, 1115 / currentHeight));
+    
+    const newFontSize = Number(Math.max(10, Math.min(15, (currentStyles.fontSize || 13) * ratio)).toFixed(1));
+    const newTitleSize = Math.round(Math.max(18, Math.min(36, (currentStyles.titleSize || 26) * ratio)));
+    const newSectionSpacing = Math.round(Math.max(8, Math.min(30, (currentStyles.sectionSpacing || 25) * ratio)));
+    const newItemSpacing = Math.round(Math.max(3, Math.min(18, (currentStyles.itemSpacing || 10) * ratio)));
+    const newMargins = Math.round(Math.max(12, Math.min(45, (currentStyles.margins || 30) * ratio)));
+    const newLineHeight = Number(Math.max(1.15, Math.min(1.5, (currentStyles.lineHeight || 1.4) * ratio)).toFixed(2));
+
+    setResumeData(prev => ({
+      ...prev,
+      styleConfig: {
+        fontSize: newFontSize,
+        titleSize: newTitleSize,
+        sectionSpacing: newSectionSpacing,
+        itemSpacing: newItemSpacing,
+        margins: newMargins,
+        lineHeight: newLineHeight,
+        alignment: prev.styleConfig?.alignment || 'left',
+        fontFamily: prev.styleConfig?.fontFamily || 'sans'
+      }
+    }));
+  };
+
   const [resumeHeight, setResumeHeight] = useState(1122);
   const [isAutoFit, setIsAutoFit] = useState(true);
 
@@ -3210,13 +4046,14 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
         });
       }));
 
-      // Force absolute baseline layout dimensions for high resolution capture
+      // Forçar dimensões absolutas da folha A4 para garantir saída estrita em exatamente 1 única página
       element.style.width = '794px';
-      element.style.height = 'auto';
+      element.style.height = '1122px';
       element.style.minHeight = '1122px';
-      element.style.maxHeight = 'none';
+      element.style.maxHeight = '1122px';
+      element.style.overflow = 'hidden';
 
-      const actualHeight = Math.max(1122, element.scrollHeight || element.offsetHeight);
+      const actualHeight = 1122;
 
       const opt = {
         margin: 0,
@@ -3266,6 +4103,10 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
 
   const handleDownloadPdf = () => {
     executeDownloadPdf();
+  };
+
+  const handlePrint = () => {
+    window.print();
   };
 
   const createOrder = async () => {
@@ -4465,6 +5306,7 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
           <div className="flex items-center gap-2">
             <div className="px-3 py-1 bg-soft-blue text-primary-blue text-[9px] font-black rounded-full hidden md:block">PASSO {activeStep + 1}/6</div>
             <Button variant="outline" className="h-9 px-4 text-xs font-bold lg:hidden" onClick={() => setShowPreviewModal(true)} icon={ExternalLink}>Ver currículo</Button>
+            <Button variant="secondary" className="h-9 px-4 text-xs font-bold hidden sm:flex !border-gray-200" onClick={handlePrint} icon={Printer}>Imprimir</Button>
             <Button className="h-9 px-4 text-xs font-bold hidden sm:flex" onClick={handleDownloadPdf} disabled={isDownloading} icon={Download}>{isDownloading ? 'Baixando...' : 'Baixar'}</Button>
           </div>
         </header>
@@ -5020,6 +5862,9 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
                       <Button className="w-full bg-deep-blue text-white hover:bg-deep-blue/90 border-0" onClick={handleDownloadPdf} disabled={isDownloading} icon={Download}>
                         {isDownloading ? "Preparando o seu Currículo..." : "Baixar Currículo em PDF"}
                       </Button>
+                      <Button variant="outline" className="w-full text-white border-white/40 hover:bg-white/10 h-11" onClick={() => { setIsCoverLetterMode(false); setTimeout(handlePrint, 100); }} icon={Printer}>
+                        Imprimir Currículo
+                      </Button>
                    </div>
 
                    <div className="p-8 bg-white border-2 border-dashed border-primary-blue/30 rounded-3xl text-center space-y-4 overflow-hidden relative">
@@ -5040,6 +5885,9 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
                              
                              <Button className="w-full bg-white text-primary-blue border border-primary-blue hover:bg-primary-blue/5" onClick={() => { setIsCoverLetterMode(true); setShowPreviewModal(true); }}>
                                Visualizar Carta
+                              </Button>
+                              <Button className="w-full bg-white text-gray-700 border border-gray-200 hover:bg-gray-50 hover:text-gray-900" onClick={() => { setIsCoverLetterMode(true); setTimeout(handlePrint, 100); }} icon={Printer}>
+                                Imprimir Carta
                              </Button>
                              <Button className="w-full bg-primary-blue text-white hover:bg-primary-blue/90" onClick={() => { setIsCoverLetterMode(true); setTimeout(handleDownloadPdf, 100); }} disabled={isDownloading} icon={Download}>
                                {isDownloading ? "Gerando PDF..." : "Baixar Carta em PDF"}
@@ -5118,9 +5966,310 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
           </div>
         )}
 
+        {/* Painel Flutuante de Controles Visuais e Organização de Grelha */}
+        {!isCoverLetterMode && (
+          <div className="w-full max-w-[794px] mb-6 p-4 bg-white/95 backdrop-blur-md rounded-3xl border border-gray-200/80 shadow-[0_10px_30px_-10px_rgba(0,0,0,0.08)] print:hidden space-y-4">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-gray-100 pb-3">
+               <div className="flex items-center gap-2.5">
+                 <div className="p-2 bg-primary-blue/10 rounded-2xl text-primary-blue">
+                    <Sparkles size={18} />
+                 </div>
+                 <div>
+                    <h4 className="text-xs font-black uppercase tracking-wider text-deep-blue">Ajustes Visuais & Alinhamento Automático</h4>
+                    <p className="text-[10px] text-text-muted font-bold uppercase tracking-tight opacity-75">Mova elementos, altere tamanhos e ordene</p>
+                 </div>
+               </div>
+               <div className="flex flex-wrap gap-1.5 self-stretch sm:self-auto">
+                  <button 
+                     onClick={() => setActiveVisualTab('sizes')} 
+                     className={`px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all ${activeVisualTab === 'sizes' ? 'bg-primary-blue text-white shadow-sm scale-105' : 'bg-gray-100/80 hover:bg-gray-200/60 text-text-muted'}`}
+                  >
+                     Tamanhos
+                  </button>
+                  <button 
+                     onClick={() => setActiveVisualTab('reorder')} 
+                     className={`px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all ${activeVisualTab === 'reorder' ? 'bg-primary-blue text-white shadow-sm scale-105' : 'bg-gray-100/80 hover:bg-gray-200/60 text-text-muted'}`}
+                  >
+                     Mover Itens
+                  </button>
+                  <button 
+                     onClick={() => setActiveVisualTab('alignment')} 
+                     className={`px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all ${activeVisualTab === 'alignment' ? 'bg-primary-blue text-white shadow-sm scale-105' : 'bg-gray-100/80 hover:bg-gray-200/60 text-text-muted'}`}
+                  >
+                     Alinhamentos
+                  </button>
+               </div>
+            </div>
+
+            {activeVisualTab === 'sizes' && (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-xs font-bold text-gray-700">
+                 {/* Letra Geral */}
+                 <div className="space-y-1.5">
+                   <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-wider text-gray-500">
+                      <span>Letra Geral</span>
+                      <span>{resumeData.styleConfig?.fontSize !== undefined ? resumeData.styleConfig.fontSize : 13}px</span>
+                   </div>
+                   <div className="flex items-center gap-2">
+                      <button 
+                        onClick={() => setResumeData(p => {
+                          const s = p.styleConfig || { fontSize: 13 };
+                          return { ...p, styleConfig: { ...s, fontSize: Math.max(10, (s.fontSize || 13) - 1) } };
+                        })}
+                        className="w-8 h-8 rounded-xl bg-gray-100 hover:bg-gray-200 flex items-center justify-center font-bold text-lg active:scale-95 transition-all text-gray-700 select-none"
+                      >-</button>
+                      <input 
+                        type="range" min="10" max="18" 
+                        value={resumeData.styleConfig?.fontSize !== undefined ? resumeData.styleConfig.fontSize : 13} 
+                        onChange={(e) => setResumeData(p => ({ ...p, styleConfig: { ...(p.styleConfig || {}), fontSize: parseInt(e.target.value) } }))}
+                        className="flex-1 accent-primary-blue h-1 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                      />
+                      <button 
+                        onClick={() => setResumeData(p => {
+                          const s = p.styleConfig || { fontSize: 13 };
+                          return { ...p, styleConfig: { ...s, fontSize: Math.min(18, (s.fontSize || 13) + 1) } };
+                        })}
+                        className="w-8 h-8 rounded-xl bg-gray-100 hover:bg-gray-200 flex items-center justify-center font-bold text-lg active:scale-95 transition-all text-gray-700 select-none"
+                      >+</button>
+                   </div>
+                 </div>
+
+                 {/* Tamanho do Nome */}
+                 <div className="space-y-1.5">
+                   <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-wider text-gray-500">
+                      <span>Nome Principal</span>
+                      <span>{resumeData.styleConfig?.titleSize !== undefined ? resumeData.styleConfig.titleSize : 26}px</span>
+                   </div>
+                   <div className="flex items-center gap-2">
+                      <button 
+                        onClick={() => setResumeData(p => {
+                          const s = p.styleConfig || { titleSize: 26 };
+                          return { ...p, styleConfig: { ...s, titleSize: Math.max(16, (s.titleSize || 26) - 2) } };
+                        })}
+                        className="w-8 h-8 rounded-xl bg-gray-100 hover:bg-gray-200 flex items-center justify-center font-bold text-lg active:scale-95 transition-all text-gray-700 select-none"
+                      >-</button>
+                      <input 
+                        type="range" min="16" max="48" 
+                        value={resumeData.styleConfig?.titleSize !== undefined ? resumeData.styleConfig.titleSize : 26} 
+                        onChange={(e) => setResumeData(p => ({ ...p, styleConfig: { ...(p.styleConfig || {}), titleSize: parseInt(e.target.value) } }))}
+                        className="flex-1 accent-primary-blue h-1 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                      />
+                      <button 
+                        onClick={() => setResumeData(p => {
+                          const s = p.styleConfig || { titleSize: 26 };
+                          return { ...p, styleConfig: { ...s, titleSize: Math.min(48, (s.titleSize || 26) + 2) } };
+                        })}
+                        className="w-8 h-8 rounded-xl bg-gray-100 hover:bg-gray-200 flex items-center justify-center font-bold text-lg active:scale-95 transition-all text-gray-700 select-none"
+                      >+</button>
+                   </div>
+                 </div>
+
+                 {/* Margens do Documento */}
+                 <div className="space-y-1.5">
+                   <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-wider text-gray-500">
+                      <span>Margens Fora</span>
+                      <span>{resumeData.styleConfig?.margins !== undefined ? resumeData.styleConfig.margins : 30}px</span>
+                   </div>
+                   <div className="flex items-center gap-2">
+                      <button 
+                        onClick={() => setResumeData(p => {
+                          const s = p.styleConfig || { margins: 30 };
+                          return { ...p, styleConfig: { ...s, margins: Math.max(10, (s.margins || 30) - 2) } };
+                        })}
+                        className="w-8 h-8 rounded-xl bg-gray-100 hover:bg-gray-200 flex items-center justify-center font-bold text-lg active:scale-95 transition-all text-gray-700 select-none"
+                      >-</button>
+                      <input 
+                        type="range" min="10" max="60" 
+                        value={resumeData.styleConfig?.margins !== undefined ? resumeData.styleConfig.margins : 30} 
+                        onChange={(e) => setResumeData(p => ({ ...p, styleConfig: { ...(p.styleConfig || {}), margins: parseInt(e.target.value) } }))}
+                        className="flex-1 accent-primary-blue h-1 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                      />
+                      <button 
+                        onClick={() => setResumeData(p => {
+                          const s = p.styleConfig || { margins: 30 };
+                          return { ...p, styleConfig: { ...s, margins: Math.min(60, (s.margins || 30) + 2) } };
+                        })}
+                        className="w-8 h-8 rounded-xl bg-gray-100 hover:bg-gray-200 flex items-center justify-center font-bold text-lg active:scale-95 transition-all text-gray-700 select-none"
+                      >+</button>
+                   </div>
+                 </div>
+
+                 {/* Espaçamento de Itens */}
+                 <div className="space-y-1.5">
+                   <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-wider text-gray-500">
+                      <span>Espaço entre Itens</span>
+                      <span>{resumeData.styleConfig?.itemSpacing !== undefined ? resumeData.styleConfig.itemSpacing : 10}px</span>
+                   </div>
+                   <div className="flex items-center gap-2">
+                      <button 
+                        onClick={() => setResumeData(p => {
+                          const s = p.styleConfig || { itemSpacing: 10 };
+                          return { ...p, styleConfig: { ...s, itemSpacing: Math.max(4, (s.itemSpacing || 10) - 2) } };
+                        })}
+                        className="w-8 h-8 rounded-xl bg-gray-100 hover:bg-gray-200 flex items-center justify-center font-bold text-lg active:scale-95 transition-all text-gray-700 select-none"
+                      >-</button>
+                      <input 
+                        type="range" min="4" max="25" 
+                        value={resumeData.styleConfig?.itemSpacing !== undefined ? resumeData.styleConfig.itemSpacing : 10} 
+                        onChange={(e) => setResumeData(p => ({ ...p, styleConfig: { ...(p.styleConfig || {}), itemSpacing: parseInt(e.target.value) } }))}
+                        className="flex-1 accent-primary-blue h-1 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                      />
+                      <button 
+                        onClick={() => setResumeData(p => {
+                          const s = p.styleConfig || { itemSpacing: 10 };
+                          return { ...p, styleConfig: { ...s, itemSpacing: Math.min(25, (s.itemSpacing || 10) + 2) } };
+                        })}
+                        className="w-8 h-8 rounded-xl bg-gray-100 hover:bg-gray-200 flex items-center justify-center font-bold text-lg active:scale-95 transition-all text-gray-700 select-none"
+                      >+</button>
+                   </div>
+                 </div>
+              </div>
+            )}
+
+            {activeVisualTab === 'reorder' && (
+              <div className="space-y-3.5 text-xs">
+                 {resumeData.experience.length === 0 && resumeData.education.length === 0 && (
+                   <div className="p-3 text-center text-text-muted font-bold bg-gray-50 rounded-2xl border border-dashed border-gray-200/80">
+                      Nenhuma experiência profissional ou formação registada para mover. Adicione-as nos passos à esquerda!
+                   </div>
+                 )}
+                 
+                 {resumeData.experience.length > 0 && (
+                   <div className="space-y-1.5">
+                     <span className="text-[10px] font-black uppercase text-gray-400 tracking-wider">Histórico de Trabalho (Reordenar na Preview)</span>
+                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        {resumeData.experience.map((exp, idx) => (
+                          <div key={exp.id || `exp-order-${idx}`} className="flex items-center justify-between p-2 rounded-2xl bg-gray-50 border border-gray-100/50">
+                             <div className="truncate pr-2 select-none">
+                                <div className="font-bold text-text-main text-xs truncate">{exp.position || "Sem Cargo"}</div>
+                                <div className="text-[10px] text-text-muted truncate mt-0.5">{exp.company || "Sem Empresa"}</div>
+                             </div>
+                             <div className="flex gap-1 shrink-0">
+                                <button 
+                                  disabled={idx === 0} 
+                                  onClick={() => moveExperience(idx, 'up')}
+                                  className="w-6 h-6 rounded-lg bg-white shadow-sm border border-gray-200 flex items-center justify-center cursor-pointer hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed text-xs text-gray-600 font-bold active:scale-95 transition-all"
+                                  title="Subir"
+                                >▲</button>
+                                <button 
+                                  disabled={idx === resumeData.experience.length - 1} 
+                                  onClick={() => moveExperience(idx, 'down')}
+                                  className="w-6 h-6 rounded-lg bg-white shadow-sm border border-gray-200 flex items-center justify-center cursor-pointer hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed text-xs text-gray-600 font-bold active:scale-95 transition-all"
+                                  title="Descer"
+                                >▼</button>
+                             </div>
+                          </div>
+                        ))}
+                     </div>
+                   </div>
+                 )}
+
+                 {resumeData.education.length > 0 && (
+                   <div className="space-y-1.5 mt-2">
+                     <span className="text-[10px] font-black uppercase text-gray-400 tracking-wider">Formação Académica (Reordenar na Preview)</span>
+                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        {resumeData.education.map((edu, idx) => (
+                          <div key={edu.id || `edu-order-${idx}`} className="flex items-center justify-between p-2 rounded-2xl bg-gray-50 border border-gray-100/50">
+                             <div className="truncate pr-2 select-none">
+                                <div className="font-bold text-text-main text-xs truncate">{edu.degree || "Sem Grau"}</div>
+                                <div className="text-[10px] text-text-muted truncate mt-0.5">{edu.institution || "Sem Instituição"}</div>
+                             </div>
+                             <div className="flex gap-1 shrink-0">
+                                <button 
+                                  disabled={idx === 0} 
+                                  onClick={() => moveEducation(idx, 'up')}
+                                  className="w-6 h-6 rounded-lg bg-white shadow-sm border border-gray-200 flex items-center justify-center cursor-pointer hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed text-xs text-gray-600 font-bold active:scale-95 transition-all"
+                                  title="Subir"
+                                >▲</button>
+                                <button 
+                                  disabled={idx === resumeData.education.length - 1} 
+                                  onClick={() => moveEducation(idx, 'down')}
+                                  className="w-6 h-6 rounded-lg bg-white shadow-sm border border-gray-200 flex items-center justify-center cursor-pointer hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed text-xs text-gray-600 font-bold active:scale-95 transition-all"
+                                  title="Descer"
+                                >▼</button>
+                             </div>
+                          </div>
+                        ))}
+                     </div>
+                   </div>
+                 )}
+              </div>
+            )}
+
+            {activeVisualTab === 'alignment' && (
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 text-xs">
+                 <div className="space-y-1 max-w-md">
+                    <div className="font-black text-xs text-deep-blue flex items-center gap-1.5">
+                       <span>Alinhamentos & Grelhas de Régua</span>
+                       {showAlignGuides && <span className="px-1.5 py-0.5 text-[8px] font-black tracking-wider uppercase text-emerald-600 bg-emerald-50 border border-emerald-200 rounded">Régua Ativa</span>}
+                    </div>
+                    <p className="text-[10px] text-text-muted leading-relaxed font-semibold">Temos um assistente inovador. O <b>Auto-Alinhador</b> avalia toda a informação inserida e calibra a grelha para caber precisamente numa página.</p>
+                 </div>
+                 <div className="flex flex-wrap gap-2 shrink-0 items-center">
+                    <span className="text-[10px] px-3 py-1.5 bg-soft-blue text-primary-blue rounded-full font-black uppercase tracking-wider select-none border border-primary-blue/10">
+                       Status: {resumeData.experience.length + resumeData.education.length > 5 ? "Densa (Comprimindo)" : "Excelente (Espaçada)"}
+                    </span>
+
+                    <button 
+                       onClick={() => setShowAlignGuides(p => !p)} 
+                       className={`px-4 py-2 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all border flex items-center gap-1.5 cursor-pointer ${showAlignGuides ? 'bg-indigo-50 border-indigo-200 text-indigo-700 shadow-sm font-bold' : 'bg-white border-gray-200 hover:bg-gray-50 text-gray-700 font-bold'}`}
+                    >
+                       <span>📏 {showAlignGuides ? "Esconder Régua" : "Mostrar Régua"}</span>
+                    </button>
+
+                    <button 
+                       onClick={handleAutoAlign} 
+                       className="px-4 py-2 rounded-2xl text-[10px] font-black uppercase tracking-widest bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg active:scale-95 transition-all flex items-center gap-1 cursor-pointer font-bold"
+                       title="Formata automaticamente o documento para caber em 1 página perfeitamente"
+                    >
+                       <span>✨ Alinhamento Auto</span>
+                    </button>
+                 </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Real-time A4 Page Height & Overflow Controller */}
+        {!isCoverLetterMode && (
+          <div className="w-full max-w-[794px] mb-4 print:hidden">
+            {resumeHeight > 1124 ? (
+              <div className="bg-rose-50 border border-rose-200 rounded-2xl p-4 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4 shadow-md">
+                <div className="flex items-start gap-3">
+                  <div className="bg-rose-500 text-white p-2 rounded-xl shrink-0 mt-0.5 shadow-sm">
+                    <AlertTriangle size={16} />
+                  </div>
+                  <div>
+                    <h5 className="text-[11px] font-black uppercase text-rose-800 tracking-wider">Atenção: Currículo Excede 1 folha A4!</h5>
+                    <p className="text-[10px] text-rose-700 font-semibold leading-relaxed mt-0.5">
+                      O conteúdo atual está {Math.round(resumeHeight - 1122)}px maior do que o limite duma folha A4 normal. O que passar da linha pontilhada vermelha não sairá na versão impressa ou PDF final.
+                    </p>
+                  </div>
+                </div>
+                <button 
+                  onClick={handleAutoAlign} 
+                  className="w-full md:w-auto px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-[10px] font-black uppercase tracking-wider flex items-center justify-center gap-1.5 shadow-lg active:scale-95 transition-all cursor-pointer whitespace-nowrap"
+                >
+                  <Sparkles size={12} /> Auto-Ajustar para 1 Página
+                </button>
+              </div>
+            ) : (
+              <div className="bg-emerald-50/80 border border-emerald-100/60 rounded-2xl p-3 flex items-center justify-between shadow-sm font-sans">
+                <div className="flex items-center gap-2">
+                  <span className="text-emerald-500 text-sm">✔️</span>
+                  <div>
+                    <span className="text-[10px] font-black uppercase text-emerald-800 tracking-wider">Tamanho Perfeito p/ 1 Página!</span>
+                    <p className="text-[9px] text-emerald-700/90 font-medium">O seu currículo cabe inteiramente em uma única folha A4 (Atual: {resumeHeight}px / Máximo A4: 1122px).</p>
+                  </div>
+                </div>
+                <span className="text-[8px] font-mono font-black text-emerald-700 uppercase bg-emerald-100/80 px-2 py-0.5 rounded-lg border border-emerald-200/50 tracking-wider">A4 OK</span>
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Scaled Wrapper to prevent horizontal scroll and extra vertical whitespace */}
         <div 
-          className="flex justify-center w-full"
+          className="flex justify-center w-full print:h-[1122px]"
           style={{ height: `${resumeHeight * previewScale}px` }}
         >
           <div 
@@ -5146,7 +6295,7 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
                     <CoverLetterRenderer content={generatedLetter} personalInfo={resumeData.personalInfo} themeColor={resumeData.themeColor} />
                  </motion.div>
                ) : (
-                 <ResumeRenderer data={resumeData} templateId={template} />
+                 <ResumeRenderer data={resumeData} templateId={template} showGuides={showAlignGuides} onChange={setResumeData} />
                )}
              </AnimatePresence>
           </div>
