@@ -5079,7 +5079,7 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
   const c = { ...currentTheme.colors, primary: resumeData.themeColor || currentTheme.colors.primary };
 
   return (
-    <div className="min-h-screen bg-bg-main flex flex-col lg:flex-row justify-start lg:h-screen lg:overflow-y-auto lg:overflow-x-hidden print:bg-white print:h-auto print:overflow-visible">
+    <div className="min-h-screen bg-bg-main flex flex-col md:flex-row justify-start md:h-screen md:overflow-y-auto md:overflow-x-hidden print:bg-white print:h-auto print:overflow-visible">
       
       {/* Payment Modal Overlay */}
       <AnimatePresence>
@@ -5290,7 +5290,7 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
       </AnimatePresence>
 
       {/* Sidebar Editor */}
-      <aside className={`w-full max-w-3xl mx-auto lg:max-w-none lg:mx-0 lg:w-[500px] xl:w-[600px] bg-white border-r border-border-main flex flex-col shadow-2xl z-30 print:hidden shrink-0 ${showPreviewModal ? 'hidden' : 'flex'}`}>
+      <aside className={`w-full max-w-3xl mx-auto md:max-w-none md:mx-0 md:w-[380px] lg:w-[460px] xl:w-[540px] bg-white border-r border-border-main flex flex-col shadow-2xl z-30 print:hidden shrink-0 ${showPreviewModal ? 'hidden' : 'flex'}`}>
         <header className="p-4 border-b border-border-main flex items-center justify-between sticky top-0 bg-white z-40 shadow-sm">
           <div className="flex items-center gap-3">
              <button onClick={() => setView('landing')} className="p-2 hover:bg-bg-main rounded-xl transition-colors text-text-muted">
@@ -5305,7 +5305,7 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
           </div>
           <div className="flex items-center gap-2">
             <div className="px-3 py-1 bg-soft-blue text-primary-blue text-[9px] font-black rounded-full hidden md:block">PASSO {activeStep + 1}/6</div>
-            <Button variant="outline" className="h-9 px-4 text-xs font-bold lg:hidden" onClick={() => setShowPreviewModal(true)} icon={ExternalLink}>Ver currículo</Button>
+            <Button variant="outline" className="h-9 px-4 text-xs font-bold md:hidden" onClick={() => setShowPreviewModal(true)} icon={ExternalLink}>Ver currículo</Button>
             <Button variant="secondary" className="h-9 px-4 text-xs font-bold hidden sm:flex !border-gray-200" onClick={handlePrint} icon={Printer}>Imprimir</Button>
             <Button className="h-9 px-4 text-xs font-bold hidden sm:flex" onClick={handleDownloadPdf} disabled={isDownloading} icon={Download}>{isDownloading ? 'Baixando...' : 'Baixar'}</Button>
           </div>
@@ -5939,7 +5939,7 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
           ? 'fixed inset-0 z-50 bg-bg-main/95 backdrop-blur-md pt-20 pb-8 px-2 flex' 
           : isDownloading 
             ? 'fixed top-0 left-0 z-[-50] flex opacity-100 pointer-events-none' 
-            : 'hidden lg:flex lg:relative lg:bg-[#EEF2F6] lg:py-12 lg:px-6 print:flex'
+            : 'hidden md:flex md:relative md:bg-[#EEF2F6] md:py-12 md:px-6 print:flex'
       }`}>
         
         {loading && (

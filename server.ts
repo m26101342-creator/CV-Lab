@@ -215,7 +215,7 @@ app.post("/api/gemini/optimize", async (req, res) => {
   try {
     const engine = getEngine();
     const response = await engine.models.generateContent({
-      model: "gemini-3.5-flash",
+      model: "gemini-2.5-pro",
       contents: prompt,
       config: {
         thinkingConfig: { thinkingLevel: ThinkingLevel.LOW },
@@ -263,7 +263,7 @@ app.post("/api/gemini/cover-letter", async (req, res) => {
   try {
     const engine = getEngine();
     const response = await engine.models.generateContent({
-      model: "gemini-3.5-flash",
+      model: "gemini-2.5-pro",
       contents: prompt,
       config: {
         temperature: 0.8,
@@ -312,7 +312,7 @@ app.post("/api/gemini/generate-full", async (req, res) => {
   try {
     const engine = getEngine();
     const response = await engine.models.generateContent({
-      model: "gemini-3.5-flash",
+      model: "gemini-2.5-pro",
       contents: prompt,
       config: {
         responseMimeType: "application/json",
@@ -421,7 +421,7 @@ app.post("/api/gemini/parse", async (req, res) => {
   try {
     const engine = getEngine();
     const response = await engine.models.generateContent({
-      model: "gemini-3.5-flash",
+      model: "gemini-2.5-pro",
       contents: { parts },
       config: {
         responseMimeType: "application/json",
@@ -473,7 +473,7 @@ app.post("/api/gemini/translate", async (req, res) => {
   try {
     const engine = getEngine();
     const response = await engine.models.generateContent({
-      model: "gemini-3.5-flash",
+      model: "gemini-2.5-pro",
       contents: prompt,
       config: {
         responseMimeType: "application/json",
