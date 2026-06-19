@@ -35,6 +35,43 @@ function getEngine() {
   return engineInstance;
 }
 
+const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+async function generateContentWithRetry(params: {
+  contents: any;
+  config?: any;
+}): Promise<any> {
+  const engine = getEngine();
+  const models = ["gemini-2.5-flash", "gemini-1.5-flash", "gemini-2.5-pro"];
+  let lastError: any = null;
+
+  for (const model of models) {
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      try {
+        console.log(`[GEMINI] Generating content with model: ${model}, attempt: ${attempt}/3`);
+        const response = await engine.models.generateContent({
+          model: model,
+          contents: params.contents,
+          config: params.config,
+        });
+        return response;
+      } catch (error: any) {
+        lastError = error;
+        const msg = error.message || String(error);
+        console.warn(`[GEMINI] Model ${model} (attempt ${attempt}/3) failed: ${msg}`);
+        
+        if (msg.includes("429") || msg.includes("503") || msg.includes("QUOTA_EXCEEDED") || msg.includes("UNAVAILABLE") || msg.includes("demand") || msg.includes("quota")) {
+          await sleep(attempt * 1500);
+        } else {
+          break;
+        }
+      }
+    }
+  }
+
+  throw lastError || new Error("Failed to generate content with any model");
+}
+
 // Normalized response builder
 function cleanAndNormalizeParsedData(parsedData: any): any {
   if (!parsedData) parsedData = {};
@@ -213,9 +250,7 @@ app.post("/api/gemini/optimize", async (req, res) => {
   `;
 
   try {
-    const engine = getEngine();
-    const response = await engine.models.generateContent({
-      model: "gemini-2.5-pro",
+    const response = await generateContentWithRetry({
       contents: prompt,
       config: {
         thinkingConfig: { thinkingLevel: ThinkingLevel.LOW },
@@ -261,9 +296,7 @@ app.post("/api/gemini/cover-letter", async (req, res) => {
   `;
 
   try {
-    const engine = getEngine();
-    const response = await engine.models.generateContent({
-      model: "gemini-2.5-pro",
+    const response = await generateContentWithRetry({
       contents: prompt,
       config: {
         temperature: 0.8,
@@ -310,9 +343,7 @@ app.post("/api/gemini/generate-full", async (req, res) => {
   `;
 
   try {
-    const engine = getEngine();
-    const response = await engine.models.generateContent({
-      model: "gemini-2.5-pro",
+    const response = await generateContentWithRetry({
       contents: prompt,
       config: {
         responseMimeType: "application/json",
@@ -419,9 +450,7 @@ app.post("/api/gemini/parse", async (req, res) => {
   }
 
   try {
-    const engine = getEngine();
-    const response = await engine.models.generateContent({
-      model: "gemini-2.5-pro",
+    const response = await generateContentWithRetry({
       contents: { parts },
       config: {
         responseMimeType: "application/json",
@@ -471,9 +500,7 @@ app.post("/api/gemini/translate", async (req, res) => {
   `;
 
   try {
-    const engine = getEngine();
-    const response = await engine.models.generateContent({
-      model: "gemini-2.5-pro",
+    const response = await generateContentWithRetry({
       contents: prompt,
       config: {
         responseMimeType: "application/json",
