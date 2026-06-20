@@ -44,14 +44,6 @@ function setLocalCache(apiName: string, keyString: string, value: string) {
 export async function optimizeResumeText(text: string, type: 'summary' | 'experience' | 'skills'): Promise<string> {
   if (!text || text.trim().length === 0) return text;
 
-  // 1. Try reading Cache
-  const cacheKey = `${type}_${text}`;
-  const cachedVal = getLocalCache("optimize", cacheKey);
-  if (cachedVal) {
-    console.log("optimizeResumeText (Client): Serve from local client persistent cache.");
-    return cachedVal;
-  }
-
   try {
     const response = await fetch(`${getApiBaseUrl()}/api/gemini/optimize`, {
       method: "POST",
@@ -65,7 +57,6 @@ export async function optimizeResumeText(text: string, type: 'summary' | 'experi
 
     const data = await response.json();
     if (data && data.text) {
-      setLocalCache("optimize", cacheKey, data.text);
       return data.text;
     }
     return text;
@@ -357,16 +348,6 @@ function cleanAndNormalizeParsedData(parsedData: any): any {
 export async function parseResumeFromText(rawText: string, imageData?: string): Promise<any> {
   console.log("parseResumeFromText (Client): Parsing resume. Has Text:", !!rawText, "Has OCR Image:", !!imageData);
   
-  // Try reading local client cache first
-  const cacheKey = `${generateHash(rawText || '')}_${generateHash(imageData || '')}`;
-  const cachedVal = getLocalCache("parse_text", cacheKey);
-  if (cachedVal) {
-    console.log("parseResumeFromText (Client): Serve from local client persistent cache.");
-    try {
-      return JSON.parse(cachedVal);
-    } catch (e) {}
-  }
-
   try {
     const response = await fetch(`${getApiBaseUrl()}/api/gemini/parse`, {
       method: "POST",
@@ -379,7 +360,6 @@ export async function parseResumeFromText(rawText: string, imageData?: string): 
     }
 
     const data = await response.json();
-    setLocalCache("parse_text", cacheKey, JSON.stringify(data));
     return data;
   } catch (error) {
     console.warn("Dual parser connection error. Activating intelligent high-fidelity regex fallback parser.", error);

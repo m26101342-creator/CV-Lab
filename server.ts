@@ -83,6 +83,35 @@ async function generateContentWithRetry(params: {
   throw lastError || new Error("Failed to generate content with any model");
 }
 
+// Helper to robustly extract and parse JSON from Gemini's response, handling markdown codeblocks gracefully
+function extractJSON(text: string): any {
+  if (!text) return {};
+  let cleaned = text.trim();
+  
+  // Strip markdown styling if present (e.g. ```json ... ```)
+  const markdownRegex = /```(?:json)?\s*([\s\S]*?)\s*```/i;
+  const match = cleaned.match(markdownRegex);
+  if (match) {
+    cleaned = match[1].trim();
+  }
+  
+  try {
+    return JSON.parse(cleaned);
+  } catch (e: any) {
+    console.warn("[JSON PARSER] Simple JSON parse failed. Attempting deep extraction...", e.message);
+    const firstBrace = cleaned.indexOf('{');
+    const lastBrace = cleaned.lastIndexOf('}');
+    if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+      try {
+        return JSON.parse(cleaned.substring(firstBrace, lastBrace + 1));
+      } catch (e2: any) {
+        throw new Error("Formato JSON retornado pela IA é inválido: " + e2.message);
+      }
+    }
+    throw e;
+  }
+}
+
 // Normalized response builder
 function cleanAndNormalizeParsedData(parsedData: any): any {
   if (!parsedData) parsedData = {};
@@ -363,7 +392,7 @@ app.post("/api/gemini/generate-full", async (req, res) => {
     });
     
     const result = response.text?.trim() || "";
-    const parsed = JSON.parse(result);
+    const parsed = extractJSON(result);
     res.json(parsed);
   } catch (error: any) {
     console.error("[SERVER ERROR] Generate full resume error:", error);
@@ -473,7 +502,7 @@ app.post("/api/gemini/parse", async (req, res) => {
     });
     
     const rawResult = response.text?.trim() || "{}";
-    const parsed = JSON.parse(rawResult);
+    const parsed = extractJSON(rawResult);
     
     const normalized = cleanAndNormalizeParsedData(parsed);
     res.json(normalized);
@@ -523,7 +552,7 @@ app.post("/api/gemini/translate", async (req, res) => {
     });
 
     const rawResult = response.text?.trim() || "{}";
-    const parsed = JSON.parse(rawResult);
+    const parsed = extractJSON(rawResult);
     
     // Ensure critical assets like photos are preserved
     const finalData = {

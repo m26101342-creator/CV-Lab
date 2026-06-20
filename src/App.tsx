@@ -3918,6 +3918,21 @@ export default function App() {
   const [cvPrice, setCvPrice] = useState(2000);
 
   useEffect(() => {
+    // Active cache-busting: wipe out stale or corrupted AI caches from user's localStorage
+    try {
+      const keysToRemove: string[] = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && (key.startsWith("cv_labs_gcache_") || key.startsWith("cv_lab_gcache_"))) {
+          keysToRemove.push(key);
+        }
+      }
+      keysToRemove.forEach(k => localStorage.removeItem(k));
+      console.log(`[Cache Buster] Cleared ${keysToRemove.length} stale AI Cache keys.`);
+    } catch (e) {
+      console.warn("Could not wipe stale localStorage cache keys:", e);
+    }
+
     if (!db) return;
     const metricsRef = doc(db, 'admin_settings', 'metrics');
     const unsub = onSnapshot(metricsRef, (docSnap) => {
