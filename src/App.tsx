@@ -41,7 +41,8 @@ import {
   AlertTriangle,
   AlertCircle,
   Printer,
-  Video
+  Video,
+  Type
 } from 'lucide-react';
 import { AdSenseUnit } from './components/AdSenseUnit';
 import { ResumeData, INITIAL_RESUME_DATA, TemplateType } from './types.ts';
@@ -6549,6 +6550,68 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
             <Plus size={14} />
           </button>
           
+          <div className="h-5 w-px bg-gray-200"></div>
+
+          {/* Controlo de Letra do Currículo */}
+          <div className="flex items-center gap-1 bg-slate-50 border border-slate-100 rounded-xl px-1.5 py-0.5">
+            <button 
+              type="button"
+              onClick={() => {
+                setResumeData(prev => ({
+                  ...prev,
+                  styleConfig: {
+                    ...(prev.styleConfig || {
+                      fontSize: 13,
+                      titleSize: 26,
+                      sectionSpacing: 25,
+                      itemSpacing: 10,
+                      margins: 30,
+                      lineHeight: 1.4,
+                      alignment: 'left',
+                      fontFamily: 'sans',
+                      photoBorderRadius: 50
+                    }),
+                    fontSize: Math.max(8, Number(((prev.styleConfig?.fontSize || 13) - 0.5).toFixed(1)))
+                  }
+                }));
+              }}
+              className="p-1 hover:bg-slate-100 active:bg-slate-200 rounded-lg transition-colors cursor-pointer text-gray-500 hover:text-gray-900 flex items-center justify-center"
+              title="Diminuir Tamanho de Letra"
+            >
+              <Minus size={11} />
+            </button>
+            <span className="min-w-[42px] text-center font-mono text-gray-800 text-[10px] tracking-wide flex items-center justify-center gap-0.5" title="Tamanho de Letra Atual">
+              <Type size={10} className="text-gray-400" />
+              <span>{(resumeData.styleConfig?.fontSize || 13).toFixed(1)}</span>
+            </span>
+            <button 
+              type="button"
+              onClick={() => {
+                setResumeData(prev => ({
+                  ...prev,
+                  styleConfig: {
+                    ...(prev.styleConfig || {
+                      fontSize: 13,
+                      titleSize: 26,
+                      sectionSpacing: 25,
+                      itemSpacing: 10,
+                      margins: 30,
+                      lineHeight: 1.4,
+                      alignment: 'left',
+                      fontFamily: 'sans',
+                      photoBorderRadius: 50
+                    }),
+                    fontSize: Math.min(22, Number(((prev.styleConfig?.fontSize || 13) + 0.5).toFixed(1)))
+                  }
+                }));
+              }}
+              className="p-1 hover:bg-slate-100 active:bg-slate-200 rounded-lg transition-colors cursor-pointer text-gray-500 hover:text-gray-900 flex items-center justify-center"
+              title="Aumentar Tamanho de Letra"
+            >
+              <Plus size={11} />
+            </button>
+          </div>
+
           <div className="h-5 w-px bg-gray-200"></div>
           
           <button 
