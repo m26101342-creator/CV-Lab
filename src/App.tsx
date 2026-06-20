@@ -550,7 +550,7 @@ const ProfilePage = ({ user, isAdmin, setView, onLogout, onRequestDownload }: {
     );
 };
 
-const CoverLetterRenderer = React.memo(({ content, personalInfo, themeColor }: { content: string; personalInfo: any; themeColor?: string }) => {
+const CoverLetterRenderer = React.memo(({ content, personalInfo, themeColor, onChangeContent }: { content: string; personalInfo: any; themeColor?: string; onChangeContent?: (content: string) => void }) => {
   const c = { primary: themeColor || '#1B2A4A' };
   const info = personalInfo || {};
   
@@ -584,34 +584,40 @@ const CoverLetterRenderer = React.memo(({ content, personalInfo, themeColor }: {
         }}
       >
          {/* Minimalist Professional Header */}
-         <div className="flex justify-between items-start border-b-2 pb-8 mb-10 mt-4" style={{ borderColor: `${c.primary}30` }}>
-           <div className="space-y-1.5 max-w-[60%]">
+         <div className="flex justify-between items-start pb-8 mb-10 mt-4">
+           <div className="space-y-1.5 max-w-[80%]">
              <h1 className="text-[32px] font-black tracking-tight leading-none" style={{ color: c.primary }}>
                {info.fullName || 'Seu Nome'}
              </h1>
-             <p className="text-gray-500 font-bold tracking-[0.1em] text-[11px] uppercase">
+             <p className="text-gray-500 font-medium tracking-[0.1em] text-[11px] uppercase">
                {info.title || 'Seu Cargo'}
              </p>
-           </div>
-           <div className="flex flex-col gap-2 text-gray-500 font-medium text-[11px] bg-slate-50/70 p-4 rounded-xl border border-slate-100/50 min-w-[200px]">
-             {info.email && <div className="flex items-center gap-2 text-gray-700"><Mail size={12} className="opacity-60 shrink-0 text-slate-500" /><span className="truncate leading-none">{info.email}</span></div>}
-             {info.phone && <div className="flex items-center gap-2 text-gray-700"><Phone size={12} className="opacity-60 shrink-0 text-slate-500" /><span className="leading-none">{info.phone}</span></div>}
-             {info.location && <div className="flex items-center gap-2 text-gray-700"><MapPin size={12} className="opacity-60 shrink-0 text-slate-500" /><span className="leading-none">{info.location}</span></div>}
            </div>
          </div>
 
          <div className="flex justify-between items-end mb-12 text-[12px] uppercase tracking-widest font-bold text-gray-400">
-           <span>Ref: Candidatura Espontânea</span>
-           <span>Luanda, {new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })}</span>
+           <span>Candidatura Espontânea</span>
+           <span>{(info.location ? info.location.split(',')[0] + ', ' : '') + new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })}</span>
          </div>
          
-         <div className="flex-1 text-justify whitespace-pre-line text-[14px] leading-[2.1] text-gray-700 font-medium px-4">
-            {content ? content.replace(/\*/g, '') : ''}
+         <div className="flex-1 w-full relative">
+            {onChangeContent ? (
+               <textarea
+                 className="absolute inset-0 w-full h-full text-justify text-[14px] leading-[2.1] text-gray-700 font-medium px-4 bg-transparent outline-none resize-none scrollbar-hide"
+                 value={content ? content.replace(/\*/g, '') : ''}
+                 onChange={(e) => onChangeContent(e.target.value)}
+                 spellCheck="false"
+               />
+            ) : (
+               <div className="text-justify whitespace-pre-line text-[14px] leading-[2.1] text-gray-700 font-medium px-4">
+                  {content ? content.replace(/\*/g, '') : ''}
+               </div>
+            )}
          </div>
 
          <div className="mt-20 pt-10 flex flex-col justify-end items-end pr-4 mt-auto">
             <div className="text-right">
-               <p className="text-[11px] text-gray-400 uppercase tracking-widest mb-4">Atentamente,</p>
+               <p className="text-[11px] text-gray-400 uppercase tracking-widest mb-4">Atenciosamente,</p>
                <p className="text-[18px] font-black italic tracking-tighter" style={{ color: c.primary }}>
                   {info.fullName || 'Seu Nome'}
                </p>
@@ -6525,7 +6531,7 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
                     <button data-html2canvas-ignore="true" onClick={() => setIsCoverLetterMode(false)} className="absolute top-8 left-8 text-[10px] font-black uppercase text-primary-blue tracking-widest flex items-center gap-2 print:hidden z-10 group bg-soft-blue px-4 py-2 rounded-full hover:bg-primary-blue hover:text-white transition-all">
                        <ChevronLeft size={14} className="group-hover:-translate-x-1 transition-transform" /> Voltar ao Editor
                     </button>
-                    <CoverLetterRenderer content={generatedLetter} personalInfo={resumeData.personalInfo} themeColor={resumeData.themeColor} />
+                    <CoverLetterRenderer content={generatedLetter} personalInfo={resumeData.personalInfo} themeColor={resumeData.themeColor} onChangeContent={setGeneratedLetter} />
                  </motion.div>
                ) : (
                  <ResumeRenderer data={resumeData} templateId={template} showGuides={showAlignGuides} onChange={setResumeData} />
