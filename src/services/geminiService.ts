@@ -368,125 +368,23 @@ export async function parseResumeFromText(rawText: string, imageData?: string): 
 
     const data = await response.json();
     return data;
-  } catch (error) {
-    console.warn("Dual parser connection error. Activating intelligent high-fidelity regex fallback parser.", error);
+  } catch (error: any) {
+    console.error("Gemini API connection error:", error);
     
-    // HEURISTIC INTELLIGENT LOCAL REGEX PARSER:
-    // Extracting all meaningful information from the raw pasted text step-by-step
-    // instead of throwing away experiences and education!
-    const parsed: any = {
-      isHeuristicFallback: true,
-      personalInfo: { fullName: "", title: "", email: "", phone: "", location: "", summary: "" },
-      experience: [],
-      education: [],
-      skills: [],
-      languages: [],
-      certifications: [],
-      interests: []
-    };
+    // Check if the user is on a static domain without a backend
+    const hostname = window.location.hostname;
+    const isStaticHosting = 
+      hostname.endsWith(".pages.dev") || 
+      hostname.endsWith(".github.io") || 
+      hostname.includes("netlify") || 
+      hostname.includes("vercel") ||
+      hostname.includes("cloudflare");
+
+    if (isStaticHosting) {
+      throw new Error("ALERTA DE SISTEMA (PAGES.DEV): O seu site está hospedado como conteúdo estático (Frontend) no Cloudflare Pages. O Cloudflare Pages não suporta o nosso Backend (servidor Node.js Express) que executa a Inteligência Artificial e a ligação à API Gemini de forma segura. Para resolver isto, por favor faça log-on no AI Studio, e lance este projeto usando uma plataforma de Deploy Full-Stack como RENDER, VERCEL (como monorepo) ou testando em Desenvolvimento.");
+    }
     
-    // Extract email using high-quality RFC matching regex
-    const emailRegex = /([a-zA-Z0-9._-]+@[a-zA-Z0-9._-]+\.[a-zA-Z0-9_-]+)/i;
-    const emailMatch = rawText.match(emailRegex);
-    if (emailMatch) parsed.personalInfo.email = emailMatch[1];
-    
-    // Extract phone (Angola format support: +244, 9xx, etc.)
-    const phoneRegex = /(?:(?:\+244\s?)?9[1-9][0-9]\s?[0-9]{3}\s?[0-9]{3}|(?:\+244\s?)?[29][0-9]{8})/i;
-    const phoneMatch = rawText.match(phoneRegex);
-    if (phoneMatch) parsed.personalInfo.phone = phoneMatch[0];
-
-    // Read blocks of text
-    const lines = rawText.split('\n').map(l => l.trim()).filter(l => l.length > 0);
-    
-    // Attempt name/title extraction from primary header lines
-    if (lines.length > 0) {
-      parsed.personalInfo.fullName = lines[0];
-      if (lines.length > 1 && !lines[1].includes("@") && lines[1].length < 60) {
-        parsed.personalInfo.title = lines[1];
-      }
-    }
-
-    // Smart Local Text Parser: Search for experiences, skills, and languages in the lines!
-    let currentExperience: any = null;
-    let currentEducation: any = null;
-
-    lines.forEach((line) => {
-      // Find location (e.g. "Luanda", "Lubango", "Angola")
-      const lower = line.toLowerCase();
-      if ((lower.includes("luanda") || lower.includes("angola") || lower.includes("lubango") || lower.includes("huambo") || lower.includes("benguela")) && !parsed.personalInfo.location) {
-        parsed.personalInfo.location = line.replace(/^[,\-\s]+|[,\-\s]+$/g, '');
-      }
-
-      // Detect skill keywords
-      if (lower.match(/\b(excel|word|powerpoint|liderança|comunicação|inglês|gestão|software|python|javascript|react|css|html|vendas|atendimento|marketing|administração)\b/)) {
-        const candidates = line.split(/[;,\(\)\-\•]/).map(sk => sk.trim()).filter(sk => sk.length > 2 && sk.length < 30);
-        candidates.forEach(c => {
-          if (!parsed.skills.some((s: any) => s.toLowerCase() === c.toLowerCase()) && parsed.skills.length < 10) {
-            parsed.skills.push(c);
-          }
-        });
-      }
-
-      // Basic heuristic for experiences
-      if (lower.includes("experiência") || lower.includes("profissional") || lower.includes("histórico")) {
-        // block indicator, skip
-      } else if (line.match(/(?:19|20)\d{2}/) && (lower.includes("empresa") || lower.includes("lda") || lower.includes("coop") || lower.includes("banco") || lower.includes("serviço") || lower.includes("centro"))) {
-        if (currentExperience) {
-          parsed.experience.push(currentExperience);
-        }
-        currentExperience = {
-          company: line,
-          position: parsed.personalInfo.title || "Colaborador",
-          startDate: line.match(/(?:19|20)\d{2}/)?.[0] || "",
-          endDate: lower.includes("presente") || lower.includes("atual") ? "Presente" : "",
-          description: ""
-        };
-      } else if (currentExperience && line.length > 10 && line.length < 300) {
-        currentExperience.description += (currentExperience.description ? " " : "") + line;
-      }
-
-      // Basic heuristic for education
-      if (lower.includes("instituto") || lower.includes("universidade") || lower.includes("escola") || lower.includes("licenciatura") || lower.includes("técnico") || lower.includes("ensino médio")) {
-        if (currentEducation) {
-          parsed.education.push(currentEducation);
-        }
-        currentEducation = {
-          institution: line.includes(" - ") ? line.split(" - ")[0] : line,
-          degree: lower.includes("licenciatura") ? "Licenciatura" : lower.includes("técnico") ? "Técnico Médio" : "Ensino Secundário",
-          field: line.includes(" em ") ? line.split(" em ")[1] : "Área académica",
-          startDate: line.match(/(?:19|20)\d{2}/)?.[0] || "",
-          endDate: ""
-        };
-      }
-    });
-
-    // Flush last experiences/education
-    if (currentExperience) parsed.experience.push(currentExperience);
-    if (currentEducation) parsed.education.push(currentEducation);
-
-    // Default summaries and fallback structures
-    parsed.personalInfo.summary = lines.find(l => l.length > 80 && l.length < 300) || `Profissional dinâmico com competência relevante em ${parsed.personalInfo.title || 'área administrativa/operacional'}. Determinado, proativo e ansioso por contribuir para as metas corporativas.`;
-
-    // Ensure we always have structured fallback defaults so that NO sections appear blank
-    if (parsed.skills.length === 0) {
-      parsed.skills = ["Trabalho de Equipa", "Comunicação", "Organização", "Resolução de Problemas"];
-    }
-    if (parsed.languages.length === 0) {
-      parsed.languages = ["Português"];
-    }
-    if (parsed.experience.length === 0) {
-      parsed.experience = [
-        {
-          company: "Empresa Local / Autônomo",
-          position: parsed.personalInfo.title || "Profissional",
-          startDate: "2021",
-          endDate: "Presente",
-          description: "Realização de atividades operacionais diárias de atendimento, coordenação e otimização de fluxos locais."
-        }
-      ];
-    }
-
-    return cleanAndNormalizeParsedData(parsed);
+    throw new Error("Falha na ligação ao motor Gemini AI.\\n" + (error.message || error));
   }
 }
 
