@@ -42,7 +42,7 @@ async function generateContentWithRetry(params: {
   config?: any;
 }): Promise<any> {
   const engine = getEngine();
-  const models = ["gemini-2.5-flash", "gemini-1.5-flash", "gemini-2.5-pro"];
+  const models = ["gemini-3.5-flash", "gemini-2.5-flash", "gemini-2.5-pro"];
   let lastError: any = null;
 
   for (const model of models) {
@@ -371,16 +371,19 @@ app.post("/api/gemini/parse", async (req, res) => {
 
   const textPart = {
     text: `
-      Você é o principal algoritmo de Inteligência Artificial para extração e classificação de currículos profissionais na Língua Portuguesa.
-      Sua missão é ler e analisar minuciosamente o currículo, reconhecendo e classificando com precisão as informações de contato, resumo profissional, histórico de trabalho, formação académica, habilidades e certificações.
+      Você é o principal algoritmo de Inteligência Artificial para extração, classificação e polimento de currículos profissionais na Língua Portuguesa.
+      Sua missão é ler, analisar minuciosamente e ENRIQUECER o currículo obtido a partir de texto cru ou OCR de imagem. Reconheça e classifique com precisão cirúrgica as informações estruturadas.
 
-      INSTRUÇÕES DE CLASSIFICAÇÃO:
-      1. "personalInfo": Extraia o nome completo do candidato, o seu cargo ou título desejado/atual, e-mail, telemóvel/telefone, localização e um Resumo Profissional ("summary"). Caso não exista um resumo profissional explícito, fabrique um parágrafo executivo profissional impecável focado no perfil e experiências extraídos.
-      2. "experience": Mapeie todo o histórico de trabalho. Identifique rigorosamente a empresa ("company"), o cargo ("position"), as datas de início e fim ("startDate", "endDate" - ex: "10/2021" ou "2021"), e o detalhamento das funções executivas ("description").
-      3. "education": Mapeie todos os estudos, escolas ou universidades ("institution"), graus académicos ("degree" - Licenciatura/Mestrado/Técnico/Médio), área de estudo ("field") e períodos.
-      4. "skills": Extraia todas as competências profissionais, técnicas, operacionais ou comportamentais. Retorne uma lista de strings contendo apenas os nomes das habilidades de maneira limpa (ex: "Excel Avançado", "Liderança").
-      5. "languages": Identifique todos os idiomas mencionados e mapeie os seus níveis.
-      6. "certifications": Extraia certificados de cursos livres, formações rápidas com o nome e, se houver, a data ou ano.
+      INSTRUÇÕES DE CLASSIFICAÇÃO E ENRIQUECIMENTO INTELIGENTE:
+      1. "personalInfo": Extraia o nome completo do candidato, o seu cargo ou título desejado/atual, e-mail, telemóvel/telefone, localização e um Resumo Profissional ("summary").
+         - IMPORTANTE: Se o resumo profissional original for curto, genérico ou ausente, fabrique um resumo com alto poder de impacto mercadológico (2 a 4 linhas) destacando as competências centrais do cargo apontado e focando em resultados.
+      2. "experience": Mapeie cada experiência de trabalho de forma detalhada.
+         - ENRIQUECIMENTO EXTREMO: Se a descrição original de uma função for nula, curtíssima ou telegráfica (ex: "vendas", "fazer suporte de computadores"), expanda de forma impecável e realista com verbos de ação poderosos e jargão profissional sofisticado. Converta um item simples em 2 ou 3 linhas fluídas e técnicas adequadas ao mercado corporativo.
+         - Identifique a empresa ("company"), o cargo ("position"), as datas de início e fim no formato "Mês/Ano" ou "Ano" (ex: "Jan/2021" ou "2021"), e o detalhamento das funções executivas ("description").
+      3. "education": Mapeie todo o histórico académico de nível universitário, técnico médio ou secundário. Identifique a instituição ("institution"), o grau académico ("degree" - Licenciatura/Mestrado/Técnico/Médio/Frequência Universitária), a área de estudo/curso ("field") e períodos dadas em anos.
+      4. "skills": Extraia TODAS as competências profissionais técnicas (Hard Skills) e comportamentais (Soft Skills) sugeridas ou citadas no texto. Retorne uma lista de strings limpa (ex: ["Gestão de Projetos", "JavaScript", "Comunicação Eficiente", "Vendas Estratégicas"]). Se o utilizador enviou pouca informação, deduza de forma altamente inteligente 4-6 competências perfeitamente alinhadas ao cargo dele para enriquecer o currículo!
+      5. "languages": Identifique idiomas. Se não houver nível especificado, defina como "Fluente" se for a língua mãe ou "Intermédio" como valor realista padrão.
+      6. "certifications": Extraia ou infira certificações e cursos profissionais em formato estruturado.
 
       SINTAXE DO RETORNO JSON ESPERADO:
       {
@@ -398,7 +401,7 @@ app.post("/api/gemini/parse", async (req, res) => {
             "position": "Cargo ocupado",
             "startDate": "Mês/Ano ou Ano de Início",
             "endDate": "Mês/Ano, Ano de Fim ou 'Presente'/'Atual'",
-            "description": "Explicação fluida e detalhada do que fez",
+            "description": "Explicação fluida, altamente profissional, técnica e enriquecida das realizações operacionais",
             "current": false
           }
         ],
@@ -422,10 +425,10 @@ app.post("/api/gemini/parse", async (req, res) => {
       }
 
       REGRAS RIGOROSAS:
-      1. Retorne APENAS o JSON. Sem blocos ou wraps de código adicionais (\`\`\`json).
-      2. Certifique-se de preencher as secções "personalInfo", "experience", "education" e "skills" com dedicação máxima.
+      1. Retorne APENAS o JSON puro. Sem wraps de código (NÃO inclua \`\`\`json ou semelhantes).
+      2. Não invente nomes de pessoas se nenhuma for fornecida, mas ENRIQUEÇA grandemente a redação profissional se o texto for telegráfico ou simplista.
       3. Se houver uma imagem anexa, faça OCR e leitura visual dela para garantir consistência perfeita.
-      
+
       TEXTO ENVIADO PELO CANDIDATO:
       "${rawText || ""}"
     `
