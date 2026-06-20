@@ -39,6 +39,7 @@ import {
   RotateCcw,
   Award,
   AlertTriangle,
+  AlertCircle,
   Printer,
   Video
 } from 'lucide-react';
@@ -215,104 +216,334 @@ const TEMPLATES: Record<TemplateType, { name: string; layout: string; colors: an
 // --- Helpers ---
 const renderText = (str: string) => str ? str.replace(/\*/g, '') : '';
 
-const ProfilePage = ({ user, isAdmin, setView, onLogout }: { user: any, isAdmin: boolean, setView: (v: any) => void, onLogout: () => void }) => {
+const ProfilePage = ({ user, isAdmin, setView, onLogout, onRequestDownload }: { 
+    user: any; 
+    isAdmin: boolean; 
+    setView: (v: any) => void; 
+    onLogout: () => void;
+    onRequestDownload: (data: any, type: 'resume' | 'cover_letter', templateId: TemplateType, filename: string, setLocalGenerating: (b: boolean) => void) => Promise<void>;
+}) => {
+    const [myOrders, setMyOrders] = useState<any[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [isGenerating, setIsGenerating] = useState<string | null>(null);
+
+    useEffect(() => {
+        if (!user || user.email === 'anonymous' || !db) {
+            setLoading(false);
+            return;
+        }
+        
+        const q = query(
+            collection(db, 'orders'),
+            where('ownerId', '==', user.uid)
+        );
+
+        const unsubscribe = onSnapshot(q, (snapshot) => {
+            const fetched = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            setMyOrders(fetched.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
+            setLoading(false);
+        }, (err) => {
+            console.error("Firestore read failed, fallback offline list:", err);
+            setLoading(false);
+        });
+
+        return unsubscribe;
+    }, [user]);
+
+    const downloadPDF = async (order: any, specificType: 'resume' | 'cover_letter' = 'resume') => {
+        if (isGenerating) return;
+        const generationKey = `${order.id}-${specificType}`;
+        
+        try {
+            const filename = specificType === 'resume' ? 'Curriculo_CVLAB.pdf' : 'Carta_Apresentacao_CVLAB.pdf';
+            const documentData = order.documentType === 'combo'
+                ? (specificType === 'resume' ? order.documentData.resume : order.documentData.coverLetter)
+                : order.documentData;
+
+            const resumeDataToUse = specificType === 'resume' ? (documentData.resume || documentData) : documentData;
+            const templateId = resumeDataToUse?.template as TemplateType || 't1_executive';
+
+            await onRequestDownload(
+                documentData, 
+                specificType, 
+                templateId, 
+                filename, 
+                (status: boolean) => {
+                    if (status) {
+                        setIsGenerating(generationKey);
+                    } else {
+                        setIsGenerating(null);
+                    }
+                }
+            );
+        } catch (err) {
+            console.error("Erro ao descarregar PDF:", err);
+            alert("Erro ao baixar o documento. Por favor, tente novamente.");
+            setIsGenerating(null);
+        }
+    };
+
     if (!user || user.email === 'anonymous') return (
-        <div className="p-20 text-center space-y-6">
-            <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <User size={40} className="text-gray-400" />
+        <div className="p-20 text-center space-y-6 max-w-xl mx-auto bg-white rounded-3xl border border-gray-100 shadow-xl py-16 my-12">
+            <div className="w-20 h-20 bg-soft-blue text-primary-blue rounded-full flex items-center justify-center mx-auto mb-4">
+                <User size={40} />
             </div>
-            <h2 className="text-2xl font-black text-deep-blue">Acesso Restrito</h2>
-            <p className="text-text-muted">Você está navegando como convidado. Entre com sua conta Google para aceder ao seu perfil premium.</p>
-            <Button onClick={loginWithGoogle} className="px-8 shadow-xl">Entrar com Google</Button>
+            <h2 className="text-2xl font-black text-deep-blue uppercase tracking-tight font-sans">Acesso Limitado</h2>
+            <p className="text-sm text-text-muted max-w-sm mx-auto leading-relaxed">Você está navegando temporariamente como convidado. Entre com sua conta Google ou faça login para gerir seus currículos premium.</p>
+            <div className="pt-4">
+                <Button onClick={loginWithGoogle} className="px-8 shadow-xl bg-primary-blue text-white hover:bg-primary-blue/90">Aceder com Conta Google</Button>
+            </div>
         </div>
     );
 
+    // Expand combo orders into separate items for direct beautiful card representation
+    const expandedItems: any[] = [];
+    myOrders.forEach(o => {
+        if (o.documentType === 'combo') {
+            expandedItems.push({ ...o, subType: 'resume', displayName: 'Currículo Profissional' });
+            expandedItems.push({ ...o, subType: 'cover_letter', displayName: 'Carta de Apresentação' });
+        } else {
+            expandedItems.push({ 
+                ...o, 
+                subType: o.documentType, 
+                displayName: o.documentType === 'cover_letter' ? 'Carta de Apresentação' : 'Currículo Profissional' 
+            });
+        }
+    });
+
     return (
-        <div className="max-w-4xl mx-auto py-12 px-6">
-            {/* Header / Cover */}
-            <div className="relative bg-gradient-to-tr from-primary-blue via-blue-800 to-[#121c36] rounded-[3rem] p-10 overflow-hidden shadow-2xl mb-8">
-                <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10"></div>
-                <div className="absolute -top-32 -right-32 w-80 h-80 bg-blue-400/20 rounded-full blur-[80px]"></div>
+        <div className="max-w-5xl mx-auto py-10 px-4 md:px-6 space-y-8">
+            
+            {/* Header Greeting Panel (Design Style Image 1 & 2) */}
+            <div className="relative bg-gradient-to-tr from-primary-blue via-indigo-950 to-slate-900 rounded-[2.5rem] p-8 md:p-10 overflow-hidden shadow-xl border border-white/5 select-none text-white animate-fade-in animate-duration-500">
+                <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-5 pointer-events-none"></div>
+                <div className="absolute -top-32 -right-32 w-80 h-80 bg-blue-500/20 rounded-full blur-[90px] pointer-events-none"></div>
+                <div className="absolute -bottom-24 -left-24 w-64 h-64 bg-indigo-500/10 rounded-full blur-[70px] pointer-events-none"></div>
                 
-                <div className="flex flex-col md:flex-row items-center gap-8 relative z-10">
-                    <div className="relative group">
-                        <div className="absolute -inset-1 bg-gradient-to-r from-blue-400 to-indigo-400 rounded-full blur opacity-25 group-hover:opacity-60 transition duration-1000 group-hover:duration-200"></div>
-                        <img 
-                            src={user.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.displayName || user.email || 'U')}&background=fff&color=0D8ABC`} 
-                            className="w-32 h-32 rounded-full border-[6px] border-white/20 shadow-2xl object-cover relative backdrop-blur-sm" 
-                            alt="Avatar"
-                            referrerPolicy="no-referrer"
-                        />
+                <div className="flex flex-col md:flex-row items-center justify-between gap-8 relative z-10 font-sans">
+                    <div className="flex flex-col md:flex-row items-center gap-6 text-center md:text-left">
+                        <div className="relative">
+                            <img 
+                                src={user.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.displayName || user.email || 'U')}&background=fff&color=0D8ABC`} 
+                                className="w-20 h-20 md:w-24 md:h-24 rounded-full border-4 border-white/10 shadow-2xl object-cover relative select-none" 
+                                alt="Foto"
+                                referrerPolicy="no-referrer"
+                            />
                         {isAdmin && (
-                            <div className="absolute -bottom-2 -right-2 bg-red-500 text-white text-[10px] font-black px-3 py-1.5 rounded-xl shadow-xl uppercase tracking-widest border-2 border-white flex items-center gap-1">
-                                <Shield size={12} /> ADMIN
+                            <div className="absolute -bottom-1 -right-1 bg-red-600 text-white text-[8px] font-black px-2.5 py-1 rounded-lg uppercase tracking-widest border border-white/10 shadow-lg font-mono">
+                                ADMIN
                             </div>
                         )}
                     </div>
                     
-                    <div className="text-center md:text-left space-y-2">
-                        <h2 className="text-4xl font-black text-white tracking-tight">{user.displayName || 'Utilizador CV LAB'}</h2>
-                        <div className="flex items-center justify-center md:justify-start gap-2 text-blue-100/80">
-                            <Mail size={16} />
-                            <p className="text-sm font-medium tracking-wide">{user.email}</p>
+                    <div className="space-y-1.5">
+                        <p className="text-[10px] font-black tracking-[0.2em] uppercase text-blue-200 font-sans">Área do Candidato Premium</p>
+                        <h2 className="text-3xl md:text-4xl font-black tracking-tight text-white">{user.displayName || 'Membro CV Lab'}</h2>
+                        <div className="flex items-center justify-center md:justify-start gap-1.5 text-xs text-white/70">
+                            <Mail size={13} className="text-blue-350" />
+                            <span className="font-medium font-sans">{user.email}</span>
                         </div>
-                        <div className="pt-2 flex flex-wrap gap-2 justify-center md:justify-start">
-                            <span className="px-3 py-1 bg-white/10 text-white text-[10px] font-bold uppercase tracking-widest rounded-lg border border-white/10">Conta Verificada</span>
-                            <span className="px-3 py-1 bg-blue-500/20 text-blue-200 text-[10px] font-bold uppercase tracking-widest rounded-lg border border-blue-400/20">Acesso Vitalício (CV)</span>
+                    </div>
+                </div>
+
+                {/* Premium Card Badge (resembles Wallet Card decoration in Image 1) */}
+                <div className="bg-white/5 backdrop-blur-md rounded-2xl p-5 border border-white/10 max-w-sm w-full md:w-auto h-full flex flex-col justify-between gap-6">
+                    <div className="flex justify-between items-start gap-12">
+                        <div className="space-y-0.5">
+                            <p className="text-[10px] font-bold text-white/50 uppercase tracking-widest font-sans">Acesso Ativo</p>
+                            <p className="text-lg font-black text-white tracking-widest font-mono">CV LAB VIP</p>
                         </div>
+                        <div className="w-8 h-8 rounded-xl bg-white/10 flex items-center justify-center">
+                            <Award size={18} className="text-amber-400" />
+                        </div>
+                    </div>
+                    <div className="space-y-1">
+                        <span className="text-[9px] uppercase font-bold tracking-widest text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-md border border-emerald-500/20">✓ Ativado para Angola</span>
+                        <p className="text-[10px] text-white/60 font-bold tracking-wide">MULTICAIXA Express habilitado</p>
                     </div>
                 </div>
             </div>
+        </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
-                {/* Lateral Navigation Actions */}
-                <div className="col-span-1 md:col-span-5 space-y-4">
-                    <div className="bg-white rounded-[2rem] p-6 shadow-sm border border-gray-100 space-y-3">
-                        <h3 className="text-[11px] font-black tracking-widest uppercase text-gray-400 mb-4 px-2">Suas Ações</h3>
-                        
-                        <Button 
-                            variant="outline" 
-                            onClick={() => setView('my-resumes')} 
-                            className="w-full h-16 rounded-2xl border-gray-200 hover:border-primary-blue hover:bg-soft-blue flex items-center justify-start px-6 gap-4 text-deep-blue font-bold tracking-wide group transition-all"
-                        >
-                            <div className="w-10 h-10 rounded-xl bg-gray-50 flex items-center justify-center group-hover:bg-white group-hover:text-primary-blue transition-colors">
-                                <Briefcase size={20} />
-                            </div>
-                            Acessar Meus Currículos
-                        </Button>
-
-                        {isAdmin && (
-                            <Button 
-                                onClick={() => setView('admin')} 
-                                className="w-full h-16 rounded-2xl bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white shadow-xl shadow-red-500/20 flex items-center justify-start px-6 gap-4 font-bold tracking-wide border-none group"
-                            >
-                                <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center group-hover:bg-white/30 transition-colors backdrop-blur-md">
-                                    <Shield size={20} />
-                                </div>
-                                Painel Administrativo
-                            </Button>
-                        )}
+            {/* Quick Actions Bento Style Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 animate-fade-in">
+                
+                {/* 1. Criar Currículo Widget Button */}
+                <div 
+                    onClick={() => setView('editor')}
+                    className="group bg-white hover:bg-slate-50 border border-slate-100 rounded-[2rem] p-6 shadow-sm hover:shadow-md transition-all active:scale-[0.98] cursor-pointer flex items-center gap-4 text-left select-none relative overflow-hidden"
+                >
+                    <div className="w-12 h-12 rounded-2xl bg-soft-blue text-primary-blue flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                        <Plus size={24} />
                     </div>
-                    
-                    <div className="bg-red-50 rounded-[2rem] p-6 border border-red-100">
-                        <button 
-                            onClick={onLogout}
-                            className="w-full h-12 flex items-center justify-center gap-2 text-xs font-black text-red-600 uppercase tracking-widest hover:bg-red-100 rounded-xl transition-colors"
-                        >
-                            <LogOut size={16} /> Encerrar Sessão
-                        </button>
+                    <div className="flex-1 min-w-0">
+                        <h4 className="text-sm font-black text-deep-blue uppercase tracking-tight font-sans">Criar Currículo</h4>
+                        <p className="text-xs text-text-muted truncate">Comece seu rascunho com IA</p>
                     </div>
+                    <ChevronRight size={18} className="text-gray-300 group-hover:translate-x-1 transition-transform shrink-0" />
                 </div>
 
-                {/* Dashboard Stats */}
-                <div className="col-span-1 md:col-span-7 space-y-4">
-                     <div className="bg-white p-8 rounded-[2rem] shadow-sm border border-gray-100 flex items-center gap-6 h-full min-h-[220px]">
-                        <div className="flex-1 space-y-2">
-                           <h3 className="text-xl font-black text-deep-blue">Seu Progresso</h3>
-                           <p className="text-sm text-gray-500 leading-relaxed">Continue atualizando seu perfil e gerando currículos para alcançar as melhores oportunidades do mercado. A consistência é a chave.</p>
+                {/* 2. Admin Panel Widget Button */}
+                {isAdmin ? (
+                    <div 
+                        onClick={() => setView('admin')}
+                        className="group bg-white hover:bg-amber-50/25 border border-amber-100 rounded-[2rem] p-6 shadow-sm hover:shadow-md transition-all active:scale-[0.98] cursor-pointer flex items-center gap-4 text-left select-none"
+                    >
+                        <div className="w-12 h-12 rounded-2xl bg-amber-500/10 text-amber-600 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                            <Shield size={22} />
                         </div>
-                     </div>
+                        <div className="flex-1 min-w-0">
+                            <h4 className="text-sm font-black text-amber-950 uppercase tracking-tight font-sans">Administração</h4>
+                            <p className="text-xs text-amber-500 truncate">Vendas, preços e relatórios</p>
+                        </div>
+                        <ChevronRight size={18} className="text-amber-300 group-hover:translate-x-1 transition-transform shrink-0" />
+                    </div>
+                ) : (
+                    <div className="bg-white border border-slate-100 rounded-[2rem] p-6 flex items-center gap-4 text-left select-none opacity-60">
+                        <div className="w-12 h-12 rounded-2xl bg-gray-50 text-gray-400 flex items-center justify-center shrink-0">
+                            <Zap size={20} />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                            <h4 className="text-sm font-black text-slate-500 uppercase tracking-tight font-sans">Sincronia ATS</h4>
+                            <p className="text-xs text-slate-400 truncate">Sincronização Ativa</p>
+                        </div>
+                    </div>
+                )}
+
+                {/* 3. Encerrar Sessão Button Container */}
+                <div 
+                    onClick={onLogout}
+                    className="group bg-white hover:bg-red-50/20 border border-slate-100 rounded-[2rem] p-6 shadow-sm hover:shadow-md transition-all active:scale-[0.98] cursor-pointer flex items-center gap-4 text-left select-none relative overflow-hidden"
+                >
+                    <div className="w-12 h-12 rounded-2xl bg-slate-50 text-slate-500 group-hover:text-red-500 group-hover:bg-red-50 flex items-center justify-center shrink-0 transition-all">
+                        <LogOut size={20} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                        <h4 className="text-sm font-black text-deep-blue uppercase tracking-tight group-hover:text-red-600 transition-colors font-sans font-sans">Terminar Sessão</h4>
+                        <p className="text-xs text-text-muted truncate">Sair com segurança</p>
+                    </div>
+                    <ChevronRight size={18} className="text-gray-300 group-hover:translate-x-1 transition-transform shrink-0" />
                 </div>
+            </div>
+
+            {/* Main Documents Grid representing Image 2's "Ongoing Projects" bento items */}
+            <div className="space-y-6">
+                <div className="flex items-center justify-between">
+                    <h3 className="text-lg font-black text-deep-blue uppercase tracking-tight flex items-center gap-2 font-sans">
+                        <Briefcase size={18} className="text-primary-blue" />
+                        Seus Documentos Gerados
+                    </h3>
+                    <span className="text-[11px] font-black text-primary-blue bg-soft-blue px-3 py-1 rounded-full uppercase tracking-wider font-sans">
+                        {expandedItems.length} Documentos
+                    </span>
+                </div>
+
+                {loading ? (
+                    <div className="p-16 text-center border-2 border-dashed border-gray-100 rounded-[2.5rem] bg-white">
+                        <div className="animate-spin w-8 h-8 border-4 border-primary-blue border-t-transparent rounded-full mx-auto mb-4"></div>
+                        <p className="text-xs text-text-muted uppercase font-black tracking-widest font-sans">Sincronizando com a nuvem...</p>
+                    </div>
+                ) : expandedItems.length === 0 ? (
+                    <div className="p-16 text-center border border-slate-150 rounded-[2.5rem] bg-white space-y-4 max-w-lg mx-auto">
+                        <div className="w-16 h-16 bg-slate-50 rounded-2xl flex items-center justify-center mx-auto text-slate-400">
+                            <FileText size={32} />
+                        </div>
+                        <div className="space-y-1">
+                            <h4 className="text-md font-black text-deep-blue uppercase tracking-tight font-sans">Nenhum currículo encontrado</h4>
+                            <p className="text-xs text-text-muted leading-relaxed font-sans">Você ainda não gerou ou comprou nenhum currículo premium nesta conta. Crie e descarregue um layout incrível agora!</p>
+                        </div>
+                        <div className="pt-2 flex justify-center">
+                            <Button onClick={() => setView('editor')} className="px-6 shadow-lg bg-primary-blue text-white hover:bg-primary-blue/90 font-black uppercase text-xs tracking-wider font-sans">
+                                <Plus size={16} /> Criar Meu Primeiro Currículo
+                            </Button>
+                        </div>
+                    </div>
+                ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pb-12">
+                        {expandedItems.map((item, idx) => {
+                            const isGeneratingThis = isGenerating === `${item.id}-${item.subType}`;
+                            return (
+                                <div 
+                                    key={`${item.id}-${item.subType}-${idx}`} 
+                                    className="bg-white border border-slate-100 rounded-[2rem] p-6 hover:shadow-xl transition-all duration-300 relative group overflow-hidden flex flex-col justify-between gap-6"
+                                >
+                                    {/* Top Metadata Row */}
+                                    <div className="space-y-3.5">
+                                        <div className="flex justify-between items-center gap-4">
+                                            <span className="text-[10px] font-mono font-bold text-gray-400 uppercase tracking-widest font-sans">
+                                                ID: {item.id.slice(0, 8)}
+                                            </span>
+                                            
+                                            {/* Status Badge */}
+                                            {item.status === 'approved' ? (
+                                                <span className="text-[9px] uppercase font-black tracking-widest text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-100 flex items-center gap-1 font-sans">
+                                                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Pronto
+                                                </span>
+                                            ) : (
+                                                <span className="text-[9px] uppercase font-black tracking-widest text-amber-500 bg-amber-50 px-2.5 py-1 rounded-full border border-amber-100 flex items-center gap-1 animate-pulse font-sans">
+                                                    <span className="w-1.5 h-1.5 rounded-full bg-amber-400"></span> Pendente
+                                                </span>
+                                            )}
+                                        </div>
+
+                                        {/* Card Main Title */}
+                                        <div className="space-y-1">
+                                            <h4 className="font-black text-deep-blue text-lg tracking-tight group-hover:text-primary-blue transition-colors font-sans">
+                                                {item.displayName}
+                                            </h4>
+                                            <p className="text-[11px] text-text-muted font-bold flex items-center gap-1 font-sans">
+                                                <FileText size={12} className="text-gray-400" />
+                                                Gerado em {new Date(item.createdAt).toLocaleDateString('pt-PT')}
+                                            </p>
+                                        </div>
+
+                                        {/* Stylized Progress Bar representing completion state (Aesthetic Image 2 feature) */}
+                                        <div className="space-y-1.5 pt-2">
+                                            <div className="flex justify-between items-center text-[10px] uppercase font-black text-slate-400 font-sans">
+                                                <span>Fidelidade A4</span>
+                                                <span className={item.status === 'approved' ? 'text-emerald-500 font-bold' : 'text-amber-500 font-bold'}>
+                                                    {item.status === 'approved' ? '100% Compilado' : 'Processando GPO'}
+                                                </span>
+                                            </div>
+                                            <div className="w-full bg-slate-50 h-2 rounded-full overflow-hidden">
+                                                <div 
+                                                    className={`h-full rounded-full transition-all duration-1000 ${
+                                                        item.status === 'approved' ? 'bg-emerald-500 w-full' : 'bg-amber-400 w-3/4 animate-pulse'
+                                                    }`}
+                                                ></div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Action Footnotes: Click to Download PDF instantly! */}
+                                    <div className="pt-2">
+                                        <button 
+                                            disabled={isGeneratingThis}
+                                            onClick={() => downloadPDF(item, item.subType)}
+                                            className={`w-full py-3 px-4 rounded-xl font-black text-[11px] uppercase tracking-wider flex items-center justify-center gap-2 transition-all cursor-pointer ${
+                                                item.status === 'approved'
+                                                    ? 'bg-slate-900 hover:bg-black text-white shadow-md shadow-slate-900/10'
+                                                    : 'bg-amber-500 hover:bg-amber-600 text-white border border-amber-600/10 shadow-md shadow-amber-500/10 hover:-translate-y-0.5'
+                                            } disabled:opacity-50`}
+                                        >
+                                            {isGeneratingThis ? (
+                                                <>
+                                                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin font-sans"></div>
+                                                    <span>Compilando...</span>
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <Download size={14} />
+                                                    <span>Descarregar PDF {item.subType === 'cover_letter' ? '(Carta)' : ''}</span>
+                                                </>
+                                            )}
+                                        </button>
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+                )}
             </div>
         </div>
     );
@@ -5024,7 +5255,7 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
 
           {view === 'my-resumes' && <MyResumesPage user={user} setView={setView} onRequestDownload={downloadHtmlDocumentAsPdf} />}
 
-          {view === 'profile' && <ProfilePage user={user} isAdmin={isAdmin} setView={setView} onLogout={logOut} />}
+          {view === 'profile' && <ProfilePage user={user} isAdmin={isAdmin} setView={setView} onLogout={logOut} onRequestDownload={downloadHtmlDocumentAsPdf} />}
 
           {view === 'admin' && <AdminPanel setView={setView} />}
 
@@ -6221,6 +6452,28 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
                />
                <p className="font-black text-primary-blue text-[10px] tracking-[0.3em] uppercase animate-pulse">Sincronizando com o Sistema</p>
              </div>
+          </div>
+        )}
+
+        {/* Page Limit Warning / Auto Align Trigger */}
+        {!isCoverLetterMode && resumeHeight > 1125 && (
+          <div className="w-full max-w-[794px] mb-6 bg-amber-50 border border-amber-200/80 rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4 animate-fade-in shadow-sm print:hidden">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center shrink-0">
+                <AlertCircle size={20} className="text-amber-600" />
+              </div>
+              <div className="text-left font-sans">
+                <h4 className="text-xs font-black text-amber-900 uppercase tracking-wide">O conteúdo ultrapassa 1 página A4</h4>
+                <p className="text-[11px] text-amber-700/80 font-bold leading-normal mt-0.5 animate-pulse">O currículo está longo demais e pode sofrer quebra de página imprópria na impressão.</p>
+              </div>
+            </div>
+            <button 
+              onClick={handleAutoAlign}
+              className="px-4 py-2.5 bg-amber-600 hover:bg-amber-700 active:scale-95 text-white rounded-xl text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5 shadow-md shadow-amber-600/10 transition-all cursor-pointer whitespace-nowrap font-sans"
+            >
+              <Zap size={14} className="animate-bounce text-amber-100" />
+              Reorganizar Layout
+            </button>
           </div>
         )}
 
