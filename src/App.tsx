@@ -46,7 +46,7 @@ import {
 } from 'lucide-react';
 import { AdSenseUnit } from './components/AdSenseUnit';
 import { ResumeData, INITIAL_RESUME_DATA, TemplateType } from './types.ts';
-import { optimizeResumeText, generateCoverLetter, generateFullResume, parseResumeFromText, translateResumeToEnglish } from './services/geminiService.ts';
+import { optimizeResumeText, generateCoverLetter, generateFullResume, parseResumeFromText, translateResumeToEnglish, getApiBaseUrl } from './services/geminiService.ts';
 import { pdf } from '@react-pdf/renderer';
 import { PdfDocument } from './pdf/PdfDocument';
 import * as pdfjsLib from 'pdfjs-dist';
@@ -4631,7 +4631,11 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
         certifications: parsedData.certifications?.length ? parsedData.certifications : prev.certifications
       }));
       
-      alert("Suas informações foram analisadas e organizadas em cada secção!");
+      if (parsedData?.isHeuristicFallback) {
+        alert("Nota: Para garantir que não perde os seus dados, estruturamos suas informações usando nosso analisador local de contingência devido a uma falha de rede temporária com o Servidor de IA. Por favor, revise as secções!");
+      } else {
+        alert("Maravilhoso! As suas informações foram analisadas, enriquecidas e estruturadas impecavelmente pela Inteligência Artificial Gemini 3.5 Flash!");
+      }
       setActiveStep(1); // Jump to first data step after import
       setRawText("");
     } catch (error: any) {
@@ -4696,7 +4700,11 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
         certifications: parsedData.certifications?.length ? parsedData.certifications : prev.certifications
       }));
       
-      alert("Currículo importado e otimizado com sucesso pela nossa IA!");
+      if (parsedData?.isHeuristicFallback) {
+        alert("Nota: Lemos o texto do seu PDF com sucesso! Contudo, como o Servidor IA estava temporariamente fora de alcance, estruturamos os dados usando nosso leitor de contingência local. Verifique as secções!");
+      } else {
+        alert("Magnífico! O seu currículo em PDF foi extraído, interpretado e preenchido de forma 100% inteligente com o Gemini 3.5 Flash!");
+      }
       setActiveStep(1); // Jump to first data step after import
     } catch (error: any) {
       console.error("Erro no upload/importação:", error);

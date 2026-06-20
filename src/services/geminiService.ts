@@ -2,6 +2,33 @@
 // Communicates with our full-stack Express server to run secure, quota-safe and CORS-safe AI algorithms.
 // Integrates client-side persistent caching and high-fidelity heuristic offline engines for maximum resilience.
 
+export function getApiBaseUrl(): string {
+  // Check if a custom URL is configured in localStorage
+  try {
+    const customUrl = localStorage.getItem("cv_lab_custom_backend_url");
+    if (customUrl) {
+      return customUrl.replace(/\/+$/, "");
+    }
+  } catch (e) {}
+
+  // If the origin is a third-party domain (e.g. cv-lab.pages.dev or netlify/vercel)
+  // we redirect fetch requests to our live Cloud Run backend URL to activate real AI power!
+  const hostname = window.location.hostname;
+  const isStaticHosting = 
+    hostname.endsWith(".pages.dev") || 
+    hostname.endsWith(".github.io") || 
+    hostname.includes("netlify") || 
+    hostname.includes("vercel") ||
+    hostname.includes("cloudflare") ||
+    (hostname !== "localhost" && !hostname.endsWith("run.app") && hostname !== "127.0.0.1");
+
+  if (isStaticHosting) {
+    return "https://ais-pre-j4k5cpsqlblim4ws45rnx4-5491150004.europe-west3.run.app";
+  }
+
+  return "";
+}
+
 // Helper to calculate String hash quickly for caching
 function generateHash(str: string): string {
   let hash = 0;
@@ -41,7 +68,7 @@ export async function optimizeResumeText(text: string, type: 'summary' | 'experi
   }
 
   try {
-    const response = await fetch("/api/gemini/optimize", {
+    const response = await fetch(`${getApiBaseUrl()}/api/gemini/optimize`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ text, type })
@@ -87,7 +114,7 @@ export async function generateCoverLetter(resumeData: any, jobTitle: string): Pr
   }
 
   try {
-    const response = await fetch("/api/gemini/cover-letter", {
+    const response = await fetch(`${getApiBaseUrl()}/api/gemini/cover-letter`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ resumeData, jobTitle })
@@ -142,7 +169,7 @@ export async function generateFullResume(personalInfo: any): Promise<any> {
   }
 
   try {
-    const response = await fetch("/api/gemini/generate-full", {
+    const response = await fetch(`${getApiBaseUrl()}/api/gemini/generate-full`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ personalInfo })
@@ -356,7 +383,7 @@ export async function parseResumeFromText(rawText: string, imageData?: string): 
   }
 
   try {
-    const response = await fetch("/api/gemini/parse", {
+    const response = await fetch(`${getApiBaseUrl()}/api/gemini/parse`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ rawText, imageData })
@@ -376,6 +403,7 @@ export async function parseResumeFromText(rawText: string, imageData?: string): 
     // Extracting all meaningful information from the raw pasted text step-by-step
     // instead of throwing away experiences and education!
     const parsed: any = {
+      isHeuristicFallback: true,
       personalInfo: { fullName: "", title: "", email: "", phone: "", location: "", summary: "" },
       experience: [],
       education: [],
@@ -501,7 +529,7 @@ export async function translateResumeToEnglish(resumeData: any): Promise<any> {
   }
 
   try {
-    const response = await fetch("/api/gemini/translate", {
+    const response = await fetch(`${getApiBaseUrl()}/api/gemini/translate`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ resumeData })
