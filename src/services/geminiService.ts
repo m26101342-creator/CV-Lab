@@ -11,21 +11,6 @@ export function getApiBaseUrl(): string {
     }
   } catch (e) {}
 
-  // If the origin is a third-party domain (e.g. cv-lab.pages.dev or netlify/vercel)
-  // we redirect fetch requests to our live Cloud Run backend URL to activate real AI power!
-  const hostname = window.location.hostname;
-  const isStaticHosting = 
-    hostname.endsWith(".pages.dev") || 
-    hostname.endsWith(".github.io") || 
-    hostname.includes("netlify") || 
-    hostname.includes("vercel") ||
-    hostname.includes("cloudflare") ||
-    (hostname !== "localhost" && !hostname.endsWith("run.app") && hostname !== "127.0.0.1");
-
-  if (isStaticHosting) {
-    return "https://ais-pre-j4k5cpsqlblim4ws45rnx4-5491150004.europe-west3.run.app";
-  }
-
   return "";
 }
 
