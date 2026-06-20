@@ -11,6 +11,21 @@ export function getApiBaseUrl(): string {
     }
   } catch (e) {}
 
+  // If the origin is a third-party domain (e.g. cv-lab.pages.dev, vercel, etc.)
+  // we redirect fetch requests to our live Cloud Run backend URL to activate real AI power!
+  const hostname = window.location.hostname;
+  const isStaticHosting = 
+    hostname.endsWith(".pages.dev") || 
+    hostname.endsWith(".github.io") || 
+    hostname.includes("netlify") || 
+    hostname.includes("vercel") ||
+    hostname.includes("cloudflare") ||
+    (hostname !== "localhost" && !hostname.endsWith("run.app") && hostname !== "127.0.0.1" && !hostname.match(/^\d+\.\d+\.\d+\.\d+$/));
+
+  if (isStaticHosting) {
+    return "https://ais-pre-j4k5cpsqlblim4ws45rnx4-5491150004.europe-west3.run.app";
+  }
+
   return "";
 }
 
@@ -26,19 +41,11 @@ function generateHash(str: string): string {
 
 // Save request to localStorage to prevent duplicate billing or quota exhaust
 function getLocalCache(apiName: string, keyString: string): string | null {
-  try {
-    const hash = generateHash(keyString);
-    return localStorage.getItem(`cv_labs_gcache_${apiName}_${hash}`);
-  } catch (e) {
-    return null;
-  }
+  return null; // Cache bypassed per user request to avoid stale / empty results
 }
 
 function setLocalCache(apiName: string, keyString: string, value: string) {
-  try {
-    const hash = generateHash(keyString);
-    localStorage.setItem(`cv_labs_gcache_${apiName}_${hash}`, value);
-  } catch (e) {}
+  // Cache disabled per user request
 }
 
 export async function optimizeResumeText(text: string, type: 'summary' | 'experience' | 'skills'): Promise<string> {
