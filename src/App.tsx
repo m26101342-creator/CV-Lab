@@ -39,7 +39,8 @@ import {
   RotateCcw,
   Award,
   AlertTriangle,
-  Printer
+  Printer,
+  Video
 } from 'lucide-react';
 import { AdSenseUnit } from './components/AdSenseUnit';
 import { ResumeData, INITIAL_RESUME_DATA, TemplateType } from './types.ts';
@@ -51,9 +52,11 @@ import * as pdfjsLib from 'pdfjs-dist';
 // Use CDN for worker to ensure reliability in all environments
 pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@5.6.205/build/pdf.worker.min.mjs`;
 
-import { auth, db, useAuth, loginWithGoogle, logOut } from './lib/firebase';
-import { collection, addDoc, onSnapshot, doc, query, where, getDocs, updateDoc, setDoc, serverTimestamp, getDoc } from 'firebase/firestore';
-import { createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile } from 'firebase/auth';
+import { 
+    auth, db, useAuth, loginWithGoogle, logOut,
+    collection, addDoc, onSnapshot, doc, query, where, getDocs, updateDoc, setDoc, serverTimestamp, getDoc, deleteDoc,
+    createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile
+} from './lib/firebase';
 import { 
   BarChart, 
   Bar, 
@@ -397,7 +400,7 @@ const MyResumesPage = ({ user, setView, onRequestDownload }: {
     const [isGenerating, setIsGenerating] = useState<string | null>(null);
 
     useEffect(() => {
-        if (!user || user.email === 'anonymous') return;
+        if (!user || user.email === 'anonymous' || !db) return;
         
         const q = query(
             collection(db, 'orders'),
@@ -541,12 +544,31 @@ const MyResumesPage = ({ user, setView, onRequestDownload }: {
     );
 };
 
-const AdminPanel = () => {
-    const { isAdmin } = useAuth();
+const AdminPanel = ({ setView }: { setView?: any }) => {
+    const { isAdmin, user } = useAuth();
     const [orders, setOrders] = useState<any[]>([]);
     const [onlineUsers, setOnlineUsers] = useState<any[]>([]);
     const [searchQuery, setSearchQuery] = useState('');
-    const [activeTab, setActiveTab] = useState<'overview' | 'orders' | 'visitors'>('overview');
+    const [activeTab, setActiveTab] = useState<'overview' | 'orders' | 'visitors' | 'meetings'>('overview');
+    
+    // Live authorized editable variables
+    const [realCVsCount, setRealCVsCount] = useState(9);
+    const [realRevenue, setRealRevenue] = useState(18000);
+    const [meetingLink, setMeetingLink] = useState('https://meet.google.com/abc-defg-hij');
+    const [cvPrice, setCvPrice] = useState(2000);
+
+    // Notes and team chats
+    const [adminNotes, setAdminNotes] = useState<any[]>([]);
+    const [newNoteText, setNewNoteText] = useState('');
+    const [newNoteCategory, setNewNoteCategory] = useState<'Aviso' | 'Urgente' | 'Anotação' | 'Reunião'>('Anotação');
+
+    // Editing mode toggles
+    const [isEditingRealStats, setIsEditingRealStats] = useState(false);
+    const [editCVsCount, setEditCVsCount] = useState('9');
+    const [editRevenue, setEditRevenue] = useState('18000');
+    const [editMeetingLink, setEditMeetingLink] = useState('https://meet.google.com/abc-defg-hij');
+    const [editCvPrice, setEditCvPrice] = useState('2000');
+
     const [stats, setStats] = useState({ 
         users: 0, 
         pending: 0, 
@@ -562,7 +584,7 @@ const AdminPanel = () => {
     
     useEffect(() => {
         console.log("Admin Status:", isAdmin, "User Email:", auth?.currentUser?.email);
-        if (!isAdmin) return;
+        if (!isAdmin || !db) return;
         
         // Fetch all orders to keep stats and search accurate
         const q = query(collection(db, 'orders'));
@@ -601,7 +623,7 @@ const AdminPanel = () => {
                     ...s, 
                     pending: pendingCount, 
                     approved: approvedCount,
-                    revenue: approvedCount * 1150,
+                    revenue: approvedCount * cvPrice,
                     conversion: fetchedOrders.length > 0 ? (fetchedOrders.length / visitors) * 100 : 0
                 };
             });
@@ -638,11 +660,94 @@ const AdminPanel = () => {
             setStats(s => ({ ...s, online: active.length }));
         });
 
+        // Live Admin Metrics Listener
+        const metricsRef = doc(db, 'admin_settings', 'metrics');
+        const unsubMetrics = onSnapshot(metricsRef, (docSnap) => {
+            if (docSnap.exists()) {
+                const data = docSnap.data();
+                setRealCVsCount(data.realCVsCount ?? 9);
+                setRealRevenue(data.realRevenue ?? 18000);
+                setMeetingLink(data.meetingLink ?? 'https://meet.google.com/abc-defg-hij');
+                setCvPrice(data.cvPrice ?? 2000);
+                setEditCVsCount(String(data.realCVsCount ?? 9));
+                setEditRevenue(String(data.realRevenue ?? 18000));
+                setEditMeetingLink(data.meetingLink ?? 'https://meet.google.com/abc-defg-hij');
+                setEditCvPrice(String(data.cvPrice ?? 2000));
+            } else {
+                setDoc(metricsRef, {
+                    realCVsCount: 9,
+                    realRevenue: 18000,
+                    meetingLink: 'https://meet.google.com/abc-defg-hij',
+                    cvPrice: 2000
+                });
+            }
+        });
+
+        // Live Notes Board Listener
+        const notesQuery = query(collection(db, 'admin_notes'));
+        const unsubNotes = onSnapshot(notesQuery, (snapshot) => {
+            const fetched = snapshot.docs.map(dsc => ({ id: dsc.id, ...dsc.data() }));
+            setAdminNotes(fetched.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
+        });
+
         return () => {
             unsubscribe();
             unsubPresence();
+            unsubMetrics();
+            unsubNotes();
         };
     }, [isAdmin]);
+
+    const handleSendNote = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!newNoteText.trim()) return;
+        if (!db) {
+            alert("A base de dados não está disponível no momento.");
+            return;
+        }
+        try {
+            await addDoc(collection(db, 'admin_notes'), {
+                text: newNoteText.trim(),
+                category: newNoteCategory,
+                author: user?.displayName || user?.email || 'Membro da Equipa',
+                authorEmail: user?.email || '',
+                createdAt: new Date().toISOString()
+            });
+            setNewNoteText('');
+        } catch (err) {
+            console.error("Erro ao publicar nota:", err);
+        }
+    };
+
+    const handleDeleteNote = async (id: string) => {
+        if (!db) return;
+        try {
+            await deleteDoc(doc(db, 'admin_notes', id));
+        } catch (err) {
+            console.error("Erro ao apagar nota:", err);
+        }
+    };
+
+    const handleSaveRealMetrics = async () => {
+        if (!db) {
+            alert("A base de dados não está disponível no momento.");
+            return;
+        }
+        try {
+            const metricsRef = doc(db, 'admin_settings', 'metrics');
+            await setDoc(metricsRef, {
+                realCVsCount: Math.max(0, parseInt(editCVsCount) || 0),
+                realRevenue: Math.max(0, parseInt(editRevenue) || 0),
+                meetingLink: editMeetingLink.trim() || 'https://meet.google.com/abc-defg-hij',
+                cvPrice: Math.max(0, parseInt(editCvPrice) || 2000)
+            });
+            setIsEditingRealStats(false);
+            alert("Métricas da equipa e preço do CV atualizados com sucesso!");
+        } catch (err) {
+            console.error("Erro ao salvar métricas:", err);
+            alert("Falha ao atualizar parâmetros.");
+        }
+    };
 
     const approveOrder = async (order: any) => {
         console.log("Tentando aprovar pedido:", order.id, "Usuário Logado:", auth?.currentUser?.email);
@@ -712,7 +817,8 @@ const AdminPanel = () => {
                     {[
                         { id: 'overview', label: 'Dashboard', icon: Globe },
                         { id: 'orders', label: 'Pagamentos', icon: CreditCard },
-                        { id: 'visitors', label: 'Trafego Online', icon: User },
+                        { id: 'visitors', label: 'Membros Conetados', icon: User },
+                        { id: 'meetings', label: 'Sala de Reuniões', icon: Video },
                     ].map(tab => (
                         <button
                             key={tab.id}
@@ -731,12 +837,21 @@ const AdminPanel = () => {
                     ))}
                 </nav>
 
-                <div className="pt-8 relative z-10">
+                <div className="pt-4 relative z-10 space-y-4">
                     <div className="bg-slate-800/50 backdrop-blur-sm p-6 rounded-[2rem] border border-white/5 relative overflow-hidden">
                         <div className="absolute top-0 right-0 w-24 h-24 bg-green-500/10 rounded-bl-full -mr-4 -mt-4"></div>
-                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Fatura Líquida</p>
-                        <p className="text-2xl font-black text-white tracking-tight">{stats.revenue.toLocaleString()} Kzs</p>
+                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Fatura Real</p>
+                        <p className="text-2xl font-black text-white tracking-tight">{realRevenue.toLocaleString()} Kzs</p>
                     </div>
+
+                    {setView && (
+                        <button 
+                            onClick={() => setView('landing')} 
+                            className="w-full flex items-center justify-center gap-2 py-4 bg-slate-800 hover:bg-slate-700 text-white text-xs font-black uppercase tracking-widest rounded-2xl transition-all border border-white/5"
+                        >
+                            <ChevronLeft size={16} /> Voltar ao Início
+                        </button>
+                    )}
                 </div>
             </aside>
 
@@ -771,6 +886,74 @@ const AdminPanel = () => {
 
                 {activeTab === 'overview' && (
                     <div className="space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-500 relative z-10">
+                        {/* Gestão de Métricas de Vendas (Dono/ADM) */}
+                        <div className="bg-gradient-to-r from-slate-900 to-indigo-950 p-8 rounded-[2.5rem] text-white shadow-xl relative overflow-hidden group border border-indigo-900/40">
+                            <div className="absolute top-0 right-0 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl -mr-20 -mt-20"></div>
+                            
+                            <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 relative z-10">
+                                <div className="space-y-2">
+                                    <h3 className="text-2xl font-black tracking-tight">Métricas Oficializadas CV LAB</h3>
+                                    <p className="text-xs text-blue-200/80 font-medium">Parâmetros oficiais de faturamento real de vendas e currículos validados.</p>
+                                    
+                                    <div className="flex flex-wrap gap-4 pt-4">
+                                        <div className="bg-white/5 backdrop-blur px-5 py-3 rounded-2xl border border-white/10 min-w-[120px]">
+                                            <span className="block text-[9px] uppercase tracking-wider font-bold text-blue-200">Currículos Validados</span>
+                                            <span className="text-2xl font-black">{realCVsCount} CVs</span>
+                                        </div>
+                                        <div className="bg-white/5 backdrop-blur px-5 py-3 rounded-2xl border border-white/10 min-w-[125px]">
+                                            <span className="block text-[9px] uppercase tracking-wider font-bold text-blue-200">Faturamento Oficial</span>
+                                            <span className="text-2xl font-black text-emerald-400">{realRevenue.toLocaleString()} Kzs</span>
+                                        </div>
+                                        <div className="bg-white/5 backdrop-blur px-5 py-3 rounded-2xl border border-white/10 min-w-[110px]">
+                                            <span className="block text-[9px] uppercase tracking-wider font-bold text-blue-200">Preço do CV</span>
+                                            <span className="text-2xl font-black text-amber-300">{cvPrice.toLocaleString()} Kz</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div className="w-full lg:w-auto bg-white/5 backdrop-blur p-5 rounded-3xl border border-white/10 space-y-4">
+                                    <h4 className="text-xs font-black uppercase tracking-wider text-blue-100">Atualização Prática de Faturação</h4>
+                                    
+                                    <div className="grid grid-cols-3 gap-2">
+                                        <div>
+                                            <label className="block text-[10px] font-bold text-blue-200 mb-1">Total de CVs</label>
+                                            <input 
+                                                type="number" 
+                                                value={editCVsCount} 
+                                                onChange={e => setEditCVsCount(e.target.value)} 
+                                                className="w-full bg-slate-950/80 border border-white/10 rounded-xl px-2.5 py-2 text-xs font-bold font-mono text-white outline-none focus:border-blue-400" 
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-[10px] font-bold text-blue-100 mb-1">Faturação (Kz)</label>
+                                            <input 
+                                                type="number" 
+                                                value={editRevenue} 
+                                                onChange={e => setEditRevenue(e.target.value)} 
+                                                className="w-full bg-slate-950/80 border border-white/10 rounded-xl px-2.5 py-2 text-xs font-bold font-mono text-white outline-none focus:border-blue-400" 
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-[10px] font-bold text-amber-200 mb-1">Preço CV (Kz)</label>
+                                            <input 
+                                                type="number" 
+                                                value={editCvPrice} 
+                                                onChange={e => setEditCvPrice(e.target.value)} 
+                                                className="w-full bg-slate-950/80 border border-white/10 rounded-xl px-2.5 py-2 text-xs font-bold font-mono text-white outline-none focus:border-blue-400" 
+                                            />
+                                        </div>
+                                    </div>
+                                    
+                                    <button 
+                                        onClick={handleSaveRealMetrics}
+                                        className="w-full py-2.5 bg-blue-600 hover:bg-blue-500 active:scale-[0.98] text-white text-xs font-black uppercase tracking-widest rounded-xl transition-all shadow-md border-0"
+                                    >
+                                        Gravar Alterações
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                             {[
                                 { label: 'Online Atualmente', val: stats.online, color: 'text-green-500', icon: Globe, highlight: true },
@@ -925,6 +1108,167 @@ const AdminPanel = () => {
                                     )}
                                 </tbody>
                             </table>
+                        </div>
+                    </div>
+                )}
+
+                {activeTab === 'meetings' && (
+                    <div className="space-y-10 animate-in fade-in slide-in-from-right-4 duration-500 relative z-10">
+                        {/* Sala de Reunião Link & Info Box */}
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                            <div className="md:col-span-2 bg-white p-8 rounded-[2rem] border border-slate-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)] space-y-6">
+                                <div className="flex items-center gap-4">
+                                    <div className="w-12 h-12 bg-blue-100 text-blue-600 rounded-2xl flex items-center justify-center">
+                                        <Video size={24} />
+                                    </div>
+                                    <div>
+                                        <h3 className="text-xl font-black text-slate-900 tracking-tight">Sala de Reuniões Virtual</h3>
+                                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Espaço oficial para o alinhamento da equipa</p>
+                                    </div>
+                                </div>
+
+                                <p className="text-sm text-slate-600 leading-relaxed">
+                                    Esta é a nossa sala oficial para reuniões rápidas de feedback, alinhamentos diários e desenho das novas atualizações do CV LAB. Use o link do Google Meet abaixo para aceder instantaneamente.
+                                </p>
+
+                                <div className="p-5 bg-slate-50 border border-slate-100 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                                    <div className="space-y-1">
+                                        <span className="block text-[10px] font-black text-slate-400 uppercase tracking-widest">Link de Acesso Ativo</span>
+                                        <a href={meetingLink} target="_blank" rel="noopener noreferrer" className="text-sm font-bold text-blue-600 hover:underline break-all">
+                                            {meetingLink}
+                                        </a>
+                                    </div>
+                                    <a 
+                                        href={meetingLink} 
+                                        target="_blank" 
+                                        rel="noopener noreferrer"
+                                        className="inline-flex items-center justify-center h-12 px-6 bg-blue-600 hover:bg-blue-700 font-black text-xs text-white uppercase tracking-widest rounded-xl transition-all shadow-md shrink-0 border-0"
+                                    >
+                                        Aceder à Sala
+                                    </a>
+                                </div>
+
+                                {/* Link Editor */}
+                                <div className="pt-4 border-t border-slate-100 space-y-4">
+                                    <h4 className="text-xs font-black uppercase tracking-wider text-slate-700">Alterar Link da Sala</h4>
+                                    <div className="flex gap-3">
+                                        <input 
+                                            type="text" 
+                                            value={editMeetingLink} 
+                                            onChange={e => setEditMeetingLink(e.target.value)} 
+                                            placeholder="Ex: https://meet.google.com/..."
+                                            className="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-xs font-bold font-mono outline-none focus:border-blue-500" 
+                                        />
+                                        <button 
+                                            onClick={handleSaveRealMetrics} 
+                                            className="h-12 px-5 bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold rounded-xl active:scale-[0.98] transition-all border-0 cursor-pointer"
+                                        >
+                                            Guardar Link
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Lateral Team Guidelines */}
+                            <div className="bg-gradient-to-b from-slate-900 to-slate-800 p-8 rounded-[2rem] text-white shadow-xl space-y-6 relative overflow-hidden">
+                                <div className="absolute top-0 right-0 w-48 h-48 bg-white/5 rounded-full blur-2xl"></div>
+                                <h3 className="text-lg font-black tracking-tight relative z-10">Pautas Fundamentais</h3>
+                                <ul className="space-y-4 text-xs font-black text-slate-300 relative z-10">
+                                    <li className="flex items-start gap-2.5">
+                                        <span className="w-1.5 h-1.5 rounded-full bg-blue-400 mt-1.5 shrink-0" />
+                                        <span>Confirmar cada venda de {cvPrice.toLocaleString()} Kzs no botão físico para o placar de faturamento real sincronizar na hora.</span>
+                                    </li>
+                                    <li className="flex items-start gap-2.5">
+                                        <span className="w-1.5 h-1.5 rounded-full bg-blue-400 mt-1.5 shrink-0" />
+                                        <span>Garantir que os clientes registados estão com o MULTICAIXA Express ativo ao gerar faturas.</span>
+                                    </li>
+                                    <li className="flex items-start gap-2.5">
+                                        <span className="w-1.5 h-1.5 rounded-full bg-blue-400 mt-1.5 shrink-0" />
+                                        <span>Esteja pronto para abrir o terminal contabilístico às 8:00 com credenciais de Supervisor.</span>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        {/* Quadro de Notas & Avisos Coletivos */}
+                        <div className="bg-white p-8 rounded-[2rem] border border-slate-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)] space-y-8">
+                            <div className="flex justify-between items-center border-b border-slate-100 pb-5">
+                                <div>
+                                    <h3 className="text-xl font-black text-slate-900 tracking-tight">Quadro Coletivo de Notas</h3>
+                                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Avisos e anotações internas da equipa</p>
+                                </div>
+                                <div className="px-4 py-1.5 rounded-full bg-slate-100 text-slate-600 text-[10px] font-black uppercase tracking-widest">
+                                    {adminNotes.length} Notas Ativas
+                                </div>
+                            </div>
+
+                            {/* Note Publisher Form */}
+                            <form onSubmit={handleSendNote} className="space-y-4">
+                                <div className="flex flex-col sm:flex-row gap-3">
+                                    <select 
+                                        value={newNoteCategory} 
+                                        onChange={e => setNewNoteCategory(e.target.value as any)}
+                                        className="h-12 px-4 rounded-xl text-xs font-bold border border-slate-200 bg-slate-50 outline-none focus:border-blue-500"
+                                    >
+                                        <option value="Anotação">📝 Anotação</option>
+                                        <option value="Aviso">📢 Aviso Geral</option>
+                                        <option value="Urgente">🚨 Urgente</option>
+                                        <option value="Reunião">👥 Reunião</option>
+                                    </select>
+                                    <input 
+                                        type="text" 
+                                        value={newNoteText} 
+                                        onChange={e => setNewNoteText(e.target.value)} 
+                                        placeholder="Escreva um aviso para a restante equipa..."
+                                        className="flex-1 h-12 px-5 rounded-xl text-xs font-bold border border-slate-200 bg-slate-50 outline-none focus:border-blue-500"
+                                    />
+                                    <button 
+                                        type="submit" 
+                                        className="h-12 px-8 bg-blue-600 hover:bg-blue-700 font-black text-xs text-white uppercase tracking-widest rounded-xl transition-all border-0 cursor-pointer"
+                                    >
+                                        Fixar Nota
+                                    </button>
+                                </div>
+                            </form>
+
+                            {/* Active Notes Display */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                {adminNotes.map(note => (
+                                    <div key={note.id} className="p-6 bg-slate-50 hover:bg-slate-50/80 border border-slate-100 rounded-2xl relative overflow-hidden group">
+                                        {/* Corner Tag */}
+                                        <div className="flex justify-between items-start gap-4 mb-4">
+                                            <span className={`text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-md ${
+                                                note.category === 'Urgente' ? 'bg-red-100 text-red-700' :
+                                                note.category === 'Aviso' ? 'bg-amber-100 text-amber-700' :
+                                                note.category === 'Reunião' ? 'bg-blue-100 text-blue-700' :
+                                                'bg-slate-200 text-slate-700'
+                                            }`}>
+                                                {note.category || 'Nota'}
+                                            </span>
+                                            <button 
+                                                onClick={() => handleDeleteNote(note.id)}
+                                                className="text-slate-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity border-0 bg-transparent cursor-pointer p-1"
+                                                title="Apagar Nota"
+                                            >
+                                                <X size={14} />
+                                            </button>
+                                        </div>
+
+                                        <p className="text-xs text-slate-700 leading-relaxed font-semibold mb-4">{note.text}</p>
+                                        
+                                        <div className="pt-3 border-t border-slate-200/50 flex justify-between items-center text-[9px] font-bold text-slate-400">
+                                            <span>Por: {note.author}</span>
+                                            <span>{note.createdAt ? new Date(note.createdAt).toLocaleDateString() : ''}</span>
+                                        </div>
+                                    </div>
+                                ))}
+
+                                {adminNotes.length === 0 && (
+                                    <div className="col-span-full py-16 text-center text-slate-400 font-bold uppercase text-[10px] tracking-widest">
+                                        Nenhuma nota afixada por agora. Escreva uma no quadro acima!
+                                    </div>
+                                )}
+                            </div>
                         </div>
                     </div>
                 )}
@@ -1266,49 +1610,18 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
     setDragState(prev => ({ ...prev, active: false }));
   };
 
-  // Dynamic scale calculation based on content size to ensure everything fits exactly on one page
-  const densityScale = React.useMemo(() => {
-    let score = 0;
-    if (data.personalInfo?.summary) {
-      score += data.personalInfo.summary.length * 0.16;
-    }
-    
-    if (data.experience) {
-      data.experience.forEach(exp => {
-        score += 120;
-        if (exp.description) score += exp.description.length * 0.15;
-      });
-    }
-    
-    if (data.education) {
-      data.education.forEach(edu => {
-        score += 80;
-        if (edu.degree) score += edu.degree.length * 0.08;
-      });
-    }
-    
-    if (data.skills) score += data.skills.length * 8;
-    if (data.languages) score += data.languages.length * 12;
-    
-    // Scale starts reducing if complexity exceeds 800
-    const maxNormalScore = 800;
-    const computedScale = maxNormalScore / Math.max(maxNormalScore, score);
-    return Math.max(0.65, Math.min(1.0, computedScale));
-  }, [data]);
+  // Fixed scale to 1.0 so that templates occupy the entire A4 page area beautifully
+  const densityScale = 1.0;
 
-  const wRender = 794 / densityScale;
-  const hRender = 1122 / densityScale;
+  const wRender = 794;
+  const hRender = 1122;
 
   const fontFam = style.fontFamily === 'serif' ? 'Georgia, serif' : style.fontFamily === 'mono' ? 'monospace' : style.fontFamily === 'grotesk' ? '"Space Grotesk", sans-serif' : 'Inter, sans-serif';
 
   return (
     <div 
-      className={`bg-white relative overflow-visible print:shadow-none shadow-[0_60px_120px_-20px_rgba(0,0,0,0.2)] ${showGuides || dragState.active ? 'show-guides' : ''} ${dragState.active ? 'dragging-active' : ''}`} 
+      className={`bg-white relative overflow-visible print:shadow-none shadow-[0_60px_120px_-20px_rgba(0,0,0,0.2)]`} 
       id="resume-content"
-      onPointerDown={handlePointerDown}
-      onPointerMove={handlePointerMove}
-      onPointerUp={handlePointerUp}
-      onPointerCancel={handlePointerUp}
       style={{ 
         width: '794px', 
         minHeight: '1122px',
@@ -1329,232 +1642,7 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
           box-shadow: inset 0 0 0 1px rgba(99, 102, 241, 0.25) !important;
         }
 
-        #resume-content.dragging-active {
-          touch-action: none !important;
-          user-select: none !important;
-        }
-        
-        /* Interatividade direta estilo Canva */
-        .t1-name, .t2-name, .t3-name, h1, [class*="-name"],
-        .t1-avatar, .t2-avatar, .t1-avatar-wrap, [class*="-avatar"], img,
-        .t1-bio, .t2-bio, .t1-bio-wrap, p, [class*="-bio"],
-        .t1-skill-tag, [class*="-skill-tag"], [class*="skill"],
-        [class*="lang-item"], [class*="language"],
-        .t1-contact-item, .t2-contact-row, .t1-contact-text, .t2-contact-text, [class*="contact-item"], [class*="contact-row"] {
-          position: relative !important;
-          user-select: none !important;
-          touch-action: none !important; 
-          cursor: pointer !important;
-          transition: box-shadow 0.2s ease, outline 0.2s ease !important;
-        }
 
-        .t1-section-title, .t1-right-title, .t2-section-title, .t3-section-title, h3, h2, [class*="-title"],
-        .t1-exp-item, .t2-exp-item, [class*="-exp-item"], [class*="exp-item"],
-        .t1-edu-item, [class*="-edu-item"], [class*="edu-item"] {
-          position: relative !important;
-          user-select: none !important;
-          touch-action: none !important; 
-          cursor: pointer !important;
-          transition: box-shadow 0.2s ease, outline 0.2s ease !important;
-        }
-
-        /* Hover outlines */
-        .t1-name:hover, .t2-name:hover, .t3-name:hover, h1:hover, [class*="-name"]:hover,
-        .t1-avatar:hover, .t2-avatar:hover, .t1-avatar-wrap:hover, [class*="-avatar"]:hover, img:hover,
-        .t1-section-title:hover, .t1-right-title:hover, .t2-section-title:hover, .t3-section-title:hover, h3:hover, h2:hover, [class*="-title"]:hover,
-        .t1-exp-item:hover, .t2-exp-item:hover, [class*="-exp-item"]:hover, [class*="exp-item"]:hover,
-        .t1-edu-item:hover, [class*="-edu-item"]:hover, [class*="edu-item"]:hover,
-        .t1-skill-tag:hover, [class*="-skill-tag"]:hover, [class*="skill"]:hover,
-        [class*="lang-item"]:hover, [class*="language"]:hover,
-        .t1-contact-item:hover, .t2-contact-row:hover, .t1-contact-text:hover, .t2-contact-text:hover, [class*="contact-item"]:hover, [class*="contact-row"]:hover,
-        .t1-bio:hover, .t2-bio:hover, .t1-bio-wrap:hover, p:hover, [class*="-bio"]:hover {
-          outline: 2px dashed rgba(99, 102, 241, 0.45) !important;
-          outline-offset: 4px !important;
-          background-color: rgba(99, 102, 241, 0.02) !important;
-        }
-
-        /* Help badges on hover */
-        [class*="-name"]:hover::after, h1:hover::after {
-          content: "↔️ Arraste p/ os lados (Tamanho Nome)" !important;
-          position: absolute !important;
-          bottom: -22px !important;
-          left: 50% !important;
-          transform: translateX(-50%) !important;
-          background: #4f46e5 !important;
-          color: white !important;
-          font-size: 8px !important;
-          font-family: sans-serif !important;
-          font-style: normal !important;
-          font-weight: bold !important;
-          padding: 2px 6px !important;
-          border-radius: 4px !important;
-          white-space: nowrap !important;
-          pointer-events: none !important;
-          z-index: 9999 !important;
-          box-shadow: 0 4px 6px rgba(0,0,0,0.1) !important;
-        }
-
-        .t1-avatar:hover::after, .t2-avatar:hover::after, img:hover::after {
-          content: "↔️ Tamanho da Foto | ↕️ Cantos Redondos" !important;
-          position: absolute !important;
-          bottom: -22px !important;
-          left: 50% !important;
-          transform: translateX(-50%) !important;
-          background: #312e81 !important;
-          color: white !important;
-          font-size: 8px !important;
-          font-family: sans-serif !important;
-          font-style: normal !important;
-          font-weight: bold !important;
-          padding: 2px 6px !important;
-          border-radius: 4px !important;
-          white-space: nowrap !important;
-          pointer-events: none !important;
-          z-index: 9999 !important;
-          box-shadow: 0 4px 6px rgba(0,0,0,0.1) !important;
-        }
-
-        .t1-section-title:hover::after, .t1-right-title:hover::after, .t2-section-title:hover::after, .t3-section-title:hover::after, h3:hover::after, h2:hover::after {
-          content: "↕️ Espaço abaixo | ↔️ Tamanho Título" !important;
-          position: absolute !important;
-          bottom: -22px !important;
-          left: 50% !important;
-          transform: translateX(-50%) !important;
-          background: #111827 !important;
-          color: white !important;
-          font-size: 8px !important;
-          font-family: sans-serif !important;
-          font-style: normal !important;
-          font-weight: bold !important;
-          padding: 2px 6px !important;
-          border-radius: 4px !important;
-          white-space: nowrap !important;
-          pointer-events: none !important;
-          z-index: 9999 !important;
-          box-shadow: 0 4px 6px rgba(0,0,0,0.1) !important;
-        }
-
-        [class*="exp-item"]:hover::after, [class*="edu-item"]:hover::after {
-          content: "↕️ Reordenar | ↔️ Espaçamento dos Itens" !important;
-          position: absolute !important;
-          top: 4px !important;
-          right: 4px !important;
-          background: #059669 !important;
-          color: white !important;
-          font-size: 8px !important;
-          font-family: sans-serif !important;
-          font-style: normal !important;
-          font-weight: bold !important;
-          padding: 2px 6px !important;
-          border-radius: 4px !important;
-          white-space: nowrap !important;
-          pointer-events: none !important;
-          z-index: 9999 !important;
-          box-shadow: 0 4px 6px rgba(0,0,0,0.1) !important;
-        }
-
-        .t1-skill-tag:hover::after, [class*="-skill-tag"]:hover::after, [class*="skill"]:hover::after {
-          content: "↔️ Espaçamento habilidades" !important;
-          position: absolute !important;
-          bottom: -22px !important;
-          left: 50% !important;
-          transform: translateX(-50%) !important;
-          background: #0284c7 !important;
-          color: white !important;
-          font-size: 8px !important;
-          font-family: sans-serif !important;
-          font-style: normal !important;
-          font-weight: bold !important;
-          padding: 2px 6px !important;
-          border-radius: 4px !important;
-          white-space: nowrap !important;
-          pointer-events: none !important;
-          z-index: 9999 !important;
-        }
-
-        [class*="lang-item"]:hover::after, [class*="language"]:hover::after {
-          content: "↔️ Tamanho do texto Idiomas" !important;
-          position: absolute !important;
-          bottom: -22px !important;
-          left: 50% !important;
-          transform: translateX(-50%) !important;
-          background: #7c3aed !important;
-          color: white !important;
-          font-size: 8px !important;
-          font-family: sans-serif !important;
-          font-style: normal !important;
-          font-weight: bold !important;
-          padding: 2px 6px !important;
-          border-radius: 4px !important;
-          white-space: nowrap !important;
-          pointer-events: none !important;
-          z-index: 9999 !important;
-        }
-
-        .t1-contact-item:hover::after, .t2-contact-row:hover::after, [class*="contact-item"]:hover::after {
-          content: "↔️ Tamanho Letras | ↕️ Espaço de Item" !important;
-          position: absolute !important;
-          bottom: -22px !important;
-          left: 50% !important;
-          transform: translateX(-50%) !important;
-          background: #ea580c !important;
-          color: white !important;
-          font-size: 8px !important;
-          font-family: sans-serif !important;
-          font-style: normal !important;
-          font-weight: bold !important;
-          padding: 2px 6px !important;
-          border-radius: 4px !important;
-          white-space: nowrap !important;
-          pointer-events: none !important;
-          z-index: 9999 !important;
-        }
-
-        .t1-bio:hover::after, .t2-bio:hover::after, p:hover::after {
-          content: "↔️ Tamanho Fonte | ↕️ Espaço de Linhas" !important;
-          position: absolute !important;
-          bottom: -22px !important;
-          left: 50% !important;
-          transform: translateX(-50%) !important;
-          background: #9333ea !important;
-          color: white !important;
-          font-size: 8px !important;
-          font-family: sans-serif !important;
-          font-style: normal !important;
-          font-weight: bold !important;
-          padding: 2px 6px !important;
-          border-radius: 4px !important;
-          white-space: nowrap !important;
-          pointer-events: none !important;
-          z-index: 9999 !important;
-          box-shadow: 0 4px 6px rgba(0,0,0,0.1) !important;
-        }
-        
-        #resume-content.show-guides::before {
-          content: "Maneio Interativo Total Ativo - Toque e arraste qualquer letra, foto ou detalhe livremente" !important;
-          position: absolute !important;
-          top: -24px !important;
-          left: 0 !important;
-          font-size: 10px !important;
-          font-family: ${fontFam} !important;
-          font-weight: bold !important;
-          color: #6366f1 !important;
-          text-transform: uppercase !important;
-          letter-spacing: 0.1em !important;
-          background: #f5f3ff !important;
-          padding: 2px 8px !important;
-          border-radius: 4px !important;
-          border: 1px solid #c7d2fe !important;
-          pointer-events: none !important;
-          z-index: 50 !important;
-        }
-
-        #resume-content.show-guides > div {
-          background-image: 
-            linear-gradient(rgba(99, 102, 241, 0.05) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(99, 102, 241, 0.05) 1px, transparent 1px) !important;
-          background-size: 20px 20px !important;
-        }
 
         /* Profile image with custom interactive pointer rounded borders */
         #resume-content img,
@@ -3592,7 +3680,90 @@ export default function App() {
   const [authError, setAuthError] = useState('');
   const [isAuthModeLogin, setIsAuthModeLogin] = useState(false);
 
-  const [view, setView] = useState<'landing' | 'editor' | 'faq' | 'about' | 'terms' | 'tips' | 'showcase' | 'admin' | 'profile' | 'my-resumes'>('landing');
+  const [view, _setView] = useState<'landing' | 'editor' | 'faq' | 'about' | 'terms' | 'tips' | 'showcase' | 'admin' | 'profile' | 'my-resumes'>('landing');
+  const [showAuthModalAlert, setShowAuthModalAlert] = useState(false);
+  const [isCountedAsReal, setIsCountedAsReal] = useState(false);
+  const [cvPrice, setCvPrice] = useState(2000);
+
+  useEffect(() => {
+    if (!db) return;
+    const metricsRef = doc(db, 'admin_settings', 'metrics');
+    const unsub = onSnapshot(metricsRef, (docSnap) => {
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        if (data.cvPrice !== undefined) {
+          setCvPrice(Number(data.cvPrice));
+        }
+      }
+    });
+    return () => unsub();
+  }, []);
+
+  const setView = (newView: 'landing' | 'editor' | 'faq' | 'about' | 'terms' | 'tips' | 'showcase' | 'admin' | 'profile' | 'my-resumes') => {
+    const restrictedViews = ['editor', 'admin', 'profile', 'my-resumes'];
+    if (restrictedViews.includes(newView)) {
+      const adminEmails = [
+        'ronalmaferreira04@icloud.com',
+        'sumodemanga50@gmail.com',
+        'm26101342@gmail.com'
+      ];
+      const hasAccess = user && user.email && adminEmails.includes(user.email.toLowerCase());
+      if (!hasAccess) {
+        setShowAuthModalAlert(true);
+        return;
+      }
+    }
+    _setView(newView);
+  };
+
+  const handleToggleRealCVCount = async (checked: boolean) => {
+    setIsCountedAsReal(checked);
+    if (!db) return;
+    try {
+      const metricsRef = doc(db, 'admin_settings', 'metrics');
+      const metricsSnap = await getDoc(metricsRef);
+      if (metricsSnap.exists()) {
+        const curData = metricsSnap.data();
+        const currentPrice = curData.cvPrice !== undefined ? Number(curData.cvPrice) : 2000;
+        const diffCount = checked ? 1 : -1;
+        const diffRevenue = checked ? currentPrice : -currentPrice;
+        await updateDoc(metricsRef, {
+          realCVsCount: Math.max(0, (curData.realCVsCount || 0) + diffCount),
+          realRevenue: Math.max(0, (curData.realRevenue || 0) + diffRevenue)
+        });
+      } else {
+        await setDoc(metricsRef, {
+          realCVsCount: checked ? 10 : 9,
+          realRevenue: checked ? 20000 : 18000,
+          meetingLink: 'https://meet.google.com/abc-defg-hij',
+          cvPrice: 2000
+        });
+      }
+    } catch (e) {
+      console.error("Erro ao atualizar contagem de CVs reais:", e);
+    }
+  };
+
+  const handleLogoClick = async () => {
+    if (!user || user.isAnonymous) {
+      try {
+        await loginWithGoogle();
+      } catch (err) {
+        console.error("Erro no login pelo logo:", err);
+      }
+    } else {
+      const adminEmails = [
+        'ronalmaferreira04@icloud.com',
+        'sumodemanga50@gmail.com',
+        'm26101342@gmail.com'
+      ];
+      if (user.email && adminEmails.includes(user.email.toLowerCase())) {
+        setView('admin');
+      } else {
+        alert(`Olá ${user.displayName || user.email}, você está conectado com uma conta que não possui permissão de administrador.`);
+      }
+    }
+  };
   const [activeStep, setActiveStep] = useState(0);
   const [resumeData, setResumeData] = useState<ResumeData>(() => {
     try {
@@ -3861,6 +4032,7 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
 
   // Presence & Visitor Tracking
   useEffect(() => {
+    if (!db) return;
     const trackVisitor = async () => {
       try {
         const trackingId = localStorage.getItem('cv_lab_visitor_id') || `visitor_${Math.random().toString(36).substring(2, 11)}`;
@@ -3920,7 +4092,7 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
 
   // Firebase Order Listener
   useEffect(() => {
-    if (!currentOrderId) return;
+    if (!currentOrderId || !db) return;
     const unsubscribe = onSnapshot(doc(db, 'orders', currentOrderId), (docSnap) => {
         if (docSnap.exists()) {
             const status = docSnap.data().status;
@@ -4110,6 +4282,10 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
   };
 
   const createOrder = async () => {
+    if (!db) {
+        alert("O serviço de banco de dados não está configurado. Por favor, configure o Firebase.");
+        return;
+    }
     if (!user || user.isAnonymous) {
         setShowAuthModal(true);
         return;
@@ -4447,7 +4623,7 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
       <div className="min-h-screen hero-gradient flex flex-col">
         <nav className="h-24 px-6 md:px-12 flex items-center justify-between glass sticky top-0 z-50">
           <div className="flex-1">
-            <div className="cursor-pointer inline-block" onClick={() => setView('landing')}>
+            <div className="cursor-pointer inline-block" onClick={handleLogoClick}>
               <img 
                 src="https://i.supaimg.com/6bc04951-8cbe-4706-9f0c-a01f9ea9a6c4/f7862e8c-46f6-4d82-a9e0-b9cb52c6fc4f.png" 
                 alt="CV LAB" 
@@ -4556,7 +4732,7 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
                 CV + Carta que <span className="text-primary-blue italic">abre portas.</span>
               </h1>
               <p className="text-xl text-text-muted leading-relaxed font-medium max-w-lg">
-                O seu combo profissional completo (Currículo + Carta de Apresentação) por apenas <span className="text-deep-blue font-black underline decoration-primary-blue/30">1.150 Kzs</span>. 
+                O seu combo profissional completo (Currículo + Carta de Apresentação) por apenas <span className="text-deep-blue font-black underline decoration-primary-blue/30">{cvPrice.toLocaleString()} Kzs</span>. 
                 Design premium e tecnologia validada por recrutadores.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 pt-4">
@@ -4791,7 +4967,7 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
       <div className="min-h-screen hero-gradient flex flex-col">
         <nav className="h-24 px-6 md:px-12 flex items-center justify-between glass sticky top-0 z-50">
           <div className="flex-1">
-            <button onClick={() => setView('landing')} className="flex items-center">
+            <button onClick={handleLogoClick} className="flex items-center">
               <img 
                 src="https://i.supaimg.com/6bc04951-8cbe-4706-9f0c-a01f9ea9a6c4/f7862e8c-46f6-4d82-a9e0-b9cb52c6fc4f.png" 
                 alt="CV LAB" 
@@ -4850,7 +5026,7 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
 
           {view === 'profile' && <ProfilePage user={user} isAdmin={isAdmin} setView={setView} onLogout={logOut} />}
 
-          {view === 'admin' && <AdminPanel />}
+          {view === 'admin' && <AdminPanel setView={setView} />}
 
           {view === 'tips' && (
             <div className="space-y-12">
@@ -4964,7 +5140,7 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
                   },
                   {
                     q: "Quanto custa o serviço?",
-                    a: "A criação e o download do combo completo (Currículo Profissional + Carta de Apresentação) têm o custo único de 1.150 Kzs. Este valor inclui a otimização de texto, templates premium e suporte para activação via WhatsApp."
+                    a: `A criação e o download do combo completo (Currículo Profissional + Carta de Apresentação) têm o custo único de ${cvPrice.toLocaleString()} Kzs. Este valor inclui a otimização de texto, templates premium e suporte para activação via WhatsApp.`
                   },
                   {
                     q: "Meus dados estão seguros?",
@@ -5099,8 +5275,8 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
                  <CreditCard size={32} />
                </div>
                
-               <h2 className="text-2xl font-black text-deep-blue text-center mb-2 tracking-tight">Combo (CV + Carta): 1.150 Kzs</h2>
-               <p className="text-sm text-text-muted text-center mb-6 font-medium">O pagamento único de 1.150 Kzs libera tanto o seu Currículo quanto a sua Carta de Apresentação simultaneamente.</p>
+               <h2 className="text-2xl font-black text-deep-blue text-center mb-2 tracking-tight">Combo (CV + Carta): {cvPrice.toLocaleString()} Kzs</h2>
+               <p className="text-sm text-text-muted text-center mb-6 font-medium">O pagamento único de {cvPrice.toLocaleString()} Kzs libera tanto o seu Currículo quanto a sua Carta de Apresentação simultaneamente.</p>
 
                 {orderStatus === 'pending' ? (
                   <div className="text-center space-y-6">
@@ -5289,6 +5465,85 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
         )}
       </AnimatePresence>
 
+      {/* Access Restriction Alert Modal */}
+      <AnimatePresence>
+        {showAuthModalAlert && (
+          <div className="fixed inset-0 bg-deep-blue/80 backdrop-blur-md z-[99999] flex items-center justify-center p-4">
+            <motion.div 
+               initial={{ opacity: 0, scale: 0.9, y: 20 }}
+               animate={{ opacity: 1, scale: 1, y: 0 }}
+               exit={{ opacity: 0, scale: 0.9, y: 20 }}
+               className="bg-white rounded-[40px] shadow-2xl p-10 max-w-md w-full relative overflow-hidden text-center space-y-6 border border-slate-100"
+            >
+               <button onClick={() => setShowAuthModalAlert(false)} className="absolute top-6 right-6 text-gray-400 hover:text-gray-600 bg-gray-50 rounded-full p-2">
+                 <X size={20} />
+               </button>
+               
+               <div className="w-20 h-20 bg-red-50 text-red-500 flex items-center justify-center rounded-[2rem] mx-auto shadow-inner">
+                 <Shield size={40} className="animate-pulse" />
+               </div>
+               
+               <div className="space-y-2">
+                 <h2 className="text-2xl font-black text-deep-blue tracking-tight">🔒 Acesso Exclusivo</h2>
+                 <p className="text-xs text-text-muted font-medium leading-relaxed max-w-sm mx-auto">
+                   O CV LAB agora opera como uma solução privada e exclusiva para membros autorizados da nossa equipa.
+                 </p>
+               </div>
+
+               <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 text-left space-y-1">
+                 <span className="text-[10px] uppercase font-black tracking-wider text-amber-800">Status de Ligação:</span>
+                 {user && !user.isAnonymous ? (
+                   <p className="text-xs font-semibold text-amber-900">
+                     Sua conta atual (<strong className="underline">{user.email}</strong>) não possui permissão para aceder ao editor ou ferramentas.
+                   </p>
+                 ) : (
+                   <p className="text-xs font-semibold text-amber-900">
+                     Você está navegando como Convidado. O site opera apenas como vitrina oficial.
+                   </p>
+                 )}
+               </div>
+               
+               <div className="space-y-3">
+                 <Button 
+                   className="w-full h-14 bg-gradient-to-r from-primary-blue to-blue-700 text-white hover:from-blue-700 hover:to-blue-800 font-bold rounded-2xl text-xs uppercase tracking-widest shadow-lg shadow-blue-500/20"
+                   onClick={async () => {
+                     try {
+                       await loginWithGoogle();
+                       // Check if the newly logged in user is admin
+                       const adminEmails = [
+                         'ronalmaferreira04@icloud.com',
+                         'sumodemanga50@gmail.com',
+                         'm26101342@gmail.com'
+                       ];
+                       const u = auth?.currentUser;
+                       if (u && u.email && adminEmails.includes(u.email.toLowerCase())) {
+                         setShowAuthModalAlert(false);
+                         _setView('editor');
+                       }
+                     } catch(ecc) {
+                       console.error(ecc);
+                     }
+                   }}
+                 >
+                   Fazer Login como Membro
+                 </Button>
+                 
+                 <button 
+                   onClick={() => setShowAuthModalAlert(false)}
+                   className="text-xs font-black text-text-muted hover:text-deep-blue uppercase tracking-widest pt-2 block mx-auto transition-colors"
+                 >
+                   Voltar à Vitrina
+                 </button>
+               </div>
+
+               <div className="pt-4 border-t border-gray-100 flex items-center justify-center gap-2 text-gray-400">
+                 <span className="text-[8px] font-black uppercase tracking-widest">© 2026 CV LAB ANGOLA • LAB DIGITAL</span>
+               </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
       {/* Sidebar Editor */}
       <aside className={`w-full max-w-3xl mx-auto md:max-w-none md:mx-0 md:w-[380px] lg:w-[460px] xl:w-[540px] bg-white border-r border-border-main flex flex-col shadow-2xl z-30 print:hidden shrink-0 ${showPreviewModal ? 'hidden' : 'flex'}`}>
         <header className="p-4 border-b border-border-main flex items-center justify-between sticky top-0 bg-white z-40 shadow-sm">
@@ -5306,8 +5561,7 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
           <div className="flex items-center gap-2">
             <div className="px-3 py-1 bg-soft-blue text-primary-blue text-[9px] font-black rounded-full hidden md:block">PASSO {activeStep + 1}/6</div>
             <Button variant="outline" className="h-9 px-4 text-xs font-bold md:hidden" onClick={() => setShowPreviewModal(true)} icon={ExternalLink}>Ver currículo</Button>
-            <Button variant="secondary" className="h-9 px-4 text-xs font-bold hidden sm:flex !border-gray-200" onClick={handlePrint} icon={Printer}>Imprimir</Button>
-            <Button className="h-9 px-4 text-xs font-bold hidden sm:flex" onClick={handleDownloadPdf} disabled={isDownloading} icon={Download}>{isDownloading ? 'Baixando...' : 'Baixar'}</Button>
+            <Button className="h-9 px-4 text-xs font-bold flex bg-primary-blue text-white hover:bg-[#0052cc] rounded-full shadow-md" onClick={handlePrint} icon={Printer}>Imprimir</Button>
           </div>
         </header>
 
@@ -5859,12 +6113,25 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
                       <p className="text-sm opacity-80 font-medium text-balance">O seu combo profissional (CV + Carta) está pronto para ser enviado.</p>
                       
                       <Button variant="outline" className="w-full text-white border-white hover:bg-white/10" onClick={() => { setIsCoverLetterMode(false); setShowPreviewModal(true); }} icon={ExternalLink}>Ver currículo</Button>
-                      <Button className="w-full bg-deep-blue text-white hover:bg-deep-blue/90 border-0" onClick={handleDownloadPdf} disabled={isDownloading} icon={Download}>
-                        {isDownloading ? "Preparando o seu Currículo..." : "Baixar Currículo em PDF"}
-                      </Button>
-                      <Button variant="outline" className="w-full text-white border-white/40 hover:bg-white/10 h-11" onClick={() => { setIsCoverLetterMode(false); setTimeout(handlePrint, 100); }} icon={Printer}>
+                      <Button className="w-full bg-white text-primary-blue hover:bg-white/90 h-12 text-sm font-black rounded-xl shadow-lg border-0" onClick={() => { setIsCoverLetterMode(false); setTimeout(handlePrint, 100); }} icon={Printer}>
                         Imprimir Currículo
                       </Button>
+
+                      {/* Real CV Counting Switch Box */}
+                      <div className="pt-2">
+                        <label className="flex items-center gap-3.5 p-4 rounded-2xl bg-white/10 border border-white/15 cursor-pointer hover:bg-white/20 transition-all">
+                          <input 
+                            type="checkbox" 
+                            checked={isCountedAsReal} 
+                            onChange={(e) => handleToggleRealCVCount(e.target.checked)} 
+                            className="w-5 h-5 accent-emerald-500 rounded border-gray-300 focus:ring-emerald-500 cursor-pointer text-emerald-500 bg-white"
+                          />
+                          <div className="text-left">
+                            <span className="block text-xs font-black text-white uppercase tracking-wider">Contabilizar CV Realizado</span>
+                            <span className="block text-[10px] text-white/70 leading-normal">Marque para registar esta venda de {cvPrice.toLocaleString()} Kzs e atualizar o painel de faturamento em tempo real.</span>
+                          </div>
+                        </label>
+                      </div>
                    </div>
 
                    <div className="p-8 bg-white border-2 border-dashed border-primary-blue/30 rounded-3xl text-center space-y-4 overflow-hidden relative">
@@ -5886,10 +6153,10 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
                              <Button className="w-full bg-white text-primary-blue border border-primary-blue hover:bg-primary-blue/5" onClick={() => { setIsCoverLetterMode(true); setShowPreviewModal(true); }}>
                                Visualizar Carta
                               </Button>
-                              <Button className="w-full bg-white text-gray-700 border border-gray-200 hover:bg-gray-50 hover:text-gray-900" onClick={() => { setIsCoverLetterMode(true); setTimeout(handlePrint, 100); }} icon={Printer}>
+                              <Button className="w-full bg-primary-blue text-white hover:bg-[#0052cc] h-12 text-sm font-black rounded-xl" onClick={() => { setIsCoverLetterMode(true); setTimeout(handlePrint, 100); }} icon={Printer}>
                                 Imprimir Carta
                              </Button>
-                             <Button className="w-full bg-primary-blue text-white hover:bg-primary-blue/90" onClick={() => { setIsCoverLetterMode(true); setTimeout(handleDownloadPdf, 100); }} disabled={isDownloading} icon={Download}>
+                             <Button className="w-full hidden" onClick={() => {}} disabled={isDownloading} icon={Download}>
                                {isDownloading ? "Gerando PDF..." : "Baixar Carta em PDF"}
                              </Button>
                           </motion.div>
@@ -5963,307 +6230,6 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
              <button onClick={() => setShowPreviewModal(false)} className="flex items-center gap-2 text-xs font-bold text-text-muted hover:text-text-main transition-colors">
                <X size={16}/> <span>Sair da Pré-visualização</span>
              </button>
-          </div>
-        )}
-
-        {/* Painel Flutuante de Controles Visuais e Organização de Grelha */}
-        {!isCoverLetterMode && (
-          <div className="w-full max-w-[794px] mb-6 p-4 bg-white/95 backdrop-blur-md rounded-3xl border border-gray-200/80 shadow-[0_10px_30px_-10px_rgba(0,0,0,0.08)] print:hidden space-y-4">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-gray-100 pb-3">
-               <div className="flex items-center gap-2.5">
-                 <div className="p-2 bg-primary-blue/10 rounded-2xl text-primary-blue">
-                    <Sparkles size={18} />
-                 </div>
-                 <div>
-                    <h4 className="text-xs font-black uppercase tracking-wider text-deep-blue">Ajustes Visuais & Alinhamento Automático</h4>
-                    <p className="text-[10px] text-text-muted font-bold uppercase tracking-tight opacity-75">Mova elementos, altere tamanhos e ordene</p>
-                 </div>
-               </div>
-               <div className="flex flex-wrap gap-1.5 self-stretch sm:self-auto">
-                  <button 
-                     onClick={() => setActiveVisualTab('sizes')} 
-                     className={`px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all ${activeVisualTab === 'sizes' ? 'bg-primary-blue text-white shadow-sm scale-105' : 'bg-gray-100/80 hover:bg-gray-200/60 text-text-muted'}`}
-                  >
-                     Tamanhos
-                  </button>
-                  <button 
-                     onClick={() => setActiveVisualTab('reorder')} 
-                     className={`px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all ${activeVisualTab === 'reorder' ? 'bg-primary-blue text-white shadow-sm scale-105' : 'bg-gray-100/80 hover:bg-gray-200/60 text-text-muted'}`}
-                  >
-                     Mover Itens
-                  </button>
-                  <button 
-                     onClick={() => setActiveVisualTab('alignment')} 
-                     className={`px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all ${activeVisualTab === 'alignment' ? 'bg-primary-blue text-white shadow-sm scale-105' : 'bg-gray-100/80 hover:bg-gray-200/60 text-text-muted'}`}
-                  >
-                     Alinhamentos
-                  </button>
-               </div>
-            </div>
-
-            {activeVisualTab === 'sizes' && (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-xs font-bold text-gray-700">
-                 {/* Letra Geral */}
-                 <div className="space-y-1.5">
-                   <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-wider text-gray-500">
-                      <span>Letra Geral</span>
-                      <span>{resumeData.styleConfig?.fontSize !== undefined ? resumeData.styleConfig.fontSize : 13}px</span>
-                   </div>
-                   <div className="flex items-center gap-2">
-                      <button 
-                        onClick={() => setResumeData(p => {
-                          const s = p.styleConfig || { fontSize: 13 };
-                          return { ...p, styleConfig: { ...s, fontSize: Math.max(10, (s.fontSize || 13) - 1) } };
-                        })}
-                        className="w-8 h-8 rounded-xl bg-gray-100 hover:bg-gray-200 flex items-center justify-center font-bold text-lg active:scale-95 transition-all text-gray-700 select-none"
-                      >-</button>
-                      <input 
-                        type="range" min="10" max="18" 
-                        value={resumeData.styleConfig?.fontSize !== undefined ? resumeData.styleConfig.fontSize : 13} 
-                        onChange={(e) => setResumeData(p => ({ ...p, styleConfig: { ...(p.styleConfig || {}), fontSize: parseInt(e.target.value) } }))}
-                        className="flex-1 accent-primary-blue h-1 bg-gray-200 rounded-lg appearance-none cursor-pointer"
-                      />
-                      <button 
-                        onClick={() => setResumeData(p => {
-                          const s = p.styleConfig || { fontSize: 13 };
-                          return { ...p, styleConfig: { ...s, fontSize: Math.min(18, (s.fontSize || 13) + 1) } };
-                        })}
-                        className="w-8 h-8 rounded-xl bg-gray-100 hover:bg-gray-200 flex items-center justify-center font-bold text-lg active:scale-95 transition-all text-gray-700 select-none"
-                      >+</button>
-                   </div>
-                 </div>
-
-                 {/* Tamanho do Nome */}
-                 <div className="space-y-1.5">
-                   <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-wider text-gray-500">
-                      <span>Nome Principal</span>
-                      <span>{resumeData.styleConfig?.titleSize !== undefined ? resumeData.styleConfig.titleSize : 26}px</span>
-                   </div>
-                   <div className="flex items-center gap-2">
-                      <button 
-                        onClick={() => setResumeData(p => {
-                          const s = p.styleConfig || { titleSize: 26 };
-                          return { ...p, styleConfig: { ...s, titleSize: Math.max(16, (s.titleSize || 26) - 2) } };
-                        })}
-                        className="w-8 h-8 rounded-xl bg-gray-100 hover:bg-gray-200 flex items-center justify-center font-bold text-lg active:scale-95 transition-all text-gray-700 select-none"
-                      >-</button>
-                      <input 
-                        type="range" min="16" max="48" 
-                        value={resumeData.styleConfig?.titleSize !== undefined ? resumeData.styleConfig.titleSize : 26} 
-                        onChange={(e) => setResumeData(p => ({ ...p, styleConfig: { ...(p.styleConfig || {}), titleSize: parseInt(e.target.value) } }))}
-                        className="flex-1 accent-primary-blue h-1 bg-gray-200 rounded-lg appearance-none cursor-pointer"
-                      />
-                      <button 
-                        onClick={() => setResumeData(p => {
-                          const s = p.styleConfig || { titleSize: 26 };
-                          return { ...p, styleConfig: { ...s, titleSize: Math.min(48, (s.titleSize || 26) + 2) } };
-                        })}
-                        className="w-8 h-8 rounded-xl bg-gray-100 hover:bg-gray-200 flex items-center justify-center font-bold text-lg active:scale-95 transition-all text-gray-700 select-none"
-                      >+</button>
-                   </div>
-                 </div>
-
-                 {/* Margens do Documento */}
-                 <div className="space-y-1.5">
-                   <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-wider text-gray-500">
-                      <span>Margens Fora</span>
-                      <span>{resumeData.styleConfig?.margins !== undefined ? resumeData.styleConfig.margins : 30}px</span>
-                   </div>
-                   <div className="flex items-center gap-2">
-                      <button 
-                        onClick={() => setResumeData(p => {
-                          const s = p.styleConfig || { margins: 30 };
-                          return { ...p, styleConfig: { ...s, margins: Math.max(10, (s.margins || 30) - 2) } };
-                        })}
-                        className="w-8 h-8 rounded-xl bg-gray-100 hover:bg-gray-200 flex items-center justify-center font-bold text-lg active:scale-95 transition-all text-gray-700 select-none"
-                      >-</button>
-                      <input 
-                        type="range" min="10" max="60" 
-                        value={resumeData.styleConfig?.margins !== undefined ? resumeData.styleConfig.margins : 30} 
-                        onChange={(e) => setResumeData(p => ({ ...p, styleConfig: { ...(p.styleConfig || {}), margins: parseInt(e.target.value) } }))}
-                        className="flex-1 accent-primary-blue h-1 bg-gray-200 rounded-lg appearance-none cursor-pointer"
-                      />
-                      <button 
-                        onClick={() => setResumeData(p => {
-                          const s = p.styleConfig || { margins: 30 };
-                          return { ...p, styleConfig: { ...s, margins: Math.min(60, (s.margins || 30) + 2) } };
-                        })}
-                        className="w-8 h-8 rounded-xl bg-gray-100 hover:bg-gray-200 flex items-center justify-center font-bold text-lg active:scale-95 transition-all text-gray-700 select-none"
-                      >+</button>
-                   </div>
-                 </div>
-
-                 {/* Espaçamento de Itens */}
-                 <div className="space-y-1.5">
-                   <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-wider text-gray-500">
-                      <span>Espaço entre Itens</span>
-                      <span>{resumeData.styleConfig?.itemSpacing !== undefined ? resumeData.styleConfig.itemSpacing : 10}px</span>
-                   </div>
-                   <div className="flex items-center gap-2">
-                      <button 
-                        onClick={() => setResumeData(p => {
-                          const s = p.styleConfig || { itemSpacing: 10 };
-                          return { ...p, styleConfig: { ...s, itemSpacing: Math.max(4, (s.itemSpacing || 10) - 2) } };
-                        })}
-                        className="w-8 h-8 rounded-xl bg-gray-100 hover:bg-gray-200 flex items-center justify-center font-bold text-lg active:scale-95 transition-all text-gray-700 select-none"
-                      >-</button>
-                      <input 
-                        type="range" min="4" max="25" 
-                        value={resumeData.styleConfig?.itemSpacing !== undefined ? resumeData.styleConfig.itemSpacing : 10} 
-                        onChange={(e) => setResumeData(p => ({ ...p, styleConfig: { ...(p.styleConfig || {}), itemSpacing: parseInt(e.target.value) } }))}
-                        className="flex-1 accent-primary-blue h-1 bg-gray-200 rounded-lg appearance-none cursor-pointer"
-                      />
-                      <button 
-                        onClick={() => setResumeData(p => {
-                          const s = p.styleConfig || { itemSpacing: 10 };
-                          return { ...p, styleConfig: { ...s, itemSpacing: Math.min(25, (s.itemSpacing || 10) + 2) } };
-                        })}
-                        className="w-8 h-8 rounded-xl bg-gray-100 hover:bg-gray-200 flex items-center justify-center font-bold text-lg active:scale-95 transition-all text-gray-700 select-none"
-                      >+</button>
-                   </div>
-                 </div>
-              </div>
-            )}
-
-            {activeVisualTab === 'reorder' && (
-              <div className="space-y-3.5 text-xs">
-                 {resumeData.experience.length === 0 && resumeData.education.length === 0 && (
-                   <div className="p-3 text-center text-text-muted font-bold bg-gray-50 rounded-2xl border border-dashed border-gray-200/80">
-                      Nenhuma experiência profissional ou formação registada para mover. Adicione-as nos passos à esquerda!
-                   </div>
-                 )}
-                 
-                 {resumeData.experience.length > 0 && (
-                   <div className="space-y-1.5">
-                     <span className="text-[10px] font-black uppercase text-gray-400 tracking-wider">Histórico de Trabalho (Reordenar na Preview)</span>
-                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                        {resumeData.experience.map((exp, idx) => (
-                          <div key={exp.id || `exp-order-${idx}`} className="flex items-center justify-between p-2 rounded-2xl bg-gray-50 border border-gray-100/50">
-                             <div className="truncate pr-2 select-none">
-                                <div className="font-bold text-text-main text-xs truncate">{exp.position || "Sem Cargo"}</div>
-                                <div className="text-[10px] text-text-muted truncate mt-0.5">{exp.company || "Sem Empresa"}</div>
-                             </div>
-                             <div className="flex gap-1 shrink-0">
-                                <button 
-                                  disabled={idx === 0} 
-                                  onClick={() => moveExperience(idx, 'up')}
-                                  className="w-6 h-6 rounded-lg bg-white shadow-sm border border-gray-200 flex items-center justify-center cursor-pointer hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed text-xs text-gray-600 font-bold active:scale-95 transition-all"
-                                  title="Subir"
-                                >▲</button>
-                                <button 
-                                  disabled={idx === resumeData.experience.length - 1} 
-                                  onClick={() => moveExperience(idx, 'down')}
-                                  className="w-6 h-6 rounded-lg bg-white shadow-sm border border-gray-200 flex items-center justify-center cursor-pointer hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed text-xs text-gray-600 font-bold active:scale-95 transition-all"
-                                  title="Descer"
-                                >▼</button>
-                             </div>
-                          </div>
-                        ))}
-                     </div>
-                   </div>
-                 )}
-
-                 {resumeData.education.length > 0 && (
-                   <div className="space-y-1.5 mt-2">
-                     <span className="text-[10px] font-black uppercase text-gray-400 tracking-wider">Formação Académica (Reordenar na Preview)</span>
-                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                        {resumeData.education.map((edu, idx) => (
-                          <div key={edu.id || `edu-order-${idx}`} className="flex items-center justify-between p-2 rounded-2xl bg-gray-50 border border-gray-100/50">
-                             <div className="truncate pr-2 select-none">
-                                <div className="font-bold text-text-main text-xs truncate">{edu.degree || "Sem Grau"}</div>
-                                <div className="text-[10px] text-text-muted truncate mt-0.5">{edu.institution || "Sem Instituição"}</div>
-                             </div>
-                             <div className="flex gap-1 shrink-0">
-                                <button 
-                                  disabled={idx === 0} 
-                                  onClick={() => moveEducation(idx, 'up')}
-                                  className="w-6 h-6 rounded-lg bg-white shadow-sm border border-gray-200 flex items-center justify-center cursor-pointer hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed text-xs text-gray-600 font-bold active:scale-95 transition-all"
-                                  title="Subir"
-                                >▲</button>
-                                <button 
-                                  disabled={idx === resumeData.education.length - 1} 
-                                  onClick={() => moveEducation(idx, 'down')}
-                                  className="w-6 h-6 rounded-lg bg-white shadow-sm border border-gray-200 flex items-center justify-center cursor-pointer hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed text-xs text-gray-600 font-bold active:scale-95 transition-all"
-                                  title="Descer"
-                                >▼</button>
-                             </div>
-                          </div>
-                        ))}
-                     </div>
-                   </div>
-                 )}
-              </div>
-            )}
-
-            {activeVisualTab === 'alignment' && (
-              <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 text-xs">
-                 <div className="space-y-1 max-w-md">
-                    <div className="font-black text-xs text-deep-blue flex items-center gap-1.5">
-                       <span>Alinhamentos & Grelhas de Régua</span>
-                       {showAlignGuides && <span className="px-1.5 py-0.5 text-[8px] font-black tracking-wider uppercase text-emerald-600 bg-emerald-50 border border-emerald-200 rounded">Régua Ativa</span>}
-                    </div>
-                    <p className="text-[10px] text-text-muted leading-relaxed font-semibold">Temos um assistente inovador. O <b>Auto-Alinhador</b> avalia toda a informação inserida e calibra a grelha para caber precisamente numa página.</p>
-                 </div>
-                 <div className="flex flex-wrap gap-2 shrink-0 items-center">
-                    <span className="text-[10px] px-3 py-1.5 bg-soft-blue text-primary-blue rounded-full font-black uppercase tracking-wider select-none border border-primary-blue/10">
-                       Status: {resumeData.experience.length + resumeData.education.length > 5 ? "Densa (Comprimindo)" : "Excelente (Espaçada)"}
-                    </span>
-
-                    <button 
-                       onClick={() => setShowAlignGuides(p => !p)} 
-                       className={`px-4 py-2 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all border flex items-center gap-1.5 cursor-pointer ${showAlignGuides ? 'bg-indigo-50 border-indigo-200 text-indigo-700 shadow-sm font-bold' : 'bg-white border-gray-200 hover:bg-gray-50 text-gray-700 font-bold'}`}
-                    >
-                       <span>📏 {showAlignGuides ? "Esconder Régua" : "Mostrar Régua"}</span>
-                    </button>
-
-                    <button 
-                       onClick={handleAutoAlign} 
-                       className="px-4 py-2 rounded-2xl text-[10px] font-black uppercase tracking-widest bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg active:scale-95 transition-all flex items-center gap-1 cursor-pointer font-bold"
-                       title="Formata automaticamente o documento para caber em 1 página perfeitamente"
-                    >
-                       <span>✨ Alinhamento Auto</span>
-                    </button>
-                 </div>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Real-time A4 Page Height & Overflow Controller */}
-        {!isCoverLetterMode && (
-          <div className="w-full max-w-[794px] mb-4 print:hidden">
-            {resumeHeight > 1124 ? (
-              <div className="bg-rose-50 border border-rose-200 rounded-2xl p-4 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4 shadow-md">
-                <div className="flex items-start gap-3">
-                  <div className="bg-rose-500 text-white p-2 rounded-xl shrink-0 mt-0.5 shadow-sm">
-                    <AlertTriangle size={16} />
-                  </div>
-                  <div>
-                    <h5 className="text-[11px] font-black uppercase text-rose-800 tracking-wider">Atenção: Currículo Excede 1 folha A4!</h5>
-                    <p className="text-[10px] text-rose-700 font-semibold leading-relaxed mt-0.5">
-                      O conteúdo atual está {Math.round(resumeHeight - 1122)}px maior do que o limite duma folha A4 normal. O que passar da linha pontilhada vermelha não sairá na versão impressa ou PDF final.
-                    </p>
-                  </div>
-                </div>
-                <button 
-                  onClick={handleAutoAlign} 
-                  className="w-full md:w-auto px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-[10px] font-black uppercase tracking-wider flex items-center justify-center gap-1.5 shadow-lg active:scale-95 transition-all cursor-pointer whitespace-nowrap"
-                >
-                  <Sparkles size={12} /> Auto-Ajustar para 1 Página
-                </button>
-              </div>
-            ) : (
-              <div className="bg-emerald-50/80 border border-emerald-100/60 rounded-2xl p-3 flex items-center justify-between shadow-sm font-sans">
-                <div className="flex items-center gap-2">
-                  <span className="text-emerald-500 text-sm">✔️</span>
-                  <div>
-                    <span className="text-[10px] font-black uppercase text-emerald-800 tracking-wider">Tamanho Perfeito p/ 1 Página!</span>
-                    <p className="text-[9px] text-emerald-700/90 font-medium">O seu currículo cabe inteiramente em uma única folha A4 (Atual: {resumeHeight}px / Máximo A4: 1122px).</p>
-                  </div>
-                </div>
-                <span className="text-[8px] font-mono font-black text-emerald-700 uppercase bg-emerald-100/80 px-2 py-0.5 rounded-lg border border-emerald-200/50 tracking-wider">A4 OK</span>
-              </div>
-            )}
           </div>
         )}
 
