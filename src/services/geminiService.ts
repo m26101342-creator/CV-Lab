@@ -424,3 +424,33 @@ export async function translateResumeToEnglish(resumeData: any): Promise<any> {
     throw new Error("Formatação/Tradução falhou no Gemini");
   }
 }
+
+export async function translateLetterToEnglish(text: string): Promise<string> {
+  if (!text || text.trim().length === 0) return "";
+  const cacheKey = `letter_en_${generateHash(text)}`;
+  const cachedVal = getLocalCache("translate_letter_en", cacheKey);
+  if (cachedVal) return cachedVal;
+
+  const prompt = `
+    Você é um tradutor especialista de cartas de apresentação empresariais de Português para Inglês Profissional (US).
+    Traduza o texto abaixo mantendo o mesmo tom formal, polido e profissional.
+    
+    TEXTO ORIGINAL:
+    "${text}"
+
+    INSTRUÇÕES:
+    1. Retorne APENAS o texto traduzido final, sem explicações, comentários adicionais ou notas de tradutor.
+    2. Não inclua marcas de formatação extras.
+  `;
+
+  try {
+    const rawText = await generateContentDirect([{ role: 'user', parts: [{ text: prompt }] }], false, 0.3);
+    const result = rawText.trim().replace(/\*/g, '');
+    setLocalCache("translate_letter_en", cacheKey, result);
+    return result;
+  } catch (err) {
+    console.error("Letter translation failed:", err);
+    return text; // Fallback to original
+  }
+}
+

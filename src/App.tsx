@@ -46,7 +46,7 @@ import {
 } from 'lucide-react';
 import { AdSenseUnit } from './components/AdSenseUnit';
 import { ResumeData, INITIAL_RESUME_DATA, TemplateType } from './types.ts';
-import { optimizeResumeText, generateCoverLetter, generateFullResume, parseResumeFromText, translateResumeToEnglish } from './services/geminiService.ts';
+import { optimizeResumeText, generateCoverLetter, generateFullResume, parseResumeFromText, translateResumeToEnglish, translateLetterToEnglish } from './services/geminiService.ts';
 import { pdf } from '@react-pdf/renderer';
 import { PdfDocument } from './pdf/PdfDocument';
 import * as pdfjsLib from 'pdfjs-dist';
@@ -4025,6 +4025,17 @@ export default function App() {
     }
   };
   const [activeStep, setActiveStep] = useState(0);
+  const [originalResumeData, setOriginalResumeData] = useState<ResumeData | null>(() => {
+    try {
+      const saved = localStorage.getItem('cv_lab_original_data');
+      return saved ? JSON.parse(saved) : null;
+    } catch (e) {
+      return null;
+    }
+  });
+  const [originalLetter, setOriginalLetter] = useState<string | null>(() => {
+    return localStorage.getItem('cv_lab_original_letter') || null;
+  });
   const [resumeData, setResumeData] = useState<ResumeData>(() => {
     try {
       const saved = localStorage.getItem('cv_lab_data');
@@ -4850,10 +4861,32 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
 
     setIsTranslating(true);
     setLoading(true);
+
+    // Guardar cópia de segurança antes de traduzir
+    const backupResume = { ...resumeData };
+    const backupLetter = generatedLetter;
+    setOriginalResumeData(backupResume);
+    setOriginalLetter(backupLetter);
+    localStorage.setItem('cv_lab_original_data', JSON.stringify(backupResume));
+    localStorage.setItem('cv_lab_original_letter', backupLetter);
+
     try {
       const translatedData = await translateResumeToEnglish(resumeData);
       setResumeData(translatedData);
-      alert("O seu currículo foi traduzido com sucesso para a versão Inglesa!");
+      localStorage.setItem('cv_lab_data', JSON.stringify(translatedData));
+
+      // Se houver uma carta gerada, traduzi-la também para Inglês
+      if (backupLetter && backupLetter.trim().length > 10) {
+        try {
+          const translatedLetter = await translateLetterToEnglish(backupLetter);
+          setGeneratedLetter(translatedLetter);
+          localStorage.setItem('cv_lab_letter', translatedLetter);
+        } catch (letterErr) {
+          console.warn("Falha ao traduzir a carta de apresentação:", letterErr);
+        }
+      }
+
+      alert("O seu currículo (e carta de apresentação) foram traduzidos com sucesso para a versão Inglesa!");
     } catch (error: any) {
       console.error(error);
       alert("Houve um erro técnico ao traduzir o currículo. Verifique se a sua chave API do Gemini está configurada.");
@@ -4862,6 +4895,33 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
       setLoading(false);
     }
   };
+
+  const handleRevertToOriginal = () => {
+    if (!originalResumeData) {
+      alert("Não foi detetada nenhuma versão original guardada.");
+      return;
+    }
+
+    const confirmRevert = window.confirm("Deseja reverter o currículo e a carta de apresentação para a versão original em Português?");
+    if (!confirmRevert) return;
+
+    setResumeData(originalResumeData);
+    localStorage.setItem('cv_lab_data', JSON.stringify(originalResumeData));
+
+    if (originalLetter) {
+      setGeneratedLetter(originalLetter);
+      localStorage.setItem('cv_lab_letter', originalLetter);
+    }
+
+    // Limpar backups após reverter com sucesso
+    setOriginalResumeData(null);
+    setOriginalLetter(null);
+    localStorage.removeItem('cv_lab_original_data');
+    localStorage.removeItem('cv_lab_original_letter');
+
+    alert("Revertido com sucesso para a versão original em Português!");
+  };
+
 
   const handleClearResumeData = () => {
     const confirmClear = window.confirm("Deseja mesmo eliminar/limpar todos os dados inseridos no currículo? Esta ação é irreversível!");
@@ -5874,6 +5934,16 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
                 </div>
                 
                 <div className="flex gap-2">
+                  {originalResumeData && (
+                    <button
+                      onClick={handleRevertToOriginal}
+                      title="Voltar à Versão Original em Português"
+                      className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-bold rounded-xl text-xs transition-all border border-emerald-100/30 select-none shadow-sm cursor-pointer"
+                    >
+                      <RotateCcw size={14} />
+                      <span>Versão Portuguesa (PT)</span>
+                    </button>
+                  )}
                   <button
                     onClick={handleTranslateToEnglish}
                     disabled={isTranslating}
