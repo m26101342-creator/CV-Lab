@@ -602,14 +602,21 @@ const CoverLetterRenderer = React.memo(({ content, personalInfo, themeColor, onC
          
          <div className="flex-1 w-full relative">
             {onChangeContent ? (
-               <textarea
-                 className="absolute inset-0 w-full h-full text-justify text-[14px] leading-[2.1] text-gray-700 font-medium px-4 bg-transparent outline-none resize-none scrollbar-hide"
-                 value={content ? content.replace(/\*/g, '') : ''}
-                 onChange={(e) => onChangeContent(e.target.value)}
-                 spellCheck="false"
-               />
+               <>
+                 {/* Textarea para editing interativo no ecrã (oculto na impressão) */}
+                 <textarea
+                   className="absolute inset-0 w-full h-full text-justify text-[14px] leading-[2.1] text-gray-800 font-medium px-4 bg-transparent outline-none resize-none scrollbar-hide print:hidden"
+                   value={content ? content.replace(/\*/g, '') : ''}
+                   onChange={(e) => onChangeContent(e.target.value)}
+                   spellCheck="false"
+                 />
+                 {/* Div idêntica focada em renderizar o texto com nitidez extrema e cor sólida ao imprimir */}
+                 <div className="text-justify whitespace-pre-line text-[14px] leading-[2.1] text-gray-900 font-medium px-4 hidden print:block">
+                    {content ? content.replace(/\*/g, '') : ''}
+                 </div>
+               </>
             ) : (
-               <div className="text-justify whitespace-pre-line text-[14px] leading-[2.1] text-gray-700 font-medium px-4">
+               <div className="text-justify whitespace-pre-line text-[14px] leading-[2.1] text-gray-900 font-medium px-4">
                   {content ? content.replace(/\*/g, '') : ''}
                </div>
             )}
