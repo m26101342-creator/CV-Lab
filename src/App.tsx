@@ -4293,8 +4293,8 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
   const [isTranslating, setIsTranslating] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
   const [importProgress, setImportProgress] = useState("");
-  const [aiImportTab, setAiImportTab] = useState<'pdf' | 'text'>('pdf');
   const [rawText, setRawText] = useState("");
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
   const [template, setTemplate] = useState<TemplateType>(() => {
     return (localStorage.getItem('cv_lab_template') as TemplateType) || 't1_executive';
@@ -4861,18 +4861,38 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
     }));
   };
 
-  const handleRawTextParse = async () => {
-    if (!rawText.trim()) {
-      alert("Por favor, introduza algum texto ou informação para analisar.");
+  const handleCombinedImport = async () => {
+    if (!rawText.trim() && !selectedFile) {
+      alert("Por favor, selecione um arquivo PDF ou introduza algum texto para analisar.");
       return;
     }
     
     setIsImporting(true);
-    setImportProgress("IA categorizando seus dados...");
-    
+    let combinedText = rawText.trim();
+    let pdfImage: string | undefined = undefined;
+
     try {
-      console.log("Enviando texto bruto para a Gemini AI...");
-      const parsedData = await parseResumeFromText(rawText);
+      if (selectedFile) {
+        setImportProgress("Lendo arquivo PDF...");
+        console.log("Iniciando extração de texto do PDF...");
+        const pdfData = await extractTextFromPDF(selectedFile);
+        console.log("PDF processado. Texto:", !!pdfData.text, "Imagem Fallback:", !!pdfData.image);
+        
+        if (!pdfData.text.trim() && !pdfData.image) {
+          throw new Error("Não foi possível extrair informação do PDF selecionado.");
+        }
+        
+        if (combinedText) {
+          combinedText = `[INFORMAÇÃO ADICIONAL FORNECIDA PELO USUÁRIO]:\n${combinedText}\n\n[CONTEÚDO DO CV EM PDF]:\n${pdfData.text}`;
+        } else {
+          combinedText = pdfData.text;
+        }
+        pdfImage = pdfData.image;
+      }
+      
+      setImportProgress("IA organizando os seus dados...");
+      console.log("Enviando dados combinados para a Gemini AI...");
+      const parsedData = await parseResumeFromText(combinedText, pdfImage);
       console.log("Dados processados recebidos:", parsedData);
       
       // Update resume data
@@ -4897,77 +4917,13 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
       
       setActiveStep(1); // Jump to first data step after import
       setRawText("");
+      setSelectedFile(null);
     } catch (error: any) {
-      console.error("Erro ao analisar texto bruto:", error);
-      alert("Erro ao interpretar dados: " + error.message);
+      console.error("Erro na importação combinada:", error);
+      alert("Erro ao importar dados: " + error.message);
     } finally {
       setIsImporting(false);
       setImportProgress("");
-    }
-  };
-
-  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    console.log("Arquivo selecionado para upload:", file?.name, "Tipo:", file?.type);
-    if (!file) return;
-    
-    // Alerta imediato para feedback do utilizador
-    console.log("Evento de upload disparado com sucesso.");
-
-    // Be more permissive with PDF check (check extension if type is empty/generic)
-    const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
-    if (!isPdf) {
-      alert("Por favor, selecione um arquivo PDF.");
-      return;
-    }
-
-    setIsImporting(true);
-    setImportProgress("Lendo arquivo PDF...");
-    
-    try {
-      console.log("Iniciando extração de texto do PDF...");
-      const pdfData = await extractTextFromPDF(file);
-      console.log("PDF processado. Texto:", !!pdfData.text, "Imagem Fallback:", !!pdfData.image);
-      
-      if (!pdfData.text.trim() && !pdfData.image) {
-        throw new Error("Não foi possível extrair informação deste PDF.");
-      }
-
-      setImportProgress("IA analisando seu currículo...");
-      console.log("Enviando dados para a Gemini AI (Visão + Texto)...");
-      
-      const parsedData = await parseResumeFromText(pdfData.text, pdfData.image);
-      console.log("Dados processados pela IA recebidos:", !!parsedData);
-      
-      // Update resume data
-      setResumeData(prev => ({
-        ...prev,
-        personalInfo: {
-          ...prev.personalInfo,
-          fullName: parsedData.personalInfo?.fullName || prev.personalInfo.fullName,
-          title: parsedData.personalInfo?.title || prev.personalInfo.title,
-          email: parsedData.personalInfo?.email || prev.personalInfo.email,
-          phone: parsedData.personalInfo?.phone || prev.personalInfo.phone,
-          location: parsedData.personalInfo?.location || prev.personalInfo.location,
-          summary: parsedData.personalInfo?.summary || prev.personalInfo.summary
-        },
-        experience: parsedData.experience?.length ? parsedData.experience : prev.experience,
-        education: parsedData.education?.length ? parsedData.education : prev.education,
-        skills: parsedData.skills?.length ? parsedData.skills : prev.skills,
-        languages: parsedData.languages?.length ? parsedData.languages : prev.languages,
-        interests: parsedData.interests?.length ? parsedData.interests : prev.interests,
-        certifications: parsedData.certifications?.length ? parsedData.certifications : prev.certifications
-      }));
-      
-      setActiveStep(1); // Jump to first data step after import
-    } catch (error: any) {
-      console.error("Erro no upload/importação:", error);
-      alert("Erro ao importar currículo: " + error.message);
-    } finally {
-      setIsImporting(false);
-      setImportProgress("");
-      // Clear input
-      event.target.value = '';
     }
   };
 
@@ -6197,117 +6153,69 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
                     <div className="absolute bottom-0 left-0 w-32 h-32 bg-indigo-400/20 rounded-full -ml-16 -mb-16 blur-xl"></div>
                     
                     {/* Tabs navigation */}
-                    <div className="relative z-10 flex border-b border-white/15 mb-6 pb-2 justify-start gap-4">
-                      <button 
-                        onClick={() => setAiImportTab('pdf')} 
-                        className={`text-[10px] uppercase font-black tracking-widest pb-2 border-b-2 transition-all flex items-center gap-1.5 ${aiImportTab === 'pdf' ? 'border-white text-white' : 'border-transparent text-blue-200 hover:text-white'}`}
-                      >
-                        📄 IMPORTAR PDF
-                      </button>
-                      <button 
-                        onClick={() => setAiImportTab('text')} 
-                        className={`text-[10px] uppercase font-black tracking-widest pb-2 border-b-2 transition-all flex items-center gap-1.5 ${aiImportTab === 'text' ? 'border-white text-white' : 'border-transparent text-blue-200 hover:text-white'}`}
-                      >
-                        ✍️ COLAR TEXTO SOLTO (IA)
-                      </button>
-                    </div>
-
-                    <div className="relative z-10">
-                      {aiImportTab === 'pdf' ? (
-                        <div className="flex flex-col md:flex-row items-center gap-8 animate-fadeIn">
-                          <div className="w-16 h-16 bg-white/10 backdrop-blur-md rounded-2xl flex items-center justify-center text-white border border-white/20 shadow-inner group-hover:scale-110 transition-transform duration-500 shrink-0">
-                            {isImporting ? (
-                               <div className="w-8 h-8 border-4 border-white/30 border-t-white rounded-full animate-spin"></div>
-                            ) : (
-                               <Sparkles size={32} className="text-white fill-white/20 animate-pulse" />
-                            )}
-                          </div>
-                          
-                          <div className="flex-1 text-center md:text-left space-y-2">
-                            <h3 className="text-2xl font-black text-white tracking-tight">Importação Mágica <span className="text-[10px] bg-white/20 px-2 py-0.5 rounded-full ml-1 tabular-nums">IA</span></h3>
-                            <p className="text-blue-100 text-sm font-medium leading-relaxed max-w-sm">
-                              Carregue o seu currículo antigo em PDF e deixe a nossa IA preencher tudo automaticamente e otimizar cada campo para si.
+                    <div className="relative z-10 space-y-5">
+                        <div className="space-y-1 text-center md:text-left mb-6">
+                            <h3 className="text-2xl font-black text-white tracking-tight flex items-center gap-2 justify-center md:justify-start">
+                              <Sparkles size={24} className="text-white fill-white/20 animate-pulse" />
+                              Importação Mágica IA
+                            </h3>
+                            <p className="text-blue-100 text-xs font-semibold max-w-2xl mx-auto md:mx-0">
+                                Envie o seu currículo em PDF, escreva os seus dados soltos no campo de texto, ou faça os dois simultaneamente. A IA organizará tudo com inteligência no formato certo.
                             </p>
-                          </div>
-
-                          <div className="shrink-0 w-full md:w-auto">
-                            <label className={`w-full group/btn relative flex items-center justify-center gap-3 bg-white text-blue-700 px-8 py-4 rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-black/10 hover:bg-blue-50 active:scale-95 transition-all cursor-pointer ${isImporting ? 'opacity-50 pointer-events-none' : ''}`}>
-                              {isImporting ? (
-                                <span className="flex items-center gap-2">
-                                  <div className="w-3 h-3 border-2 border-blue-600/30 border-t-blue-600 rounded-full animate-spin"></div>
-                                  {importProgress}
-                                </span>
-                              ) : (
-                                <>
-                                  <Upload size={18} className="group-hover/btn:-translate-y-0.5 transition-transform" />
-                                  IMPORTAR PDF
-                                </>
-                              )}
-                              <input 
-                                type="file" 
-                                accept=".pdf,application/pdf" 
-                                className="hidden" 
-                                onChange={handleFileUpload} 
-                                disabled={isImporting} 
-                              />
-                            </label>
-                            <p className="text-[9px] text-blue-200 mt-2 text-center font-bold uppercase tracking-widest opacity-60">Apenas ficheiros .PDF</p>
-                          </div>
                         </div>
-                      ) : (
-                        <div className="space-y-4 animate-fadeIn">
-                          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 border-b border-white/10 pb-4">
-                            <div className="space-y-1">
-                              <h3 className="text-xl font-black text-white tracking-tight flex items-center gap-2">
-                                Interpretador Inteligente IA
-                              </h3>
-                              <p className="text-blue-100 text-xs font-semibold max-w-md">
-                                Não precisa de organizar as informações! Escreva ou cole os seus dados desorganizados abaixo e a IA tratará do resto.
-                              </p>
-                            </div>
-                            <div className="shrink-0">
-                              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[9px] font-black uppercase bg-emerald-500 text-white tracking-widest animate-pulse">
-                                <Zap size={10} className="fill-white" /> DIGITALIZAÇÃO DIRETA
-                              </span>
-                            </div>
-                          </div>
 
-                          <div className="space-y-4">
-                            <textarea
-                              rows={5}
-                              value={rawText}
-                              onChange={(e) => setRawText(e.target.value)}
-                              placeholder={`Cole quaisquer dados soltos aqui. Exemplo:\n\n"Chamo-me Ricardo Fernandes. Trabalhei como programador de 2021 a 2024 na Unitel. Licenciei-me no ISPTEC em 2020. Falo Inglês fluente. Meus contactos são ricardo@email.com e +244912345678."`}
-                              className="w-full bg-white/10 border border-white/20 rounded-2xl p-4 text-white placeholder-blue-100/40 text-xs focus:ring-2 focus:ring-white focus:outline-none resize-none font-medium leading-relaxed min-h-[140px]"
-                              disabled={isImporting}
-                            />
-                            
-                            <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-                              <p className="text-[10px] text-blue-100/80 font-bold uppercase tracking-wider text-center sm:text-left">
-                                ✨ Preenche automaticamente Perfil, Experiência, Educação e mais!
-                              </p>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                           {/* PDF Column */}
+                           <div className="bg-white/10 rounded-2xl p-4 border border-white/20 flex flex-col justify-between">
+                              <div className="space-y-1 mb-4">
+                                <h4 className="text-white text-xs font-black uppercase tracking-widest flex items-center gap-2"><Upload size={14}/> Arquivo PDF (Opcional)</h4>
+                                <p className="text-blue-100/70 text-[10px]">Escolha um arquivo PDF com o seu currículo antigo ou base.</p>
+                              </div>
                               
-                              <button
-                                onClick={handleRawTextParse}
-                                disabled={isImporting || !rawText.trim()}
-                                className={`w-full sm:w-auto flex items-center justify-center gap-2 bg-white text-blue-700 hover:bg-blue-50 active:scale-95 transition-all text-xs font-black uppercase tracking-widest px-8 py-3.5 rounded-2xl shadow-xl shadow-black/10 ${isImporting || !rawText.trim() ? 'opacity-50 pointer-events-none' : ''}`}
-                              >
-                                {isImporting ? (
-                                  <>
-                                    <div className="w-3 h-3 border-2 border-blue-600/30 border-t-blue-600 rounded-full animate-spin"></div>
-                                    <span>{importProgress}</span>
-                                  </>
-                                ) : (
-                                  <>
-                                    <Sparkles size={14} className="animate-pulse fill-blue-700/20" />
-                                    <span>ORGANIZAR TUDO COM IA</span>
-                                  </>
-                                )}
-                              </button>
-                            </div>
-                          </div>
+                              <label className={`w-full group/btn relative flex items-center justify-center gap-2 bg-white/20 text-white px-4 py-4 rounded-xl border border-white/30 font-bold text-xs uppercase tracking-widest hover:bg-white/30 active:scale-95 transition-all cursor-pointer ${isImporting ? 'opacity-50 pointer-events-none' : ''}`}>
+                                 {selectedFile ? (
+                                    <span className="truncate max-w-[200px] text-[10px]">{selectedFile.name} (Trocar)</span>
+                                 ) : (
+                                    <>Selecionar Arquivo PDF</>
+                                 )}
+                                 <input type="file" accept=".pdf,application/pdf" className="hidden" disabled={isImporting} onChange={(e) => setSelectedFile(e.target.files?.[0] || null)} />
+                              </label>
+                           </div>
+
+                           {/* Text Column */}
+                           <div className="bg-white/10 rounded-2xl p-4 border border-white/20 flex flex-col">
+                              <div className="space-y-1 mb-3">
+                                <h4 className="text-white text-xs font-black uppercase tracking-widest flex items-center gap-2"><Type size={14}/> Dados Soltos (Opcional)</h4>
+                                <p className="text-blue-100/70 text-[10px]">Cole informações soltas, links, ou notas que não estão no PDF.</p>
+                              </div>
+                              <textarea
+                                rows={4}
+                                value={rawText}
+                                onChange={(e) => setRawText(e.target.value)}
+                                placeholder="Pode colar informações soltas ou adicionais aqui..."
+                                className="w-full bg-white/5 border border-white/10 hover:border-white/20 rounded-xl p-3 text-white placeholder-blue-100/40 text-[11px] focus:ring-2 focus:ring-white focus:outline-none resize-none font-medium leading-relaxed flex-1 transition-all"
+                                disabled={isImporting}
+                              />
+                           </div>
                         </div>
-                      )}
+
+                        <button
+                          onClick={handleCombinedImport}
+                          disabled={isImporting || (!rawText.trim() && !selectedFile)}
+                          className={`w-full flex items-center justify-center gap-2 bg-white text-blue-700 hover:bg-blue-50 active:scale-95 transition-all text-sm font-black uppercase tracking-widest px-8 py-4 rounded-2xl shadow-xl shadow-black/10 mt-2 ${isImporting || (!rawText.trim() && !selectedFile) ? 'opacity-50 pointer-events-none' : ''}`}
+                        >
+                          {isImporting ? (
+                            <>
+                              <div className="w-4 h-4 border-2 border-blue-600/30 border-t-blue-600 rounded-full animate-spin"></div>
+                              <span>{importProgress}</span>
+                            </>
+                          ) : (
+                            <>
+                              <Zap size={18} className="fill-blue-700/20" />
+                              <span>FUNDIR E ORGANIZAR DADOS</span>
+                            </>
+                          )}
+                        </button>
                     </div>
                   </div>
 
