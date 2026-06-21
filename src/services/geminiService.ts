@@ -351,10 +351,13 @@ export async function parseResumeFromText(rawText: string, imageData?: string): 
       2. "experience": Mapeie cada de forma detalhada com verbos de ação poderosos.
       3. "education": Identifique instituição, grau, curso/campo, ano de início e fim.
          - IMPORTANTE: Se o indivíduo tiver bullet points, listas de tópicos de destaque ao longo do curso (ex: distinções, participação associativa, lideranças ou monitorias), salve-os fielmente no campo "description": "• Item 1\n• Item 2".
-      4. "skills": Extraia TODAS as competências profissionais na forma de uma array de strings.
+      4. "skills": Extraia competências profissionais gerais ou curtas (Ex: HTML, Excel, Vendas) na forma de uma array de strings no campo 'skills'. 
+         - ATENÇÃO CRÍTICA: Se o candidato listar competências em grupos estruturados ou categorias diferenciadas no texto original (por exemplo: "Competências de comunicação", "Competências organizacionais", "Competências técnicas", "Carta de condução", "Disponibilidade e Outros"), NÃO os junte todos em "skills". Pelo contrário, crie secções e categorias independentes dedicadas na propriedade "customSections" para que fiquem devidamente segregados e não compactados como simples palavras-chave.
       5. "languages": Identifique idiomas. Se sem nível, assuma "Intermédio" ou "Fluente".
       6. "certifications": Extraia ano.
-      7. "customSections": Se existirem no currículo ou texto secções, blocos isolados de informações que não se enquadram diretamente nos campos padrão acima mas são essenciais para o currículo do utilizador (por exemplo, "ESPECIALIZAÇÕES" com tópicos, "Conquistas", "Prémios", "Projetos Culturais", "Filiações"), extraia-as de forma flexível nesta propriedade de retorno. Retorne um array de objetos onde cada objeto representa uma seção customizada.
+      7. "customSections": Crie categorias e secções flexíveis para estruturar e diferenciar blocos informativos ricos e evitar que tudo seja empilhado na aba de habilidades.
+         - Por exemplo, se houver títulos de seções como "Competências de Comunicação", "Competências Organizacionais", "Competências Técnicas", "Carta de Condução" ou "Outras Informações" (como no CV do utilizador focado na Toyota Angola), crie um objeto para cada uma destas categorias em "customSections", preservando o título detalhado e os seus itens correspondentes dentro do array "items".
+         - Cada item deve conter obrigatoriamente a propriedade "name" (título/rótulo do item) e opcionalmente "description" (detalhe, explicação ou valor associado).
 
       SINTAXE DO RETORNO JSON ESPERADO (Formato Extremamente Restrito):
       {
@@ -381,16 +384,28 @@ export async function parseResumeFromText(rawText: string, imageData?: string): 
             "description": "• Vice-Lider da associação dos Estudantes\n• Monitora nas Aulas" 
           }
         ],
-        "skills": ["Competência 1", "Competência 2", "Competência 3"],
+        "skills": ["Competência Geral 1", "Competência Geral 2"],
         "languages": [ { "name": "Inglês", "level": "Avançado" } ],
         "certifications": [],
         "customSections": [
           {
-            "title": "Especializações",
+            "title": "Competências de Comunicação",
             "items": [
-              { "name": "Secretaria Executiva" },
-              { "name": "Contadora" },
-              { "name": "Auditora contabilista" }
+              { "name": "Comunicação em equipe multinacional", "description": "11 anos trabalhando na equipe da Toyota" }
+            ]
+          },
+          {
+            "title": "Competências Organizacionais",
+            "items": [
+              { "name": "Gestão de armazém e logística" },
+              { "name": "Gestão de tempo e rotas de distribuição" }
+            ]
+          },
+          {
+            "title": "Competências Técnicas",
+            "items": [
+              { "name": "Manobrador de Empilhadores", "description": "11 anos de experiência prática real" },
+              { "name": "Gestão de Stock", "description": "Uso de sistemas WMS básicos" }
             ]
           }
         ]

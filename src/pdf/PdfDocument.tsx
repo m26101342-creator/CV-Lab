@@ -6,6 +6,52 @@ const getSectionTitle = (data: ResumeData, key: keyof NonNullable<ResumeData['se
   return data.sectionTitles?.[key] || defaultTitle;
 };
 
+const RenderCustomSections = ({ 
+  customSections, 
+  headingStyle, 
+  itemTitleStyle = { fontSize: 9.5, fontWeight: 'bold', color: '#1F2937', marginBottom: 2 }, 
+  itemDescStyle = { fontSize: 8.5, color: '#4B5563', marginTop: 3, lineHeight: 1.35 },
+  cardStyle = null
+}: { 
+  customSections?: any[], 
+  headingStyle: any, 
+  itemTitleStyle?: any, 
+  itemDescStyle?: any,
+  cardStyle?: any
+}) => {
+  if (!customSections || customSections.length === 0) return null;
+  return (
+    <>
+      {customSections.map((cs, idx) => {
+        const content = (
+          <View key={cs.id || `cs-${idx}`} style={{ marginBottom: 15, marginTop: 10 }}>
+            <Text style={headingStyle}>{cs.title}</Text>
+            <View style={{ gap: 5 }}>
+              {cs.items.map((item: any, idxx: number) => (
+                <View key={item.id || `csi-${idxx}`} style={{ marginBottom: 4 }}>
+                  <Text style={itemTitleStyle}>{item.name}</Text>
+                  {item.description ? (
+                    <Text style={itemDescStyle}>{item.description.replace(/\*/g, '')}</Text>
+                  ) : null}
+                </View>
+              ))}
+            </View>
+          </View>
+        );
+
+        if (cardStyle) {
+          return (
+            <View key={cs.id || `cs-${idx}`} style={cardStyle}>
+              {content}
+            </View>
+          );
+        }
+        return content;
+      })}
+    </>
+  );
+};
+
 // Register Fonts
 Font.register({
   family: 'Inter',
@@ -145,6 +191,7 @@ const Template1 = ({ data }: { data: ResumeData }) => {
             ))}
           </View>
         )}
+        <RenderCustomSections customSections={data.customSections} headingStyle={styles.mainSectionTitle} />
       </View>
     </View>
   );
@@ -205,6 +252,7 @@ const Template2 = ({ data }: { data: ResumeData }) => {
               <Text style={{ fontSize: 10 }}>{ex.description.replace(/\*/g, '')}</Text>
             </View>
           ))}
+          <RenderCustomSections customSections={data.customSections} headingStyle={styles.sectionTitle} />
         </View>
       </View>
     </View>
@@ -271,6 +319,7 @@ const Template3 = ({ data }: { data: ResumeData }) => {
               <Text style={{ fontSize: 10 }}>{ex.description.replace(/\*/g, '')}</Text>
             </View>
           ))}
+          <RenderCustomSections customSections={data.customSections} headingStyle={styles.sectionTitle} />
         </View>
       </View>
     </View>
@@ -392,6 +441,7 @@ const Template4 = ({ data }: { data: ResumeData }) => {
              </View>
            </View>
         )}
+        <RenderCustomSections customSections={data.customSections} headingStyle={styles.sectionTitleMain} />
       </View>
     </View>
   );
@@ -547,6 +597,7 @@ const Template5 = ({ data }: { data: ResumeData }) => {
               ))}
             </View>
           )}
+          <RenderCustomSections customSections={data.customSections} headingStyle={styles.rightSectionTitle} />
         </View>
       </View>
     </View>
@@ -666,6 +717,7 @@ const Template6 = ({ data }: { data: ResumeData }) => {
               ))}
             </View>
           )}
+          <RenderCustomSections customSections={data.customSections} headingStyle={styles.sectionTitle} />
         </View>
         <View style={styles.col}>
           {data.education.length > 0 && (
@@ -755,6 +807,7 @@ const Template7 = ({ data }: { data: ResumeData }) => {
               ))}
             </View>
           )}
+          <RenderCustomSections customSections={data.customSections} headingStyle={styles.sectionTitle} />
         </View>
         <View style={styles.sideCol}>
           {data.skills.length > 0 && (
@@ -955,6 +1008,7 @@ const Template8 = ({ data }: { data: ResumeData }) => {
             ))}
           </View>
         )}
+        <RenderCustomSections customSections={data.customSections} headingStyle={styles.sectionTitle} />
       </View>
     </View>
   );
@@ -1117,6 +1171,7 @@ const Template9 = ({ data }: { data: ResumeData }) => {
               </View>
             </View>
           )}
+          <RenderCustomSections customSections={data.customSections} headingStyle={styles.sectionTitle} />
         </View>
       </View>
     </View>
@@ -1329,6 +1384,7 @@ const Template10 = ({ data }: { data: ResumeData }) => {
               </View>
             </View>
           )}
+          <RenderCustomSections customSections={data.customSections} headingStyle={styles.sectionTitle} />
         </View>
       </View>
       <View style={styles.footerLine} />
@@ -1444,6 +1500,7 @@ const Template11 = ({ data }: { data: ResumeData }) => {
             ))}
           </View>
         )}
+        <RenderCustomSections customSections={data.customSections} headingStyle={styles.sectionTitleBanner} />
       </View>
 
       {/* Right Column (Dark Sidebar) */}
@@ -1681,6 +1738,7 @@ const Template12 = ({ data }: { data: ResumeData }) => {
               </View>
             </View>
           )}
+          <RenderCustomSections customSections={data.customSections} headingStyle={styles.sectionTitle} />
         </View>
       </View>
 
@@ -1865,6 +1923,7 @@ const Template13 = ({ data }: { data: ResumeData }) => {
               </View>
             </View>
           )}
+          <RenderCustomSections customSections={data.customSections} headingStyle={styles.sectionHeader} cardStyle={styles.card} />
         </View>
       </View>
 
