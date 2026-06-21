@@ -1,0 +1,74 @@
+434:                    <h3 className="text-lg font-black text-deep-blue uppercase tracking-tight flex items-center gap-2 font-sans">
+737:                            <h3 className="font-black text-xl text-slate-900 tracking-tight">
+782:                            <h3 className="text-3xl font-black text-slate-900 tracking-tight">Painel Vazio</h3>
+1141:                                    <h3 className="text-2xl font-black tracking-tight">Métricas Oficializadas CV LAB</h3>
+1229:                                    <h3 className="font-black text-slate-900 text-2xl tracking-tight">Atividade de Pedidos</h3>
+1371:                                        <h3 className="text-xl font-black text-slate-900 tracking-tight">Sala de Reuniões Virtual</h3>
+1421:                                <h3 className="text-lg font-black tracking-tight relative z-10">Pautas Fundamentais</h3>
+1443:                                    <h3 className="text-xl font-black text-slate-900 tracking-tight">Quadro Coletivo de Notas</h3>
+2410:                   <h3 className="text-xl font-bold mb-5 pb-2 text-white border-b-2 border-white/20 inline-block pr-6">Contacto</h3>
+2419:                     <h3 className="text-xl font-bold mb-5 pb-2 text-white border-b-2 border-white/20 inline-block pr-6">Idiomas</h3>
+2542:                     <h3 className="text-[12px] font-black uppercase tracking-[0.2em]" style={{ color: c.primary }}>Contacto</h3>
+2554:                       <h3 className="text-[12px] font-black uppercase tracking-[0.2em]" style={{ color: c.primary }}>Habilidades</h3>
+2570:                       <h3 className="text-[12px] font-black uppercase tracking-[0.2em]" style={{ color: c.primary }}>Formação</h3>
+2588:                       <h3 className="text-[12px] font-black uppercase tracking-[0.2em]" style={{ color: c.primary }}>Idiomas</h3>
+2608:                       <h3 className="text-[12px] font-black uppercase tracking-[0.2em]" style={{ color: c.primary }}>Certificações</h3>
+2625:                       <h3 className="text-[12px] font-black uppercase tracking-[0.2em]" style={{ color: c.primary }}>Interesses</h3>
+2743:                  <h3 className="text-sm font-black uppercase tracking-wider mb-4" style={{ color: '#111827' }}>Experiência</h3>
+2760:                  <h3 className="text-sm font-black uppercase tracking-wider mb-4" style={{ color: '#111827' }}>{cs.title}</h3>
+2776:                  <h3 className="text-sm font-black uppercase tracking-wider mb-4" style={{ color: '#111827' }}>Formação</h3>
+2791:                  <h3 className="text-sm font-black uppercase tracking-wider mb-4" style={{ color: '#111827' }}>Habilidades</h3>
+2804:                  <h3 className="text-sm font-black uppercase tracking-wider mb-3" style={{ color: '#111827' }}>Idiomas</h3>
+2851:                  <h3 className="text-xs font-black uppercase tracking-wider mb-3 text-gray-900">Síntese</h3>
+2858:                  <h3 className="text-xs font-black uppercase tracking-wider mb-4 text-gray-900">Experiência</h3>
+2877:                  <h3 className="text-xs font-black uppercase tracking-wider mb-4 text-gray-900">{cs.title}</h3>
+2895:                  <h3 className="text-xs font-black uppercase tracking-wider mb-4 text-gray-900">Habilidades</h3>
+2917:                  <h3 className="text-xs font-black uppercase tracking-wider mb-3 text-gray-900">Educação</h3>
+2932:                  <h3 className="text-xs font-black uppercase tracking-wider mb-3 text-gray-900">Idiomas</h3>
+2986:              <h3 className="text-sm font-black uppercase tracking-wider mb-4 text-center pb-1 border-b-2 border-sky-400/50" style={{ color: c.primary }}>Contacto</h3>
+3018:                <h3 className="text-sm font-black uppercase tracking-wider mb-4 text-center pb-1 border-b-2 border-sky-400/50" style={{ color: c.primary }}>Habilidades</h3>
+3043:                <h3 className="text-sm font-black uppercase tracking-wider mb-4 text-center pb-1 border-b-2 border-sky-400/50" style={{ color: c.primary }}>Interesses</h3>
+3180:                    <h3 className="text-sm font-extrabold uppercase tracking-wider text-gray-900">Sobre Mim</h3>
+3193:                    <h3 className="text-sm font-extrabold uppercase tracking-wider text-gray-900">Experiência Profissional</h3>
+3217:                    <h3 className="text-sm font-extrabold uppercase tracking-wider text-gray-900">{cs.title}</h3>
+3242:                    <h3 className="text-sm font-extrabold uppercase tracking-wider text-gray-900">Habilidades</h3>
+3274:                    <h3 className="text-sm font-extrabold uppercase tracking-wider text-gray-900">Formação Académica</h3>
+3295:                    <h3 className="text-sm font-extrabold uppercase tracking-wider text-gray-900">Idiomas</h3>
+3313:                    <h3 className="text-sm font-extrabold uppercase tracking-wider text-gray-900">Certificações</h3>
+3466:                    <h3 className="text-sm font-extrabold uppercase tracking-[0.25em] text-slate-800">Experiência</h3>
+3488:                    <h3 className="text-sm font-extrabold uppercase tracking-[0.25em] text-slate-800">Formação Académica</h3>
+3509:                    <h3 className="text-sm font-extrabold uppercase tracking-[0.25em] text-slate-800">{cs.title}</h3>
+3529:                    <h3 className="text-sm font-extrabold uppercase tracking-[0.25em] text-slate-800">Certidões & Prêmios</h3>
+3818:                  <h3 className="text-xs font-black uppercase tracking-widest font-sans border-b pb-1 text-slate-800" style={{ borderColor: c.primary }}>Competências</h3>
+3833:                  <h3 className="text-xs font-black uppercase tracking-widest font-sans border-b pb-1 text-slate-800" style={{ borderColor: c.primary }}>Idiomas</h3>
+3851:                  <h3 className="text-xs font-black uppercase tracking-widest font-sans border-b pb-1 text-slate-800" style={{ borderColor: c.primary }}>Experiência Profissional</h3>
+3870:                  <h3 className="text-xs font-black uppercase tracking-widest font-sans border-b pb-1 text-slate-800" style={{ borderColor: c.primary }}>Formação Académica</h3>
+3888:                  <h3 className="text-xs font-black uppercase tracking-widest font-sans border-b pb-1 text-slate-800" style={{ borderColor: c.primary }}>{cs.title}</h3>
+3905:                  <h3 className="text-xs font-black uppercase tracking-widest font-sans border-b pb-1 text-slate-800" style={{ borderColor: c.primary }}>Certificações & Prêmios</h3>
+3960:                <h3 className="text-xs font-mono font-black uppercase tracking-widest text-slate-800 border-b pb-1.5" style={{ borderBottomColor: c.primary }}>Contacto</h3>
+3992:                  <h3 className="text-xs font-mono font-black uppercase tracking-widest text-slate-800 border-b pb-1.5" style={{ borderBottomColor: c.primary }}>Competências</h3>
+4014:                  <h3 className="text-xs font-mono font-black uppercase tracking-widest text-slate-800 border-b pb-1.5" style={{ borderBottomColor: c.primary }}>Idiomas</h3>
+4034:                  <h3 className="text-xs font-mono font-black uppercase tracking-widest text-slate-800">Resumo Profissional</h3>
+4044:                  <h3 className="text-xs font-mono font-black uppercase tracking-widest text-slate-800 border-b pb-2" style={{ borderBottomColor: c.primary }}>Experiência de Trabalho</h3>
+4063:                  <h3 className="text-xs font-mono font-black uppercase tracking-widest text-slate-800 border-b pb-2" style={{ borderBottomColor: c.primary }}>Educação</h3>
+4081:                  <h3 className="text-xs font-mono font-black uppercase tracking-widest text-slate-800 border-b pb-2" style={{ borderBottomColor: c.primary }}>{cs.title}</h3>
+4098:                  <h3 className="text-xs font-mono font-black uppercase tracking-widest text-slate-800 border-b pb-2" style={{ borderBottomColor: c.primary }}>Prémios & Certificações</h3>
+5355:                  <h3 className="text-4xl md:text-5xl font-black text-deep-blue tracking-tighter mb-1">
+5406:                  <h3 className="text-2xl font-black text-deep-blue tracking-tight mb-4">
+5613:                       <h3 className="text-xl font-black text-deep-blue group-hover:text-primary-blue transition-colors">{tip.title}</h3>
+5622:                  <h3 className="text-2xl font-black">Quer uma análise personalizada?</h3>
+5662:                      <h3 className="text-lg font-black text-deep-blue">{item.name}</h3>
+5712:                    <h3 className="text-xl font-black text-deep-blue mb-3 group-hover:text-primary-blue transition-colors">{item.q}</h3>
+5763:                <h3 className="text-3xl font-black relative z-10">Pronto para dar o próximo passo?</h3>
+5778:                <h3 className="font-bold text-primary-blue">1. Aceitação</h3>
+5781:                <h3 className="font-bold text-primary-blue">2. Uso de Algoritmos de Otimização</h3>
+5784:                <h3 className="font-bold text-primary-blue">3. Pagamentos e Reembolsos</h3>
+5787:                <h3 className="font-bold text-primary-blue">4. Privacidade e Proteção de Dados</h3>
+5856:                        <h3 className="text-[10px] font-black uppercase text-gray-400 tracking-wider text-center">Dados para Pagamento Seguros</h3>
+6227:                            <h3 className="text-2xl font-black text-white tracking-tight">Importação Mágica <span className="text-[10px] bg-white/20 px-2 py-0.5 rounded-full ml-1 tabular-nums">IA</span></h3>
+6261:                              <h3 className="text-xl font-black text-white tracking-tight flex items-center gap-2">
+6498:                    <h3 className="text-sm font-black uppercase tracking-[0.2em] text-primary-blue">Habilidades</h3>
+6521:                    <h3 className="text-sm font-black uppercase tracking-[0.2em] text-primary-blue">Idiomas</h3>
+6590:                    <h3 className="text-sm font-black uppercase tracking-[0.2em] text-primary-blue flex justify-between items-center">
+6693:                    <h3 className="text-sm font-black uppercase tracking-[0.2em] text-primary-blue">Estilo Visual</h3>
+6790:                      <h3 className="text-2xl font-black leading-tight">Documento Finalizado!</h3>

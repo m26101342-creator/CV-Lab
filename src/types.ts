@@ -56,6 +56,7 @@ export interface ResumeData {
   interests?: string[];
   certifications?: { id: string; name: string; date: string }[];
   customSections?: CustomSection[];
+  sectionTitles?: Partial<Record<'experience' | 'education' | 'skills' | 'languages' | 'certifications' | 'interests' | 'summary', string>>;
   themeColor?: string;
   styleConfig?: ResumeStyleConfig;
 }
@@ -89,6 +90,7 @@ export const INITIAL_RESUME_DATA: ResumeData = {
   skills: [],
   languages: [],
   customSections: [],
+  sectionTitles: {},
   themeColor: '#1B2A4A',
   styleConfig: {
     fontSize: 13,

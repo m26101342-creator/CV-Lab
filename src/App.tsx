@@ -588,7 +588,7 @@ const CoverLetterRenderer = React.memo(({ content, personalInfo, themeColor, onC
          <div className="flex justify-between items-start pb-8 mb-10 mt-4">
            <div className="space-y-1.5 max-w-[80%]">
              <h1 className="text-[32px] font-black tracking-tight leading-none" style={{ color: c.primary }}>
-               {info.fullName || 'Seu Nome'}
+               {info.fullName }
              </h1>
              <p className="text-gray-500 font-medium tracking-[0.1em] text-[11px] uppercase">
                {info.title || 'Seu Cargo'}
@@ -627,7 +627,7 @@ const CoverLetterRenderer = React.memo(({ content, personalInfo, themeColor, onC
             <div className="text-right">
                <p className="text-[11px] text-gray-400 uppercase tracking-widest mb-4">Atenciosamente,</p>
                <p className="text-[18px] font-black italic tracking-tighter" style={{ color: c.primary }}>
-                  {info.fullName || 'Seu Nome'}
+                  {info.fullName }
                </p>
             </div>
          </div>
@@ -2132,8 +2132,8 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
           </div>
           
           <div className="t1-right">
-             <div className="t1-name mb-1">{data.personalInfo.fullName || "Seu Nome"}</div>
-             <div className="t1-title mb-4">{data.personalInfo.title || "Cargo Desejado"}</div>
+             <div className="t1-name mb-1">{data.personalInfo.fullName }</div>
+             <div className="t1-title mb-4">{data.personalInfo.title }</div>
              <div className="t1-divider"></div>
              {data.personalInfo.summary && <div className="t1-bio leading-relaxed">{renderText(data.personalInfo.summary)}</div>}
 
@@ -2176,8 +2176,8 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
                {data.personalInfo.photo ? <img src={data.personalInfo.photo} referrerPolicy="no-referrer" alt="Profile" className="w-full h-full object-cover object-top" /> : (data.personalInfo.fullName ? data.personalInfo.fullName.charAt(0).toUpperCase() : 'CV')}
              </div>
              <div className="t2-header-text">
-                <div className="t2-name">{data.personalInfo.fullName || "Seu Nome"}</div>
-                <div className="t2-title">{data.personalInfo.title || "Cargo Desejado"}</div>
+                <div className="t2-name">{data.personalInfo.fullName }</div>
+                <div className="t2-title">{data.personalInfo.title }</div>
                 <div className="t2-divider"></div>
                 {data.personalInfo.summary && <div className="t2-bio">{renderText(data.personalInfo.summary)}</div>}
              </div>
@@ -2277,8 +2277,8 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
       {theme.layout === 'custom-t3' && (
         <div className="t3" style={{ '--primary': c.primary, '--primary-light': c.lines, '--heading': c.heading } as any}>
            <div className="t3-header">
-              <div className="t3-name">{data.personalInfo.fullName || "Seu Nome"}</div>
-              <div className="t3-title">{data.personalInfo.title || "Cargo Desejado"}</div>
+              <div className="t3-name">{data.personalInfo.fullName }</div>
+              <div className="t3-title">{data.personalInfo.title }</div>
               {data.personalInfo.summary && <div className="t3-bio">{renderText(data.personalInfo.summary)}</div>}
               
               <div className="t3-contact-row">
@@ -2719,8 +2719,8 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
                 }} 
               />
             )}
-            <h1 className="text-3xl font-black uppercase tracking-wider mb-2" style={{ color: c.primary }}>{data.personalInfo.fullName || "Seu Nome"}</h1>
-            <p className="text-xs font-bold text-gray-500 uppercase tracking-[0.25em]">{data.personalInfo.title || "Cargo Desejado"}</p>
+            <h1 className="text-3xl font-black uppercase tracking-wider mb-2" style={{ color: c.primary }}>{data.personalInfo.fullName }</h1>
+            <p className="text-xs font-bold text-gray-500 uppercase tracking-[0.25em]">{data.personalInfo.title }</p>
             <div className="flex items-center gap-4 mt-4 text-[11px] font-bold text-gray-500 uppercase tracking-widest">
               {data.personalInfo.phone && <span className="flex items-center gap-1"><Phone size={11} /> {data.personalInfo.phone}</span>}
               {(data.personalInfo.phone && data.personalInfo.email) && <span>•</span>}
@@ -2834,8 +2834,8 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
                 />
               </div>
             )}
-            <h1 className="text-3xl font-black uppercase tracking-wider">{data.personalInfo.fullName || "Seu Nome"}</h1>
-            <p className="text-xs font-bold uppercase tracking-[0.2em] opacity-90 mt-1">{data.personalInfo.title || "Cargo Desejado"}</p>
+            <h1 className="text-3xl font-black uppercase tracking-wider">{data.personalInfo.fullName }</h1>
+            <p className="text-xs font-bold uppercase tracking-[0.2em] opacity-90 mt-1">{data.personalInfo.title }</p>
           </div>
 
           <div className="bg-gray-100/80 px-10 py-3.5 flex flex-wrap justify-center gap-x-6 gap-y-1.5 text-[10px] font-black text-gray-500 uppercase tracking-widest">
@@ -2870,6 +2870,23 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
                   </div>
                 </div>
               )}
+
+              {/* CUSTOM SECTIONS */}
+              {data.customSections?.map((cs, idx) => (
+                <div key={cs.id || `cs-${idx}`}>
+                  <h3 className="text-xs font-black uppercase tracking-wider mb-4 text-gray-900">{cs.title}</h3>
+                  <div className="space-y-5">
+                    {cs.items.map((item, idxx) => (
+                      <div key={item.id || `csi-${idxx}`} className="space-y-1">
+                        <div className="flex justify-between items-baseline">
+                          <h4 className="text-xs font-black text-gray-950">{item.name}</h4>
+                        </div>
+                        {item.description && <p className="text-[11px] leading-relaxed text-gray-600 mt-1">{renderText(item.description)}</p>}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
             </div>
 
             <div className="w-[40%] space-y-6">
@@ -3039,8 +3056,8 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
           <div className="w-[65%] h-full p-8 pt-6 flex flex-col relative z-20 overflow-hidden">
             {/* Header / Name Block */}
             <div className="mb-8 mt-4">
-              <h1 className="text-3xl font-black text-white drop-shadow-md tracking-wider uppercase mb-1">{data.personalInfo.fullName || "Seu Nome"}</h1>
-              <p className="text-xs font-bold text-sky-300 tracking-[0.25em] uppercase">{data.personalInfo.title || "Cargo Desejado"}</p>
+              <h1 className="text-3xl font-black text-white drop-shadow-md tracking-wider uppercase mb-1">{data.personalInfo.fullName }</h1>
+              <p className="text-xs font-bold text-sky-300 tracking-[0.25em] uppercase">{data.personalInfo.title }</p>
             </div>
 
             <div className="space-y-6 flex-1 overflow-hidden mt-6">
@@ -3096,6 +3113,26 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
                   </div>
                 </div>
               )}
+
+              {/* CUSTOM SECTIONS */}
+              {data.customSections?.map((cs, idx) => (
+                <div key={cs.id || `cs-${idx}`}>
+                  <div className="inline-block py-1.5 px-5 rounded-full text-[10px] font-black uppercase tracking-wider text-white mb-4" style={{ backgroundColor: c.primary }}>
+                    {cs.title}
+                  </div>
+                  <div className="space-y-4">
+                    {cs.items.map((item, idxx) => (
+                      <div key={item.id || `csi-${idxx}`} className="relative pl-6 border-l-2 border-sky-400/30">
+                        <div className="absolute -left-1.5 top-1.5 w-3 h-3 rounded-full border-2 border-white shadow bg-sky-400" />
+                        <div className="flex justify-between items-baseline mb-1">
+                          <h4 className="text-xs font-black text-gray-955">{item.name}</h4>
+                        </div>
+                        {item.description && <p className="text-[11px] leading-relaxed text-gray-600 font-medium mt-1">{renderText(item.description)}</p>}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         </div>
@@ -3106,8 +3143,8 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
           {/* Professional Header */}
           <div className="p-12 pb-8 border-b-4 border-gray-100 flex justify-between items-center" style={{ borderBottomColor: c.primary }}>
             <div className="space-y-3">
-              <h1 className="text-4xl font-extrabold tracking-tight text-gray-900 leading-none">{data.personalInfo.fullName || "Seu Nome"}</h1>
-              <p className="text-sm font-semibold uppercase tracking-[0.2em]" style={{ color: c.primary }}>{data.personalInfo.title || "Cargo Desejado"}</p>
+              <h1 className="text-4xl font-extrabold tracking-tight text-gray-900 leading-none">{data.personalInfo.fullName }</h1>
+              <p className="text-sm font-semibold uppercase tracking-[0.2em]" style={{ color: c.primary }}>{data.personalInfo.title }</p>
             </div>
             
             {data.personalInfo.photo && (
@@ -3171,6 +3208,28 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
                   </div>
                 </div>
               )}
+
+              {/* CUSTOM SECTIONS */}
+              {data.customSections?.map((cs, idx) => (
+                <div key={cs.id || `cs-${idx}`} className="space-y-4">
+                  <div className="flex items-center gap-2">
+                    <span className="w-1.5 h-4 rounded-full" style={{ backgroundColor: c.primary }}></span>
+                    <h3 className="text-sm font-extrabold uppercase tracking-wider text-gray-900">{cs.title}</h3>
+                  </div>
+                  <div className="space-y-6">
+                    {cs.items.map((item, idxx) => (
+                      <div key={item.id || `csi-${idxx}`} className="space-y-1.5 relative pl-4 border-l border-gray-100">
+                        {/* Dot indicator */}
+                        <div className="absolute -left-[5px] top-1.5 w-2.5 h-2.5 rounded-full border-2 border-white" style={{ backgroundColor: c.primary }}></div>
+                        <div className="flex justify-between items-baseline">
+                          <h4 className="text-xs font-bold text-gray-900 leading-tight">{item.name}</h4>
+                        </div>
+                        {item.description && <p className="text-[11px] leading-relaxed text-gray-500 mt-1 whitespace-pre-line">{renderText(item.description)}</p>}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
             </div>
 
             {/* Right Column (37% width) */}
@@ -3277,8 +3336,8 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
           {/* Main Top Header Block (Johan Bluestone Style) */}
           <div className="px-12 py-10 flex justify-between items-center bg-gray-50/50 border-b border-gray-100">
             <div className="space-y-2 max-w-[65%]">
-              <h1 className="text-4xl font-extrabold tracking-widest text-slate-900 uppercase leading-none">{data.personalInfo.fullName || "Seu Nome"}</h1>
-              <p className="text-xs font-black uppercase tracking-[0.3em] font-mono" style={{ color: c.primary }}>{data.personalInfo.title || "Cargo Desejado"}</p>
+              <h1 className="text-4xl font-extrabold tracking-widest text-slate-900 uppercase leading-none">{data.personalInfo.fullName }</h1>
+              <p className="text-xs font-black uppercase tracking-[0.3em] font-mono" style={{ color: c.primary }}>{data.personalInfo.title }</p>
               {data.personalInfo.summary && (
                 <p className="text-[11px] leading-relaxed text-gray-500 mt-2 font-serif italic pr-4">
                   "{renderText(data.personalInfo.summary)}"
@@ -3442,6 +3501,26 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
                 </div>
               )}
 
+              {/* CUSTOM SECTIONS */}
+              {data.customSections?.map((cs, idx) => (
+                <div key={cs.id || `cs-${idx}`} className="space-y-4">
+                  <div className="flex items-center gap-2 pb-1.5 border-b border-gray-100">
+                    <span className="w-2.5 h-2.5 shrink-0" style={{ backgroundColor: c.primary }}></span>
+                    <h3 className="text-sm font-extrabold uppercase tracking-[0.25em] text-slate-800">{cs.title}</h3>
+                  </div>
+                  <div className="space-y-5">
+                    {cs.items.map((item, idxx) => (
+                      <div key={item.id || `csi-${idxx}`} className="space-y-1.5 pl-3 border-l-2" style={{ borderColor: c.primary }}>
+                        <div className="flex justify-between items-baseline gap-2">
+                          <h4 className="text-xs font-bold text-slate-900 leading-tight">{item.name}</h4>
+                        </div>
+                        {item.description && <p className="text-[11px] leading-relaxed text-gray-500 whitespace-pre-line pt-0.5">{renderText(item.description)}</p>}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+
               {/* Certifications & Awards */}
               {data.certifications && data.certifications.length > 0 && (
                 <div className="space-y-4">
@@ -3490,8 +3569,8 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
                   />
                 )}
                 <div className="space-y-1">
-                  <h1 className="text-3xl font-black text-slate-900 leading-none tracking-tight uppercase">{data.personalInfo.fullName || "Seu Nome"}</h1>
-                  <p className="text-xs font-extrabold uppercase tracking-widest" style={{ color: c.primary }}>{data.personalInfo.title || "Cargo Desejado"}</p>
+                  <h1 className="text-3xl font-black text-slate-900 leading-none tracking-tight uppercase">{data.personalInfo.fullName }</h1>
+                  <p className="text-xs font-extrabold uppercase tracking-widest" style={{ color: c.primary }}>{data.personalInfo.title }</p>
                 </div>
               </div>
 
@@ -3558,6 +3637,27 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
                   </div>
                 </div>
               )}
+
+              {/* CUSTOM SECTIONS */}
+              {data.customSections?.map((cs, idx) => (
+                <div key={cs.id || `cs-${idx}`} className="space-y-4">
+                  <div className="text-white text-[10px] font-black uppercase tracking-[0.2em] px-3.5 py-1.5 rounded-sm inline-block leading-none" style={{ backgroundColor: c.primary }}>
+                    {cs.title}
+                  </div>
+                  <div className="space-y-5 pl-1">
+                    {cs.items.map((item, idxx) => (
+                      <div key={item.id || `csi-${idxx}`} className="flex flex-row gap-4 items-start">
+                        <div className="flex-1 space-y-1">
+                          <div className="flex justify-between items-baseline gap-2">
+                            <h4 className="text-xs font-bold text-slate-900 leading-tight">{item.name}</h4>
+                          </div>
+                          {item.description && <p className="text-[11px] leading-relaxed text-gray-500 whitespace-pre-line mt-1">{renderText(item.description)}</p>}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
             </div>
 
             {/* Accent colored minimal footer credit */}
@@ -3687,8 +3787,8 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
                 <img src={data.personalInfo.photo} referrerPolicy="no-referrer" className="object-cover object-top w-full h-full" />
               </div>
             )}
-            <h1 className="text-4xl font-extrabold tracking-tight text-slate-900 font-serif leading-none">{data.personalInfo.fullName || "Seu Nome"}</h1>
-            <p className="text-xs tracking-[0.25em] font-sans font-black uppercase" style={{ color: c.primary }}>{data.personalInfo.title || "Cargo Desejado"}</p>
+            <h1 className="text-4xl font-extrabold tracking-tight text-slate-900 font-serif leading-none">{data.personalInfo.fullName }</h1>
+            <p className="text-xs tracking-[0.25em] font-sans font-black uppercase" style={{ color: c.primary }}>{data.personalInfo.title }</p>
             
             {/* Dynamic centered contact row */}
             <div className="flex flex-wrap justify-center items-center gap-x-6 gap-y-1.5 pt-2 text-[10px] text-gray-500 font-sans font-bold">
@@ -3782,6 +3882,23 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
                 </div>
               )}
 
+              {/* CUSTOM SECTIONS */}
+              {data.customSections?.map((cs, idx) => (
+                <div key={cs.id || `cs-${idx}`} className="space-y-4">
+                  <h3 className="text-xs font-black uppercase tracking-widest font-sans border-b pb-1 text-slate-800" style={{ borderColor: c.primary }}>{cs.title}</h3>
+                  <div className="space-y-6">
+                    {cs.items.map((item, idxx) => (
+                      <div key={item.id || `csi-${idxx}`} className="space-y-1.5">
+                        <div className="flex justify-between items-baseline">
+                          <h4 className="text-xs font-extrabold text-slate-950 font-serif">{item.name}</h4>
+                        </div>
+                        {item.description && <p className="text-[11px] leading-relaxed text-slate-600 whitespace-pre-line font-medium pt-0.5">{renderText(item.description)}</p>}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+
               {/* Certifications & Awards */}
               {data.certifications && data.certifications.length > 0 && (
                 <div className="space-y-4">
@@ -3816,8 +3933,8 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
             <div className="absolute top-1/2 left-1/3 w-32 h-32 rounded-full opacity-5" style={{ backgroundColor: c.primary }} />
 
             <div className="space-y-2 z-10 font-sans">
-              <h1 className="text-4xl font-extrabold tracking-tight uppercase leading-none">{data.personalInfo.fullName || "Seu Nome"}</h1>
-              <p className="text-xs font-black uppercase tracking-[0.25em]" style={{ color: c.primary }}>{data.personalInfo.title || "Cargo Desejado"}</p>
+              <h1 className="text-4xl font-extrabold tracking-tight uppercase leading-none">{data.personalInfo.fullName }</h1>
+              <p className="text-xs font-black uppercase tracking-[0.25em]" style={{ color: c.primary }}>{data.personalInfo.title }</p>
             </div>
 
             {data.personalInfo.photo && (
@@ -3957,6 +4074,23 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
                   </div>
                 </div>
               )}
+
+              {/* CUSTOM SECTIONS */}
+              {data.customSections?.map((cs, idx) => (
+                <div key={cs.id || `cs-${idx}`} className="p-6 bg-white rounded-2xl border border-slate-100 shadow-sm space-y-4 font-sans">
+                  <h3 className="text-xs font-mono font-black uppercase tracking-widest text-slate-800 border-b pb-2" style={{ borderBottomColor: c.primary }}>{cs.title}</h3>
+                  <div className="space-y-4">
+                    {cs.items.map((item, idxx) => (
+                      <div key={item.id || `csi-${idxx}`} className="space-y-1 relative pl-4 border-l-2" style={{ borderLeftColor: c.primary }}>
+                        <div className="flex justify-between items-baseline font-sans">
+                          <h4 className="text-xs font-extrabold text-slate-900 leading-tight">{item.name}</h4>
+                        </div>
+                        {item.description && <p className="text-[10.5px] leading-relaxed text-slate-600 whitespace-pre-line mt-1">{renderText(item.description)}</p>}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
 
               {/* Certifications and Awards */}
               {data.certifications && data.certifications.length > 0 && (
