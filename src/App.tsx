@@ -2113,6 +2113,20 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
                   </div>
                 </div>
               )}
+
+              {data.customSections?.map((cs, idx) => (
+                <div key={cs.id || `cs-${idx}`} style={{ marginBottom: '32px' }}>
+                  <div className="t1-section-title">{cs.title}</div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    {cs.items.map((item, idxx) => (
+                       <div key={item.id || `csi-${idxx}`} className="flex flex-col text-[12px] opacity-90">
+                         <span className="font-bold mb-1">{item.name}</span>
+                         {item.description && <span className="opacity-80 leading-relaxed font-serif text-[11px] whitespace-pre-wrap">{item.description}</span>}
+                       </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
           
@@ -2240,6 +2254,20 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
                      </div>
                   </div>
                 )}
+
+                {data.customSections?.map((cs, idx) => (
+                  <div key={cs.id || `cs-${idx}`} className="t2-section">
+                    <div className="t2-section-title">{cs.title}</div>
+                    <div className="flex flex-col gap-6">
+                      {cs.items.map((item, idxx) => (
+                        <div key={item.id || `csi-${idxx}`} className="t2-exp-item">
+                           <div className="t2-exp-role" style={{ fontSize: '13px' }}>{item.name}</div>
+                           {item.description && <div className="t2-exp-desc mt-1.5">{renderText(item.description)}</div>}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
              </div>
           </div>
         </div>
@@ -2319,6 +2347,18 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
                       ))}
                    </div>
                  )}
+
+                 {data.customSections?.map((cs, idx) => (
+                   <div key={cs.id || `cs-${idx}`}>
+                      <div className="t3-section-title">{cs.title}</div>
+                      {cs.items.map((item, idxx) => (
+                         <div key={item.id || `csi-${idxx}`} className="t3-exp-item">
+                            <div className="t3-exp-role" style={{ fontSize: '13px' }}>{item.name}</div>
+                            {item.description && <div className="t3-exp-desc mt-1.5">{renderText(item.description)}</div>}
+                         </div>
+                      ))}
+                   </div>
+                 ))}
               </div>
            </div>
         </div>
@@ -2446,6 +2486,20 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
                   </div>
                </div>
              )}
+             {data.customSections?.map((cs, idx) => (
+               <div key={cs.id || `cs-${idx}`}>
+                  <h2 className="text-[28px] font-black mb-4 leading-tight" style={{ color: '#111827' }}>{cs.title}</h2>
+                  <div className="w-12 h-1.5 bg-gray-200 mb-6 rounded-full"></div>
+                  <div className="flex flex-col gap-6">
+                    {cs.items.map((item, idxx) => (
+                      <div key={item.id || `csi-${idxx}`}>
+                         <h4 className="text-[15px] font-bold mb-1" style={{ color: '#1f2937' }}>{item.name}</h4>
+                         {item.description && <p className="text-[13px] leading-[1.7] text-left font-serif mt-1" style={{ color: '#4b5563' }}>{renderText(item.description)}</p>}
+                      </div>
+                    ))}
+                  </div>
+               </div>
+             ))}
           </div>
         </div>
       )}
@@ -2623,6 +2677,28 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
                    </div>
                 </div>
               )}
+
+              {data.customSections?.map((cs, idx) => (
+                <div key={cs.id || `cs-${idx}`}>
+                   <h2 className="text-[18px] font-black uppercase tracking-[0.15em] mb-6 border-b pb-4" style={{ color: '#111827', borderColor: '#F3F4F6' }}>{cs.title}</h2>
+                   <div className="flex flex-col gap-8">
+                     {cs.items.map((item, idxx) => (
+                       <div key={item.id || `csi-${idxx}`} className="flex gap-4">
+                          <div className="flex flex-col items-center pt-2">
+                             <div className="w-2.5 h-2.5 rounded-full border-2 bg-white" style={{ borderColor: c.primary }}></div>
+                             <div className="w-0.5 flex-1 bg-gray-50 my-1"></div>
+                          </div>
+                          <div className="flex-1">
+                            <div className="flex justify-between items-baseline mb-1">
+                               <h4 className="text-[17px] font-black text-gray-900 tracking-tight">{item.name}</h4>
+                            </div>
+                            {item.description && <p className="text-[13px] leading-[1.8] text-left text-gray-600 font-medium pl-4 border-l-2 mt-2" style={{borderColor: `${c.primary}20`}}>{renderText(item.description)}</p>}
+                          </div>
+                       </div>
+                     ))}
+                   </div>
+                </div>
+              ))}
            </div>
         </div>
       )}
@@ -2677,6 +2753,20 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
                   </div>
                 </div>
               )}
+
+              {data.customSections?.map((cs, idx) => (
+                <div key={cs.id || `cs-${idx}`}>
+                  <h3 className="text-sm font-black uppercase tracking-wider mb-4" style={{ color: '#111827' }}>{cs.title}</h3>
+                  <div className="space-y-4">
+                    {cs.items.map((item, idxx) => (
+                      <div key={item.id || `csi-${idxx}`} className="pl-3 border-l-2 space-y-1" style={{ borderColor: c.primary }}>
+                        <h4 className="text-xs font-black text-gray-955">{item.name}</h4>
+                        {item.description && <p className="text-[11px] leading-relaxed text-gray-600 mt-1">{renderText(item.description)}</p>}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
             </div>
 
             <div className="space-y-6">
@@ -6360,6 +6450,105 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
                       </div>
                     )}
                   </div>
+
+                  <div className="space-y-6 pt-6 border-t border-border-main">
+                    <h3 className="text-sm font-black uppercase tracking-[0.2em] text-primary-blue flex justify-between items-center">
+                       Seções Personalizadas
+                       <Button variant="secondary" onClick={() => {
+                          setResumeData(prev => ({
+                             ...prev,
+                             customSections: [...(prev.customSections || []), {
+                                id: Math.random().toString(36).substring(7),
+                                title: 'Nova Seção',
+                                items: [{
+                                   id: Math.random().toString(36).substring(7),
+                                   name: 'Item Título',
+                                   description: ''
+                                }]
+                             }]
+                          }));
+                       }}><Plus size={14} className="mr-2" /> Adicionar Seção</Button>
+                    </h3>
+                    
+                    {(resumeData.customSections || []).map((cs, sIdx) => (
+                       <div key={cs.id || `cs-${sIdx}`} className="p-4 bg-white border border-border-main rounded-2xl space-y-4">
+                          <div className="flex gap-3 items-end">
+                             <div className="flex-1">
+                               <Input 
+                                 label="Título da Seção (Ex: Interesses, Cursos)" 
+                                 value={cs.title} 
+                                 onChange={(v) => {
+                                    const updated = [...(resumeData.customSections || [])];
+                                    updated[sIdx].title = v;
+                                    setResumeData(p => ({...p, customSections: updated}));
+                                 }} 
+                               />
+                             </div>
+                             <button 
+                               onClick={() => {
+                                  const updated = [...(resumeData.customSections || [])];
+                                  updated.splice(sIdx, 1);
+                                  setResumeData(p => ({...p, customSections: updated}));
+                               }}
+                               className="p-3 text-red-500 hover:bg-red-50 rounded-lg transition-colors border border-transparent hover:border-red-100 hover:text-red-600 bg-gray-50 hover:bg-red-50/50 mb-[1px]"
+                             >
+                               <Trash2 size={16} />
+                             </button>
+                          </div>
+                          <div className="space-y-3 pl-4 border-l-2 border-gray-100">
+                             {cs.items.map((item, iIdx) => (
+                                <div key={item.id || `csi-${iIdx}`} className="flex gap-3 items-start">
+                                   <div className="flex-1 space-y-3">
+                                      <Input 
+                                        placeholder="Título (Obrigatório)" 
+                                        value={item.name} 
+                                        onChange={(v) => {
+                                           const updated = [...(resumeData.customSections || [])];
+                                           updated[sIdx].items[iIdx].name = v;
+                                           setResumeData(p => ({...p, customSections: updated}));
+                                        }} 
+                                      />
+                                      <textarea 
+                                        placeholder="Descrição (Opcional)" 
+                                        className="w-full bg-gray-50/50 border border-border-main rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-primary-blue/30 focus:border-primary-blue transition-all font-medium text-sm text-text-primary resize-y min-h-[60px]"
+                                        value={item.description || ''} 
+                                        onChange={(e) => {
+                                           const updated = [...(resumeData.customSections || [])];
+                                           updated[sIdx].items[iIdx].description = e.target.value;
+                                           setResumeData(p => ({...p, customSections: updated}));
+                                        }} 
+                                      />
+                                   </div>
+                                   <button 
+                                     onClick={() => {
+                                        const updated = [...(resumeData.customSections || [])];
+                                        updated[sIdx].items.splice(iIdx, 1);
+                                        setResumeData(p => ({...p, customSections: updated}));
+                                     }}
+                                     className="p-3 mt-1 text-red-400 hover:text-red-600 rounded-lg"
+                                   >
+                                     <X size={14} />
+                                   </button>
+                                </div>
+                             ))}
+                             <button 
+                               className="text-xs font-bold text-primary-blue hover:underline py-1 flex items-center gap-1 opacity-80"
+                               onClick={() => {
+                                  const updated = [...(resumeData.customSections || [])];
+                                  updated[sIdx].items.push({
+                                     id: Math.random().toString(36).substring(7),
+                                     name: '',
+                                     description: ''
+                                  });
+                                  setResumeData(p => ({...p, customSections: updated}));
+                               }}
+                             >
+                                <Plus size={12} /> Adicionar Item
+                             </button>
+                          </div>
+                       </div>
+                    ))}
+                  </div>
                 </div>
               )}
 
@@ -6392,6 +6581,32 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
                           </div>
                        </div>
                     </div>
+                  </div>
+
+                  <div className="p-6 bg-white border border-border-main rounded-3xl space-y-6">
+                     <h4 className="text-[10px] font-black uppercase tracking-widest text-text-muted">Ajustes Avançados (Afeta alguns templates)</h4>
+                     <div className="space-y-4">
+                        <div className="space-y-2">
+                           <div className="flex justify-between text-[11px] font-bold text-gray-700 uppercase tracking-widest"><span>Espaçamento de Seções</span> <span>{resumeData.styleConfig?.sectionSpacing || 25}px</span></div>
+                           <input type="range" min="10" max="40" step="1" value={resumeData.styleConfig?.sectionSpacing || 25} onChange={(e) => setResumeData(p => ({...p, styleConfig: {...(p.styleConfig||{}), sectionSpacing: Number(e.target.value)}}))} className="w-full h-1 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-primary-blue" />
+                        </div>
+                        <div className="space-y-2">
+                           <div className="flex justify-between text-[11px] font-bold text-gray-700 uppercase tracking-widest"><span>Espaçamento Interno</span> <span>{resumeData.styleConfig?.itemSpacing || 10}px</span></div>
+                           <input type="range" min="4" max="24" step="1" value={resumeData.styleConfig?.itemSpacing || 10} onChange={(e) => setResumeData(p => ({...p, styleConfig: {...(p.styleConfig||{}), itemSpacing: Number(e.target.value)}}))} className="w-full h-1 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-primary-blue" />
+                        </div>
+                        <div className="space-y-2">
+                           <div className="flex justify-between text-[11px] font-bold text-gray-700 uppercase tracking-widest"><span>Margens da Folha</span> <span>{resumeData.styleConfig?.margins || 30}px</span></div>
+                           <input type="range" min="10" max="60" step="1" value={resumeData.styleConfig?.margins || 30} onChange={(e) => setResumeData(p => ({...p, styleConfig: {...(p.styleConfig||{}), margins: Number(e.target.value)}}))} className="w-full h-1 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-primary-blue" />
+                        </div>
+                        <div className="space-y-2">
+                           <div className="flex justify-between text-[11px] font-bold text-gray-700 uppercase tracking-widest"><span>Espaçamento de Linha (Textos)</span> <span>{resumeData.styleConfig?.lineHeight || 1.4}</span></div>
+                           <input type="range" min="1.0" max="2.5" step="0.05" value={resumeData.styleConfig?.lineHeight || 1.4} onChange={(e) => setResumeData(p => ({...p, styleConfig: {...(p.styleConfig||{}), lineHeight: Number(e.target.value)}}))} className="w-full h-1 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-primary-blue" />
+                        </div>
+                        <div className="space-y-2">
+                           <div className="flex justify-between text-[11px] font-bold text-gray-700 uppercase tracking-widest"><span>Tamanho do Nome</span> <span>{resumeData.styleConfig?.titleSize || 26}px</span></div>
+                           <input type="range" min="16" max="48" step="1" value={resumeData.styleConfig?.titleSize || 26} onChange={(e) => setResumeData(p => ({...p, styleConfig: {...(p.styleConfig||{}), titleSize: Number(e.target.value)}}))} className="w-full h-1 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-primary-blue" />
+                        </div>
+                     </div>
                   </div>
 
                   <div className="grid grid-cols-1 gap-3">
@@ -6552,6 +6767,40 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
           </div>
         )}
 
+        {/* Top toolbar replacing the floating bottom bar */}
+        <div className="w-full relative shrink-0 z-40 bg-white/90 backdrop-blur-md rounded-2xl px-4 py-3 flex flex-wrap items-center justify-center sm:justify-between gap-4 border border-gray-200/80 shadow-sm print:hidden mb-6 mt-2 max-w-[794px]">
+          <div className="flex items-center gap-3">
+             <button title="Diminuir Zoom" onClick={() => { setIsAutoFit(false); setPreviewScale(prev => Math.max(0.4, Number((prev - 0.05).toFixed(2)))); }} className="p-1.5 hover:bg-gray-100 active:bg-gray-200 rounded-xl transition-colors cursor-pointer text-gray-500 hover:text-gray-900"><Minus size={14} /></button>
+             <span className="min-w-[48px] text-center font-mono text-gray-800 text-xs font-bold">{Math.round(previewScale * 100)}%</span>
+             <button title="Aumentar Zoom" onClick={() => { setIsAutoFit(false); setPreviewScale(prev => Math.min(1.5, Number((prev + 0.05).toFixed(2)))); }} className="p-1.5 hover:bg-gray-100 active:bg-gray-200 rounded-xl transition-colors cursor-pointer text-gray-500 hover:text-gray-900"><Plus size={14} /></button>
+          </div>
+          
+          <div className="h-5 w-px bg-gray-200 hidden sm:block"></div>
+
+          <div className="flex items-center gap-1 bg-slate-50 border border-slate-100 rounded-xl px-1.5 py-1">
+            <button title="Diminuir Tamanho de Letra" onClick={() => setResumeData(prev => ({...prev, styleConfig: {...(prev.styleConfig || {fontSize:13}), fontSize: Math.max(8, Number(((prev.styleConfig?.fontSize || 13) - 0.5).toFixed(1)))} }))} className="p-1 hover:bg-slate-100 active:bg-slate-200 rounded-lg text-gray-500"><Minus size={11} /></button>
+            <span className="min-w-[42px] text-center font-mono text-gray-800 text-[10px] tracking-wide flex items-center justify-center gap-1" title="Tamanho de Letra Atual">
+              <Type size={10} className="text-gray-400" />
+              <span>{(resumeData.styleConfig?.fontSize || 13).toFixed(1)}</span>
+            </span>
+            <button title="Aumentar Tamanho de Letra" onClick={() => setResumeData(prev => ({...prev, styleConfig: {...(prev.styleConfig || {fontSize:13}), fontSize: Math.min(22, Number(((prev.styleConfig?.fontSize || 13) + 0.5).toFixed(1)))} }))} className="p-1 hover:bg-slate-100 active:bg-slate-200 rounded-lg text-gray-500"><Plus size={11} /></button>
+          </div>
+          
+          <div className="h-5 w-px bg-gray-200 hidden sm:block"></div>
+
+          <div className="flex items-center gap-2">
+            <button 
+              onClick={() => setShowAlignGuides(!showAlignGuides)}
+              title={showAlignGuides ? "Desativar Modo de Alinhamento e Réguas" : "Ativar Modo de Alinhamento e Ajustes Finos"}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-wider transition-colors cursor-pointer ${showAlignGuides ? 'bg-primary-blue text-white shadow-md shadow-primary-blue/20' : 'bg-gray-100 text-gray-600 hover:bg-gray-200 hover:text-gray-900'}`}
+            >
+              <Grid size={14} className={showAlignGuides ? "text-white" : "text-gray-400"} />
+              {showAlignGuides ? 'Modo de Medição: Ligado' : 'Ajustes de Layout'}
+            </button>
+            <button title="Descarga PDF" onClick={() => window.print()} className="p-2 bg-text-main text-white hover:bg-deep-blue rounded-xl shadow-lg transition-colors cursor-pointer"><Download size={14} /></button>
+          </div>
+        </div>
+
         {/* Page Limit Warning / Auto Align Trigger */}
         {!isCoverLetterMode && resumeHeight > 1125 && (
           <div className="w-full max-w-[794px] mb-6 bg-amber-50 border border-amber-200/80 rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4 animate-fade-in shadow-sm print:hidden">
@@ -6615,126 +6864,6 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
                )}
              </AnimatePresence>
           </div>
-        </div>
-        {/* Floating Zoom & Scale Controls - Absolute positioning inside relative <main> */}
-        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 bg-white/90 backdrop-blur-md border border-gray-200/80 rounded-2xl px-4 py-2.5 flex items-center gap-3.5 shadow-[0_20px_50px_-12px_rgba(0,0,0,0.15)] z-40 print:hidden text-xs font-bold text-gray-700 select-none transition-all duration-300 hover:shadow-[0_24px_60px_-10px_rgba(0,0,0,0.22)]">
-          <button 
-            type="button"
-            onClick={() => {
-              setIsAutoFit(false);
-              setPreviewScale(prev => Math.max(0.4, Number((prev - 0.05).toFixed(2))));
-            }}
-            className="p-1.5 hover:bg-gray-100 active:bg-gray-200 rounded-xl transition-colors cursor-pointer text-gray-400 hover:text-gray-900"
-            title="Diminuir Zoom"
-          >
-            <Minus size={14} />
-          </button>
-          
-          <span className="min-w-[48px] text-center font-mono text-gray-800 text-xs">
-            {Math.round(previewScale * 100)}%
-          </span>
-          
-          <button 
-            type="button"
-            onClick={() => {
-              setIsAutoFit(false);
-              setPreviewScale(prev => Math.min(1.5, Number((prev + 0.05).toFixed(2))));
-            }}
-            className="p-1.5 hover:bg-gray-100 active:bg-gray-200 rounded-xl transition-colors cursor-pointer text-gray-400 hover:text-gray-900"
-            title="Aumentar Zoom"
-          >
-            <Plus size={14} />
-          </button>
-          
-          <div className="h-5 w-px bg-gray-200"></div>
-
-          {/* Controlo de Letra do Currículo */}
-          <div className="flex items-center gap-1 bg-slate-50 border border-slate-100 rounded-xl px-1.5 py-0.5">
-            <button 
-              type="button"
-              onClick={() => {
-                setResumeData(prev => ({
-                  ...prev,
-                  styleConfig: {
-                    ...(prev.styleConfig || {
-                      fontSize: 13,
-                      titleSize: 26,
-                      sectionSpacing: 25,
-                      itemSpacing: 10,
-                      margins: 30,
-                      lineHeight: 1.4,
-                      alignment: 'left',
-                      fontFamily: 'sans',
-                      photoBorderRadius: 50
-                    }),
-                    fontSize: Math.max(8, Number(((prev.styleConfig?.fontSize || 13) - 0.5).toFixed(1)))
-                  }
-                }));
-              }}
-              className="p-1 hover:bg-slate-100 active:bg-slate-200 rounded-lg transition-colors cursor-pointer text-gray-500 hover:text-gray-900 flex items-center justify-center"
-              title="Diminuir Tamanho de Letra"
-            >
-              <Minus size={11} />
-            </button>
-            <span className="min-w-[42px] text-center font-mono text-gray-800 text-[10px] tracking-wide flex items-center justify-center gap-0.5" title="Tamanho de Letra Atual">
-              <Type size={10} className="text-gray-400" />
-              <span>{(resumeData.styleConfig?.fontSize || 13).toFixed(1)}</span>
-            </span>
-            <button 
-              type="button"
-              onClick={() => {
-                setResumeData(prev => ({
-                  ...prev,
-                  styleConfig: {
-                    ...(prev.styleConfig || {
-                      fontSize: 13,
-                      titleSize: 26,
-                      sectionSpacing: 25,
-                      itemSpacing: 10,
-                      margins: 30,
-                      lineHeight: 1.4,
-                      alignment: 'left',
-                      fontFamily: 'sans',
-                      photoBorderRadius: 50
-                    }),
-                    fontSize: Math.min(22, Number(((prev.styleConfig?.fontSize || 13) + 0.5).toFixed(1)))
-                  }
-                }));
-              }}
-              className="p-1 hover:bg-slate-100 active:bg-slate-200 rounded-lg transition-colors cursor-pointer text-gray-500 hover:text-gray-900 flex items-center justify-center"
-              title="Aumentar Tamanho de Letra"
-            >
-              <Plus size={11} />
-            </button>
-          </div>
-
-          <div className="h-5 w-px bg-gray-200"></div>
-          
-          <button 
-            type="button"
-            onClick={() => {
-              setIsAutoFit(true);
-              // Force trigger refit
-              if (window.innerWidth >= 1024) {
-                 const sidebarWidth = window.innerWidth >= 1280 ? 600 : 500;
-                 const availableWidth = window.innerWidth - sidebarWidth - 48;
-                 const optScale = availableWidth / 794;
-                 setPreviewScale(Math.min(1.05, Math.max(0.45, optScale)));
-              } else {
-                 const availableWidth = window.innerWidth - 32;
-                 const optScale = availableWidth / 794;
-                 setPreviewScale(Math.min(1.0, Math.max(0.4, optScale)));
-              }
-            }}
-            className={`px-3 py-1.5 rounded-lg transition-all text-[10px] uppercase font-black tracking-wider cursor-pointer ${
-              isAutoFit 
-                ? 'bg-primary-blue text-white shadow-md shadow-primary-blue/20' 
-                : 'bg-soft-blue text-primary-line hover:bg-primary-blue/10 text-primary-blue'
-            }`}
-            title="Ajustar Automaticamente ao Ecrã"
-          >
-            Ajustar
-          </button>
         </div>
       </main>
 

@@ -139,7 +139,8 @@ function cleanAndNormalizeParsedData(parsedData: any): any {
           degree: String(edu.degree || '').trim(),
           field: String(edu.field || '').trim(),
           startDate: String(edu.startDate || '').trim(),
-          endDate: String(edu.endDate || '').trim()
+          endDate: String(edu.endDate || '').trim(),
+          description: String(edu.description || '').trim()
         });
       }
     });
@@ -178,7 +179,7 @@ function cleanAndNormalizeParsedData(parsedData: any): any {
       } else if (typeof lang === 'object') {
         const nameVal = lang.name || lang.language || '';
         if (nameVal) {
-          languages.push({ id: lang.id || cleanId(), name: String(nameVal).trim(), level: lang.level || 'Fluente' });
+           languages.push({ id: lang.id || cleanId(), name: String(nameVal).trim(), level: lang.level || 'Fluente' });
         }
       }
     });
@@ -198,7 +199,35 @@ function cleanAndNormalizeParsedData(parsedData: any): any {
     });
   }
 
-  return { personalInfo, experience, education, skills, languages, certifications, interests: [] };
+  const customSections: any[] = [];
+  if (Array.isArray(parsedData.customSections)) {
+    parsedData.customSections.forEach((cs: any) => {
+      if (cs && cs.title) {
+        const items: any[] = [];
+        if (Array.isArray(cs.items)) {
+          cs.items.forEach((item: any) => {
+            if (item) {
+              const nameVal = typeof item === 'string' ? item : (item.name || item.text || '');
+              if (nameVal) {
+                items.push({
+                  id: item.id || cleanId(),
+                  name: String(nameVal).trim(),
+                  description: String(item.description || '').trim()
+                });
+              }
+            }
+          });
+        }
+        customSections.push({
+          id: cs.id || cleanId(),
+          title: String(cs.title).trim(),
+          items
+        });
+      }
+    });
+  }
+
+  return { personalInfo, experience, education, skills, languages, certifications, customSections, interests: [] };
 }
 
 
@@ -314,17 +343,18 @@ export async function generateFullResume(personalInfo: any): Promise<any> {
 export async function parseResumeFromText(rawText: string, imageData?: string): Promise<any> {
   const textPrompt = `
       Você é o principal algoritmo de Inteligência Artificial para extração, classificação e polimento de currículos profissionais na Língua Portuguesa.
-      Sua missão é ler, analisar minuciosamente e ENRIQUECER o currículo obtido a partir de texto cru ou OCR de imagem. Reconheça e classifique com precisão cirúrgica as informações estruturadas.
+      Sua missão é ler, analisar minuciosamente e ENRIQUECER o currículo obtido a partir de texto cru ou OCR de imagem. Reconheça e classifique com precisão as informações estruturadas.
 
       INSTRUÇÕES DE CLASSIFICAÇÃO E ENRIQUECIMENTO INTELIGENTE:
       1. "personalInfo": Extraia o nome completo do candidato, cargo desejado, e-mail, telefone, localização e um Resumo.
-         - IMPORTANTE: Se o resumo profissional for curto ou ausente, fabrique um resumo fantástico (2 a 4 linhas) baseado nas competências e foco no cargo.
-      2. "experience": Mapeie cada de forma detalhada. 
-         - ENRIQUECIMENTO EXTREMO: Expanda itens telegráficos (ex: "vendas") com verbos de ação poderosos.
-      3. "education": Identifique instituição, grau e data.
-      4. "skills": Extraia TODAS as competências profissionais na forma de uma array de strings! Retorne lista de strings vazia apenas se nulo - TENTE PREENCHER COM 4-6 competências alinhadas de forma dedutiva!
+         - Se o resumo profissional for curto ou ausente, fabrique um resumo fantástico (2 a 4 linhas) baseado nas competências e foco no cargo.
+      2. "experience": Mapeie cada de forma detalhada com verbos de ação poderosos.
+      3. "education": Identifique instituição, grau, curso/campo, ano de início e fim.
+         - IMPORTANTE: Se o indivíduo tiver bullet points, listas de tópicos de destaque ao longo do curso (ex: distinções, participação associativa, lideranças ou monitorias), salve-os fielmente no campo "description": "• Item 1\n• Item 2".
+      4. "skills": Extraia TODAS as competências profissionais na forma de uma array de strings.
       5. "languages": Identifique idiomas. Se sem nível, assuma "Intermédio" ou "Fluente".
       6. "certifications": Extraia ano.
+      7. "customSections": Se existirem no currículo ou texto secções, blocos isolados de informações que não se enquadram diretamente nos campos padrão acima mas são essenciais para o currículo do utilizador (por exemplo, "ESPECIALIZAÇÕES" com tópicos, "Conquistas", "Prémios", "Projetos Culturais", "Filiações"), extraia-as de forma flexível nesta propriedade de retorno. Retorne um array de objetos onde cada objeto representa uma seção customizada.
 
       SINTAXE DO RETORNO JSON ESPERADO (Formato Extremamente Restrito):
       {
@@ -342,16 +372,33 @@ export async function parseResumeFromText(rawText: string, imageData?: string): 
           }
         ],
         "education": [
-          { "institution": "Escola", "degree": "Grau", "field": "Curso", "startDate": "Ano" }
+          { 
+            "institution": "Escola", 
+            "degree": "Grau/Nível", 
+            "field": "Curso", 
+            "startDate": "Ano", 
+            "endDate": "Ano",
+            "description": "• Vice-Lider da associação dos Estudantes\n• Monitora nas Aulas" 
+          }
         ],
         "skills": ["Competência 1", "Competência 2", "Competência 3"],
         "languages": [ { "name": "Inglês", "level": "Avançado" } ],
-        "certifications": []
+        "certifications": [],
+        "customSections": [
+          {
+            "title": "Especializações",
+            "items": [
+              { "name": "Secretaria Executiva" },
+              { "name": "Contadora" },
+              { "name": "Auditora contabilista" }
+            ]
+          }
+        ]
       }
 
       REGRAS RIGOROSAS:
       1. Retorne **APENAS e ESTRITAMENTE** o formatação em objeto JSON válida. Não incluir markdown \`\`\`json\`\`\`.
-      2. Preencha e expanda ativamente os dados descritivos (experience, summary, skills) de forma inteligente quando escassos.
+      2. Preencha e expanda ativamente os dados descritivos de forma inteligente quando escassos.
 
       TEXTO DE ENTRADA DO UTILIZADOR:
       "${rawText || ""}"

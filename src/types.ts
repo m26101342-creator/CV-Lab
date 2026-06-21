@@ -41,6 +41,7 @@ export interface ResumeData {
     field: string;
     startDate: string;
     endDate: string;
+    description?: string; // Tópicos ou notas sobre a formação acadêmica
   }[];
   skills: {
     id: string;
@@ -54,8 +55,21 @@ export interface ResumeData {
   }[];
   interests?: string[];
   certifications?: { id: string; name: string; date: string }[];
+  customSections?: CustomSection[];
   themeColor?: string;
   styleConfig?: ResumeStyleConfig;
+}
+
+export interface CustomSectionItem {
+  id: string;
+  name: string;
+  description?: string;
+}
+
+export interface CustomSection {
+  id: string;
+  title: string;
+  items: CustomSectionItem[];
 }
 
 export const INITIAL_RESUME_DATA: ResumeData = {
@@ -74,6 +88,7 @@ export const INITIAL_RESUME_DATA: ResumeData = {
   education: [],
   skills: [],
   languages: [],
+  customSections: [],
   themeColor: '#1B2A4A',
   styleConfig: {
     fontSize: 13,
