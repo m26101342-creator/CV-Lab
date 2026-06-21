@@ -135,7 +135,7 @@ const Template1 = ({ data }: { data: ResumeData }) => {
           <View>
             <Text style={styles.mainSectionTitle}>{getSectionTitle(data, 'experience', 'Experiência Profissional')}</Text>
             {data.experience.map((ex, idx) => (
-              <View key={ex.id || `exp-${idx}`} style={styles.expItem}>
+              <View key={ex.id || `exp-${idx}`} style={[styles.expItem, data.styleConfig?.showTimeline === false && { borderLeft: 'none', paddingLeft: 0, marginLeft: 0 }]}>
                 <View style={styles.expContent}>
                   <Text style={styles.expRole}>{ex.position} | <Text style={{ color: '#4B5563' }}>{ex.company}</Text></Text>
                   <Text style={styles.expPeriod}>{ex.startDate} - {ex.current ? "Presente" : ex.endDate}</Text>
@@ -355,7 +355,7 @@ const Template4 = ({ data }: { data: ResumeData }) => {
           <View>
             <Text style={styles.sectionTitleMain}>{getSectionTitle(data, 'experience', 'Experiência')}</Text>
             {data.experience.map((ex, idx) => (
-              <View key={ex.id || `exp-${idx}`} style={styles.expBox}>
+              <View key={ex.id || `exp-${idx}`} style={[styles.expBox, data.styleConfig?.showTimeline === false && { borderLeft: 'none', paddingLeft: 0 }]}>
                 <View style={styles.expHeader}>
                   <Text style={styles.expTitle}>{ex.position}</Text>
                   <Text style={styles.expDate}>{ex.startDate} - {ex.endDate}</Text>
@@ -521,7 +521,7 @@ const Template5 = ({ data }: { data: ResumeData }) => {
             <View>
               <Text style={[styles.rightSectionTitle, { marginTop: 0 }]}>{getSectionTitle(data, 'experience', 'Experiência')}</Text>
               {data.experience.map((ex, idx) => (
-                <View key={ex.id || `exp-${idx}`} style={styles.expBox}>
+                <View key={ex.id || `exp-${idx}`} style={[styles.expBox, data.styleConfig?.showTimeline === false && { borderLeft: 'none', paddingLeft: 0 }]}>
                   <Text style={styles.expTitle}>{ex.position}</Text>
                   <View style={styles.expCompanyRow}>
                     <Text style={styles.expCompany}>{ex.company}</Text>
@@ -658,7 +658,7 @@ const Template6 = ({ data }: { data: ResumeData }) => {
             <View style={{ marginBottom: 20 }}>
               <Text style={styles.sectionTitle}>{getSectionTitle(data, 'experience', 'Experiência')}</Text>
               {data.experience.map((ex, idx) => (
-                <View key={ex.id || `exp-${idx}`} style={styles.expBox}>
+                <View key={ex.id || `exp-${idx}`} style={[styles.expBox, data.styleConfig?.showTimeline === false && { borderLeft: 'none', paddingLeft: 0 }]}>
                   <Text style={styles.expTitle}>{ex.position}</Text>
                   <Text style={styles.expCompany}>{ex.company} | {ex.startDate} - {ex.endDate}</Text>
                   <Text style={styles.expDesc}>{ex.description.replace(/\*/g, '')}</Text>
@@ -744,7 +744,7 @@ const Template7 = ({ data }: { data: ResumeData }) => {
             <View>
               <Text style={styles.sectionTitle}>{getSectionTitle(data, 'experience', 'Experiência')}</Text>
               {data.experience.map((ex, idx) => (
-                <View key={ex.id || `exp-${idx}`} style={styles.expBox}>
+                <View key={ex.id || `exp-${idx}`} style={[styles.expBox, data.styleConfig?.showTimeline === false && { borderLeft: 'none', paddingLeft: 0 }]}>
                   <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
                     <Text style={styles.expTitle}>{ex.position}</Text>
                     <Text style={styles.expDate}>{ex.startDate} - {ex.endDate}</Text>
@@ -918,8 +918,8 @@ const Template8 = ({ data }: { data: ResumeData }) => {
           <View>
             <Text style={styles.sectionTitle}>Formação Académica</Text>
             {data.education.map((e, idx) => (
-              <View key={e.id || `edu-${idx}`} style={styles.timelineItem}>
-                <View style={styles.timelineDot} />
+              <View key={e.id || `edu-${idx}`} style={[styles.timelineItem, data.styleConfig?.showTimeline === false && { borderLeft: 'none', paddingLeft: 0, marginLeft: 0 }]}>
+                {data.styleConfig?.showTimeline !== false && <View style={styles.timelineDot} />}
                 <View style={styles.itemHeader}>
                   <Text style={styles.itemTitle}>{e.degree}</Text>
                   <Text style={styles.itemPeriod}>{e.startDate} - {e.endDate}</Text>
@@ -934,8 +934,8 @@ const Template8 = ({ data }: { data: ResumeData }) => {
           <View>
             <Text style={styles.sectionTitle}>{getSectionTitle(data, 'experience', 'Experiência Profissional')}</Text>
             {data.experience.map((ex, idx) => (
-              <View key={ex.id || `exp-${idx}`} style={styles.timelineItem}>
-                <View style={styles.timelineDot} />
+              <View key={ex.id || `exp-${idx}`} style={[styles.timelineItem, data.styleConfig?.showTimeline === false && { borderLeft: 'none', paddingLeft: 0, marginLeft: 0 }]}>
+                {data.styleConfig?.showTimeline !== false && <View style={styles.timelineDot} />}
                 <View style={styles.itemHeader}>
                   <Text style={styles.itemTitle}>{ex.position}</Text>
                   <Text style={styles.itemPeriod}>{ex.startDate} - {ex.current ? "Presente" : ex.endDate}</Text>
@@ -1070,7 +1070,7 @@ const Template9 = ({ data }: { data: ResumeData }) => {
             <View>
               <Text style={styles.sectionTitle}>{getSectionTitle(data, 'experience', 'Experiência Profissional')}</Text>
               {data.experience.map((ex, idx) => (
-                <View key={ex.id || `exp-${idx}`} style={styles.expBox}>
+                <View key={ex.id || `exp-${idx}`} style={[styles.expBox, data.styleConfig?.showTimeline === false && { borderLeft: 'none', paddingLeft: 0 }]}>
                   <View style={styles.expHeader}>
                     <Text style={styles.expTitle}>{ex.position}</Text>
                     <Text style={styles.expDate}>{ex.startDate} - {ex.current ? "Presente" : ex.endDate}</Text>
@@ -1270,7 +1270,7 @@ const Template10 = ({ data }: { data: ResumeData }) => {
                 <Text style={styles.sectionTitle}>{getSectionTitle(data, 'experience', 'Experiência Profissional')}</Text>
               </View>
               {data.experience.map((ex, idx) => (
-                <View key={ex.id || `exp-${idx}`} style={styles.expItem}>
+                <View key={ex.id || `exp-${idx}`} style={[styles.expItem, data.styleConfig?.showTimeline === false && { borderLeft: 'none', paddingLeft: 0, marginLeft: 0 }]}>
                   <View style={styles.expHeader}>
                     <Text style={styles.expTitle}>{ex.position}</Text>
                     <Text style={styles.expDate}>{ex.startDate} - {ex.current ? "Presente" : ex.endDate}</Text>
@@ -1288,7 +1288,7 @@ const Template10 = ({ data }: { data: ResumeData }) => {
                 <Text style={styles.sectionTitle}>Formação Académica</Text>
               </View>
               {data.education.map((e, idx) => (
-                <View key={e.id || `edu-${idx}`} style={styles.eduItem}>
+                <View key={e.id || `edu-${idx}`} style={[styles.eduItem, data.styleConfig?.showTimeline === false && { borderLeft: 'none', paddingLeft: 0, marginLeft: 0 }]}>
                   <View style={styles.eduHeader}>
                     <Text style={styles.eduDegree}>{e.degree}</Text>
                     <Text style={styles.eduDate}>{e.startDate} - {e.endDate}</Text>
@@ -1403,7 +1403,7 @@ const Template11 = ({ data }: { data: ResumeData }) => {
           <View>
             <Text style={styles.sectionTitleBanner}>Formação acadêmica</Text>
             {data.education.map((e, idx) => (
-              <View key={e.id || `edu-${idx}`} style={styles.rowItem}>
+              <View key={e.id || `edu-${idx}`} style={[styles.rowItem, data.styleConfig?.showTimeline === false && { borderLeft: 'none', paddingLeft: 0 }]}>
                 <Text style={styles.yearBox}>{e.startDate} - {e.endDate}</Text>
                 <View style={styles.rowContent}>
                   <Text style={styles.rowHeading}>{e.degree}</Text>
@@ -1418,7 +1418,7 @@ const Template11 = ({ data }: { data: ResumeData }) => {
           <View>
             <Text style={styles.sectionTitleBanner}>{getSectionTitle(data, 'experience', 'Experiência Profissional')}</Text>
             {data.experience.map((ex, idx) => (
-              <View key={ex.id || `exp-${idx}`} style={styles.rowItem}>
+              <View key={ex.id || `exp-${idx}`} style={[styles.rowItem, data.styleConfig?.showTimeline === false && { borderLeft: 'none', paddingLeft: 0 }]}>
                 <Text style={styles.yearBox}>{ex.startDate} - {ex.current ? "PRES." : ex.endDate}</Text>
                 <View style={styles.rowContent}>
                   <Text style={styles.rowHeading}>{ex.position}</Text>
@@ -1623,7 +1623,7 @@ const Template12 = ({ data }: { data: ResumeData }) => {
             <View style={{ marginBottom: 15 }}>
               <Text style={styles.sectionTitle}>{getSectionTitle(data, 'experience', 'Experiência Profissional')}</Text>
               {data.experience.map((ex, idx) => (
-                <View key={ex.id || `exp-${idx}`} style={styles.expItem}>
+                <View key={ex.id || `exp-${idx}`} style={[styles.expItem, data.styleConfig?.showTimeline === false && { borderLeft: 'none', paddingLeft: 0, marginLeft: 0 }]}>
                   <View style={styles.expHeader}>
                     <Text style={styles.expRole}>{ex.position}</Text>
                     <Text style={styles.expPeriod}>{ex.startDate} - {ex.current ? 'PRESENTE' : ex.endDate}</Text>
@@ -1639,7 +1639,7 @@ const Template12 = ({ data }: { data: ResumeData }) => {
             <View style={{ marginBottom: 15 }}>
               <Text style={styles.sectionTitle}>{getSectionTitle(data, 'education', 'Formação Acadêmica')}</Text>
               {data.education.map((e, idx) => (
-                <View key={e.id || `edu-${idx}`} style={styles.eduItem}>
+                <View key={e.id || `edu-${idx}`} style={[styles.eduItem, data.styleConfig?.showTimeline === false && { borderLeft: 'none', paddingLeft: 0, marginLeft: 0 }]}>
                   <View style={styles.eduHeader}>
                     <Text style={styles.eduDegree}>{e.degree}</Text>
                     <Text style={styles.eduPeriod}>{e.startDate} - {e.endDate}</Text>
@@ -1804,7 +1804,7 @@ const Template13 = ({ data }: { data: ResumeData }) => {
             <View style={styles.card}>
               <Text style={styles.sectionHeader}>{getSectionTitle(data, 'experience', 'Experiência de Trabalho')}</Text>
               {data.experience.map((ex, idx) => (
-                <View key={ex.id || `exp-${idx}`} style={styles.rowItem}>
+                <View key={ex.id || `exp-${idx}`} style={[styles.rowItem, data.styleConfig?.showTimeline === false && { borderLeft: 'none', paddingLeft: 0 }]}>
                   <View style={styles.rowHeader}>
                     <Text style={styles.rowHeading}>{ex.position}</Text>
                     <Text style={styles.rowPeriod}>{ex.startDate} - {ex.current ? 'PRESENTE' : ex.endDate}</Text>
@@ -1820,7 +1820,7 @@ const Template13 = ({ data }: { data: ResumeData }) => {
             <View style={styles.card}>
               <Text style={styles.sectionHeader}>{getSectionTitle(data, 'education', 'Educação')}</Text>
               {data.education.map((e, idx) => (
-                <View key={e.id || `edu-${idx}`} style={styles.rowItem}>
+                <View key={e.id || `edu-${idx}`} style={[styles.rowItem, data.styleConfig?.showTimeline === false && { borderLeft: 'none', paddingLeft: 0 }]}>
                   <View style={styles.rowHeader}>
                     <Text style={styles.rowHeading}>{e.degree}</Text>
                     <Text style={styles.rowPeriod}>{e.startDate} - {e.endDate}</Text>

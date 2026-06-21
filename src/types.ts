@@ -10,6 +10,7 @@ export interface ResumeStyleConfig {
   alignment?: 'left' | 'center' | 'right' | 'justify';
   fontFamily?: 'sans' | 'serif' | 'mono' | 'grotesk';
   photoBorderRadius?: number; // em px ou %, ex: 999
+  showTimeline?: boolean;  // mostrar linha do tempo (pontos) na experiência/educação
 }
 
 export interface ResumeData {
@@ -100,7 +101,8 @@ export const INITIAL_RESUME_DATA: ResumeData = {
     margins: 30,
     lineHeight: 1.4,
     alignment: 'left',
-    fontFamily: 'sans'
+    fontFamily: 'sans',
+    showTimeline: true
   }
 };
 

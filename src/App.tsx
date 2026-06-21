@@ -2745,10 +2745,10 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
                    <div className="flex flex-col gap-8">
                      {cs.items.map((item, idxx) => (
                        <div key={item.id || `csi-${idxx}`} className="flex gap-4">
-                          <div className="flex flex-col items-center pt-2">
-                             <div className="w-2.5 h-2.5 rounded-full border-2 bg-white" style={{ borderColor: c.primary }}></div>
-                             <div className="w-0.5 flex-1 bg-gray-50 my-1"></div>
-                          </div>
+                          {data.styleConfig?.showTimeline !== false && <div className="flex flex-col items-center pt-2">
+<div className="w-2.5 h-2.5 rounded-full border-2 bg-white" style={{ borderColor: c.primary }}></div>
+<div className="w-0.5 flex-1 bg-gray-50 my-1"></div>
+</div>}
                           <div className="flex-1">
                             <div className="flex justify-between items-baseline mb-1">
                                <h4 className="text-[17px] font-black text-gray-900 tracking-tight">{item.name}</h4>
@@ -2803,7 +2803,7 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
                   <EditableTitle as="h3" className="text-sm font-black uppercase tracking-wider mb-4"  style={{ color: '#111827' }} defaultText="Experiência" text={getSectionTitle(data, 'experience', 'Experiência')} onSave={onChange ? (v) => handleTitleChange('experience', v) : undefined} />
                   <div className="space-y-4">
                     {data.experience.map((ex, idx) => (
-                      <div key={ex.id || `exp-${idx}`} className="pl-3 border-l-2 space-y-1" style={{ borderColor: c.primary }}>
+                      <div key={ex.id || `exp-${idx}`} className={`space-y-1 ${data.styleConfig?.showTimeline !== false ? 'pl-3 border-l-2' : ''}`} style={data.styleConfig?.showTimeline !== false ? { borderLeftColor: c.primary } : {}}>
                         <h4 className="text-xs font-black text-gray-955">{ex.position}</h4>
                         <div className="text-[10px] font-bold text-gray-400">
                           {ex.company} | {ex.startDate} - {ex.current ? "Presente" : ex.endDate}
@@ -2820,7 +2820,7 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
                   <h3 className="text-sm font-black uppercase tracking-wider mb-4" style={{ color: '#111827' }}>{cs.title}</h3>
                   <div className="space-y-4">
                     {cs.items.map((item, idxx) => (
-                      <div key={item.id || `csi-${idxx}`} className="pl-3 border-l-2 space-y-1" style={{ borderColor: c.primary }}>
+                      <div key={item.id || `csi-${idxx}`} className={`space-y-1 ${data.styleConfig?.showTimeline !== false ? 'pl-3 border-l-2' : ''}`} style={data.styleConfig?.showTimeline !== false ? { borderLeftColor: c.primary } : {}}>
                         <h4 className="text-xs font-black text-gray-955">{item.name}</h4>
                         {item.description && <p className="text-[11px] leading-relaxed text-gray-600 mt-1">{renderText(item.description)}</p>}
                       </div>
@@ -3137,8 +3137,8 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
                   <EditableTitle as="div" className="inline-block py-1.5 px-5 rounded-full text-[10px] font-black uppercase tracking-wider text-white mb-4"  style={{ backgroundColor: c.primary }} defaultText="Formação Académica" text={getSectionTitle(data, 'education', 'Formação Académica')} onSave={onChange ? (v) => handleTitleChange('education', v) : undefined} />
                   <div className="space-y-4">
                     {data.education.map((e, idx) => (
-                      <div key={e.id || `edu-${idx}`} className="relative pl-6 border-l-2 border-sky-400/30">
-                        <div className="absolute -left-1.5 top-1.5 w-3 h-3 rounded-full border-2 border-white shadow bg-sky-400" />
+                      <div key={e.id || `edu-${idx}`} className={`relative ${data.styleConfig?.showTimeline !== false ? 'pl-6 border-l-2 border-sky-400/30' : ''}`}>
+                        {data.styleConfig?.showTimeline !== false && <div className="absolute -left-1.5 top-1.5 w-3 h-3 rounded-full border-2 border-white shadow bg-sky-400" />}
                         <div className="flex justify-between items-baseline mb-0.5">
                           <h4 className="text-xs font-black text-gray-900">{e.degree}</h4>
                           <span className="text-[9px] font-black text-sky-500 uppercase tracking-tight shrink-0">{e.startDate} - {e.endDate}</span>
@@ -3156,8 +3156,8 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
                   <EditableTitle as="div" className="inline-block py-1.5 px-5 rounded-full text-[10px] font-black uppercase tracking-wider text-white mb-4"  style={{ backgroundColor: c.primary }} defaultText="Experiência Profissional" text={getSectionTitle(data, 'experience', 'Experiência Profissional')} onSave={onChange ? (v) => handleTitleChange('experience', v) : undefined} />
                   <div className="space-y-4">
                     {data.experience.map((ex, idx) => (
-                      <div key={ex.id || `exp-${idx}`} className="relative pl-6 border-l-2 border-sky-400/30">
-                        <div className="absolute -left-1.5 top-1.5 w-3 h-3 rounded-full border-2 border-white shadow bg-sky-400" />
+                      <div key={ex.id || `exp-${idx}`} className={`relative ${data.styleConfig?.showTimeline !== false ? 'pl-6 border-l-2 border-sky-400/30' : ''}`}>
+                        {data.styleConfig?.showTimeline !== false && <div className="absolute -left-1.5 top-1.5 w-3 h-3 rounded-full border-2 border-white shadow bg-sky-400" />}
                         <div className="flex justify-between items-baseline mb-1">
                           <h4 className="text-xs font-black text-gray-955">{ex.position}</h4>
                           <span className="text-[9px] font-black text-sky-500 uppercase tracking-tight shrink-0">{ex.startDate} - {ex.current ? "Presente" : ex.endDate}</span>
@@ -3178,8 +3178,8 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
                   </div>
                   <div className="space-y-4">
                     {cs.items.map((item, idxx) => (
-                      <div key={item.id || `csi-${idxx}`} className="relative pl-6 border-l-2 border-sky-400/30">
-                        <div className="absolute -left-1.5 top-1.5 w-3 h-3 rounded-full border-2 border-white shadow bg-sky-400" />
+                      <div key={item.id || `csi-${idxx}`} className={`relative ${data.styleConfig?.showTimeline !== false ? 'pl-6 border-l-2 border-sky-400/30' : ''}`}>
+                        {data.styleConfig?.showTimeline !== false && <div className="absolute -left-1.5 top-1.5 w-3 h-3 rounded-full border-2 border-white shadow bg-sky-400" />}
                         <div className="flex justify-between items-baseline mb-1">
                           <h4 className="text-xs font-black text-gray-955">{item.name}</h4>
                         </div>
@@ -3250,9 +3250,9 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
                   </div>
                   <div className="space-y-6">
                     {data.experience.map((ex, idx) => (
-                      <div key={ex.id || `exp-${idx}`} className="space-y-1.5 relative pl-4 border-l border-gray-100">
+                      <div key={ex.id || `exp-${idx}`} className={`space-y-1.5 relative ${data.styleConfig?.showTimeline !== false ? 'pl-4 border-l border-gray-100' : ''}`}>
                         {/* Dot indicator */}
-                        <div className="absolute -left-[5px] top-1.5 w-2.5 h-2.5 rounded-full border-2 border-white" style={{ backgroundColor: c.primary }}></div>
+                        {data.styleConfig?.showTimeline !== false && <div className="absolute -left-[5px] top-1.5 w-2.5 h-2.5 rounded-full border-2 border-white" style={{ backgroundColor: c.primary }}></div>}
                         <div className="flex justify-between items-baseline">
                           <h4 className="text-xs font-bold text-gray-900 leading-tight">{ex.position}</h4>
                           <span className="text-[9px] font-black text-gray-400 uppercase tracking-tight shrink-0">{ex.startDate} - {ex.current ? "Presente" : ex.endDate}</span>
@@ -3274,9 +3274,9 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
                   </div>
                   <div className="space-y-6">
                     {cs.items.map((item, idxx) => (
-                      <div key={item.id || `csi-${idxx}`} className="space-y-1.5 relative pl-4 border-l border-gray-100">
+                      <div key={item.id || `csi-${idxx}`} className={`space-y-1.5 relative ${data.styleConfig?.showTimeline !== false ? 'pl-4 border-l border-gray-100' : ''}`}>
                         {/* Dot indicator */}
-                        <div className="absolute -left-[5px] top-1.5 w-2.5 h-2.5 rounded-full border-2 border-white" style={{ backgroundColor: c.primary }}></div>
+                        {data.styleConfig?.showTimeline !== false && <div className="absolute -left-[5px] top-1.5 w-2.5 h-2.5 rounded-full border-2 border-white" style={{ backgroundColor: c.primary }}></div>}
                         <div className="flex justify-between items-baseline">
                           <h4 className="text-xs font-bold text-gray-900 leading-tight">{item.name}</h4>
                         </div>
@@ -3331,9 +3331,9 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
                   </div>
                   <div className="space-y-4">
                     {data.education.map((e, idx) => (
-                      <div key={e.id || `edu-${idx}`} className="space-y-1 relative pl-3 border-l border-gray-100">
+                      <div key={e.id || `edu-${idx}`} className={`space-y-1 relative ${data.styleConfig?.showTimeline !== false ? 'pl-3 border-l border-gray-100' : ''}`}>
                         {/* Elegant vertical dot */}
-                        <div className="absolute -left-[4px] top-1.5 w-1.5 h-1.5 rounded-full" style={{ backgroundColor: c.primary }}></div>
+                        {data.styleConfig?.showTimeline !== false && <div className="absolute -left-[4px] top-1.5 w-1.5 h-1.5 rounded-full" style={{ backgroundColor: c.primary }}></div>}
                         <h4 className="text-xs font-bold text-gray-900 leading-tight">{e.degree}</h4>
                         <p className="text-[10px] text-gray-500 font-semibold">{e.institution}</p>
                         <p className="text-[8px] font-black text-gray-400 uppercase tracking-widest">{e.startDate} - {e.endDate}</p>
@@ -3370,8 +3370,8 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
                   </div>
                   <div className="space-y-3">
                     {data.certifications.map((cVal, idx) => (
-                      <div key={cVal.id || `cert-${idx}`} className="space-y-0.5 relative pl-3 border-l border-gray-100">
-                        <div className="absolute -left-[4px] top-1.5 w-1.5 h-1.5 rounded-full" style={{ backgroundColor: c.primary }}></div>
+                      <div key={cVal.id || `cert-${idx}`} className={`space-y-0.5 relative ${data.styleConfig?.showTimeline !== false ? 'pl-3 border-l border-gray-100' : ''}`}>
+                        {data.styleConfig?.showTimeline !== false && <div className="absolute -left-[4px] top-1.5 w-1.5 h-1.5 rounded-full" style={{ backgroundColor: c.primary }}></div>}
                         <h4 className="text-xs font-bold text-gray-900 leading-tight">{cVal.name}</h4>
                         <p className="text-[8px] font-black text-gray-400 uppercase tracking-widest">{cVal.date}</p>
                       </div>
@@ -3523,7 +3523,7 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
                   </div>
                   <div className="space-y-5">
                     {data.experience.map((ex, idx) => (
-                      <div key={ex.id || `exp-${idx}`} className="space-y-1.5 pl-3 border-l-2" style={{ borderColor: c.primary }}>
+                      <div key={ex.id || `exp-${idx}`} className={`space-y-1.5 ${data.styleConfig?.showTimeline !== false ? 'pl-3 border-l-2' : ''}`} style={data.styleConfig?.showTimeline !== false ? { borderLeftColor: c.primary } : {}}>
                         <div className="flex justify-between items-baseline gap-2">
                           <h4 className="text-xs font-bold text-slate-900 leading-tight">{ex.position}</h4>
                           <span className="text-[8.5px] font-black text-slate-400 uppercase tracking-tight shrink-0">{ex.startDate} - {ex.current ? "Presente" : ex.endDate}</span>
@@ -3545,7 +3545,7 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
                   </div>
                   <div className="space-y-4">
                     {data.education.map((e, idx) => (
-                      <div key={e.id || `edu-${idx}`} className="space-y-1 relative pl-3 border-l-2" style={{ borderColor: c.primary }}>
+                      <div key={e.id || `edu-${idx}`} className={`space-y-1 relative ${data.styleConfig?.showTimeline !== false ? 'pl-3 border-l-2' : ''}`} style={data.styleConfig?.showTimeline !== false ? { borderLeftColor: c.primary } : {}}>
                         <div className="flex justify-between items-baseline">
                           <h4 className="text-xs font-bold text-slate-900 leading-tight">{e.degree}</h4>
                           <span className="text-[8.5px] font-black text-slate-400 uppercase tracking-widest shrink-0">{e.startDate} - {e.endDate}</span>
@@ -3566,7 +3566,7 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
                   </div>
                   <div className="space-y-5">
                     {cs.items.map((item, idxx) => (
-                      <div key={item.id || `csi-${idxx}`} className="space-y-1.5 pl-3 border-l-2" style={{ borderColor: c.primary }}>
+                      <div key={item.id || `csi-${idxx}`} className={`space-y-1.5 ${data.styleConfig?.showTimeline !== false ? 'pl-3 border-l-2' : ''}`} style={data.styleConfig?.showTimeline !== false ? { borderLeftColor: c.primary } : {}}>
                         <div className="flex justify-between items-baseline gap-2">
                           <h4 className="text-xs font-bold text-slate-900 leading-tight">{item.name}</h4>
                         </div>
@@ -3586,8 +3586,8 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     {data.certifications.map((cVal, idx) => (
-                      <div key={cVal.id || `cert-${idx}`} className="space-y-0.5 relative pl-3 border-l border-gray-100">
-                        <div className="absolute -left-[1.5px] top-1.5 w-1 h-1 rounded-full" style={{ backgroundColor: c.primary }}></div>
+                      <div key={cVal.id || `cert-${idx}`} className={`space-y-0.5 relative ${data.styleConfig?.showTimeline !== false ? 'pl-3 border-l border-gray-100' : ''}`}>
+                        {data.styleConfig?.showTimeline !== false && <div className="absolute -left-[1.5px] top-1.5 w-1 h-1 rounded-full" style={{ backgroundColor: c.primary }}></div>}
                         <h4 className="text-[10.5px] font-bold text-slate-800 leading-tight">{cVal.name}</h4>
                         <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest">{cVal.date}</p>
                       </div>
@@ -3813,8 +3813,8 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
                   </span>
                   <div className="space-y-3.5 pl-1">
                     {data.certifications.map((cVal, idx) => (
-                      <div key={cVal.id || `cert-${idx}`} className="space-y-0.5 relative pl-3 border-l border-zinc-800">
-                        <div className="absolute -left-[4px] top-1.5 w-1.5 h-1.5 rounded-full" style={{ backgroundColor: c.primary }}></div>
+                      <div key={cVal.id || `cert-${idx}`} className={`space-y-0.5 relative ${data.styleConfig?.showTimeline !== false ? 'pl-3 border-l border-zinc-800' : ''}`}>
+                        {data.styleConfig?.showTimeline !== false && <div className="absolute -left-[4px] top-1.5 w-1.5 h-1.5 rounded-full" style={{ backgroundColor: c.primary }}></div>}
                         <h4 className="text-[10px] font-bold text-slate-200 leading-tight">{cVal.name}</h4>
                         <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">{cVal.date}</p>
                       </div>
@@ -4100,7 +4100,7 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
                   <EditableTitle as="h3" className="text-xs font-mono font-black uppercase tracking-widest text-slate-800 border-b pb-2"  style={{ borderBottomColor: c.primary }} defaultText="Experiência de Trabalho" text={getSectionTitle(data, 'experience', 'Experiência de Trabalho')} onSave={onChange ? (v) => handleTitleChange('experience', v) : undefined} />
                   <div className="space-y-4">
                     {data.experience.map((ex, idx) => (
-                      <div key={ex.id || `exp-${idx}`} className="space-y-1 relative pl-4 border-l-2" style={{ borderLeftColor: c.primary }}>
+                      <div key={ex.id || `exp-${idx}`} className={`space-y-1 relative ${data.styleConfig?.showTimeline !== false ? 'pl-4 border-l-2' : ''}`} style={data.styleConfig?.showTimeline !== false ? { borderLeftColor: c.primary } : {}}>
                         <div className="flex justify-between items-baseline gap-2">
                           <h4 className="text-xs font-extrabold text-slate-900 leading-tight">{ex.position}</h4>
                           <span className="text-[8px] font-black font-mono text-slate-400 uppercase tracking-tight shrink-0">{ex.startDate} - {ex.current ? "PRESENTE" : ex.endDate}</span>
@@ -4119,7 +4119,7 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
                   <EditableTitle as="h3" className="text-xs font-mono font-black uppercase tracking-widest text-slate-800 border-b pb-2"  style={{ borderBottomColor: c.primary }} defaultText="Educação" text={getSectionTitle(data, 'education', 'Educação')} onSave={onChange ? (v) => handleTitleChange('education', v) : undefined} />
                   <div className="space-y-4">
                     {data.education.map((e, idx) => (
-                      <div key={e.id || `edu-${idx}`} className="space-y-1 relative pl-4 border-l-2" style={{ borderLeftColor: c.primary }}>
+                      <div key={e.id || `edu-${idx}`} className={`space-y-1 relative ${data.styleConfig?.showTimeline !== false ? 'pl-4 border-l-2' : ''}`} style={data.styleConfig?.showTimeline !== false ? { borderLeftColor: c.primary } : {}}>
                         <div className="flex justify-between items-baseline font-sans">
                           <h4 className="text-xs font-extrabold text-slate-900 leading-tight">{e.degree}</h4>
                           <span className="text-[8px] font-black font-mono text-slate-400 uppercase tracking-tight shrink-0">{e.startDate} - {e.endDate}</span>
@@ -4137,7 +4137,7 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
                   <h3 className="text-xs font-mono font-black uppercase tracking-widest text-slate-800 border-b pb-2" style={{ borderBottomColor: c.primary }}>{cs.title}</h3>
                   <div className="space-y-4">
                     {cs.items.map((item, idxx) => (
-                      <div key={item.id || `csi-${idxx}`} className="space-y-1 relative pl-4 border-l-2" style={{ borderLeftColor: c.primary }}>
+                      <div key={item.id || `csi-${idxx}`} className={`space-y-1 relative ${data.styleConfig?.showTimeline !== false ? 'pl-4 border-l-2' : ''}`} style={data.styleConfig?.showTimeline !== false ? { borderLeftColor: c.primary } : {}}>
                         <div className="flex justify-between items-baseline font-sans">
                           <h4 className="text-xs font-extrabold text-slate-900 leading-tight">{item.name}</h4>
                         </div>
@@ -6704,6 +6704,13 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
                         <div className="space-y-2">
                            <div className="flex justify-between text-[11px] font-bold text-gray-700 uppercase tracking-widest"><span>Tamanho do Nome</span> <span>{resumeData.styleConfig?.titleSize || 26}px</span></div>
                            <input type="range" min="16" max="48" step="1" value={resumeData.styleConfig?.titleSize || 26} onChange={(e) => setResumeData(p => ({...p, styleConfig: {...(p.styleConfig||{}), titleSize: Number(e.target.value)}}))} className="w-full h-1 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-primary-blue" />
+                        </div>
+                        <div className="flex items-center justify-between pt-2">
+                           <span className="text-[11px] font-bold text-gray-700 uppercase tracking-widest">Mostrar Linhas de Tempo (Pontos)</span>
+                           <label className="relative inline-flex items-center cursor-pointer">
+                             <input type="checkbox" className="sr-only peer" checked={resumeData.styleConfig?.showTimeline ?? true} onChange={(e) => setResumeData(p => ({...p, styleConfig: {...(p.styleConfig||{}), showTimeline: e.target.checked}}))} />
+                             <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary-blue"></div>
+                           </label>
                         </div>
                      </div>
                   </div>
