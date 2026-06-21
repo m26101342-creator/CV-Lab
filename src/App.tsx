@@ -2370,7 +2370,7 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
                         {data.skills.map((s, idx) => (
                            <div key={s.id || `skill-${idx}`} className="t3-skill-item">
                               <span className="t3-skill-label">{s.name}</span>
-                              <span className="t3-skill-level">{s.level}</span>
+                              {s.level && s.level !== 'Ocultar' && <span className="t3-skill-level">{s.level}</span>}
                            </div>
                         ))}
                       </div>
@@ -2954,20 +2954,26 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
                 <div>
                   <EditableTitle as="h3" className="text-xs font-black uppercase tracking-wider mb-4 text-gray-900"  defaultText="Habilidades" text={getSectionTitle(data, 'skills', 'Habilidades')} onSave={onChange ? (v) => handleTitleChange('skills', v) : undefined} />
                   <div className="space-y-3.5">
-                    {data.skills.filter(s => s && s.name).map((s, idx) => (
-                      <div key={s.id || `skill-${idx}`} className="space-y-1">
-                        <p className="text-[10px] font-bold text-gray-700">{s.name}</p>
-                        <div className="w-full h-1 bg-gray-100 rounded-full overflow-hidden">
-                          <div 
-                            className="h-full rounded-full transition-all duration-500" 
-                            style={{ 
-                              backgroundColor: c.primary,
-                              width: s.level === 'Especialista' ? '100%' : s.level === 'Avançado' ? '80%' : s.level === 'Intermédio' ? '60%' : '40%'
-                            }} 
-                          />
+                    {data.skills.filter(s => s && s.name).map((s, idx) => {
+                      const showLevel = s.level && s.level !== 'Ocultar';
+                      const widthPercent = s.level === 'Especialista' ? '100%' : s.level === 'Avançado' ? '80%' : s.level === 'Intermédio' ? '60%' : s.level === 'Básico' ? '40%' : s.level === 'Iniciante' ? '20%' : '0%';
+                      return (
+                        <div key={s.id || `skill-${idx}`} className="space-y-1">
+                          <p className="text-[10px] font-bold text-gray-700">{s.name}</p>
+                          {showLevel && (
+                            <div className="w-full h-1 bg-gray-100 rounded-full overflow-hidden">
+                              <div 
+                                className="h-full rounded-full transition-all duration-500" 
+                                style={{ 
+                                  backgroundColor: c.primary,
+                                  width: widthPercent
+                                }} 
+                              />
+                            </div>
+                          )}
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
               )}
@@ -3078,18 +3084,22 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
                 <EditableTitle as="h3" className="text-sm font-black uppercase tracking-wider mb-4 text-center pb-1 border-b-2 border-sky-400/50"  style={{ color: c.primary }} defaultText="Habilidades" text={getSectionTitle(data, 'skills', 'Habilidades')} onSave={onChange ? (v) => handleTitleChange('skills', v) : undefined} />
                 <div className="space-y-2.5">
                   {data.skills.filter(s => s && s.name).map((s, idx) => {
-                    const dotsCount = s.level === 'Especialista' ? 5 : s.level === 'Avançado' ? 4 : s.level === 'Intermédio' ? 3 : 2;
+                    const dotsCount = s.level === 'Especialista' ? 5 : s.level === 'Avançado' ? 4 : s.level === 'Intermédio' ? 3 : s.level === 'Básico' ? 2 : s.level === 'Iniciante' ? 1 : 0;
+                    const showDots = s.level && s.level !== 'Ocultar';
                     return (
                       <div key={s.id || `skill-${idx}`} className="flex justify-between items-center text-[10px]">
                         <span className="font-bold text-gray-700 mr-2 truncate">{s.name}</span>
-                        <div className="flex gap-1 shrink-0">
-                          {[1, 2, 3, 4, 5].map(dot => (
-                            <div 
-                              key={dot} 
-                              className={`w-2 h-2 rounded-full transition-colors duration-300 ${dot <= dotsCount ? 'bg-sky-400' : 'bg-gray-200'}`}
-                            />
-                          ))}
-                        </div>
+                        {showDots && (
+                          <div className="flex gap-1 shrink-0">
+                            {[1, 2, 3, 4, 5].map(dot => (
+                              <div 
+                                key={dot} 
+                                className={`w-2 h-2 rounded-full transition-colors duration-300 ${dot <= dotsCount ? 'bg-sky-400' : 'bg-gray-200'}`}
+                                style={dot <= dotsCount ? { backgroundColor: c.primary } : {}}
+                              />
+                            ))}
+                          </div>
+                        )}
                       </div>
                     );
                   })}
@@ -3299,22 +3309,25 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
                   </div>
                   <div className="space-y-3">
                     {data.skills.map((s, idx) => {
-                      const value = s.level === 'Especialista' ? 100 : s.level === 'Avançado' ? 80 : s.level === 'Intermédio' ? 60 : 40;
+                      const value = s.level === 'Especialista' ? 100 : s.level === 'Avançado' ? 80 : s.level === 'Intermédio' ? 60 : s.level === 'Básico' ? 40 : s.level === 'Iniciante' ? 20 : 0;
+                      const showLevel = s.level && s.level !== 'Ocultar';
                       return (
                         <div key={s.id || `skill-${idx}`} className="space-y-1">
                           <div className="flex justify-between items-center text-[10px] font-bold text-gray-700">
                             <span>{s.name}</span>
-                            <span className="text-[8px] opacity-75 font-black uppercase tracking-wider" style={{ color: c.primary }}>{s.level}</span>
+                            {showLevel && <span className="text-[8px] opacity-75 font-black uppercase tracking-wider" style={{ color: c.primary }}>{s.level}</span>}
                           </div>
-                          <div className="w-full h-1 bg-gray-100 rounded-full overflow-hidden">
-                            <div 
-                              className="h-full rounded-full transition-all duration-500"
-                              style={{ 
-                                backgroundColor: c.primary,
-                                width: `${value}%`
-                              }}
-                            />
-                          </div>
+                          {showLevel && (
+                            <div className="w-full h-1 bg-gray-100 rounded-full overflow-hidden">
+                              <div 
+                                className="h-full rounded-full transition-all duration-500"
+                                style={{ 
+                                  backgroundColor: c.primary,
+                                  width: `${value}%`
+                                }}
+                              />
+                            </div>
+                          )}
                         </div>
                       );
                     })}
@@ -3467,25 +3480,28 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
                   </span>
                   <div className="space-y-3.5 pl-1">
                     {data.skills.map((s, idx) => {
-                      const value = s.level === 'Especialista' ? 5 : s.level === 'Avançado' ? 4 : s.level === 'Intermédio' ? 3 : 2;
+                      const value = s.level === 'Especialista' ? 5 : s.level === 'Avançado' ? 4 : s.level === 'Intermédio' ? 3 : s.level === 'Básico' ? 2 : s.level === 'Iniciante' ? 1 : 0;
+                      const showLevel = s.level && s.level !== 'Ocultar';
                       return (
                         <div key={s.id || `skill-${idx}`} className="space-y-1.5">
                           <div className="flex justify-between items-center text-[10px] font-bold text-slate-200">
                             <span>{s.name}</span>
-                            <span className="text-[8px] opacity-75 font-mono uppercase" style={{ color: c.primary }}>{s.level}</span>
+                            {showLevel && <span className="text-[8px] opacity-75 font-mono uppercase" style={{ color: c.primary }}>{s.level}</span>}
                           </div>
                           {/* Segmented meter */}
-                          <div className="flex gap-1">
-                            {[1, 2, 3, 4, 5].map((seg) => (
-                              <div 
-                                key={seg} 
-                                className="h-1 flex-1 rounded-sm transition-all duration-300"
-                                style={{ 
-                                  backgroundColor: seg <= value ? (c.primary || '#EA580C') : '#475569' 
-                                }}
-                              />
-                            ))}
-                          </div>
+                          {showLevel && (
+                            <div className="flex gap-1">
+                              {[1, 2, 3, 4, 5].map((seg) => (
+                                <div 
+                                  key={seg} 
+                                  className="h-1 flex-1 rounded-sm transition-all duration-300"
+                                  style={{ 
+                                    backgroundColor: seg <= value ? (c.primary || '#EA580C') : '#475569' 
+                                  }}
+                                />
+                              ))}
+                            </div>
+                          )}
                         </div>
                       );
                     })}
@@ -3766,21 +3782,24 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
                   </span>
                   <div className="space-y-3.5 pl-1">
                     {data.skills.map((s, idx) => {
-                      const value = s.level === 'Especialista' ? 100 : s.level === 'Avançado' ? 80 : s.level === 'Intermédio' ? 60 : 40;
+                      const value = s.level === 'Especialista' ? 100 : s.level === 'Avançado' ? 80 : s.level === 'Intermédio' ? 60 : s.level === 'Básico' ? 40 : s.level === 'Iniciante' ? 20 : 0;
+                      const showLevel = s.level && s.level !== 'Ocultar';
                       return (
                         <div key={s.id || `skill-${idx}`} className="space-y-1">
                           <div className="flex justify-between items-center text-[10px] font-bold text-zinc-300">
                             <span>{s.name}</span>
                           </div>
-                          <div className="w-full h-1.5 bg-zinc-800 rounded-full overflow-hidden p-0.5">
-                            <div 
-                              className="h-full rounded-full transition-all duration-500"
-                              style={{ 
-                                backgroundColor: c.primary,
-                                width: `${value}%`
-                              }}
-                            />
-                          </div>
+                          {showLevel && (
+                            <div className="w-full h-1.5 bg-zinc-800 rounded-full overflow-hidden p-0.5">
+                              <div 
+                                className="h-full rounded-full transition-all duration-500"
+                                style={{ 
+                                  backgroundColor: c.primary,
+                                  width: `${value}%`
+                                }}
+                              />
+                            </div>
+                          )}
                         </div>
                       );
                     })}
@@ -3876,7 +3895,7 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
                     {data.skills.map((s, idx) => (
                       <div key={s.id || `skill-${idx}`} className="flex justify-between items-baseline font-sans text-[10px]">
                         <span className="font-bold text-slate-700">{s.name}</span>
-                        <span className="text-[8px] font-bold text-slate-400 capitalize">{s.level}</span>
+                        {s.level && s.level !== 'Ocultar' && <span className="text-[8px] font-bold text-slate-400 capitalize">{s.level}</span>}
                       </div>
                     ))}
                   </div>
@@ -4048,15 +4067,19 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
                   <EditableTitle as="h3" className="text-xs font-mono font-black uppercase tracking-widest text-slate-800 border-b pb-1.5"  style={{ borderBottomColor: c.primary }} defaultText="Competências" text={getSectionTitle(data, 'skills', 'Competências')} onSave={onChange ? (v) => handleTitleChange('skills', v) : undefined} />
                   <div className="space-y-3">
                     {data.skills.map((s, idx) => {
+                      const showLevel = s.level && s.level !== 'Ocultar';
+                      const value = s.level === 'Especialista' ? '100%' : s.level === 'Avançado' ? '80%' : s.level === 'Intermédio' ? '60%' : s.level === 'Básico' ? '40%' : s.level === 'Iniciante' ? '20%' : '0%';
                       return (
                         <div key={s.id || `skill-${idx}`} className="space-y-1 font-sans">
                           <div className="flex justify-between items-baseline text-[10px] font-bold text-slate-700">
                             <span>{s.name}</span>
-                            <span className="text-[8px] opacity-70 uppercase tracking-tight">{s.level}</span>
+                            {showLevel && <span className="text-[8px] opacity-70 uppercase tracking-tight">{s.level}</span>}
                           </div>
-                          <div className="w-full h-1 bg-slate-100 rounded-full overflow-hidden">
-                            <div className="h-full rounded-full transition-all duration-300" style={{ backgroundColor: c.primary, width: s.level === 'Especialista' ? '100%' : s.level === 'Avançado' ? '80%' : s.level === 'Intermédio' ? '60%' : '40%' }} />
-                          </div>
+                          {showLevel && (
+                            <div className="w-full h-1 bg-slate-100 rounded-full overflow-hidden">
+                              <div className="h-full rounded-full transition-all duration-300" style={{ backgroundColor: c.primary, width: value }} />
+                            </div>
+                          )}
                         </div>
                       );
                     })}
@@ -6467,17 +6490,100 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
                          onChange={setTempSkill}
                        />
                        <Button onClick={() => {
+                         if (!tempSkill.trim()) return;
                          addSkill(tempSkill);
                          setTempSkill("");
                        }}>Adicionar</Button>
                     </div>
-                    <div className="flex flex-wrap gap-2">
-                       {resumeData.skills.map((s, idx) => (
-                         <span key={s.id || `sk-${idx}`} className="px-3 py-1.5 bg-soft-blue text-primary-blue rounded-lg font-bold text-xs flex items-center gap-2">
-                           {s.name}
-                           <button onClick={() => setResumeData(p => ({...p, skills: p.skills.filter(sk => sk.id !== s.id)}))}><X size={12} /></button>
-                         </span>
-                       ))}
+                    
+                    <div className="space-y-4">
+                       {resumeData.skills.length > 0 && (
+                         <div className="space-y-3">
+                           <label className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider pl-1">Minhas Habilidades e Pontuação</label>
+                           <div className="space-y-3">
+                              {resumeData.skills.map((s, idx) => {
+                                const isHidden = s.level === 'Ocultar';
+                                const currentDots = s.level === 'Especialista' ? 5 : s.level === 'Avançado' ? 4 : s.level === 'Intermédio' ? 3 : s.level === 'Básico' ? 2 : s.level === 'Iniciante' ? 1 : 0;
+
+                                return (
+                                  <div key={s.id || `sk-item-${idx}`} className="flex flex-col gap-3 bg-white p-4 rounded-2xl border border-border-main shadow-sm transition-all hover:shadow-md">
+                                    <div className="flex items-center gap-3.5">
+                                      <div className="flex-1">
+                                        <input 
+                                          type="text"
+                                          placeholder="Nome da habilidade"
+                                          value={s.name || ""} 
+                                          onChange={(e) => {
+                                            const updated = [...resumeData.skills];
+                                            updated[idx] = { ...updated[idx], name: e.target.value };
+                                            setResumeData(prev => ({ ...prev, skills: updated }));
+                                          }}
+                                          className="w-full text-xs font-bold text-gray-800 bg-transparent border-b border-dashed border-gray-200 focus:border-primary-blue focus:outline-none py-1"
+                                        />
+                                      </div>
+                                      
+                                      <button 
+                                        type="button"
+                                        onClick={() => setResumeData(p => ({...p, skills: p.skills.filter(sk => sk.id !== s.id)}))}
+                                        className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors bg-gray-50 hover:bg-red-50/50"
+                                        title="Remover Habilidade"
+                                      >
+                                        <Trash2 size={14} />
+                                      </button>
+                                    </div>
+
+                                    <div className="flex items-center justify-between gap-4 pt-1 border-t border-gray-50">
+                                      <div className="flex items-center gap-2">
+                                        <span className="text-[10px] uppercase font-black tracking-wider text-gray-400">Nível (Pontos):</span>
+                                        <div className="flex gap-1.5">
+                                          {[1, 2, 3, 4, 5].map(dot => {
+                                            const active = dot <= currentDots && !isHidden;
+                                            return (
+                                              <button
+                                                key={dot}
+                                                type="button"
+                                                onClick={() => {
+                                                  const newLevelString = dot === 5 ? 'Especialista' : dot === 4 ? 'Avançado' : dot === 3 ? 'Intermédio' : dot === 2 ? 'Básico' : 'Iniciante';
+                                                  const updated = [...resumeData.skills];
+                                                  updated[idx] = { ...updated[idx], level: newLevelString };
+                                                  setResumeData(prev => ({ ...prev, skills: updated }));
+                                                }}
+                                                className={`w-4 h-4 rounded-full transition-transform active:scale-125 ${active ? 'bg-primary-blue shadow-sm' : 'bg-gray-100 hover:bg-gray-200'}`}
+                                                style={active ? { backgroundColor: resumeData.themeColor || '#1B2A4A' } : {}}
+                                                title={`Definir como nível ${dot}`}
+                                                disabled={isHidden}
+                                              />
+                                            );
+                                          })}
+                                        </div>
+                                      </div>
+
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          const updated = [...resumeData.skills];
+                                          if (isHidden) {
+                                            updated[idx] = { ...updated[idx], level: 'Intermédio' };
+                                          } else {
+                                            updated[idx] = { ...updated[idx], level: 'Ocultar' };
+                                          }
+                                          setResumeData(prev => ({ ...prev, skills: updated }));
+                                        }}
+                                        className={`px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-wider transition-all border ${
+                                          isHidden 
+                                            ? 'bg-amber-50 text-amber-700 border-amber-200' 
+                                            : 'bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100'
+                                        }`}
+                                      >
+                                        {isHidden ? 'Oculto (Mostrar)' : 'Ocultar Pontos'}
+                                      </button>
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                           </div>
+                         </div>
+                       )}
                     </div>
                   </div>
 

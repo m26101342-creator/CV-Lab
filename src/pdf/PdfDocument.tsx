@@ -760,14 +760,20 @@ const Template7 = ({ data }: { data: ResumeData }) => {
           {data.skills.length > 0 && (
             <View style={{ marginBottom: 30 }}>
               <Text style={styles.sectionTitle}>{getSectionTitle(data, 'skills', 'Habilidades')}</Text>
-              {data.skills.filter(s => s?.name).map((s, idx) => (
-                <View key={s.id || `skill-${idx}`} style={{ marginBottom: 8 }}>
-                  <Text style={{ fontSize: 9, fontWeight: 700, color: '#4B5563', marginBottom: 2 }}>{s.name.trim()}</Text>
-                  <View style={{ width: '100%', height: 4, backgroundColor: '#F3F4F6', borderRadius: 2 }}>
-                     <View style={{ height: 4, borderRadius: 2, backgroundColor: cTheme, width: s.level === 'Especialista' ? '100%' : s.level === 'Avançado' ? '80%' : s.level === 'Intermédio' ? '60%' : '40%' }} />
+              {data.skills.filter(s => s?.name).map((s, idx) => {
+                const showLevel = s.level && s.level !== 'Ocultar';
+                const value = s.level === 'Especialista' ? '100%' : s.level === 'Avançado' ? '80%' : s.level === 'Intermédio' ? '60%' : s.level === 'Básico' ? '40%' : s.level === 'Iniciante' ? '20%' : '0%';
+                return (
+                  <View key={s.id || `skill-${idx}`} style={{ marginBottom: 8 }}>
+                    <Text style={{ fontSize: 9, fontWeight: 700, color: '#4B5563', marginBottom: 2 }}>{s.name.trim()}</Text>
+                    {showLevel && (
+                      <View style={{ width: '100%', height: 4, backgroundColor: '#F3F4F6', borderRadius: 2 }}>
+                         <View style={{ height: 4, borderRadius: 2, backgroundColor: cTheme, width: value }} />
+                      </View>
+                    )}
                   </View>
-                </View>
-              ))}
+                );
+              })}
             </View>
           )}
           {data.education.length > 0 && (
@@ -874,15 +880,18 @@ const Template8 = ({ data }: { data: ResumeData }) => {
           <View style={{ marginBottom: 20 }}>
             <Text style={styles.sidebarTitle}>{getSectionTitle(data, 'skills', 'Habilidades')}</Text>
             {data.skills.filter(s => s && s.name).map((s, idx) => {
-              const count = s.level === 'Especialista' ? 5 : s.level === 'Avançado' ? 4 : s.level === 'Intermédio' ? 3 : 2;
+              const showDots = s.level && s.level !== 'Ocultar';
+              const count = s.level === 'Especialista' ? 5 : s.level === 'Avançado' ? 4 : s.level === 'Intermédio' ? 3 : s.level === 'Básico' ? 2 : s.level === 'Iniciante' ? 1 : 0;
               return (
                 <View key={s.id || `skill-${idx}`} style={styles.skillRow}>
                   <Text style={styles.skillText}>{s.name}</Text>
-                  <View style={styles.skillDots}>
-                    {[1, 2, 3, 4, 5].map(d => (
-                      <View key={d} style={[styles.skillDot, { backgroundColor: d <= count ? '#38BDF8' : '#E5E7EB' }]} />
-                    ))}
-                  </View>
+                  {showDots && (
+                    <View style={styles.skillDots}>
+                      {[1, 2, 3, 4, 5].map(d => (
+                        <View key={d} style={[styles.skillDot, { backgroundColor: d <= count ? '#38BDF8' : '#E5E7EB' }]} />
+                      ))}
+                    </View>
+                  )}
                 </View>
               );
             })}
@@ -1087,18 +1096,21 @@ const Template9 = ({ data }: { data: ResumeData }) => {
               <Text style={styles.sectionTitle}>{getSectionTitle(data, 'skills', 'Habilidades')}</Text>
               <View style={styles.skillsGrid}>
                 {data.skills.filter(s => s && s.name).map((s, idx) => {
-                  const val = s.level === 'Especialista' ? 5 : s.level === 'Avançado' ? 4 : s.level === 'Intermédio' ? 3 : 2;
+                  const val = s.level === 'Especialista' ? 5 : s.level === 'Avançado' ? 4 : s.level === 'Intermédio' ? 3 : s.level === 'Básico' ? 2 : s.level === 'Iniciante' ? 1 : 0;
+                  const showLevel = s.level && s.level !== 'Ocultar';
                   return (
                     <View key={s.id || `skill-${idx}`} style={styles.skillItem}>
                       <Text style={styles.skillName}>{s.name}</Text>
-                      <View style={styles.skillBar}>
-                        {[1, 2, 3, 4, 5].map(seg => (
-                          <View 
-                            key={seg} 
-                            style={[styles.skillSegment, { backgroundColor: seg <= val ? cTheme : '#E5E7EB' }]} 
-                          />
-                        ))}
-                      </View>
+                      {showLevel && (
+                        <View style={styles.skillBar}>
+                          {[1, 2, 3, 4, 5].map(seg => (
+                            <View 
+                              key={seg} 
+                              style={[styles.skillSegment, { backgroundColor: seg <= val ? cTheme : '#E5E7EB' }]} 
+                            />
+                          ))}
+                        </View>
+                      )}
                     </View>
                   );
                 })}
@@ -1226,24 +1238,27 @@ const Template10 = ({ data }: { data: ResumeData }) => {
             <View style={styles.sidebarSection}>
               <Text style={styles.sidebarTitle}>{getSectionTitle(data, 'skills', 'Habilidades')}</Text>
               {data.skills.filter(s => s && s.name).map((s, idx) => {
-                const value = s.level === 'Especialista' ? 5 : s.level === 'Avançado' ? 4 : s.level === 'Intermédio' ? 3 : 2;
+                const value = s.level === 'Especialista' ? 5 : s.level === 'Avançado' ? 4 : s.level === 'Intermédio' ? 3 : s.level === 'Básico' ? 2 : s.level === 'Iniciante' ? 1 : 0;
+                const showLevel = s.level && s.level !== 'Ocultar';
                 return (
                   <View key={s.id || `skill-${idx}`} style={styles.skillItem}>
                     <View style={styles.skillHeader}>
                       <Text style={styles.skillName}>{s.name}</Text>
-                      <Text style={styles.skillLevel}>{s.level}</Text>
+                      {showLevel && <Text style={styles.skillLevel}>{s.level}</Text>}
                     </View>
-                    <View style={styles.skillBar}>
-                      {[1, 2, 3, 4, 5].map((seg) => (
-                        <View 
-                          key={seg} 
-                          style={[
-                            styles.skillSegment, 
-                            { backgroundColor: seg <= value ? cTheme : '#475569' }
-                          ]} 
-                        />
-                      ))}
-                    </View>
+                    {showLevel && (
+                      <View style={styles.skillBar}>
+                        {[1, 2, 3, 4, 5].map((seg) => (
+                          <View 
+                            key={seg} 
+                            style={[
+                              styles.skillSegment, 
+                              { backgroundColor: seg <= value ? cTheme : '#475569' }
+                            ]} 
+                          />
+                        ))}
+                      </View>
+                    )}
                   </View>
                 );
               })}
@@ -1460,13 +1475,16 @@ const Template11 = ({ data }: { data: ResumeData }) => {
             <View style={styles.sidebarSection}>
               <Text style={styles.sidebarSectionHeader}>{getSectionTitle(data, 'skills', 'Competências')}</Text>
               {data.skills.filter(s => s && s.name).map((s, idx) => {
-                const value = s.level === 'Especialista' ? 100 : s.level === 'Avançado' ? 80 : s.level === 'Intermédio' ? 60 : 40;
+                const value = s.level === 'Especialista' ? 100 : s.level === 'Avançado' ? 80 : s.level === 'Intermédio' ? 60 : s.level === 'Básico' ? 40 : s.level === 'Iniciante' ? 20 : 0;
+                const showLevel = s.level && s.level !== 'Ocultar';
                 return (
                   <View key={s.id || `skill-${idx}`} style={styles.skillItem}>
                     <Text style={styles.skillName}>{s.name}</Text>
-                    <View style={styles.skillBar}>
-                      <View style={[styles.skillValue, { width: `${value}%` }]} />
-                    </View>
+                    {showLevel && (
+                      <View style={styles.skillBar}>
+                        <View style={[styles.skillValue, { width: `${value}%` }]} />
+                      </View>
+                    )}
                   </View>
                 );
               })}
@@ -1599,7 +1617,7 @@ const Template12 = ({ data }: { data: ResumeData }) => {
               {data.skills.filter(s => s && s.name).map((s, idx) => (
                 <View key={s.id || `skill-${idx}`} style={styles.skillRow}>
                   <Text style={styles.skillName}>{s.name}</Text>
-                  <Text style={styles.skillLevel}>{s.level}</Text>
+                  {s.level && s.level !== 'Ocultar' && <Text style={styles.skillLevel}>{s.level}</Text>}
                 </View>
               ))}
             </View>
@@ -1763,16 +1781,19 @@ const Template13 = ({ data }: { data: ResumeData }) => {
             <View style={styles.card}>
               <Text style={styles.sectionHeader}>{getSectionTitle(data, 'skills', 'Competências')}</Text>
               {data.skills.filter(s => s && s.name).map((s, idx) => {
-                const value = s.level === 'Especialista' ? 100 : s.level === 'Avançado' ? 80 : s.level === 'Intermédio' ? 60 : 40;
+                const value = s.level === 'Especialista' ? 100 : s.level === 'Avançado' ? 80 : s.level === 'Intermédio' ? 60 : s.level === 'Básico' ? 40 : s.level === 'Iniciante' ? 20 : 0;
+                const showLevel = s.level && s.level !== 'Ocultar';
                 return (
                   <View key={s.id || `skill-${idx}`} style={styles.skillItem}>
                     <View style={styles.skillInfo}>
                       <Text style={styles.skillName}>{s.name}</Text>
-                      <Text style={styles.skillLevel}>{s.level}</Text>
+                      {showLevel && <Text style={styles.skillLevel}>{s.level}</Text>}
                     </View>
-                    <View style={styles.skillBar}>
-                      <View style={[styles.skillVal, { width: `${value}%` }]} />
-                    </View>
+                    {showLevel && (
+                      <View style={styles.skillBar}>
+                        <View style={[styles.skillVal, { width: `${value}%` }]} />
+                      </View>
+                    )}
                   </View>
                 );
               })}
