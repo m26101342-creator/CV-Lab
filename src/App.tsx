@@ -42,7 +42,8 @@ import {
   AlertCircle,
   Printer,
   Video,
-  Type
+  Type,
+  Grid
 } from 'lucide-react';
 import { AdSenseUnit } from './components/AdSenseUnit';
 import { ResumeData, INITIAL_RESUME_DATA, TemplateType } from './types.ts';
