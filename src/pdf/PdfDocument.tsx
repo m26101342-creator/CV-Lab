@@ -2,6 +2,10 @@ import React from 'react';
 import { Document, Page, View, Text, StyleSheet, Font, Image, Svg, Path } from '@react-pdf/renderer';
 import { ResumeData } from '../types';
 
+const getSectionTitle = (data: ResumeData, key: keyof NonNullable<ResumeData['sectionTitles']>, defaultTitle: string) => {
+  return data.sectionTitles?.[key] || defaultTitle;
+};
+
 // Register Fonts
 Font.register({
   family: 'Inter',
@@ -98,7 +102,7 @@ const Template1 = ({ data }: { data: ResumeData }) => {
 
         {data.skills.length > 0 && (
           <View style={{ marginBottom: 30 }}>
-            <Text style={styles.sectionTitle}>Habilidades</Text>
+            <Text style={styles.sectionTitle}>{getSectionTitle(data, 'skills', 'Habilidades')}</Text>
             {data.skills.filter(s => s?.name && s.name.trim() !== '').map((s, idx) => (
               <View key={s.id || `skill-${idx}`} style={styles.skillItem}>
                 <Text style={styles.skillText}>{s.name.trim()}</Text>
@@ -109,7 +113,7 @@ const Template1 = ({ data }: { data: ResumeData }) => {
 
         {data.education.length > 0 && (
           <View>
-            <Text style={styles.sectionTitle}>Educação</Text>
+            <Text style={styles.sectionTitle}>{getSectionTitle(data, 'education', 'Educação')}</Text>
             {data.education.map((e, idx) => (
               <View key={e.id || `edu-${idx}`} style={{ marginBottom: 15 }}>
                 <Text style={{ fontSize: 10, fontWeight: 700 }}>{e.degree}</Text>
@@ -129,7 +133,7 @@ const Template1 = ({ data }: { data: ResumeData }) => {
 
         {data.experience.length > 0 && (
           <View>
-            <Text style={styles.mainSectionTitle}>Experiência Profissional</Text>
+            <Text style={styles.mainSectionTitle}>{getSectionTitle(data, 'experience', 'Experiência Profissional')}</Text>
             {data.experience.map((ex, idx) => (
               <View key={ex.id || `exp-${idx}`} style={styles.expItem}>
                 <View style={styles.expContent}>
@@ -184,7 +188,7 @@ const Template2 = ({ data }: { data: ResumeData }) => {
 
           {data.skills.length > 0 && (
             <View key="skills-section" style={{ marginTop: 30 }}>
-              <Text style={styles.sectionTitle}>Habilidades</Text>
+              <Text style={styles.sectionTitle}>{getSectionTitle(data, 'skills', 'Habilidades')}</Text>
               <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
                 {data.skills.filter(s => s?.name && s.name.trim() !== '').map((s, idx) => <View key={s.id || `skill-${idx}`} style={styles.skillTag}><Text>{s.name.trim()}</Text></View>)}
               </View>
@@ -192,7 +196,7 @@ const Template2 = ({ data }: { data: ResumeData }) => {
           )}
         </View>
         <View key="right-col" style={styles.rightCol}>
-          <Text style={styles.sectionTitle}>Experiência</Text>
+          <Text style={styles.sectionTitle}>{getSectionTitle(data, 'experience', 'Experiência')}</Text>
           {data.experience.map((ex, idx) => (
             <View key={ex.id || `exp-${idx}`} style={{ marginBottom: 20 }}>
               <Text style={{ fontSize: 11, fontWeight: 700 }}>{ex.position}</Text>
@@ -236,7 +240,7 @@ const Template3 = ({ data }: { data: ResumeData }) => {
         <View style={styles.leftCol}>
           {data.education.length > 0 && (
             <View>
-              <Text style={styles.sectionTitle}>Formação</Text>
+              <Text style={styles.sectionTitle}>{getSectionTitle(data, 'education', 'Formação')}</Text>
               {data.education.map((e, idx) => (
                 <View key={e.id || `edu-${idx}`} style={{ marginBottom: 15 }}>
                   <Text style={{ fontWeight: 700, fontSize: 10 }}>{e.institution}</Text>
@@ -248,7 +252,7 @@ const Template3 = ({ data }: { data: ResumeData }) => {
           )}
           {data.skills.length > 0 && (
             <View style={{ marginTop: 30 }}>
-              <Text style={styles.sectionTitle}>Habilidades</Text>
+              <Text style={styles.sectionTitle}>{getSectionTitle(data, 'skills', 'Habilidades')}</Text>
               {data.skills.filter(s => s?.name && s.name.trim() !== '').map((s, idx) => <Text key={s.id || `skill-${idx}`} style={{ fontSize: 10, marginBottom: 5 }}>• {s.name.trim()}</Text>)}
             </View>
           )}
@@ -256,7 +260,7 @@ const Template3 = ({ data }: { data: ResumeData }) => {
         <View style={styles.rightCol}>
           <Text style={styles.sectionTitle}>Sobre Mim</Text>
           <Text style={{ fontSize: 10, marginBottom: 30, lineHeight: 1.6 }}>{data.personalInfo.summary.replace(/\*/g, '')}</Text>
-          <Text style={styles.sectionTitle}>Experiência</Text>
+          <Text style={styles.sectionTitle}>{getSectionTitle(data, 'experience', 'Experiência')}</Text>
           {data.experience.map((ex, idx) => (
             <View key={ex.id || `exp-${idx}`} style={{ marginBottom: 20 }}>
               <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
@@ -327,7 +331,7 @@ const Template4 = ({ data }: { data: ResumeData }) => {
 
         {data.education && data.education.length > 0 && (
           <View style={{ marginBottom: 30 }}>
-            <Text style={styles.sectionTitleSidebar}>Educação</Text>
+            <Text style={styles.sectionTitleSidebar}>{getSectionTitle(data, 'education', 'Educação')}</Text>
             {data.education.map((edu, idx) => (
               <View key={edu.id || `edu-${idx}`} style={{ marginBottom: 12 }}>
                 <Text style={styles.sidebarSubHeading}>{edu.institution}</Text>
@@ -349,7 +353,7 @@ const Template4 = ({ data }: { data: ResumeData }) => {
 
         {data.experience && data.experience.length > 0 && (
           <View>
-            <Text style={styles.sectionTitleMain}>Experiência</Text>
+            <Text style={styles.sectionTitleMain}>{getSectionTitle(data, 'experience', 'Experiência')}</Text>
             {data.experience.map((ex, idx) => (
               <View key={ex.id || `exp-${idx}`} style={styles.expBox}>
                 <View style={styles.expHeader}>
@@ -365,7 +369,7 @@ const Template4 = ({ data }: { data: ResumeData }) => {
 
         {data.skills && data.skills.length > 0 && (
            <View style={{ marginTop: 5 }}>
-             <Text style={styles.sectionTitleMain}>Habilidades</Text>
+             <Text style={styles.sectionTitleMain}>{getSectionTitle(data, 'skills', 'Habilidades')}</Text>
              <View style={styles.skillsGrid}>
                {data.skills.filter(s => s?.name && s.name.trim() !== '').map((s, idx) => (
                  <View key={s.id || `skill-${idx}`} style={styles.skillItem}>
@@ -378,7 +382,7 @@ const Template4 = ({ data }: { data: ResumeData }) => {
 
         {data.languages && data.languages.length > 0 && (
            <View style={{ marginTop: 5 }}>
-             <Text style={styles.sectionTitleMain}>Idiomas</Text>
+             <Text style={styles.sectionTitleMain}>{getSectionTitle(data, 'languages', 'Idiomas')}</Text>
              <View style={styles.skillsGrid}>
                {data.languages.filter(s => s?.name && s.name.trim() !== '').map((s, idx) => (
                  <View key={s.id || `lang-${idx}`} style={styles.skillItem}>
@@ -466,7 +470,7 @@ const Template5 = ({ data }: { data: ResumeData }) => {
           
           {data.skills && data.skills.length > 0 && (
             <View>
-              <Text style={styles.leftSectionTitle}>Habilidades</Text>
+              <Text style={styles.leftSectionTitle}>{getSectionTitle(data, 'skills', 'Habilidades')}</Text>
               <View style={{ gap: 6 }}>
                 {data.skills.filter(s => s?.name).map((s, idx) => (
                   <Text key={s.id || `skill-${idx}`} style={styles.leftText}>• {s.name.trim()}</Text>
@@ -477,7 +481,7 @@ const Template5 = ({ data }: { data: ResumeData }) => {
           
           {data.languages && data.languages.length > 0 && (
             <View>
-              <Text style={styles.leftSectionTitle}>Idiomas</Text>
+              <Text style={styles.leftSectionTitle}>{getSectionTitle(data, 'languages', 'Idiomas')}</Text>
               <View style={{ gap: 6 }}>
                 {data.languages.filter(s => s?.name).map((s, idx) => (
                   <Text key={s.id || `lang-${idx}`} style={styles.leftText}>• {s.name.trim()} - {s.level}</Text>
@@ -488,7 +492,7 @@ const Template5 = ({ data }: { data: ResumeData }) => {
 
           {data.certifications && data.certifications.length > 0 && (
             <View>
-              <Text style={styles.leftSectionTitle}>Certificações</Text>
+              <Text style={styles.leftSectionTitle}>{getSectionTitle(data, 'certifications', 'Certificações')}</Text>
               <View style={{ gap: 6 }}>
                 {data.certifications.filter(s => s?.name).map((s, idx) => (
                   <View key={s.id || `cert-${idx}`} style={{ marginBottom: 4 }}>
@@ -502,7 +506,7 @@ const Template5 = ({ data }: { data: ResumeData }) => {
 
           {data.interests && data.interests.length > 0 && (
             <View>
-              <Text style={styles.leftSectionTitle}>Interesses</Text>
+              <Text style={styles.leftSectionTitle}>{getSectionTitle(data, 'interests', 'Interesses')}</Text>
               <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 4 }}>
                 {data.interests.map((interest, idx) => (
                   <Text key={idx} style={[styles.leftText, { backgroundColor: 'rgba(255,255,255,0.15)', padding: '2 6', borderRadius: 4, marginRight: 4, marginBottom: 4 }]}>{interest}</Text>
@@ -515,7 +519,7 @@ const Template5 = ({ data }: { data: ResumeData }) => {
         <View style={styles.rightColumn}>
           {data.experience && data.experience.length > 0 && (
             <View>
-              <Text style={[styles.rightSectionTitle, { marginTop: 0 }]}>Experiência</Text>
+              <Text style={[styles.rightSectionTitle, { marginTop: 0 }]}>{getSectionTitle(data, 'experience', 'Experiência')}</Text>
               {data.experience.map((ex, idx) => (
                 <View key={ex.id || `exp-${idx}`} style={styles.expBox}>
                   <Text style={styles.expTitle}>{ex.position}</Text>
@@ -531,7 +535,7 @@ const Template5 = ({ data }: { data: ResumeData }) => {
           
           {data.education && data.education.length > 0 && (
             <View>
-              <Text style={styles.rightSectionTitle}>Educação</Text>
+              <Text style={styles.rightSectionTitle}>{getSectionTitle(data, 'education', 'Educação')}</Text>
               {data.education.map((e, idx) => (
                 <View key={e.id || `edu-${idx}`} style={styles.eduBox}>
                    <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
@@ -652,7 +656,7 @@ const Template6 = ({ data }: { data: ResumeData }) => {
         <View style={styles.col}>
           {data.experience.length > 0 && (
             <View style={{ marginBottom: 20 }}>
-              <Text style={styles.sectionTitle}>Experiência</Text>
+              <Text style={styles.sectionTitle}>{getSectionTitle(data, 'experience', 'Experiência')}</Text>
               {data.experience.map((ex, idx) => (
                 <View key={ex.id || `exp-${idx}`} style={styles.expBox}>
                   <Text style={styles.expTitle}>{ex.position}</Text>
@@ -666,7 +670,7 @@ const Template6 = ({ data }: { data: ResumeData }) => {
         <View style={styles.col}>
           {data.education.length > 0 && (
             <View style={{ marginBottom: 30 }}>
-              <Text style={styles.sectionTitle}>Formação</Text>
+              <Text style={styles.sectionTitle}>{getSectionTitle(data, 'education', 'Formação')}</Text>
               {data.education.map((e, idx) => (
                 <View key={e.id || `edu-${idx}`} style={{ marginBottom: 15, padding: 15, backgroundColor: '#FFFFFF', border: '1pt solid #E5E7EB', borderRadius: 8 }}>
                   <Text style={{ fontSize: 11, fontWeight: 900, color: '#111827' }}>{e.degree}</Text>
@@ -678,7 +682,7 @@ const Template6 = ({ data }: { data: ResumeData }) => {
           )}
           {data.skills.length > 0 && (
             <View>
-              <Text style={styles.sectionTitle}>Habilidades</Text>
+              <Text style={styles.sectionTitle}>{getSectionTitle(data, 'skills', 'Habilidades')}</Text>
               <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 5 }}>
                 {data.skills.filter(s => s?.name).map((s, idx) => (
                   <Text key={s.id || `skill-${idx}`} style={{ padding: '4 8', backgroundColor: '#FFFFFF', border: '1pt solid #E5E7EB', borderRadius: 4, fontSize: 8, fontWeight: 700, color: '#374151' }}>{s.name.trim()}</Text>
@@ -738,7 +742,7 @@ const Template7 = ({ data }: { data: ResumeData }) => {
           )}
           {data.experience.length > 0 && (
             <View>
-              <Text style={styles.sectionTitle}>Experiência</Text>
+              <Text style={styles.sectionTitle}>{getSectionTitle(data, 'experience', 'Experiência')}</Text>
               {data.experience.map((ex, idx) => (
                 <View key={ex.id || `exp-${idx}`} style={styles.expBox}>
                   <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -755,7 +759,7 @@ const Template7 = ({ data }: { data: ResumeData }) => {
         <View style={styles.sideCol}>
           {data.skills.length > 0 && (
             <View style={{ marginBottom: 30 }}>
-              <Text style={styles.sectionTitle}>Habilidades</Text>
+              <Text style={styles.sectionTitle}>{getSectionTitle(data, 'skills', 'Habilidades')}</Text>
               {data.skills.filter(s => s?.name).map((s, idx) => (
                 <View key={s.id || `skill-${idx}`} style={{ marginBottom: 8 }}>
                   <Text style={{ fontSize: 9, fontWeight: 700, color: '#4B5563', marginBottom: 2 }}>{s.name.trim()}</Text>
@@ -768,7 +772,7 @@ const Template7 = ({ data }: { data: ResumeData }) => {
           )}
           {data.education.length > 0 && (
             <View>
-              <Text style={styles.sectionTitle}>Educação</Text>
+              <Text style={styles.sectionTitle}>{getSectionTitle(data, 'education', 'Educação')}</Text>
               {data.education.map((e, idx) => (
                 <View key={e.id || `edu-${idx}`} style={{ marginBottom: 15 }}>
                   <Text style={{ fontSize: 10, fontWeight: 900, color: '#111827' }}>{e.degree}</Text>
@@ -868,7 +872,7 @@ const Template8 = ({ data }: { data: ResumeData }) => {
 
         {data.skills.length > 0 && (
           <View style={{ marginBottom: 20 }}>
-            <Text style={styles.sidebarTitle}>Habilidades</Text>
+            <Text style={styles.sidebarTitle}>{getSectionTitle(data, 'skills', 'Habilidades')}</Text>
             {data.skills.filter(s => s && s.name).map((s, idx) => {
               const count = s.level === 'Especialista' ? 5 : s.level === 'Avançado' ? 4 : s.level === 'Intermédio' ? 3 : 2;
               return (
@@ -887,7 +891,7 @@ const Template8 = ({ data }: { data: ResumeData }) => {
 
         {data.interests && data.interests.length > 0 && (
           <View>
-            <Text style={styles.sidebarTitle}>Interesses</Text>
+            <Text style={styles.sidebarTitle}>{getSectionTitle(data, 'interests', 'Interesses')}</Text>
             <View style={styles.interestsWrap}>
               {data.interests.map((interest, idx) => (
                 <Text key={idx} style={styles.interestBadge}>{interest}</Text>
@@ -928,7 +932,7 @@ const Template8 = ({ data }: { data: ResumeData }) => {
 
         {data.experience.length > 0 && (
           <View>
-            <Text style={styles.sectionTitle}>Experiência Profissional</Text>
+            <Text style={styles.sectionTitle}>{getSectionTitle(data, 'experience', 'Experiência Profissional')}</Text>
             {data.experience.map((ex, idx) => (
               <View key={ex.id || `exp-${idx}`} style={styles.timelineItem}>
                 <View style={styles.timelineDot} />
@@ -1030,7 +1034,7 @@ const Template9 = ({ data }: { data: ResumeData }) => {
 
           {data.education.length > 0 && (
             <View style={styles.sidebarSection}>
-              <Text style={styles.sidebarTitle}>Formação</Text>
+              <Text style={styles.sidebarTitle}>{getSectionTitle(data, 'education', 'Formação')}</Text>
               {data.education.map((e, idx) => (
                 <View key={e.id || `edu-${idx}`} style={styles.sidebarItem}>
                   <Text style={styles.sidebarItemTitle}>{e.degree}</Text>
@@ -1064,7 +1068,7 @@ const Template9 = ({ data }: { data: ResumeData }) => {
 
           {data.experience.length > 0 && (
             <View>
-              <Text style={styles.sectionTitle}>Experiência Profissional</Text>
+              <Text style={styles.sectionTitle}>{getSectionTitle(data, 'experience', 'Experiência Profissional')}</Text>
               {data.experience.map((ex, idx) => (
                 <View key={ex.id || `exp-${idx}`} style={styles.expBox}>
                   <View style={styles.expHeader}>
@@ -1080,7 +1084,7 @@ const Template9 = ({ data }: { data: ResumeData }) => {
 
           {data.skills.length > 0 && (
             <View>
-              <Text style={styles.sectionTitle}>Habilidades</Text>
+              <Text style={styles.sectionTitle}>{getSectionTitle(data, 'skills', 'Habilidades')}</Text>
               <View style={styles.skillsGrid}>
                 {data.skills.filter(s => s && s.name).map((s, idx) => {
                   const val = s.level === 'Especialista' ? 5 : s.level === 'Avançado' ? 4 : s.level === 'Intermédio' ? 3 : 2;
@@ -1220,7 +1224,7 @@ const Template10 = ({ data }: { data: ResumeData }) => {
 
           {data.skills.length > 0 && (
             <View style={styles.sidebarSection}>
-              <Text style={styles.sidebarTitle}>Habilidades</Text>
+              <Text style={styles.sidebarTitle}>{getSectionTitle(data, 'skills', 'Habilidades')}</Text>
               {data.skills.filter(s => s && s.name).map((s, idx) => {
                 const value = s.level === 'Especialista' ? 5 : s.level === 'Avançado' ? 4 : s.level === 'Intermédio' ? 3 : 2;
                 return (
@@ -1248,7 +1252,7 @@ const Template10 = ({ data }: { data: ResumeData }) => {
 
           {data.languages && data.languages.length > 0 && (
             <View style={styles.sidebarSection}>
-              <Text style={styles.sidebarTitle}>Idiomas</Text>
+              <Text style={styles.sidebarTitle}>{getSectionTitle(data, 'languages', 'Idiomas')}</Text>
               {data.languages.map((l, idx) => (
                 <View key={l.id || `lang-${idx}`} style={styles.langItem}>
                   <Text style={styles.langName}>{l.name}</Text>
@@ -1263,7 +1267,7 @@ const Template10 = ({ data }: { data: ResumeData }) => {
           {data.experience.length > 0 && (
             <View>
               <View style={styles.sectionHeader}>
-                <Text style={styles.sectionTitle}>Experiência Profissional</Text>
+                <Text style={styles.sectionTitle}>{getSectionTitle(data, 'experience', 'Experiência Profissional')}</Text>
               </View>
               {data.experience.map((ex, idx) => (
                 <View key={ex.id || `exp-${idx}`} style={styles.expItem}>
@@ -1412,7 +1416,7 @@ const Template11 = ({ data }: { data: ResumeData }) => {
 
         {data.experience.length > 0 && (
           <View>
-            <Text style={styles.sectionTitleBanner}>Experiência Profissional</Text>
+            <Text style={styles.sectionTitleBanner}>{getSectionTitle(data, 'experience', 'Experiência Profissional')}</Text>
             {data.experience.map((ex, idx) => (
               <View key={ex.id || `exp-${idx}`} style={styles.rowItem}>
                 <Text style={styles.yearBox}>{ex.startDate} - {ex.current ? "PRES." : ex.endDate}</Text>
@@ -1454,7 +1458,7 @@ const Template11 = ({ data }: { data: ResumeData }) => {
 
           {data.skills.length > 0 && (
             <View style={styles.sidebarSection}>
-              <Text style={styles.sidebarSectionHeader}>Competências</Text>
+              <Text style={styles.sidebarSectionHeader}>{getSectionTitle(data, 'skills', 'Competências')}</Text>
               {data.skills.filter(s => s && s.name).map((s, idx) => {
                 const value = s.level === 'Especialista' ? 100 : s.level === 'Avançado' ? 80 : s.level === 'Intermédio' ? 60 : 40;
                 return (
@@ -1471,7 +1475,7 @@ const Template11 = ({ data }: { data: ResumeData }) => {
 
           {data.languages && data.languages.length > 0 && (
             <View style={styles.sidebarSection}>
-              <Text style={styles.sidebarSectionHeader}>Idiomas</Text>
+              <Text style={styles.sidebarSectionHeader}>{getSectionTitle(data, 'languages', 'Idiomas')}</Text>
               {data.languages.map((l, idx) => (
                 <View key={l.id || `lang-${idx}`} style={styles.langItem}>
                   <Text style={styles.langName}>{l.name}</Text>
@@ -1591,7 +1595,7 @@ const Template12 = ({ data }: { data: ResumeData }) => {
         <View style={styles.leftCol}>
           {data.skills.length > 0 && (
             <View style={{ marginBottom: 15 }}>
-              <Text style={styles.sectionTitle}>Competências</Text>
+              <Text style={styles.sectionTitle}>{getSectionTitle(data, 'skills', 'Competências')}</Text>
               {data.skills.filter(s => s && s.name).map((s, idx) => (
                 <View key={s.id || `skill-${idx}`} style={styles.skillRow}>
                   <Text style={styles.skillName}>{s.name}</Text>
@@ -1603,7 +1607,7 @@ const Template12 = ({ data }: { data: ResumeData }) => {
 
           {data.languages && data.languages.length > 0 && (
             <View style={{ marginBottom: 15 }}>
-              <Text style={styles.sectionTitle}>Idiomas</Text>
+              <Text style={styles.sectionTitle}>{getSectionTitle(data, 'languages', 'Idiomas')}</Text>
               {data.languages.map((l, idx) => (
                 <View key={l.id || `lang-${idx}`} style={styles.langRow}>
                   <Text style={styles.langName}>{l.name}</Text>
@@ -1617,7 +1621,7 @@ const Template12 = ({ data }: { data: ResumeData }) => {
         <View style={styles.rightCol}>
           {data.experience.length > 0 && (
             <View style={{ marginBottom: 15 }}>
-              <Text style={styles.sectionTitle}>Experiência Profissional</Text>
+              <Text style={styles.sectionTitle}>{getSectionTitle(data, 'experience', 'Experiência Profissional')}</Text>
               {data.experience.map((ex, idx) => (
                 <View key={ex.id || `exp-${idx}`} style={styles.expItem}>
                   <View style={styles.expHeader}>
@@ -1633,7 +1637,7 @@ const Template12 = ({ data }: { data: ResumeData }) => {
 
           {data.education.length > 0 && (
             <View style={{ marginBottom: 15 }}>
-              <Text style={styles.sectionTitle}>Formação Acadêmica</Text>
+              <Text style={styles.sectionTitle}>{getSectionTitle(data, 'education', 'Formação Acadêmica')}</Text>
               {data.education.map((e, idx) => (
                 <View key={e.id || `edu-${idx}`} style={styles.eduItem}>
                   <View style={styles.eduHeader}>
@@ -1648,7 +1652,7 @@ const Template12 = ({ data }: { data: ResumeData }) => {
 
           {data.certifications && data.certifications.length > 0 && (
             <View>
-              <Text style={styles.sectionTitle}>Certificações</Text>
+              <Text style={styles.sectionTitle}>{getSectionTitle(data, 'certifications', 'Certificações')}</Text>
               <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
                 {data.certifications.map((cVal, idx) => (
                   <View key={cVal.id || `cert-${idx}`} style={[styles.certItem, { width: '45%' }]}>
@@ -1757,7 +1761,7 @@ const Template13 = ({ data }: { data: ResumeData }) => {
 
           {data.skills.length > 0 && (
             <View style={styles.card}>
-              <Text style={styles.sectionHeader}>Competências</Text>
+              <Text style={styles.sectionHeader}>{getSectionTitle(data, 'skills', 'Competências')}</Text>
               {data.skills.filter(s => s && s.name).map((s, idx) => {
                 const value = s.level === 'Especialista' ? 100 : s.level === 'Avançado' ? 80 : s.level === 'Intermédio' ? 60 : 40;
                 return (
@@ -1777,7 +1781,7 @@ const Template13 = ({ data }: { data: ResumeData }) => {
 
           {data.languages && data.languages.length > 0 && (
             <View style={styles.card}>
-              <Text style={styles.sectionHeader}>Idiomas</Text>
+              <Text style={styles.sectionHeader}>{getSectionTitle(data, 'languages', 'Idiomas')}</Text>
               {data.languages.map((l, idx) => (
                 <View key={l.id || `lang-${idx}`} style={styles.langItem}>
                   <Text style={styles.langName}>{l.name}</Text>
@@ -1791,14 +1795,14 @@ const Template13 = ({ data }: { data: ResumeData }) => {
         <View style={styles.mainContent}>
           {data.personalInfo.summary && (
             <View style={styles.card}>
-              <Text style={styles.sectionHeader}>Resumo Profissional</Text>
+              <Text style={styles.sectionHeader}>{getSectionTitle(data, 'summary', 'Resumo Profissional')}</Text>
               <Text style={styles.summaryText}>{data.personalInfo.summary.replace(/\*/g, '')}</Text>
             </View>
           )}
 
           {data.experience.length > 0 && (
             <View style={styles.card}>
-              <Text style={styles.sectionHeader}>Experiência de Trabalho</Text>
+              <Text style={styles.sectionHeader}>{getSectionTitle(data, 'experience', 'Experiência de Trabalho')}</Text>
               {data.experience.map((ex, idx) => (
                 <View key={ex.id || `exp-${idx}`} style={styles.rowItem}>
                   <View style={styles.rowHeader}>
@@ -1814,7 +1818,7 @@ const Template13 = ({ data }: { data: ResumeData }) => {
 
           {data.education.length > 0 && (
             <View style={styles.card}>
-              <Text style={styles.sectionHeader}>Educação</Text>
+              <Text style={styles.sectionHeader}>{getSectionTitle(data, 'education', 'Educação')}</Text>
               {data.education.map((e, idx) => (
                 <View key={e.id || `edu-${idx}`} style={styles.rowItem}>
                   <View style={styles.rowHeader}>
@@ -1829,7 +1833,7 @@ const Template13 = ({ data }: { data: ResumeData }) => {
 
           {data.certifications && data.certifications.length > 0 && (
             <View style={styles.card}>
-              <Text style={styles.sectionHeader}>Certificações</Text>
+              <Text style={styles.sectionHeader}>{getSectionTitle(data, 'certifications', 'Certificações')}</Text>
               <View style={styles.certGrid}>
                 {data.certifications.map((cVal, idx) => (
                   <View key={cVal.id || `cert-${idx}`} style={styles.certItem}>

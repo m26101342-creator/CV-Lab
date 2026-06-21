@@ -217,6 +217,9 @@ const TEMPLATES: Record<TemplateType, { name: string; layout: string; colors: an
 
 // --- Helpers ---
 const renderText = (str: string) => str ? str.replace(/\*/g, '') : '';
+const getSectionTitle = (data: ResumeData, key: keyof NonNullable<ResumeData['sectionTitles']>, defaultTitle: string) => {
+  return data.sectionTitles?.[key] || defaultTitle;
+};
 
 const ProfilePage = ({ user, isAdmin, setView, onLogout, onRequestDownload }: { 
     user: any; 
@@ -1523,6 +1526,51 @@ const AdminPanel = ({ setView }: { setView?: any }) => {
     );
 };
 
+const EditableTitle = ({ 
+  text, 
+  defaultText, 
+  onSave, 
+  className, 
+  style,
+  as: Component = 'div'
+}: { 
+  text?: string, 
+  defaultText: string, 
+  onSave?: (v: string) => void,
+  className?: string,
+  style?: React.CSSProperties,
+  as?: any
+}) => {
+  const [val, setVal] = useState(text || defaultText);
+  const [editing, setEditing] = useState(false);
+
+  React.useEffect(() => {
+    setVal(text || defaultText);
+  }, [text, defaultText]);
+
+  if (!onSave) {
+    return <Component className={className} style={style}>{val}</Component>;
+  }
+
+  return (
+    <Component 
+      className={`relative group ${className}`} 
+      style={{ ...style, cursor: 'text' }}
+    >
+      <input
+        type="text"
+        value={val}
+        onChange={e => setVal(e.target.value)}
+        onBlur={() => onSave(val)}
+        onKeyDown={e => { if (e.key === 'Enter') { e.currentTarget.blur(); } }}
+        className="bg-transparent border-none outline-none w-full p-0 m-0 font-inherit color-inherit rounded hover:bg-black/10 focus:bg-white focus:text-black focus:ring-2 focus:ring-primary-blue/50 transition-colors cursor-text border-b border-transparent hover:border-current border-dashed"
+        style={{ color: 'inherit', fontWeight: 'inherit', fontSize: 'inherit', letterSpacing: 'inherit', textTransform: 'inherit' }}
+        title="Clique para editar o título da seção"
+      />
+    </Component>
+  );
+};
+
 const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: { data: ResumeData; templateId: TemplateType; showGuides?: boolean; onChange?: React.Dispatch<React.SetStateAction<ResumeData>> }) => {
   const theme = TEMPLATES[templateId] || TEMPLATES.t1_executive;
   const c = { ...theme.colors, primary: data.themeColor || theme.colors.primary };
@@ -1537,6 +1585,18 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
     alignment: 'left',
     fontFamily: 'sans',
     photoBorderRadius: 50
+  };
+
+  const handleTitleChange = (key: keyof NonNullable<ResumeData['sectionTitles']>, value: string) => {
+    if (onChange) {
+      onChange(prev => ({
+        ...prev,
+        sectionTitles: {
+          ...(prev.sectionTitles || {}),
+          [key]: value
+        }
+      }));
+    }
   };
 
   // Local state for direct touch and drag-to-resize/reorder action
@@ -2092,7 +2152,7 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
               
               {data.skills.length > 0 && (
                 <div style={{ marginBottom: '32px' }}>
-                  <div className="t1-section-title">Habilidades</div>
+                  <EditableTitle as="div" className="t1-section-title" defaultText="Habilidades" text={getSectionTitle(data, 'skills', 'Habilidades')} onSave={onChange ? (v) => handleTitleChange('skills', v) : undefined} />
                   <div>
                     {data.skills.map((s, idx) => (
                        <span key={s.id || `skill-${idx}`} className="t1-skill-tag">{s.name}</span>
@@ -2103,7 +2163,7 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
 
               {data.languages && data.languages.length > 0 && (
                 <div style={{ marginBottom: '32px' }}>
-                  <div className="t1-section-title">Idiomas</div>
+                  <EditableTitle as="div" className="t1-section-title" defaultText="Idiomas" text={getSectionTitle(data, 'languages', 'Idiomas')} onSave={onChange ? (v) => handleTitleChange('languages', v) : undefined} />
                   <div style={{ display: 'flex', flexDirection: 'column' }}>
                     {data.languages.map((l, idx) => (
                        <div key={l.id || `lang-${idx}`} className="flex justify-between items-center text-[12px] opacity-90" style={{ marginBottom: idx === data.languages.length - 1 ? 0 : '12px' }}>
@@ -2139,7 +2199,7 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
 
              {data.experience.length > 0 && (
                 <div className="t1-right-section">
-                  <div className="t1-right-title">Experiência Profissional</div>
+                  <EditableTitle as="div" className="t1-right-title" defaultText="Experiência Profissional" text={getSectionTitle(data, 'experience', 'Experiência Profissional')} onSave={onChange ? (v) => handleTitleChange('experience', v) : undefined} />
                   <div className="flex flex-col gap-6">
                     {data.experience.map((ex, idx) => (
                       <div key={ex.id || `exp-${idx}`} className="t1-exp-item">
@@ -2224,7 +2284,7 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
                 
                 {data.languages && data.languages.length > 0 && (
                   <div className="t2-section">
-                     <div className="t2-section-title">Idiomas</div>
+                     <EditableTitle as="div" className="t2-section-title" defaultText="Idiomas" text={getSectionTitle(data, 'languages', 'Idiomas')} onSave={onChange ? (v) => handleTitleChange('languages', v) : undefined} />
                      <div className="flex flex-col gap-2">
                        {data.languages.map((l, idx) => (
                          <div key={l.id || `lang-${idx}`} className="flex justify-between items-center text-[12px]">
@@ -2240,7 +2300,7 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
              <div className="t2-right">
                 {data.experience.length > 0 && (
                   <div className="t2-section">
-                     <div className="t2-section-title">Experiência Profissional</div>
+                     <EditableTitle as="div" className="t2-section-title" defaultText="Experiência Profissional" text={getSectionTitle(data, 'experience', 'Experiência Profissional')} onSave={onChange ? (v) => handleTitleChange('experience', v) : undefined} />
                      <div className="flex flex-col gap-8">
                        {data.experience.map((ex, idx) => (
                           <div key={ex.id || `exp-${idx}`} className="t2-exp-item">
@@ -2335,7 +2395,7 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
               <div className="t3-right">
                  {data.experience.length > 0 && (
                    <div>
-                      <div className="t3-section-title">Experiência Profissional</div>
+                      <EditableTitle as="div" className="t3-section-title" defaultText="Experiência Profissional" text={getSectionTitle(data, 'experience', 'Experiência Profissional')} onSave={onChange ? (v) => handleTitleChange('experience', v) : undefined} />
                       {data.experience.map((ex, idx) => (
                          <div key={ex.id || `exp-${idx}`} className="t3-exp-item">
                             <div className="t3-exp-header">
@@ -2416,7 +2476,7 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
                 </div>
                 {data.languages && data.languages.length > 0 && (
                   <div>
-                     <h3 className="text-xl font-bold mb-5 pb-2 text-white border-b-2 border-white/20 inline-block pr-6">Idiomas</h3>
+                     <EditableTitle as="h3" className="text-xl font-bold mb-5 pb-2 text-white border-b-2 border-white/20 inline-block pr-6"  defaultText="Idiomas" text={getSectionTitle(data, 'languages', 'Idiomas')} onSave={onChange ? (v) => handleTitleChange('languages', v) : undefined} />
                      <div className="flex flex-col gap-3 text-[13px] opacity-90">
                        {data.languages.map((l, idx) => (
                           <div key={l.id || `lang-${idx}`} className="flex flex-col gap-0.5">
@@ -2432,14 +2492,14 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
           <div className="w-[68%] p-14 flex flex-col gap-10 bg-white" style={{ color: '#1f2937' }}>
              {data.personalInfo.summary && (
                <div>
-                  <h2 className="text-[28px] font-black mb-4 leading-tight" style={{ color: '#111827' }}>Perfil Profissional</h2>
+                  <EditableTitle as="h2" className="text-[28px] font-black mb-4 leading-tight" style={{ color: '#111827' }} defaultText="Perfil Profissional" text={getSectionTitle(data, 'summary', 'Perfil Profissional')} onSave={onChange ? (v) => handleTitleChange('summary', v) : undefined} />
                   <div className="w-12 h-1.5 bg-gray-200 mb-6 rounded-full"></div>
                   <p className="text-[14px] leading-[1.8] text-left font-serif" style={{ color: '#374151' }}>{renderText(data.personalInfo.summary)}</p>
                </div>
              )}
              {data.experience.length > 0 && (
                <div>
-                  <h2 className="text-[28px] font-black mb-4 leading-tight" style={{ color: '#111827' }}>Experiência Profissional</h2>
+                  <EditableTitle as="h2" className="text-[28px] font-black mb-4 leading-tight" style={{ color: '#111827' }} defaultText="Experiência Profissional" text={getSectionTitle(data, 'experience', 'Experiência Profissional')} onSave={onChange ? (v) => handleTitleChange('experience', v) : undefined} />
                   <div className="w-12 h-1.5 bg-gray-200 mb-8 rounded-full"></div>
                   <div className="flex flex-col gap-10">
                      {data.experience.map((ex, idx) => (
@@ -2463,7 +2523,7 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
              )}
              {data.skills.length > 0 && (
                <div>
-                  <h2 className="text-[28px] font-black mb-4 leading-tight" style={{ color: '#111827' }}>Habilidades</h2>
+                  <EditableTitle as="h2" className="text-[28px] font-black mb-4 leading-tight" style={{ color: '#111827' }} defaultText="Habilidades" text={getSectionTitle(data, 'skills', 'Habilidades')} onSave={onChange ? (v) => handleTitleChange('skills', v) : undefined} />
                   <div className="w-12 h-1.5 bg-gray-200 mb-6 rounded-full"></div>
                   <div className="flex flex-wrap gap-x-6 gap-y-2 text-[13px] leading-[1.8] font-serif" style={{ color: '#374151' }}>
                     {data.skills.map((s, idx) => <span key={s.id || `skill-${idx}`} className="flex items-center gap-2 font-bold">• {s.name}</span>)}
@@ -2472,7 +2532,7 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
              )}
              {data.education.length > 0 && (
                <div>
-                  <h2 className="text-[28px] font-black mb-4 leading-tight" style={{ color: '#111827' }}>Formação</h2>
+                  <EditableTitle as="h2" className="text-[28px] font-black mb-4 leading-tight" style={{ color: '#111827' }} defaultText="Formação" text={getSectionTitle(data, 'education', 'Formação')} onSave={onChange ? (v) => handleTitleChange('education', v) : undefined} />
                   <div className="w-12 h-1.5 bg-gray-200 mb-6 rounded-full"></div>
                   <div className="flex flex-col gap-6">
                     {data.education.map((e, idx) => (
@@ -2551,7 +2611,7 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
                 {data.skills.length > 0 && (
                   <div className="w-full mb-10">
                     <div className="mb-6 border-b-2 pb-2" style={{ borderColor: `${c.primary}40` }}>
-                       <h3 className="text-[12px] font-black uppercase tracking-[0.2em]" style={{ color: c.primary }}>Habilidades</h3>
+                       <EditableTitle as="h3" className="text-[12px] font-black uppercase tracking-[0.2em]"  style={{ color: c.primary }} defaultText="Habilidades" text={getSectionTitle(data, 'skills', 'Habilidades')} onSave={onChange ? (v) => handleTitleChange('skills', v) : undefined} />
                     </div>
                     <div className="flex flex-col gap-3">
                        {data.skills.map((s, idx) => (
@@ -2567,7 +2627,7 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
                 {data.education.length > 0 && (
                   <div className="w-full mb-10">
                     <div className="mb-6 border-b-2 pb-2" style={{ borderColor: `${c.primary}40` }}>
-                       <h3 className="text-[12px] font-black uppercase tracking-[0.2em]" style={{ color: c.primary }}>Formação</h3>
+                       <EditableTitle as="h3" className="text-[12px] font-black uppercase tracking-[0.2em]"  style={{ color: c.primary }} defaultText="Formação" text={getSectionTitle(data, 'education', 'Formação')} onSave={onChange ? (v) => handleTitleChange('education', v) : undefined} />
                     </div>
                     <div className="flex flex-col gap-6" style={{ color: '#374151' }}>
                        {data.education.map((e, idx) => (
@@ -2585,7 +2645,7 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
                 {data.languages && data.languages.length > 0 && (
                   <div className="w-full mb-10">
                     <div className="mb-6 border-b-2 pb-2" style={{ borderColor: `${c.primary}40` }}>
-                       <h3 className="text-[12px] font-black uppercase tracking-[0.2em]" style={{ color: c.primary }}>Idiomas</h3>
+                       <EditableTitle as="h3" className="text-[12px] font-black uppercase tracking-[0.2em]"  style={{ color: c.primary }} defaultText="Idiomas" text={getSectionTitle(data, 'languages', 'Idiomas')} onSave={onChange ? (v) => handleTitleChange('languages', v) : undefined} />
                     </div>
                     <div className="flex flex-col gap-3">
                        {data.languages.map((l, idx) => (
@@ -2605,7 +2665,7 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
                 {data.certifications && data.certifications.length > 0 && (
                   <div className="w-full mb-10">
                     <div className="mb-6 border-b-2 pb-2" style={{ borderColor: `${c.primary}40` }}>
-                       <h3 className="text-[12px] font-black uppercase tracking-[0.2em]" style={{ color: c.primary }}>Certificações</h3>
+                       <EditableTitle as="h3" className="text-[12px] font-black uppercase tracking-[0.2em]"  style={{ color: c.primary }} defaultText="Certificações" text={getSectionTitle(data, 'certifications', 'Certificações')} onSave={onChange ? (v) => handleTitleChange('certifications', v) : undefined} />
                     </div>
                     <div className="flex flex-col gap-4">
                        {data.certifications.map((cert, idx) => (
@@ -2622,7 +2682,7 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
                 {data.interests && data.interests.length > 0 && (
                   <div className="w-full mb-10">
                     <div className="mb-6 border-b-2 pb-2" style={{ borderColor: `${c.primary}40` }}>
-                       <h3 className="text-[12px] font-black uppercase tracking-[0.2em]" style={{ color: c.primary }}>Interesses</h3>
+                       <EditableTitle as="h3" className="text-[12px] font-black uppercase tracking-[0.2em]"  style={{ color: c.primary }} defaultText="Interesses" text={getSectionTitle(data, 'interests', 'Interesses')} onSave={onChange ? (v) => handleTitleChange('interests', v) : undefined} />
                     </div>
                     <div className="flex flex-wrap gap-1.5">
                        {data.interests.map((interest, idx) => (
@@ -2655,7 +2715,7 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
 
               {data.experience.length > 0 && (
                 <div>
-                   <h2 className="text-[18px] font-black uppercase tracking-[0.15em] mb-6 border-b pb-4" style={{ color: '#111827', borderColor: '#F3F4F6' }}>Experiência Profissional</h2>
+                   <EditableTitle as="h2" className="text-[18px] font-black uppercase tracking-[0.15em] mb-6 border-b pb-4" style={{ color: '#111827', borderColor: '#F3F4F6' }} defaultText="Experiência Profissional" text={getSectionTitle(data, 'experience', 'Experiência Profissional')} onSave={onChange ? (v) => handleTitleChange('experience', v) : undefined} />
                    <div className="flex flex-col gap-8">
                      {data.experience.map((ex, idx) => (
                        <div key={ex.id || `exp-${idx}`} className="flex gap-4">
@@ -2740,7 +2800,7 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
             <div className="space-y-6">
               {data.experience.length > 0 && (
                 <div>
-                  <h3 className="text-sm font-black uppercase tracking-wider mb-4" style={{ color: '#111827' }}>Experiência</h3>
+                  <EditableTitle as="h3" className="text-sm font-black uppercase tracking-wider mb-4"  style={{ color: '#111827' }} defaultText="Experiência" text={getSectionTitle(data, 'experience', 'Experiência')} onSave={onChange ? (v) => handleTitleChange('experience', v) : undefined} />
                   <div className="space-y-4">
                     {data.experience.map((ex, idx) => (
                       <div key={ex.id || `exp-${idx}`} className="pl-3 border-l-2 space-y-1" style={{ borderColor: c.primary }}>
@@ -2773,7 +2833,7 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
             <div className="space-y-6">
               {data.education.length > 0 && (
                 <div>
-                  <h3 className="text-sm font-black uppercase tracking-wider mb-4" style={{ color: '#111827' }}>Formação</h3>
+                  <EditableTitle as="h3" className="text-sm font-black uppercase tracking-wider mb-4"  style={{ color: '#111827' }} defaultText="Formação" text={getSectionTitle(data, 'education', 'Formação')} onSave={onChange ? (v) => handleTitleChange('education', v) : undefined} />
                   <div className="space-y-3">
                     {data.education.map((e, idx) => (
                       <div key={e.id || `edu-${idx}`} className="p-3 bg-white border border-gray-100 rounded-xl shadow-sm space-y-1">
@@ -2788,7 +2848,7 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
 
               {data.skills.length > 0 && (
                 <div>
-                  <h3 className="text-sm font-black uppercase tracking-wider mb-4" style={{ color: '#111827' }}>Habilidades</h3>
+                  <EditableTitle as="h3" className="text-sm font-black uppercase tracking-wider mb-4"  style={{ color: '#111827' }} defaultText="Habilidades" text={getSectionTitle(data, 'skills', 'Habilidades')} onSave={onChange ? (v) => handleTitleChange('skills', v) : undefined} />
                   <div className="flex flex-wrap gap-1.5">
                     {data.skills.map((s, idx) => (
                       <span key={s.id || `skill-${idx}`} className="px-2.5 py-1 bg-white border border-gray-100 rounded-lg text-[10px] font-bold text-gray-700 shadow-sm">
@@ -2801,7 +2861,7 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
 
               {data.languages && data.languages.length > 0 && (
                 <div>
-                  <h3 className="text-sm font-black uppercase tracking-wider mb-3" style={{ color: '#111827' }}>Idiomas</h3>
+                  <EditableTitle as="h3" className="text-sm font-black uppercase tracking-wider mb-3"  style={{ color: '#111827' }} defaultText="Idiomas" text={getSectionTitle(data, 'languages', 'Idiomas')} onSave={onChange ? (v) => handleTitleChange('languages', v) : undefined} />
                   <div className="space-y-2">
                     {data.languages.map((l, idx) => (
                       <div key={l.id || `lang-${idx}`} className="flex justify-between items-center text-[11px]">
@@ -2855,7 +2915,7 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
 
               {data.experience.length > 0 && (
                 <div>
-                  <h3 className="text-xs font-black uppercase tracking-wider mb-4 text-gray-900">Experiência</h3>
+                  <EditableTitle as="h3" className="text-xs font-black uppercase tracking-wider mb-4 text-gray-900"  defaultText="Experiência" text={getSectionTitle(data, 'experience', 'Experiência')} onSave={onChange ? (v) => handleTitleChange('experience', v) : undefined} />
                   <div className="space-y-5">
                     {data.experience.map((ex, idx) => (
                       <div key={ex.id || `exp-${idx}`} className="space-y-1">
@@ -2892,7 +2952,7 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
             <div className="w-[40%] space-y-6">
               {data.skills.length > 0 && (
                 <div>
-                  <h3 className="text-xs font-black uppercase tracking-wider mb-4 text-gray-900">Habilidades</h3>
+                  <EditableTitle as="h3" className="text-xs font-black uppercase tracking-wider mb-4 text-gray-900"  defaultText="Habilidades" text={getSectionTitle(data, 'skills', 'Habilidades')} onSave={onChange ? (v) => handleTitleChange('skills', v) : undefined} />
                   <div className="space-y-3.5">
                     {data.skills.filter(s => s && s.name).map((s, idx) => (
                       <div key={s.id || `skill-${idx}`} className="space-y-1">
@@ -2914,7 +2974,7 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
 
               {data.education.length > 0 && (
                 <div>
-                  <h3 className="text-xs font-black uppercase tracking-wider mb-3 text-gray-900">Educação</h3>
+                  <EditableTitle as="h3" className="text-xs font-black uppercase tracking-wider mb-3 text-gray-900"  defaultText="Educação" text={getSectionTitle(data, 'education', 'Educação')} onSave={onChange ? (v) => handleTitleChange('education', v) : undefined} />
                   <div className="space-y-3">
                     {data.education.map((e, idx) => (
                       <div key={e.id || `edu-${idx}`} className="space-y-1">
@@ -2929,7 +2989,7 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
 
               {data.languages && data.languages.length > 0 && (
                 <div>
-                  <h3 className="text-xs font-black uppercase tracking-wider mb-3 text-gray-900">Idiomas</h3>
+                  <EditableTitle as="h3" className="text-xs font-black uppercase tracking-wider mb-3 text-gray-900"  defaultText="Idiomas" text={getSectionTitle(data, 'languages', 'Idiomas')} onSave={onChange ? (v) => handleTitleChange('languages', v) : undefined} />
                   <div className="space-y-2">
                     {data.languages.map((l, idx) => (
                       <div key={l.id || `lang-${idx}`} className="flex justify-between items-center text-[11px]">
@@ -3015,7 +3075,7 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
             {/* SKILLS Section with Rating Dots */}
             {data.skills.length > 0 && (
               <div className="mb-8">
-                <h3 className="text-sm font-black uppercase tracking-wider mb-4 text-center pb-1 border-b-2 border-sky-400/50" style={{ color: c.primary }}>Habilidades</h3>
+                <EditableTitle as="h3" className="text-sm font-black uppercase tracking-wider mb-4 text-center pb-1 border-b-2 border-sky-400/50"  style={{ color: c.primary }} defaultText="Habilidades" text={getSectionTitle(data, 'skills', 'Habilidades')} onSave={onChange ? (v) => handleTitleChange('skills', v) : undefined} />
                 <div className="space-y-2.5">
                   {data.skills.filter(s => s && s.name).map((s, idx) => {
                     const dotsCount = s.level === 'Especialista' ? 5 : s.level === 'Avançado' ? 4 : s.level === 'Intermédio' ? 3 : 2;
@@ -3040,7 +3100,7 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
             {/* HOBBIES / INTERESTS Section */}
             {data.interests && data.interests.length > 0 && (
               <div>
-                <h3 className="text-sm font-black uppercase tracking-wider mb-4 text-center pb-1 border-b-2 border-sky-400/50" style={{ color: c.primary }}>Interesses</h3>
+                <EditableTitle as="h3" className="text-sm font-black uppercase tracking-wider mb-4 text-center pb-1 border-b-2 border-sky-400/50"  style={{ color: c.primary }} defaultText="Interesses" text={getSectionTitle(data, 'interests', 'Interesses')} onSave={onChange ? (v) => handleTitleChange('interests', v) : undefined} />
                 <div className="flex flex-wrap gap-1.5 justify-center">
                   {data.interests.map((interest, idx) => (
                     <span key={idx} className="px-2.5 py-1 bg-white border border-gray-200 rounded-full text-[9px] font-bold text-gray-600 shadow-sm">
@@ -3074,9 +3134,7 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
               {/* EDUCATION Section */}
               {data.education.length > 0 && (
                 <div>
-                  <div className="inline-block py-1.5 px-5 rounded-full text-[10px] font-black uppercase tracking-wider text-white mb-4" style={{ backgroundColor: c.primary }}>
-                    Formação Académica
-                  </div>
+                  <EditableTitle as="div" className="inline-block py-1.5 px-5 rounded-full text-[10px] font-black uppercase tracking-wider text-white mb-4"  style={{ backgroundColor: c.primary }} defaultText="Formação Académica" text={getSectionTitle(data, 'education', 'Formação Académica')} onSave={onChange ? (v) => handleTitleChange('education', v) : undefined} />
                   <div className="space-y-4">
                     {data.education.map((e, idx) => (
                       <div key={e.id || `edu-${idx}`} className="relative pl-6 border-l-2 border-sky-400/30">
@@ -3095,9 +3153,7 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
               {/* EXPERIENCE Section */}
               {data.experience.length > 0 && (
                 <div>
-                  <div className="inline-block py-1.5 px-5 rounded-full text-[10px] font-black uppercase tracking-wider text-white mb-4" style={{ backgroundColor: c.primary }}>
-                    Experiência Profissional
-                  </div>
+                  <EditableTitle as="div" className="inline-block py-1.5 px-5 rounded-full text-[10px] font-black uppercase tracking-wider text-white mb-4"  style={{ backgroundColor: c.primary }} defaultText="Experiência Profissional" text={getSectionTitle(data, 'experience', 'Experiência Profissional')} onSave={onChange ? (v) => handleTitleChange('experience', v) : undefined} />
                   <div className="space-y-4">
                     {data.experience.map((ex, idx) => (
                       <div key={ex.id || `exp-${idx}`} className="relative pl-6 border-l-2 border-sky-400/30">
@@ -3177,7 +3233,7 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
                 <div className="space-y-3">
                   <div className="flex items-center gap-2">
                     <span className="w-1.5 h-4 rounded-full" style={{ backgroundColor: c.primary }}></span>
-                    <h3 className="text-sm font-extrabold uppercase tracking-wider text-gray-900">Sobre Mim</h3>
+                    <EditableTitle as="h3" className="text-sm font-extrabold uppercase tracking-wider text-gray-900"  defaultText="Sobre Mim" text={getSectionTitle(data, 'summary', 'Sobre Mim')} onSave={onChange ? (v) => handleTitleChange('summary', v) : undefined} />
                   </div>
                   <p className="text-xs leading-relaxed text-gray-600 font-medium font-serif italic pr-2">
                     {renderText(data.personalInfo.summary)}
@@ -3190,7 +3246,7 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
                 <div className="space-y-4">
                   <div className="flex items-center gap-2">
                     <span className="w-1.5 h-4 rounded-full" style={{ backgroundColor: c.primary }}></span>
-                    <h3 className="text-sm font-extrabold uppercase tracking-wider text-gray-900">Experiência Profissional</h3>
+                    <EditableTitle as="h3" className="text-sm font-extrabold uppercase tracking-wider text-gray-900"  defaultText="Experiência Profissional" text={getSectionTitle(data, 'experience', 'Experiência Profissional')} onSave={onChange ? (v) => handleTitleChange('experience', v) : undefined} />
                   </div>
                   <div className="space-y-6">
                     {data.experience.map((ex, idx) => (
@@ -3239,7 +3295,7 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
                 <div className="space-y-4">
                   <div className="flex items-center gap-2">
                     <span className="w-1.5 h-4 rounded-full" style={{ backgroundColor: c.primary }}></span>
-                    <h3 className="text-sm font-extrabold uppercase tracking-wider text-gray-900">Habilidades</h3>
+                    <EditableTitle as="h3" className="text-sm font-extrabold uppercase tracking-wider text-gray-900"  defaultText="Habilidades" text={getSectionTitle(data, 'skills', 'Habilidades')} onSave={onChange ? (v) => handleTitleChange('skills', v) : undefined} />
                   </div>
                   <div className="space-y-3">
                     {data.skills.map((s, idx) => {
@@ -3271,7 +3327,7 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
                 <div className="space-y-4">
                   <div className="flex items-center gap-2">
                     <span className="w-1.5 h-4 rounded-full" style={{ backgroundColor: c.primary }}></span>
-                    <h3 className="text-sm font-extrabold uppercase tracking-wider text-gray-900">Formação Académica</h3>
+                    <EditableTitle as="h3" className="text-sm font-extrabold uppercase tracking-wider text-gray-900"  defaultText="Formação Académica" text={getSectionTitle(data, 'education', 'Formação Académica')} onSave={onChange ? (v) => handleTitleChange('education', v) : undefined} />
                   </div>
                   <div className="space-y-4">
                     {data.education.map((e, idx) => (
@@ -3292,7 +3348,7 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
                 <div className="space-y-4">
                   <div className="flex items-center gap-2">
                     <span className="w-1.5 h-4 rounded-full" style={{ backgroundColor: c.primary }}></span>
-                    <h3 className="text-sm font-extrabold uppercase tracking-wider text-gray-900">Idiomas</h3>
+                    <EditableTitle as="h3" className="text-sm font-extrabold uppercase tracking-wider text-gray-900"  defaultText="Idiomas" text={getSectionTitle(data, 'languages', 'Idiomas')} onSave={onChange ? (v) => handleTitleChange('languages', v) : undefined} />
                   </div>
                   <div className="space-y-2">
                     {data.languages.map((l, idx) => (
@@ -3310,7 +3366,7 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
                 <div className="space-y-4">
                   <div className="flex items-center gap-2">
                     <span className="w-1.5 h-4 rounded-full" style={{ backgroundColor: c.primary }}></span>
-                    <h3 className="text-sm font-extrabold uppercase tracking-wider text-gray-900">Certificações</h3>
+                    <EditableTitle as="h3" className="text-sm font-extrabold uppercase tracking-wider text-gray-900"  defaultText="Certificações" text={getSectionTitle(data, 'certifications', 'Certificações')} onSave={onChange ? (v) => handleTitleChange('certifications', v) : undefined} />
                   </div>
                   <div className="space-y-3">
                     {data.certifications.map((cVal, idx) => (
@@ -3463,7 +3519,7 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
                 <div className="space-y-4">
                   <div className="flex items-center gap-2 pb-1.5 border-b border-gray-100">
                     <Briefcase size={14} style={{ color: c.primary }} />
-                    <h3 className="text-sm font-extrabold uppercase tracking-[0.25em] text-slate-800">Experiência</h3>
+                    <EditableTitle as="h3" className="text-sm font-extrabold uppercase tracking-[0.25em] text-slate-800"  defaultText="Experiência" text={getSectionTitle(data, 'experience', 'Experiência')} onSave={onChange ? (v) => handleTitleChange('experience', v) : undefined} />
                   </div>
                   <div className="space-y-5">
                     {data.experience.map((ex, idx) => (
@@ -3485,7 +3541,7 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
                 <div className="space-y-4">
                   <div className="flex items-center gap-2 pb-1.5 border-b border-gray-100">
                     <GraduationCap size={14} style={{ color: c.primary }} />
-                    <h3 className="text-sm font-extrabold uppercase tracking-[0.25em] text-slate-800">Formação Académica</h3>
+                    <EditableTitle as="h3" className="text-sm font-extrabold uppercase tracking-[0.25em] text-slate-800"  defaultText="Formação Académica" text={getSectionTitle(data, 'education', 'Formação Académica')} onSave={onChange ? (v) => handleTitleChange('education', v) : undefined} />
                   </div>
                   <div className="space-y-4">
                     {data.education.map((e, idx) => (
@@ -3815,7 +3871,7 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
               {/* Skills/Competences */}
               {data.skills.length > 0 && (
                 <div className="space-y-3">
-                  <h3 className="text-xs font-black uppercase tracking-widest font-sans border-b pb-1 text-slate-800" style={{ borderColor: c.primary }}>Competências</h3>
+                  <EditableTitle as="h3" className="text-xs font-black uppercase tracking-widest font-sans border-b pb-1 text-slate-800"  style={{ borderColor: c.primary }} defaultText="Competências" text={getSectionTitle(data, 'skills', 'Competências')} onSave={onChange ? (v) => handleTitleChange('skills', v) : undefined} />
                   <div className="space-y-2">
                     {data.skills.map((s, idx) => (
                       <div key={s.id || `skill-${idx}`} className="flex justify-between items-baseline font-sans text-[10px]">
@@ -3830,7 +3886,7 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
               {/* Languages */}
               {data.languages && data.languages.length > 0 && (
                 <div className="space-y-3 pt-2">
-                  <h3 className="text-xs font-black uppercase tracking-widest font-sans border-b pb-1 text-slate-800" style={{ borderColor: c.primary }}>Idiomas</h3>
+                  <EditableTitle as="h3" className="text-xs font-black uppercase tracking-widest font-sans border-b pb-1 text-slate-800"  style={{ borderColor: c.primary }} defaultText="Idiomas" text={getSectionTitle(data, 'languages', 'Idiomas')} onSave={onChange ? (v) => handleTitleChange('languages', v) : undefined} />
                   <div className="space-y-2">
                     {data.languages.map((l, idx) => (
                       <div key={l.id || `lang-${idx}`} className="flex justify-between items-baseline font-sans text-[10px]">
@@ -3848,7 +3904,7 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
               {/* Experience */}
               {data.experience.length > 0 && (
                 <div className="space-y-4">
-                  <h3 className="text-xs font-black uppercase tracking-widest font-sans border-b pb-1 text-slate-800" style={{ borderColor: c.primary }}>Experiência Profissional</h3>
+                  <EditableTitle as="h3" className="text-xs font-black uppercase tracking-widest font-sans border-b pb-1 text-slate-800"  style={{ borderColor: c.primary }} defaultText="Experiência Profissional" text={getSectionTitle(data, 'experience', 'Experiência Profissional')} onSave={onChange ? (v) => handleTitleChange('experience', v) : undefined} />
                   <div className="space-y-6">
                     {data.experience.map((ex, idx) => (
                       <div key={ex.id || `exp-${idx}`} className="space-y-1.5">
@@ -3867,7 +3923,7 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
               {/* Education */}
               {data.education.length > 0 && (
                 <div className="space-y-4">
-                  <h3 className="text-xs font-black uppercase tracking-widest font-sans border-b pb-1 text-slate-800" style={{ borderColor: c.primary }}>Formação Académica</h3>
+                  <EditableTitle as="h3" className="text-xs font-black uppercase tracking-widest font-sans border-b pb-1 text-slate-800"  style={{ borderColor: c.primary }} defaultText="Formação Académica" text={getSectionTitle(data, 'education', 'Formação Académica')} onSave={onChange ? (v) => handleTitleChange('education', v) : undefined} />
                   <div className="space-y-4">
                     {data.education.map((e, idx) => (
                       <div key={e.id || `edu-${idx}`} className="space-y-1">
@@ -3902,7 +3958,7 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
               {/* Certifications & Awards */}
               {data.certifications && data.certifications.length > 0 && (
                 <div className="space-y-4">
-                  <h3 className="text-xs font-black uppercase tracking-widest font-sans border-b pb-1 text-slate-800" style={{ borderColor: c.primary }}>Certificações & Prêmios</h3>
+                  <EditableTitle as="h3" className="text-xs font-black uppercase tracking-widest font-sans border-b pb-1 text-slate-800"  style={{ borderColor: c.primary }} defaultText="Certificações & Prêmios" text={getSectionTitle(data, 'certifications', 'Certificações & Prêmios')} onSave={onChange ? (v) => handleTitleChange('certifications', v) : undefined} />
                   <div className="grid grid-cols-2 gap-4">
                     {data.certifications.map((cVal, idx) => (
                       <div key={cVal.id || `cert-${idx}`} className="space-y-0.5">
@@ -3989,7 +4045,7 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
               {/* Skills */}
               {data.skills.length > 0 && (
                 <div className="p-5 bg-white rounded-2xl border border-slate-100 shadow-sm space-y-4 select-none">
-                  <h3 className="text-xs font-mono font-black uppercase tracking-widest text-slate-800 border-b pb-1.5" style={{ borderBottomColor: c.primary }}>Competências</h3>
+                  <EditableTitle as="h3" className="text-xs font-mono font-black uppercase tracking-widest text-slate-800 border-b pb-1.5"  style={{ borderBottomColor: c.primary }} defaultText="Competências" text={getSectionTitle(data, 'skills', 'Competências')} onSave={onChange ? (v) => handleTitleChange('skills', v) : undefined} />
                   <div className="space-y-3">
                     {data.skills.map((s, idx) => {
                       return (
@@ -4011,7 +4067,7 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
               {/* Languages */}
               {data.languages && data.languages.length > 0 && (
                 <div className="p-5 bg-white rounded-2xl border border-slate-100 shadow-sm space-y-3 font-sans">
-                  <h3 className="text-xs font-mono font-black uppercase tracking-widest text-slate-800 border-b pb-1.5" style={{ borderBottomColor: c.primary }}>Idiomas</h3>
+                  <EditableTitle as="h3" className="text-xs font-mono font-black uppercase tracking-widest text-slate-800 border-b pb-1.5"  style={{ borderBottomColor: c.primary }} defaultText="Idiomas" text={getSectionTitle(data, 'languages', 'Idiomas')} onSave={onChange ? (v) => handleTitleChange('languages', v) : undefined} />
                   <div className="space-y-2 font-sans">
                     {data.languages.map((l, idx) => (
                       <div key={l.id || `lang-${idx}`} className="flex justify-between items-baseline text-[10px] font-bold text-slate-700 font-sans font-sans">
@@ -4031,7 +4087,7 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
               {/* Summary Card */}
               {data.personalInfo.summary && (
                 <div className="p-6 bg-white rounded-2xl border border-slate-100 shadow-sm space-y-2.5">
-                  <h3 className="text-xs font-mono font-black uppercase tracking-widest text-slate-800">Resumo Profissional</h3>
+                  <EditableTitle as="h3" className="text-xs font-mono font-black uppercase tracking-widest text-slate-800"  defaultText="Resumo Profissional" text={getSectionTitle(data, 'summary', 'Resumo Profissional')} onSave={onChange ? (v) => handleTitleChange('summary', v) : undefined} />
                   <p className="text-xs leading-relaxed text-slate-600 font-medium">
                     {renderText(data.personalInfo.summary)}
                   </p>
@@ -4041,7 +4097,7 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
               {/* Experience Card */}
               {data.experience.length > 0 && (
                 <div className="p-6 bg-white rounded-2xl border border-slate-100 shadow-sm space-y-4 font-sans">
-                  <h3 className="text-xs font-mono font-black uppercase tracking-widest text-slate-800 border-b pb-2" style={{ borderBottomColor: c.primary }}>Experiência de Trabalho</h3>
+                  <EditableTitle as="h3" className="text-xs font-mono font-black uppercase tracking-widest text-slate-800 border-b pb-2"  style={{ borderBottomColor: c.primary }} defaultText="Experiência de Trabalho" text={getSectionTitle(data, 'experience', 'Experiência de Trabalho')} onSave={onChange ? (v) => handleTitleChange('experience', v) : undefined} />
                   <div className="space-y-4">
                     {data.experience.map((ex, idx) => (
                       <div key={ex.id || `exp-${idx}`} className="space-y-1 relative pl-4 border-l-2" style={{ borderLeftColor: c.primary }}>
@@ -4060,7 +4116,7 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
               {/* Education Card */}
               {data.education.length > 0 && (
                 <div className="p-6 bg-white rounded-2xl border border-slate-100 shadow-sm space-y-4 font-sans">
-                  <h3 className="text-xs font-mono font-black uppercase tracking-widest text-slate-800 border-b pb-2" style={{ borderBottomColor: c.primary }}>Educação</h3>
+                  <EditableTitle as="h3" className="text-xs font-mono font-black uppercase tracking-widest text-slate-800 border-b pb-2"  style={{ borderBottomColor: c.primary }} defaultText="Educação" text={getSectionTitle(data, 'education', 'Educação')} onSave={onChange ? (v) => handleTitleChange('education', v) : undefined} />
                   <div className="space-y-4">
                     {data.education.map((e, idx) => (
                       <div key={e.id || `edu-${idx}`} className="space-y-1 relative pl-4 border-l-2" style={{ borderLeftColor: c.primary }}>
@@ -4095,7 +4151,7 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
               {/* Certifications and Awards */}
               {data.certifications && data.certifications.length > 0 && (
                 <div className="p-6 bg-white rounded-2xl border border-slate-100 shadow-sm space-y-4">
-                  <h3 className="text-xs font-mono font-black uppercase tracking-widest text-slate-800 border-b pb-2" style={{ borderBottomColor: c.primary }}>Prémios & Certificações</h3>
+                  <EditableTitle as="h3" className="text-xs font-mono font-black uppercase tracking-widest text-slate-800 border-b pb-2"  style={{ borderBottomColor: c.primary }} defaultText="Prémios & Certificações" text={getSectionTitle(data, 'certifications', 'Prémios & Certificações')} onSave={onChange ? (v) => handleTitleChange('certifications', v) : undefined} />
                   <div className="grid grid-cols-2 gap-4">
                     {data.certifications.map((cVal, idx) => (
                       <div key={cVal.id || `cert-${idx}`} className="space-y-1 font-sans">
