@@ -120,7 +120,7 @@ const extractTextFromPDF = async (file: File): Promise<{ text: string, image?: s
 
 // --- UI Components ---
 
-const Button = ({ children, onClick, variant = 'primary', className = '', disabled = false, icon: Icon }: any) => {
+const Button = ({ children, onClick, variant = 'primary', className = '', disabled = false, icon: Icon, type = 'button' }: any) => {
   const base = "px-6 py-2.5 rounded-2xl font-bold transition-all flex items-center justify-center gap-2 active:scale-[0.96] disabled:opacity-40 disabled:cursor-not-allowed text-xs tracking-wider uppercase";
   const variants: any = {
     primary: "bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-xl shadow-blue-500/15 hover:from-blue-500 hover:to-indigo-500 border border-white/20 h-11",
@@ -132,7 +132,7 @@ const Button = ({ children, onClick, variant = 'primary', className = '', disabl
   };
 
   return (
-    <button onClick={onClick} className={`${base} ${variants[variant] || ''} ${className}`} disabled={disabled}>
+    <button type={type} onClick={onClick} className={`${base} ${variants[variant] || ''} ${className}`} disabled={disabled}>
       {Icon && <Icon size={14} />}
       {children}
     </button>
@@ -247,7 +247,7 @@ const ProfilePage = ({ user, isAdmin, setView, onLogout, onRequestDownload }: {
     const [isGenerating, setIsGenerating] = useState<string | null>(null);
 
     useEffect(() => {
-        if (!user || user.email === 'anonymous' || !db) {
+        if (!user || user.email === 'anonymous') {
             setLoading(false);
             return;
         }
@@ -5468,14 +5468,14 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
     const id = Math.random().toString(36).substring(7);
     setResumeData(prev => ({
       ...prev,
-      experience: [...prev.experience, { id, company: '', position: '', startDate: '', endDate: '', description: '', current: false }]
+      experience: [...(prev.experience || []), { id, company: '', position: '', startDate: '', endDate: '', description: '', current: false }]
     }));
   };
 
   const removeExperience = (id: string) => {
     setResumeData(prev => ({
       ...prev,
-      experience: prev.experience.filter(ex => ex.id !== id)
+      experience: (prev.experience || []).filter(ex => ex.id !== id)
     }));
   };
 
@@ -5484,7 +5484,7 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
     const id = Math.random().toString(36).substring(7);
     setResumeData(prev => ({
       ...prev,
-      skills: [...prev.skills, { id, name, level: 'Intermédio' }]
+      skills: [...(prev.skills || []), { id, name, level: 'Intermédio' }]
     }));
   };
 
@@ -5493,7 +5493,7 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
     const id = Math.random().toString(36).substring(7);
     setResumeData(prev => ({
       ...prev,
-      languages: [...prev.languages, { id, name, level }]
+      languages: [...(prev.languages || []), { id, name, level }]
     }));
   };
 
@@ -5501,7 +5501,7 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
     const id = Math.random().toString(36).substring(7);
     setResumeData(prev => ({
       ...prev,
-      education: [...prev.education, { id, institution: '', degree: '', field: '', startDate: '', endDate: '' }]
+      education: [...(prev.education || []), { id, institution: '', degree: '', field: '', startDate: '', endDate: '' }]
     }));
   };
 
@@ -5555,9 +5555,9 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
       setResumeData(prev => ({
         ...prev,
         personalInfo: { ...prev.personalInfo, summary: data.summary },
-        experience: data.experience.map((e: any) => ({ ...e, id: Math.random().toString(36).substring(7) })),
-        education: data.education.map((e: any) => ({ ...e, id: Math.random().toString(36).substring(7) })),
-        skills: data.skills.map((s: string) => ({ name: s, id: Math.random().toString(36).substring(7), level: 'Intermédio' })),
+        experience: (data.experience || []).map((e: any) => ({ ...e, id: Math.random().toString(36).substring(7) })),
+        education: (data.education || []).map((e: any) => ({ ...e, id: Math.random().toString(36).substring(7) })),
+        skills: (data.skills || []).map((s: string) => ({ name: s, id: Math.random().toString(36).substring(7), level: 'Intermédio' })),
         languages: (data.languages || []).map((s: string) => ({ name: s, id: Math.random().toString(36).substring(7), level: 'Fluente' }))
       }));
       alert("Currículo gerado com sucesso! Você pode ajustar os detalhes agora.");
@@ -5569,7 +5569,7 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
   };
 
   const handleTranslateToEnglish = async () => {
-    if (!resumeData.personalInfo.fullName && resumeData.experience.length === 0 && resumeData.education.length === 0 && resumeData.skills.length === 0) {
+    if (!resumeData.personalInfo.fullName && (resumeData.experience || []).length === 0 && (resumeData.education || []).length === 0 && (resumeData.skills || []).length === 0) {
       alert("O seu currículo está vazio. Preencha algumas informações antes de traduzir!");
       return;
     }
@@ -6463,11 +6463,11 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
                <div className="space-y-3">
                  <Button 
                    onClick={async () => {
-                     await loginWithGoogle();
+                     const u = await loginWithGoogle();
                      setShowAuthModal(false);
-                     if (auth?.currentUser && !auth.currentUser.isAnonymous) {
+                     if (u && (!u.isAnonymous || u.isAnonymous === undefined)) {
                         setShowPaymentModal(true);
-                        setContactEmail(auth.currentUser.email || '');
+                        setContactEmail(u.email || '');
                      }
                    }} 
                    className="w-full h-12 bg-white border-2 border-gray-200 hover:bg-gray-50 font-black rounded-xl text-sm text-gray-900 shadow-none"
@@ -6887,7 +6887,7 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
 
               {activeStep === 1 && ( /* Experience */
                 <div className="space-y-6">
-                  {resumeData.experience.map((ex, i) => (
+                  {(resumeData.experience || []).map((ex, i) => (
                     <div key={ex.id || `exp-${i}`} className="p-5 bg-bg-main rounded-2xl border border-border-main space-y-5 relative group">
                       <button onClick={() => removeExperience(ex.id)} className="absolute top-4 right-4 text-red-500 opacity-0 group-hover:opacity-100 transition-opacity">
                          <Trash2 size={16} />
@@ -6917,7 +6917,7 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
 
               {activeStep === 2 && ( /* Education */
                 <div className="space-y-6">
-                  {resumeData.education.map((ed, i) => (
+                  {(resumeData.education || []).map((ed, i) => (
                     <div key={ed.id || `edu-${i}`} className="p-5 bg-bg-main rounded-2xl border border-border-main space-y-5">
                        <Input label="Instituição" value={ed.institution} onChange={(v: string) => {
                          const n = [...resumeData.education]; n[i].institution = v; setResumeData(p => ({...p, education: n}));
@@ -6942,7 +6942,7 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
               {activeStep === 3 && ( /* Skills */
                 <div className="space-y-10">
                   <div className="space-y-6">
-                    <h3 className="text-sm font-black uppercase tracking-[0.2em] text-primary-blue">{data.language === 'en' ? 'Skills' : 'Habilidades'}</h3>
+                    <h3 className="text-sm font-black uppercase tracking-[0.2em] text-primary-blue">{resumeData.language === 'en' ? 'Skills' : 'Habilidades'}</h3>
                     <div className="flex gap-2">
                        <Input 
                          placeholder="Ex: Marketing Digital" 
@@ -6957,11 +6957,11 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
                     </div>
                     
                     <div className="space-y-4">
-                       {resumeData.skills.length > 0 && (
+                       {resumeData.skills && resumeData.skills.length > 0 && (
                          <div className="space-y-3">
                            <label className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider pl-1">Minhas Habilidades e Pontuação</label>
                            <div className="space-y-3">
-                              {resumeData.skills.map((s, idx) => {
+                              {(resumeData.skills || []).map((s, idx) => {
                                 const isHidden = s.level === 'Ocultar';
                                 const currentDots = s.level === 'Especialista' ? 5 : s.level === 'Avançado' ? 4 : s.level === 'Intermédio' ? 3 : s.level === 'Básico' ? 2 : s.level === 'Iniciante' ? 1 : 0;
 
@@ -6974,7 +6974,7 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
                                           placeholder="Nome da habilidade"
                                           value={s.name || ""} 
                                           onChange={(e) => {
-                                            const updated = [...resumeData.skills];
+                                            const updated = [...(resumeData.skills || [])];
                                             updated[idx] = { ...updated[idx], name: e.target.value };
                                             setResumeData(prev => ({ ...prev, skills: updated }));
                                           }}
@@ -6984,7 +6984,7 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
                                       
                                       <button 
                                         type="button"
-                                        onClick={() => setResumeData(p => ({...p, skills: p.skills.filter(sk => sk.id !== s.id)}))}
+                                        onClick={() => setResumeData(p => ({...p, skills: (p.skills || []).filter(sk => sk.id !== s.id)}))}
                                         className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors bg-gray-50 hover:bg-red-50/50"
                                         title="Remover Habilidade"
                                       >
@@ -7004,7 +7004,7 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
                                                 type="button"
                                                 onClick={() => {
                                                   const newLevelString = dot === 5 ? 'Especialista' : dot === 4 ? 'Avançado' : dot === 3 ? 'Intermédio' : dot === 2 ? 'Básico' : 'Iniciante';
-                                                  const updated = [...resumeData.skills];
+                                                  const updated = [...(resumeData.skills || [])];
                                                   updated[idx] = { ...updated[idx], level: newLevelString };
                                                   setResumeData(prev => ({ ...prev, skills: updated }));
                                                 }}
@@ -7021,7 +7021,7 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
                                       <button
                                         type="button"
                                         onClick={() => {
-                                          const updated = [...resumeData.skills];
+                                          const updated = [...(resumeData.skills || [])];
                                           if (isHidden) {
                                             updated[idx] = { ...updated[idx], level: 'Intermédio' };
                                           } else {
@@ -7048,7 +7048,7 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
                   </div>
 
                   <div className="space-y-6 pt-6 border-t border-border-main">
-                    <h3 className="text-sm font-black uppercase tracking-[0.2em] text-primary-blue">{data.language === 'en' ? 'Languages' : 'Idiomas'}</h3>
+                    <h3 className="text-sm font-black uppercase tracking-[0.2em] text-primary-blue">{resumeData.language === 'en' ? 'Languages' : 'Idiomas'}</h3>
                     <div className="flex flex-col gap-3.5 bg-gray-50/50 p-4 rounded-2xl border border-gray-100">
                       <div className="grid grid-cols-2 gap-3">
                          <Input 
@@ -7072,11 +7072,11 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
                       }} className="w-full">Adicionar Idioma</Button>
                     </div>
 
-                    {resumeData.languages.length > 0 && (
+                    {resumeData.languages && resumeData.languages.length > 0 && (
                       <div className="space-y-3">
                         <label className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider pl-1">Idiomas de Trabalho e Níveis</label>
                         <div className="space-y-3">
-                           {resumeData.languages.map((l, idx) => (
+                           {(resumeData.languages || []).map((l, idx) => (
                              <div key={l.id || `la-${idx}`} className="flex items-end gap-3.5 bg-white p-3.5 rounded-2xl border border-border-main shadow-sm">
                                <div className="flex-1">
                                  <Input 
@@ -7084,7 +7084,7 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
                                    placeholder="Idioma" 
                                    value={l.name || ""} 
                                    onChange={(newVal) => {
-                                     const updated = [...resumeData.languages];
+                                     const updated = [...(resumeData.languages || [])];
                                      updated[idx] = { ...updated[idx], name: newVal };
                                      setResumeData(prev => ({ ...prev, languages: updated }));
                                    }}
@@ -7096,14 +7096,14 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
                                    placeholder="Nível" 
                                    value={l.level || ""} 
                                    onChange={(newVal) => {
-                                     const updated = [...resumeData.languages];
+                                     const updated = [...(resumeData.languages || [])];
                                      updated[idx] = { ...updated[idx], level: newVal };
                                      setResumeData(prev => ({ ...prev, languages: updated }));
                                    }}
                                  />
                                </div>
                                <button 
-                                 onClick={() => setResumeData(p => ({...p, languages: p.languages.filter(lk => lk.id !== l.id)}))}
+                                 onClick={() => setResumeData(p => ({...p, languages: (p.languages || []).filter(lk => lk.id !== l.id)}))}
                                  className="p-3 text-red-500 hover:bg-red-50 rounded-lg transition-colors border border-transparent hover:border-red-100 hover:text-red-600 bg-gray-50 hover:bg-red-50/50 mb-[1px]"
                                  title="Remover"
                                >

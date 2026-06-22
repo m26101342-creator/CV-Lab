@@ -32,7 +32,7 @@ const firebaseConfig = {
 
 let app: any = null;
 let auth: any = {};
-let db: any = null;
+let db: any = {};
 let googleProvider: any = null;
 const isWebFirebaseConfigured = !!(firebaseConfig.apiKey && firebaseConfig.projectId);
 
@@ -145,7 +145,7 @@ if (!isWebFirebaseConfigured) {
 export const loginWithGoogle = async () => {
     if (isWebFirebaseConfigured && auth && googleProvider) {
         try {
-            const res = await signInWithRedirect(auth, googleProvider);
+            const res = await signInWithPopup(auth, googleProvider);
             return res?.user;
         } catch (e: any) {
             console.error("Login failed:", e);
