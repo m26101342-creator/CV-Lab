@@ -61,6 +61,7 @@ export interface ResumeData {
   sectionTitles?: Partial<Record<'experience' | 'education' | 'skills' | 'languages' | 'certifications' | 'interests' | 'summary', string>>;
   themeColor?: string;
   styleConfig?: ResumeStyleConfig;
+  language?: 'pt' | 'en';
 }
 
 export interface CustomSectionItem {
@@ -94,6 +95,7 @@ export const INITIAL_RESUME_DATA: ResumeData = {
   customSections: [],
   sectionTitles: {},
   themeColor: '#1B2A4A',
+  language: 'pt',
   styleConfig: {
     fontSize: 13,
     titleSize: 26,

@@ -608,6 +608,7 @@ const Template5 = ({ data }: { data: ResumeData }) => {
 
 const CoverLetter = ({ data }: { data: any }) => {
   const cTheme = data.themeColor || '#1B2A4A';
+  const isEn = data.language === 'en';
   const styles = StyleSheet.create({
     container: { padding: 50, flex: 1 },
     header: { marginBottom: 30, borderBottom: `1.5pt solid ${cTheme}40`, paddingBottom: 20 },
@@ -628,7 +629,7 @@ const CoverLetter = ({ data }: { data: any }) => {
     <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.name}>{info.fullName || 'Seu Nome'}</Text>
-        <Text style={styles.title}>{info.title || 'Seu Cargo'}</Text>
+        <Text style={styles.title}>{info.title || (isEn ? 'Your Position' : 'Seu Cargo')}</Text>
         <View style={styles.contactRow}>
           {info.email && (
             <View style={styles.contactItem}>
@@ -652,8 +653,8 @@ const CoverLetter = ({ data }: { data: any }) => {
       </View>
 
       <View style={styles.dateRow}>
-        <Text>Ref: Candidatura Espontânea</Text>
-        <Text>Luanda, {new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })}</Text>
+        <Text>Ref: {isEn ? 'Spontaneous Application' : 'Candidatura Espontânea'}</Text>
+        <Text>{isEn ? '' : 'Luanda, '}{new Date().toLocaleDateString(isEn ? 'en-US' : 'pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })}</Text>
       </View>
 
       <Text style={styles.content}>

@@ -471,9 +471,11 @@ export async function translateResumeToEnglish(resumeData: any): Promise<any> {
     ${JSON.stringify(dataToTranslate, null, 2)}
 
     INSTRUÇÕES:
-    1. Traduza tudo (cargos, descrições usando verbos como Spearheaded/Managed no passado se concluído).
-    2. Preserve TUDO o resto exato (arrays, ids, themeColor, etc).
-    3. Retorne APENAS o JSON puro.
+    1. Traduza todo o conteúdo recebido para Inglês Profissional (US). 
+    2. CRIE/PREENCHA o objeto "sectionTitles" com as traduções dos títulos padrão. Use: {"experience": "Professional Experience", "education": "Education", "skills": "Skills", "languages": "Languages", "certifications": "Certifications", "interests": "Interests", "summary": "Profile"}.
+    3. Retorne "language": "en" na raiz do JSON.
+    4. Preserve TUDO o resto exato (arrays, ids, themeColor, etc).
+    5. Retorne APENAS o JSON puro.
   `;
 
   try {
@@ -483,6 +485,10 @@ export async function translateResumeToEnglish(resumeData: any): Promise<any> {
     const finalData = {
       ...resumeData,
       ...parsed,
+      sectionTitles: {
+          ...parsed.sectionTitles
+      },
+      language: 'en',
       personalInfo: {
         ...resumeData.personalInfo,
         ...(parsed.personalInfo || {}),
