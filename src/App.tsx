@@ -1600,6 +1600,8 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
     }
   };
 
+  const wasDraggingRef = React.useRef(false);
+
   // Local state for direct touch and drag-to-resize/reorder action
   const [dragState, setDragState] = React.useState<{
     active: boolean;
@@ -1630,6 +1632,7 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
   });
 
   const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    wasDraggingRef.current = false;
     // Check if clicking/touching editable fields
     const target = e.target as HTMLElement;
     
@@ -1752,6 +1755,10 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
 
     const dx = e.clientX - dragState.startX;
     const dy = e.clientY - dragState.startY;
+
+    if (Math.abs(dx) > 4 || Math.abs(dy) > 4) {
+      wasDraggingRef.current = true;
+    }
 
     let currentVal = dragState.startVal;
     let secondaryCurrentVal = dragState.secondaryStartVal;
@@ -1915,6 +1922,9 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
       target.releasePointerCapture(e.pointerId);
     } catch (err) {}
     setDragState(prev => ({ ...prev, active: false }));
+    setTimeout(() => {
+      wasDraggingRef.current = false;
+    }, 120);
   };
 
   const [selectedElement, setSelectedElement] = React.useState<any>(null);
@@ -1933,6 +1943,28 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
         width: rect.width,
         height: rect.height
       };
+
+      // Avatar/Photo checks
+      const isAvatar = current.classList.contains('t1-avatar') || 
+                       current.classList.contains('t1-avatar-wrap') || 
+                       current.classList.contains('t2-avatar') || 
+                       current.classList.contains('t4-avatar') || 
+                       current.getAttribute('class')?.includes('t5-avatar') || 
+                       current.getAttribute('class')?.includes('avatar') || 
+                       current.getAttribute('class')?.includes('photo') ||
+                       (current.tagName.toLowerCase() === 'img' && current.getAttribute('src')?.includes('photo')) ||
+                       (current.tagName.toLowerCase() === 'img' && current.getAttribute('class')?.includes('object-cover'));
+
+      if (isAvatar) {
+        return {
+          type: 'avatar',
+          label: 'Círculo de Foto / Iniciais',
+          currentText: 'Foto de perfil do currículo',
+          title: 'Avatar',
+          rect: relativeRect,
+          domElement: current
+        };
+      }
 
       // Summary checks
       const isSummary = current.classList.contains('t1-bio') || 
@@ -2094,6 +2126,7 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
 
   const handlePreviewClick = (e: React.MouseEvent<HTMLDivElement>) => {
     if (!onChange) return;
+    if (wasDraggingRef.current) return;
     const target = e.target as HTMLElement;
     
     if (target.closest('[data-html2canvas-ignore="true"]')) {
@@ -2113,6 +2146,10 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
 
   const handlePreviewMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     if (!onChange) return;
+    if (dragState.active || wasDraggingRef.current) {
+      setHoveredElement(null);
+      return;
+    }
     const target = e.target as HTMLElement;
     
     if (target.closest('[data-html2canvas-ignore="true"]')) {
@@ -2255,148 +2292,94 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
 
       {onChange && selectedElement && (
         <>
+          {/* Elegant dashed Indigo highlight around the selected element, with NO page-dimming background */}
           <div 
             data-html2canvas-ignore="true"
-            className="absolute z-30 border-2 border-indigo-600 bg-indigo-100/10 pointer-events-none rounded transition-all duration-200"
+            className="absolute z-30 border-2 border-indigo-500 bg-indigo-50/5 pointer-events-none rounded border-dashed animate-pulse duration-1000"
             style={{
               top: `${selectedElement.rect.top - 4}px`,
               left: `${selectedElement.rect.left - 4}px`,
               width: `${selectedElement.rect.width + 8}px`,
               height: `${selectedElement.rect.height + 8}px`,
-              outline: '4000px solid rgba(15, 23, 42, 0.4)', // Dim rest of page to focus user attention!
             }}
           />
           
+          {/* Micro floating editor pill - compact, glassy, and completely responsive */}
           <div
             data-html2canvas-ignore="true"
-            className="absolute z-50 bg-slate-900 border border-slate-800 text-white rounded-xl shadow-2xl p-4 flex flex-col gap-3 font-sans w-80 animate-in fade-in-50 zoom-in-95 duration-200"
+            className="absolute z-50 bg-slate-950/95 border border-slate-800 text-white rounded-full shadow-2xl px-2.5 py-1.5 flex items-center gap-1.5 font-sans select-none backdrop-blur animate-in fade-in-50 slide-in-from-top-1 duration-150"
             style={{
-              top: `${selectedElement.rect.top + selectedElement.rect.height + 12 < 900 ? selectedElement.rect.top + selectedElement.rect.height + 8 : Math.max(8, selectedElement.rect.top - 240)}px`,
-              left: `${Math.max(8, Math.min(794 - 328, selectedElement.rect.left + (selectedElement.rect.width / 2) - 160))}px`,
+              top: `${selectedElement.rect.top - 46 < 10 ? selectedElement.rect.top + selectedElement.rect.height + 8 : selectedElement.rect.top - 46}px`,
+              left: `${Math.max(8, Math.min(794 - 264, selectedElement.rect.left + (selectedElement.rect.width / 2) - 120))}px`,
               pointerEvents: 'auto'
             }}
           >
-            {/* Toolbar Head */}
-            <div className="flex items-center justify-between border-b border-slate-800 pb-2">
-              <div className="flex items-center gap-2">
-                <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                <span className="text-[10px] font-black tracking-widest uppercase text-slate-400">Preview Inteligente</span>
-              </div>
-              <button 
-                onClick={() => setSelectedElement(null)}
-                className="text-slate-400 hover:text-white text-[9px] font-black uppercase tracking-wider px-2 py-1 rounded bg-slate-800 cursor-pointer"
-              >
-                Fechar
-              </button>
-            </div>
-            
-            {/* Info Label */}
-            <div>
-              <div className="text-[11px] font-bold text-slate-200 truncate">{selectedElement.label}</div>
-              {selectedElement.currentText && (
-                <div className="text-[9px] text-slate-400 mt-1 line-clamp-2 italic">
-                  "{selectedElement.currentText}"
-                </div>
-              )}
+            {/* Element type identifier tag */}
+            <div className="text-[9px] font-black uppercase tracking-wider text-indigo-400 bg-indigo-950/60 border border-indigo-900/60 px-2 py-0.5 rounded-full whitespace-nowrap">
+              {selectedElement.type === 'summary' ? 'Resumo' : selectedElement.type === 'experience' ? 'Experiência' : selectedElement.type === 'education' ? 'Estudos' : selectedElement.type === 'custom' ? 'Secção' : selectedElement.type === 'avatar' ? 'Círculo de Foto' : 'Texto'}
             </div>
 
-            {/* Controls Container */}
-            <div className="grid grid-cols-2 gap-2">
-              {/* Aumentar Informação (IA) */}
+            {selectedElement.type === 'avatar' ? (
               <button
-                disabled={isProcessingAI || selectedElement.type === 'skills' || selectedElement.type === 'languages' || selectedElement.type === 'personalInfo'}
-                onClick={() => handleUpdateInformation('expand')}
-                className="flex flex-col items-center justify-center p-2.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 select-none text-center transition-all cursor-pointer group"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (onChange) {
+                    onChange((prev: any) => ({
+                      ...prev,
+                      styleConfig: { ...(prev.styleConfig || {}), showPhoto: false }
+                    }));
+                  }
+                  setSelectedElement(null);
+                }}
+                className="flex items-center gap-1.5 px-2.5 py-1 text-[10px] font-bold text-rose-200 hover:text-white hover:bg-rose-900/60 bg-rose-950/30 border border-rose-500/20 rounded-full cursor-pointer transition-all"
+                title="Eliminar o círculo e ocultar a foto de perfil do CV de forma definitiva"
               >
-                <Sparkles size={16} className={`${isProcessingAI ? 'animate-spin' : 'group-hover:scale-110 transition-transform'}`} />
-                <span className="text-[10px] font-bold mt-1 text-white">Aumentar (IA)</span>
-                <span className="text-[7.5px] text-indigo-200 mt-0.5 font-mono">Mais detalhes</span>
+                <Trash2 size={11} className="text-rose-400" />
+                <span>Eliminar Círculo</span>
               </button>
+            ) : (
+              <>
+                {/* AI Expand */}
+                <button
+                  disabled={isProcessingAI || selectedElement.type === 'skills' || selectedElement.type === 'languages' || selectedElement.type === 'personalInfo'}
+                  onClick={(e) => { e.stopPropagation(); handleUpdateInformation('expand'); }}
+                  className="flex items-center gap-1 px-2.5 py-1 text-[10px] font-bold text-slate-200 hover:text-white hover:bg-slate-800 rounded-full cursor-pointer disabled:opacity-30 disabled:hover:bg-transparent transition-all"
+                  title="Expandir informações usando Inteligência Artificial"
+                >
+                  <Sparkles size={11} className="text-emerald-400 font-bold" />
+                  <span>Expandir</span>
+                </button>
 
-              {/* Diminuir Informação (IA) */}
-              <button
-                disabled={isProcessingAI || selectedElement.type === 'skills' || selectedElement.type === 'languages' || selectedElement.type === 'personalInfo'}
-                onClick={() => handleUpdateInformation('shorten')}
-                className="flex flex-col items-center justify-center p-2.5 rounded-lg bg-rose-600 hover:bg-rose-500 disabled:opacity-40 select-none text-center transition-all cursor-pointer group"
-              >
-                <Scissors size={15} className={`${isProcessingAI ? 'animate-spin' : 'group-hover:scale-110 transition-transform'}`} />
-                <span className="text-[10px] font-bold mt-1 text-white">Diminuir (IA)</span>
-                <span className="text-[7.5px] text-rose-200 mt-0.5 font-mono">Resumir texto</span>
-              </button>
-            </div>
+                {/* Vertical column separator */}
+                <div className="w-[1px] h-3.5 bg-slate-800" />
 
-            {/* Sizing/Spacing Adjustment Tools */}
-            <div className="border-t border-slate-800 pt-2.5 flex flex-col gap-2">
-              <span className="text-[8px] font-black uppercase text-slate-500 tracking-widest font-mono">Ajuste Visual do CV</span>
-              <div className="flex items-center justify-between gap-2">
-                <div className="text-[10px] text-slate-300">Tamanho da Letra:</div>
-                <div className="flex items-center gap-1.5">
-                  <button
-                    onClick={() => handleAdjustStyle('fontSize', -0.5)}
-                    className="w-7 h-7 bg-slate-800 hover:bg-slate-700 text-white rounded flex items-center justify-center text-xs font-bold font-mono transition-colors cursor-pointer"
-                  >
-                    -
-                  </button>
-                  <span className="text-[10px] font-mono text-slate-300 bg-slate-950 px-2 py-0.5 rounded">
-                    {style.fontSize || 13}px
-                  </span>
-                  <button
-                    onClick={() => handleAdjustStyle('fontSize', 0.5)}
-                    className="w-7 h-7 bg-slate-800 hover:bg-slate-700 text-white rounded flex items-center justify-center text-xs font-bold font-mono transition-colors cursor-pointer"
-                  >
-                    +
-                  </button>
-                </div>
-              </div>
+                {/* AI Shorten */}
+                <button
+                  disabled={isProcessingAI || selectedElement.type === 'skills' || selectedElement.type === 'languages' || selectedElement.type === 'personalInfo'}
+                  onClick={(e) => { e.stopPropagation(); handleUpdateInformation('shorten'); }}
+                  className="flex items-center gap-1 px-2.5 py-1 text-[10px] font-bold text-slate-200 hover:text-white hover:bg-slate-800 rounded-full cursor-pointer disabled:opacity-30 disabled:hover:bg-transparent transition-all"
+                  title="Resumir texto usando Inteligência Artificial"
+                >
+                  <Scissors size={10} className="text-rose-400 font-bold" />
+                  <span>Resumir</span>
+                </button>
+              </>
+            )}
 
-              <div className="flex items-center justify-between gap-2">
-                <div className="text-[10px] text-slate-300">Espaçamento Itens:</div>
-                <div className="flex items-center gap-1.5">
-                  <button
-                    onClick={() => handleAdjustStyle('itemSpacing', -2)}
-                    className="w-7 h-7 bg-slate-800 hover:bg-slate-700 text-white rounded flex items-center justify-center text-xs font-bold font-mono transition-colors cursor-pointer"
-                  >
-                    -
-                  </button>
-                  <span className="text-[10px] font-mono text-slate-300 bg-slate-950 px-2 py-0.5 rounded">
-                    {style.itemSpacing || 10}px
-                  </span>
-                  <button
-                    onClick={() => handleAdjustStyle('itemSpacing', 2)}
-                    className="w-7 h-7 bg-slate-800 hover:bg-slate-700 text-white rounded flex items-center justify-center text-xs font-bold font-mono transition-colors cursor-pointer"
-                  >
-                    +
-                  </button>
-                </div>
-              </div>
+            {/* Dismiss trigger */}
+            <button
+              onClick={(e) => { e.stopPropagation(); setSelectedElement(null); }}
+              className="ml-0.5 p-1 text-slate-400 hover:text-white hover:bg-slate-800 rounded-full cursor-pointer transition-colors"
+              title="Limpar seleção"
+            >
+              <X size={11} />
+            </button>
 
-              <div className="flex items-center justify-between gap-2">
-                <div className="text-[10px] text-slate-300">Margens CV:</div>
-                <div className="flex items-center gap-1.5">
-                  <button
-                    onClick={() => handleAdjustStyle('margins', -4)}
-                    className="w-7 h-7 bg-slate-800 hover:bg-slate-700 text-white rounded flex items-center justify-center text-xs font-bold font-mono transition-colors cursor-pointer"
-                  >
-                    -
-                  </button>
-                  <span className="text-[10px] font-mono text-slate-300 bg-slate-950 px-2 py-0.5 rounded">
-                    {style.margins || 30}px
-                  </span>
-                  <button
-                    onClick={() => handleAdjustStyle('margins', 4)}
-                    className="w-7 h-7 bg-slate-800 hover:bg-slate-700 text-white rounded flex items-center justify-center text-xs font-bold font-mono transition-colors cursor-pointer"
-                  >
-                    +
-                  </button>
-                </div>
-              </div>
-            </div>
-
+            {/* Progress status loader */}
             {isProcessingAI && (
-              <div className="absolute inset-0 bg-slate-950/90 backdrop-blur-sm rounded-xl flex flex-col items-center justify-center text-center p-4">
-                <div className="w-10 h-10 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin mb-3"></div>
-                <span className="text-xs font-bold text-slate-200">Refinando com IA...</span>
-                <span className="text-[9px] text-slate-400 mt-1">Conectando ao modelo Gemini para processar as informações</span>
+              <div className="absolute inset-0 bg-slate-950/95 rounded-full flex items-center justify-center gap-2 px-3">
+                <div className="w-3 h-3 border border-indigo-400 border-t-transparent rounded-full animate-spin"></div>
+                <span className="text-[9px] font-bold text-slate-200 animate-pulse">Ajustando Texto...</span>
               </div>
             )}
           </div>
@@ -2574,26 +2557,28 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
       {theme.layout === 'custom-t1' && (
         <div className="t1" style={{ '--primary': c.primary } as any}>
           <div className="t1-left">
-            <div className="t1-avatar-wrap">
-              <div 
-                className="t1-avatar overflow-hidden" 
-                style={{ 
-                  borderRadius: data.personalInfo.photoStyle === 'square' ? '12px' : '50%',
-                  width: `${data.personalInfo.photoSize || 100}px`,
-                  height: `${data.personalInfo.photoSize || 100}px`,
-                  fontSize: `${(data.personalInfo.photoSize || 100) * 0.4}px`,
-                  lineHeight: `${data.personalInfo.photoSize || 100}px`,
-                  textAlign: 'center',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center'
-                }}
-              >
-                {data.personalInfo.photo ? <img src={data.personalInfo.photo} referrerPolicy="no-referrer" alt="Profile" className="w-full h-full object-cover object-top" /> : (data.personalInfo.fullName ? data.personalInfo.fullName.charAt(0).toUpperCase() : 'CV')}
+            {data.styleConfig?.showPhoto !== false && (
+              <div className="t1-avatar-wrap">
+                <div 
+                  className="t1-avatar overflow-hidden" 
+                  style={{ 
+                    borderRadius: data.personalInfo.photoStyle === 'square' ? '12px' : '50%',
+                    width: `${data.personalInfo.photoSize || 100}px`,
+                    height: `${data.personalInfo.photoSize || 100}px`,
+                    fontSize: `${(data.personalInfo.photoSize || 100) * 0.4}px`,
+                    lineHeight: `${data.personalInfo.photoSize || 100}px`,
+                    textAlign: 'center',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }}
+                >
+                  {data.personalInfo.photo ? <img src={data.personalInfo.photo} referrerPolicy="no-referrer" alt="Profile" className="w-full h-full object-cover object-top" /> : (data.personalInfo.fullName ? data.personalInfo.fullName.charAt(0).toUpperCase() : 'CV')}
+                </div>
               </div>
-            </div>
+            )}
             {/* T1 Sidebar sections with improved alignment */}
-            <div style={{ display: 'flex', flexDirection: 'column', marginTop: '32px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', marginTop: data.styleConfig?.showPhoto !== false ? '32px' : '0px' }}>
               <div style={{ marginBottom: '32px' }}>
                 <div className="t1-section-title">Contacto</div>
                 <div style={{ display: 'flex', flexDirection: 'column' }}>
@@ -2692,17 +2677,19 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
       {theme.layout === 'custom-t2' && (
         <div className="t2" style={{ '--primary': c.primary, '--soft': c.soft } as any}>
           <div className="t2-header">
-             <div 
-               className="t2-avatar flex items-center justify-center overflow-hidden"
-               style={{ 
-                 borderRadius: data.personalInfo.photoStyle === 'square' ? '16px' : '50%',
-                 width: `${data.personalInfo.photoSize || 110}px`,
-                 height: `${data.personalInfo.photoSize || 110}px`,
-                 fontSize: `${(data.personalInfo.photoSize || 110) * 0.4}px`
-               }}
-             >
-               {data.personalInfo.photo ? <img src={data.personalInfo.photo} referrerPolicy="no-referrer" alt="Profile" className="w-full h-full object-cover object-top" /> : (data.personalInfo.fullName ? data.personalInfo.fullName.charAt(0).toUpperCase() : 'CV')}
-             </div>
+             {data.styleConfig?.showPhoto !== false && (
+               <div 
+                 className="t2-avatar flex items-center justify-center overflow-hidden"
+                 style={{ 
+                   borderRadius: data.personalInfo.photoStyle === 'square' ? '16px' : '50%',
+                   width: `${data.personalInfo.photoSize || 110}px`,
+                   height: `${data.personalInfo.photoSize || 110}px`,
+                   fontSize: `${(data.personalInfo.photoSize || 110) * 0.4}px`
+                 }}
+               >
+                 {data.personalInfo.photo ? <img src={data.personalInfo.photo} referrerPolicy="no-referrer" alt="Profile" className="w-full h-full object-cover object-top" /> : (data.personalInfo.fullName ? data.personalInfo.fullName.charAt(0).toUpperCase() : 'CV')}
+               </div>
+             )}
              <div className="t2-header-text">
                 <div className="t2-name">{data.personalInfo.fullName }</div>
                 <div className="t2-title">{data.personalInfo.title }</div>
@@ -2896,7 +2883,7 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
       {theme.layout === 'custom-t4' && (
         <div className="flex w-full min-h-[1122px] h-auto bg-white text-left font-sans overflow-visible relative border border-gray-100">
           <div className="w-[32%] flex flex-col relative z-10" style={{ backgroundColor: c.primary, color: 'white' }}>
-             {data.personalInfo.photo ? (
+             {data.styleConfig?.showPhoto !== false && (data.personalInfo.photo ? (
                <div className="w-full flex justify-center py-8">
                   <img 
                     src={data.personalInfo.photo} 
@@ -2928,7 +2915,7 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
                >
                  {data.personalInfo.fullName.charAt(0)}
                </div>
-             )}
+             ))}
              <div className="p-10 flex flex-col gap-10 flex-1">
                 <div>
                    <h1 className="text-[38px] font-black leading-[1.1] mb-2">{data.personalInfo.fullName.replace(' ', '\n')}</h1>
@@ -3040,6 +3027,7 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
              <div className="absolute top-0 left-0 right-0 h-48 bg-white" style={{ borderRadius: '0 0 100px 100px', boxShadow: '0 10px 30px rgba(0,0,0,0.02)' }}></div>
              
              <div className="relative z-30 w-full flex flex-col items-center px-10">
+               {data.styleConfig?.showPhoto !== false && (
                 <div className="mb-12 shadow-[0_20px_40px_-15px_rgba(0,0,0,0.15)] bg-white overflow-hidden" 
                      style={{ 
                        width: `${data.personalInfo.photoSize || 160}px`,
@@ -3064,6 +3052,7 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
                   </div>
                 )}
                 </div>
+               )}
                 
                 <div className="w-full mb-10">
                   <div className="mb-6 border-b-2 pb-2" style={{ borderColor: `${c.primary}40` }}>
@@ -3235,7 +3224,7 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
       {theme.layout === 'custom-t6' && (
         <div className="flex flex-col w-full min-h-[1122px] h-auto bg-[#fcfcfc] p-12 font-sans overflow-visible text-left relative" style={{ border: `16px solid ${c.primary}` }}>
           <div className="flex flex-col items-center pb-6 mb-6 border-b-2" style={{ borderColor: c.primary }}>
-            {data.personalInfo.photo && (
+            {data.styleConfig?.showPhoto !== false && data.personalInfo.photo && (
               <img 
                 src={data.personalInfo.photo} 
                 referrerPolicy="no-referrer" 
@@ -3348,7 +3337,7 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
       {theme.layout === 'custom-t7' && (
         <div className="flex flex-col w-full min-h-[1122px] h-auto bg-white text-center font-sans overflow-visible relative">
           <div className="flex flex-col items-center p-10 pb-12 text-white relative" style={{ backgroundColor: c.primary }}>
-            {data.personalInfo.photo && (
+            {data.styleConfig?.showPhoto !== false && data.personalInfo.photo && (
               <div className="mb-4">
                 <img 
                   src={data.personalInfo.photo} 
@@ -3492,28 +3481,30 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
           {/* Left Column (Light Gray Background / Sidebar) */}
           <div className="w-[35%] bg-gray-50 h-full p-8 pt-10 flex flex-col relative z-10 border-r border-gray-100 shrink-0">
             {/* Avatar Wrap */}
-            <div className="flex flex-col items-center mb-8 relative">
-              <div 
-                className="rounded-full border-4 shadow-lg overflow-hidden flex items-center justify-center bg-white" 
-                style={{ 
-                  borderColor: '#38BDF8', // Cyan border
-                  width: `${data.personalInfo.photoSize || 110}px`,
-                  height: `${data.personalInfo.photoSize || 110}px`
-                }} 
-              >
-                {data.personalInfo.photo ? (
-                  <img 
-                    src={data.personalInfo.photo} 
-                    referrerPolicy="no-referrer" 
-                    className="object-cover object-top w-full h-full" 
-                  />
-                ) : (
-                  <div className="text-3xl font-black text-gray-300">
-                    {data.personalInfo.fullName ? data.personalInfo.fullName.charAt(0).toUpperCase() : 'CV'}
-                  </div>
-                )}
+            {data.styleConfig?.showPhoto !== false && (
+              <div className="flex flex-col items-center mb-8 relative">
+                <div 
+                  className="rounded-full border-4 shadow-lg overflow-hidden flex items-center justify-center bg-white" 
+                  style={{ 
+                    borderColor: '#38BDF8', // Cyan border
+                    width: `${data.personalInfo.photoSize || 110}px`,
+                    height: `${data.personalInfo.photoSize || 110}px`
+                  }} 
+                >
+                  {data.personalInfo.photo ? (
+                    <img 
+                      src={data.personalInfo.photo} 
+                      referrerPolicy="no-referrer" 
+                      className="object-cover object-top w-full h-full" 
+                    />
+                  ) : (
+                    <div className="text-3xl font-black text-gray-300">
+                      {data.personalInfo.fullName ? data.personalInfo.fullName.charAt(0).toUpperCase() : 'CV'}
+                    </div>
+                  )}
+                </div>
               </div>
-            </div>
+            )}
 
             {/* CONTACT Section */}
             <div className="mb-8">
@@ -3681,7 +3672,7 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
               <p className="text-sm font-semibold uppercase tracking-[0.2em]" style={{ color: c.primary }}>{data.personalInfo.title }</p>
             </div>
             
-            {data.personalInfo.photo && (
+            {data.styleConfig?.showPhoto !== false && data.personalInfo.photo && (
               <img 
                 src={data.personalInfo.photo} 
                 referrerPolicy="no-referrer" 
@@ -3883,24 +3874,26 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
             </div>
             
             {/* Round photo placed neatly with background overlap border */}
-            <div className="relative pr-2 shrink-0">
-              <div 
-                className="w-24 h-24 rounded-full border-4 shadow-md bg-white overflow-hidden flex items-center justify-center p-0.5"
-                style={{ borderColor: c.primary }}
-              >
-                {data.personalInfo.photo ? (
-                  <img 
-                    src={data.personalInfo.photo} 
-                    referrerPolicy="no-referrer" 
-                    className="object-cover object-top w-full h-full rounded-full" 
-                  />
-                ) : (
-                  <div className="text-3xl font-black text-gray-300">
-                    {data.personalInfo.fullName ? data.personalInfo.fullName.charAt(0).toUpperCase() : 'CV'}
-                  </div>
-                )}
+            {data.styleConfig?.showPhoto !== false && (
+              <div className="relative pr-2 shrink-0">
+                <div 
+                  className="w-24 h-24 rounded-full border-4 shadow-md bg-white overflow-hidden flex items-center justify-center p-0.5"
+                  style={{ borderColor: c.primary }}
+                >
+                  {data.personalInfo.photo ? (
+                    <img 
+                      src={data.personalInfo.photo} 
+                      referrerPolicy="no-referrer" 
+                      className="object-cover object-top w-full h-full rounded-full" 
+                    />
+                  ) : (
+                    <div className="text-3xl font-black text-gray-300">
+                      {data.personalInfo.fullName ? data.personalInfo.fullName.charAt(0).toUpperCase() : 'CV'}
+                    </div>
+                  )}
+                </div>
               </div>
-            </div>
+            )}
           </div>
 
           <div className="flex flex-row flex-1 min-h-[850px]">
@@ -4096,7 +4089,7 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
             <div className="space-y-8">
               {/* Profile/Photo section at the top of the white block */}
               <div className="flex items-center gap-5">
-                {data.personalInfo.photo && (
+                {data.styleConfig?.showPhoto !== false && data.personalInfo.photo && (
                   <img 
                     src={data.personalInfo.photo} 
                     referrerPolicy="no-referrer" 
@@ -4325,7 +4318,7 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
 
           {/* Centered top name card */}
           <div className="text-center space-y-4 pb-8 border-b border-gray-100">
-            {data.personalInfo.photo && (
+            {data.styleConfig?.showPhoto !== false && data.personalInfo.photo && (
               <div className="mx-auto overflow-hidden rounded-full border mb-4" style={{ width: `${data.personalInfo.photoSize || 80}px`, height: `${data.personalInfo.photoSize || 80}px`, borderColor: c.primary }}>
                 <img src={data.personalInfo.photo} referrerPolicy="no-referrer" className="object-cover object-top w-full h-full" />
               </div>
@@ -4480,7 +4473,7 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
               <p className="text-xs font-black uppercase tracking-[0.25em]" style={{ color: c.primary }}>{data.personalInfo.title }</p>
             </div>
 
-            {data.personalInfo.photo && (
+            {data.styleConfig?.showPhoto !== false && data.personalInfo.photo && (
               <div 
                 className="w-20 h-20 rounded-2xl overflow-hidden border-2 z-10 bg-black/20"
                 style={{ borderColor: c.primary }}
@@ -7279,7 +7272,14 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
                            <div className="flex justify-between text-[11px] font-bold text-gray-700 uppercase tracking-widest"><span>Tamanho do Nome</span> <span>{resumeData.styleConfig?.titleSize || 26}px</span></div>
                            <input type="range" min="16" max="48" step="1" value={resumeData.styleConfig?.titleSize || 26} onChange={(e) => setResumeData(p => ({...p, styleConfig: {...(p.styleConfig||{}), titleSize: Number(e.target.value)}}))} className="w-full h-1 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-primary-blue" />
                         </div>
-                        <div className="flex items-center justify-between pt-2">
+                        <div className="flex items-center justify-between pt-2 border-t border-gray-100">
+                           <span className="text-[11px] font-bold text-gray-700 uppercase tracking-widest">Exibir Foto / Iniciais</span>
+                           <label className="relative inline-flex items-center cursor-pointer">
+                             <input type="checkbox" className="sr-only peer" checked={resumeData.styleConfig?.showPhoto ?? true} onChange={(e) => setResumeData(p => ({...p, styleConfig: {...(p.styleConfig||{}), showPhoto: e.target.checked}}))} />
+                             <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary-blue"></div>
+                           </label>
+                        </div>
+                        <div className="flex items-center justify-between pt-2 border-t border-gray-100">
                            <span className="text-[11px] font-bold text-gray-700 uppercase tracking-widest">Mostrar Linhas de Tempo (Pontos)</span>
                            <label className="relative inline-flex items-center cursor-pointer">
                              <input type="checkbox" className="sr-only peer" checked={resumeData.styleConfig?.showTimeline ?? true} onChange={(e) => setResumeData(p => ({...p, styleConfig: {...(p.styleConfig||{}), showTimeline: e.target.checked}}))} />

@@ -11,6 +11,7 @@ export interface ResumeStyleConfig {
   fontFamily?: 'sans' | 'serif' | 'mono' | 'grotesk';
   photoBorderRadius?: number; // em px ou %, ex: 999
   showTimeline?: boolean;  // mostrar linha do tempo (pontos) na experiência/educação
+  showPhoto?: boolean;     // mostrar círculo da foto de perfil ou iniciais do nome
 }
 
 export interface ResumeData {
@@ -102,7 +103,8 @@ export const INITIAL_RESUME_DATA: ResumeData = {
     lineHeight: 1.4,
     alignment: 'left',
     fontFamily: 'sans',
-    showTimeline: true
+    showTimeline: true,
+    showPhoto: true
   }
 };
 
