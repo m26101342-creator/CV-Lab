@@ -43,11 +43,12 @@ import {
   Printer,
   Video,
   Type,
-  Grid
+  Grid,
+  Scissors
 } from 'lucide-react';
 import { AdSenseUnit } from './components/AdSenseUnit';
-import { ResumeData, INITIAL_RESUME_DATA, TemplateType } from './types.ts';
-import { optimizeResumeText, generateCoverLetter, generateFullResume, parseResumeFromText, translateResumeToEnglish, translateLetterToEnglish } from './services/geminiService.ts';
+import { ResumeData, INITIAL_RESUME_DATA, TemplateType, ResumeStyleConfig } from './types.ts';
+import { optimizeResumeText, generateCoverLetter, generateFullResume, parseResumeFromText, translateResumeToEnglish, translateLetterToEnglish, alterResumeInformation } from './services/geminiService.ts';
 import { pdf } from '@react-pdf/renderer';
 import { PdfDocument } from './pdf/PdfDocument';
 import * as pdfjsLib from 'pdfjs-dist';
@@ -1916,6 +1917,303 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
     setDragState(prev => ({ ...prev, active: false }));
   };
 
+  const [selectedElement, setSelectedElement] = React.useState<any>(null);
+  const [hoveredElement, setHoveredElement] = React.useState<any>(null);
+  const [isProcessingAI, setIsProcessingAI] = React.useState<boolean>(false);
+
+  const findSelectableElement = (target: HTMLElement, container: HTMLElement): any => {
+    let current: HTMLElement | null = target;
+    while (current && current !== container) {
+      const text = current.innerText || current.textContent || "";
+      const rect = current.getBoundingClientRect();
+      const containerRect = container.getBoundingClientRect();
+      const relativeRect = {
+        top: rect.top - containerRect.top,
+        left: rect.left - containerRect.left,
+        width: rect.width,
+        height: rect.height
+      };
+
+      // Summary checks
+      const isSummary = current.classList.contains('t1-bio') || 
+                        current.classList.contains('t2-bio') || 
+                        current.classList.contains('t3-bio') || 
+                        current.getAttribute('class')?.includes('bio') || 
+                        (current.tagName.toLowerCase() === 'p' && data.personalInfo.summary && text.includes(data.personalInfo.summary.substring(0, Math.min(20, data.personalInfo.summary.length))));
+                        
+      if (isSummary && data.personalInfo.summary) {
+        return {
+          type: 'summary',
+          label: 'Resumo / Sobre Mim',
+          currentText: data.personalInfo.summary,
+          title: 'Perfil Profissional',
+          rect: relativeRect,
+          domElement: current
+        };
+      }
+
+      // Experience checks
+      const isExperience = current.classList.contains('t1-exp-item') || 
+                           current.classList.contains('t2-exp-item') || 
+                           current.getAttribute('class')?.includes('exp-item') || 
+                           current.getAttribute('class')?.includes('expItem') || 
+                           current.getAttribute('class')?.includes('timelineItem') || 
+                           current.getAttribute('class')?.includes('expBox') ||
+                           current.getAttribute('class')?.includes('rowItem') ||
+                           current.getAttribute('class')?.includes('exp-card');
+                           
+      if (isExperience && data.experience && data.experience.length > 0) {
+        const match = data.experience.find(ex => 
+          text.includes(ex.position) || text.includes(ex.company) || (ex.description && text.includes(ex.description.substring(0, Math.min(20, ex.description.length))))
+        );
+        if (match) {
+          return {
+            type: 'experience',
+            id: match.id,
+            label: `Experiência: ${match.position} em ${match.company}`,
+            currentText: match.description || match.position,
+            title: match.position,
+            rect: relativeRect,
+            domElement: current
+          };
+        }
+      }
+
+      // Education checks
+      const isEducation = current.classList.contains('t1-edu-item') || 
+                          current.classList.contains('t2-edu-item') || 
+                          current.getAttribute('class')?.includes('edu-item') || 
+                          current.getAttribute('class')?.includes('eduItem') ||
+                          current.getAttribute('class')?.includes('eduBox') ||
+                          current.getAttribute('class')?.includes('edu-card');
+                          
+      if (isEducation && data.education && data.education.length > 0) {
+        const match = data.education.find(edu => 
+          text.includes(edu.institution) || text.includes(edu.degree) || (edu.description && text.includes(edu.description.substring(0, Math.min(20, edu.description.length))))
+        );
+        if (match) {
+          return {
+            type: 'education',
+            id: match.id,
+            label: `Formação: ${match.degree} em ${match.institution}`,
+            currentText: match.description || `${match.degree} - ${match.field}`,
+            title: match.degree,
+            rect: relativeRect,
+            domElement: current
+          };
+        }
+      }
+
+      // Custom Section checks
+      const isCustomSectionItem = current.getAttribute('class')?.includes('csi-') || 
+                                  current.getAttribute('class')?.includes('cs-item') ||
+                                  current.getAttribute('class')?.includes('custom-item');
+                                  
+      if (isCustomSectionItem && data.customSections && data.customSections.length > 0) {
+        for (const cs of data.customSections) {
+          for (const item of cs.items) {
+            if (text.includes(item.name) || (item.description && text.includes(item.description.substring(0, Math.min(20, item.description.length))))) {
+              return {
+                type: 'custom',
+                id: item.id,
+                sectionId: cs.id,
+                label: `${cs.title}: ${item.name}`,
+                currentText: item.description || item.name,
+                title: item.name,
+                rect: relativeRect,
+                domElement: current
+              };
+            }
+          }
+        }
+      }
+
+      // Skills checks
+      const isSkill = current.classList.contains('t1-skill-tag') || 
+                      current.getAttribute('class')?.includes('skill-tag') || 
+                      current.getAttribute('class')?.includes('skillItem') ||
+                      current.getAttribute('class')?.includes('skillName');
+                      
+      if (isSkill && data.skills && data.skills.length > 0) {
+        const match = data.skills.find(sk => text.includes(sk.name) || sk.name.includes(text));
+        if (match) {
+          return {
+            type: 'skills',
+            id: match.id,
+            label: `Habilidade: ${match.name}`,
+            currentText: match.name,
+            title: match.name,
+            rect: relativeRect,
+            domElement: current
+          };
+        }
+      }
+
+      // Language checks
+      const isLang = current.getAttribute('class')?.includes('lang-item') || 
+                     current.getAttribute('class')?.includes('language') || 
+                     current.getAttribute('class')?.includes('langBox');
+                     
+      if (isLang && data.languages && data.languages.length > 0) {
+        const match = data.languages.find(l => text.includes(l.name) || l.name.includes(text));
+        if (match) {
+          return {
+            type: 'languages',
+            id: match.id,
+            label: `Idioma: ${match.name}`,
+            currentText: `${match.name} - ${match.level}`,
+            title: match.name,
+            rect: relativeRect,
+            domElement: current
+          };
+        }
+      }
+
+      // Generic title/h1 checks
+      const isNameOrTitle = current.classList.contains('t1-name') || 
+                            current.classList.contains('t1-title') || 
+                            current.getAttribute('class')?.includes('-name') || 
+                            current.getAttribute('class')?.includes('-title') ||
+                            current.tagName.toLowerCase() === 'h1';
+
+      if (isNameOrTitle) {
+        return {
+          type: 'personalInfo',
+          label: 'Informações Pessoais',
+          currentText: data.personalInfo.title || data.personalInfo.fullName,
+          title: data.personalInfo.fullName,
+          rect: relativeRect,
+          domElement: current
+        };
+      }
+
+      current = current.parentElement;
+    }
+    return null;
+  };
+
+  const handlePreviewClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!onChange) return;
+    const target = e.target as HTMLElement;
+    
+    if (target.closest('[data-html2canvas-ignore="true"]')) {
+      return;
+    }
+    
+    const container = document.getElementById('resume-content');
+    if (container) {
+      const selectable = findSelectableElement(target, container);
+      if (selectable) {
+        setSelectedElement(selectable);
+      } else {
+        setSelectedElement(null);
+      }
+    }
+  };
+
+  const handlePreviewMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!onChange) return;
+    const target = e.target as HTMLElement;
+    
+    if (target.closest('[data-html2canvas-ignore="true"]')) {
+      setHoveredElement(null);
+      return;
+    }
+    
+    const container = document.getElementById('resume-content');
+    if (container) {
+      const selectable = findSelectableElement(target, container);
+      if (selectable) {
+        setHoveredElement(selectable);
+      } else {
+        setHoveredElement(null);
+      }
+    }
+  };
+
+  const handleUpdateInformation = async (action: 'expand' | 'shorten') => {
+    if (!selectedElement || !onChange) return;
+    setIsProcessingAI(true);
+    try {
+      const updatedText = await alterResumeInformation(
+        selectedElement.currentText, 
+        action, 
+        selectedElement.type
+      );
+      
+      if (selectedElement.type === 'summary') {
+        onChange(prev => ({
+          ...prev,
+          personalInfo: {
+            ...prev.personalInfo,
+            summary: updatedText
+          }
+        }));
+      } else if (selectedElement.type === 'experience') {
+        onChange(prev => ({
+          ...prev,
+          experience: prev.experience.map(exp => 
+            exp.id === selectedElement.id ? { ...exp, description: updatedText } : exp
+          )
+        }));
+      } else if (selectedElement.type === 'education') {
+        onChange(prev => ({
+          ...prev,
+          education: prev.education.map(edu => 
+            edu.id === selectedElement.id ? { ...edu, description: updatedText } : edu
+          )
+        }));
+      } else if (selectedElement.type === 'custom') {
+        onChange(prev => ({
+          ...prev,
+          customSections: (prev.customSections || []).map(cs => {
+            if (cs.id === selectedElement.sectionId) {
+              return {
+                ...cs,
+                items: cs.items.map(item => 
+                  item.id === selectedElement.id ? { ...item, description: updatedText } : item
+                )
+              };
+            }
+            return cs;
+          })
+        }));
+      }
+      
+      // Update local currentText state inside the selectedElement
+      setSelectedElement((prevSelected: any) => {
+        if (!prevSelected) return null;
+        return {
+          ...prevSelected,
+          currentText: updatedText
+        };
+      });
+    } catch (error) {
+      console.error("Erro ao processar as alterações de informação:", error);
+    } finally {
+      setIsProcessingAI(false);
+    }
+  };
+
+  const handleAdjustStyle = (styleProp: keyof ResumeStyleConfig, delta: number) => {
+    if (onChange) {
+      onChange((prev: any) => {
+        const currentVal = (prev.styleConfig?.[styleProp] !== undefined)
+          ? prev.styleConfig[styleProp]
+          : (styleProp === 'fontSize' ? 13 : styleProp === 'itemSpacing' ? 10 : styleProp === 'margins' ? 30 : 0);
+        
+        const newVal = Math.max(1, currentVal + delta);
+        return {
+          ...prev,
+          styleConfig: {
+            ...(prev.styleConfig || {}),
+            [styleProp]: newVal
+          }
+        };
+      });
+    }
+  };
+
   // Fixed scale to 1.0 so that templates occupy the entire A4 page area beautifully
   const densityScale = 1.0;
 
@@ -1933,7 +2231,177 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
         minHeight: '1122px',
         color: '#1f2937'
       }}
+      onClick={handlePreviewClick}
+      onMouseMove={handlePreviewMouseMove}
+      onMouseLeave={() => setHoveredElement(null)}
     >
+      {/* Absolute Overlays for Interactive Selection & Control */}
+      {onChange && hoveredElement && (!selectedElement || selectedElement.id !== hoveredElement.id) && (
+        <div 
+          data-html2canvas-ignore="true"
+          className="absolute z-30 border-2 border-indigo-400/50 bg-indigo-50/5 pointer-events-none rounded transition-all duration-75 cursor-pointer"
+          style={{
+            top: `${hoveredElement.rect.top - 4}px`,
+            left: `${hoveredElement.rect.left - 4}px`,
+            width: `${hoveredElement.rect.width + 8}px`,
+            height: `${hoveredElement.rect.height + 8}px`,
+          }}
+        >
+          <div className="absolute -top-6 left-0 bg-indigo-500 text-white text-[8px] font-black uppercase px-2 py-0.5 rounded shadow scale-95 origin-bottom-left whitespace-nowrap">
+            🔍 Ajustar: {hoveredElement.label}
+          </div>
+        </div>
+      )}
+
+      {onChange && selectedElement && (
+        <>
+          <div 
+            data-html2canvas-ignore="true"
+            className="absolute z-30 border-2 border-indigo-600 bg-indigo-100/10 pointer-events-none rounded transition-all duration-200"
+            style={{
+              top: `${selectedElement.rect.top - 4}px`,
+              left: `${selectedElement.rect.left - 4}px`,
+              width: `${selectedElement.rect.width + 8}px`,
+              height: `${selectedElement.rect.height + 8}px`,
+              outline: '4000px solid rgba(15, 23, 42, 0.4)', // Dim rest of page to focus user attention!
+            }}
+          />
+          
+          <div
+            data-html2canvas-ignore="true"
+            className="absolute z-50 bg-slate-900 border border-slate-800 text-white rounded-xl shadow-2xl p-4 flex flex-col gap-3 font-sans w-80 animate-in fade-in-50 zoom-in-95 duration-200"
+            style={{
+              top: `${selectedElement.rect.top + selectedElement.rect.height + 12 < 900 ? selectedElement.rect.top + selectedElement.rect.height + 8 : Math.max(8, selectedElement.rect.top - 240)}px`,
+              left: `${Math.max(8, Math.min(794 - 328, selectedElement.rect.left + (selectedElement.rect.width / 2) - 160))}px`,
+              pointerEvents: 'auto'
+            }}
+          >
+            {/* Toolbar Head */}
+            <div className="flex items-center justify-between border-b border-slate-800 pb-2">
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                <span className="text-[10px] font-black tracking-widest uppercase text-slate-400">Preview Inteligente</span>
+              </div>
+              <button 
+                onClick={() => setSelectedElement(null)}
+                className="text-slate-400 hover:text-white text-[9px] font-black uppercase tracking-wider px-2 py-1 rounded bg-slate-800 cursor-pointer"
+              >
+                Fechar
+              </button>
+            </div>
+            
+            {/* Info Label */}
+            <div>
+              <div className="text-[11px] font-bold text-slate-200 truncate">{selectedElement.label}</div>
+              {selectedElement.currentText && (
+                <div className="text-[9px] text-slate-400 mt-1 line-clamp-2 italic">
+                  "{selectedElement.currentText}"
+                </div>
+              )}
+            </div>
+
+            {/* Controls Container */}
+            <div className="grid grid-cols-2 gap-2">
+              {/* Aumentar Informação (IA) */}
+              <button
+                disabled={isProcessingAI || selectedElement.type === 'skills' || selectedElement.type === 'languages' || selectedElement.type === 'personalInfo'}
+                onClick={() => handleUpdateInformation('expand')}
+                className="flex flex-col items-center justify-center p-2.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 select-none text-center transition-all cursor-pointer group"
+              >
+                <Sparkles size={16} className={`${isProcessingAI ? 'animate-spin' : 'group-hover:scale-110 transition-transform'}`} />
+                <span className="text-[10px] font-bold mt-1 text-white">Aumentar (IA)</span>
+                <span className="text-[7.5px] text-indigo-200 mt-0.5 font-mono">Mais detalhes</span>
+              </button>
+
+              {/* Diminuir Informação (IA) */}
+              <button
+                disabled={isProcessingAI || selectedElement.type === 'skills' || selectedElement.type === 'languages' || selectedElement.type === 'personalInfo'}
+                onClick={() => handleUpdateInformation('shorten')}
+                className="flex flex-col items-center justify-center p-2.5 rounded-lg bg-rose-600 hover:bg-rose-500 disabled:opacity-40 select-none text-center transition-all cursor-pointer group"
+              >
+                <Scissors size={15} className={`${isProcessingAI ? 'animate-spin' : 'group-hover:scale-110 transition-transform'}`} />
+                <span className="text-[10px] font-bold mt-1 text-white">Diminuir (IA)</span>
+                <span className="text-[7.5px] text-rose-200 mt-0.5 font-mono">Resumir texto</span>
+              </button>
+            </div>
+
+            {/* Sizing/Spacing Adjustment Tools */}
+            <div className="border-t border-slate-800 pt-2.5 flex flex-col gap-2">
+              <span className="text-[8px] font-black uppercase text-slate-500 tracking-widest font-mono">Ajuste Visual do CV</span>
+              <div className="flex items-center justify-between gap-2">
+                <div className="text-[10px] text-slate-300">Tamanho da Letra:</div>
+                <div className="flex items-center gap-1.5">
+                  <button
+                    onClick={() => handleAdjustStyle('fontSize', -0.5)}
+                    className="w-7 h-7 bg-slate-800 hover:bg-slate-700 text-white rounded flex items-center justify-center text-xs font-bold font-mono transition-colors cursor-pointer"
+                  >
+                    -
+                  </button>
+                  <span className="text-[10px] font-mono text-slate-300 bg-slate-950 px-2 py-0.5 rounded">
+                    {style.fontSize || 13}px
+                  </span>
+                  <button
+                    onClick={() => handleAdjustStyle('fontSize', 0.5)}
+                    className="w-7 h-7 bg-slate-800 hover:bg-slate-700 text-white rounded flex items-center justify-center text-xs font-bold font-mono transition-colors cursor-pointer"
+                  >
+                    +
+                  </button>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between gap-2">
+                <div className="text-[10px] text-slate-300">Espaçamento Itens:</div>
+                <div className="flex items-center gap-1.5">
+                  <button
+                    onClick={() => handleAdjustStyle('itemSpacing', -2)}
+                    className="w-7 h-7 bg-slate-800 hover:bg-slate-700 text-white rounded flex items-center justify-center text-xs font-bold font-mono transition-colors cursor-pointer"
+                  >
+                    -
+                  </button>
+                  <span className="text-[10px] font-mono text-slate-300 bg-slate-950 px-2 py-0.5 rounded">
+                    {style.itemSpacing || 10}px
+                  </span>
+                  <button
+                    onClick={() => handleAdjustStyle('itemSpacing', 2)}
+                    className="w-7 h-7 bg-slate-800 hover:bg-slate-700 text-white rounded flex items-center justify-center text-xs font-bold font-mono transition-colors cursor-pointer"
+                  >
+                    +
+                  </button>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between gap-2">
+                <div className="text-[10px] text-slate-300">Margens CV:</div>
+                <div className="flex items-center gap-1.5">
+                  <button
+                    onClick={() => handleAdjustStyle('margins', -4)}
+                    className="w-7 h-7 bg-slate-800 hover:bg-slate-700 text-white rounded flex items-center justify-center text-xs font-bold font-mono transition-colors cursor-pointer"
+                  >
+                    -
+                  </button>
+                  <span className="text-[10px] font-mono text-slate-300 bg-slate-950 px-2 py-0.5 rounded">
+                    {style.margins || 30}px
+                  </span>
+                  <button
+                    onClick={() => handleAdjustStyle('margins', 4)}
+                    className="w-7 h-7 bg-slate-800 hover:bg-slate-700 text-white rounded flex items-center justify-center text-xs font-bold font-mono transition-colors cursor-pointer"
+                  >
+                    +
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {isProcessingAI && (
+              <div className="absolute inset-0 bg-slate-950/90 backdrop-blur-sm rounded-xl flex flex-col items-center justify-center text-center p-4">
+                <div className="w-10 h-10 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin mb-3"></div>
+                <span className="text-xs font-bold text-slate-200">Refinando com IA...</span>
+                <span className="text-[9px] text-slate-400 mt-1">Conectando ao modelo Gemini para processar as informações</span>
+              </div>
+            )}
+          </div>
+        </>
+      )}
       <style>{`
         /* Overrides customizadas do painel de design */
         #resume-content {

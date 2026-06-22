@@ -516,3 +516,55 @@ export async function translateLetterToEnglish(text: string): Promise<string> {
   }
 }
 
+export async function alterResumeInformation(
+  text: string, 
+  action: 'expand' | 'shorten', 
+  type: string
+): Promise<string> {
+  if (!text || text.trim().length === 0) return text;
+  
+  const cacheKey = `alter_info_${action}_${type}_${generateHash(text)}`;
+  const cachedVal = getLocalCache("alter_info", cacheKey);
+  if (cachedVal) return cachedVal;
+
+  let requestText = "";
+  if (action === 'expand') {
+    requestText = `AUMENTE as informações e detalhes de forma profissional para este segmento de currículo do tipo "${type}". Adicione realizações realistas, verbos de ação mais fortes, competências relevantes adicionadas e explique melhor os pontos para tornar o texto mais rico e completo.`;
+  } else {
+    requestText = `DIMINUA as informações de forma profissional para este segmento de currículo do tipo "${type}". Torne o texto o mais conciso, limpo e direto ao ponto possível, sem perder o profissionalismo. Remova repetições ou detalhes desnecessários.`;
+  }
+
+  const prompt = `
+    Atuando como um consultor sênior de currículos e ATS em Angola, recalcule e reescreva o texto abaixo.
+    
+    TEXTO ATUAL:
+    "${text}"
+
+    INSTRUÇÕES:
+    - ${requestText}
+    - Mantenha o idioma em Português Profesional.
+    - Se o texto atual contiver marcadores (como bullet points ou tópicos iniciados por • ou -), certifique-se de retornar os novos pontos com a mesma formatação estruturada (usando •).
+    - Retorne APENAS o novo texto gerado diretamente, sem introduções ("Aqui está o seu texto reescrito:"), sem comentários e sem aspas extras ou delimitadores markdown.
+  `;
+
+  try {
+    const rawText = await generateContentDirect([{ role: 'user', parts: [{ text: prompt }] }], false, 0.7);
+    const result = rawText.trim();
+    setLocalCache("alter_info", cacheKey, result);
+    return result;
+  } catch (error) {
+    console.warn("Alter information error, applying local fallback:", error);
+    if (action === 'expand') {
+      return `${text}\n• Focado na otimização de processos e na entrega de projetos dentro dos prazos estabelecidos.`;
+    } else {
+      // Shorten fallback
+      const lines = text.split('\n');
+      if (lines.length > 1) {
+        return lines.slice(0, Math.ceil(lines.length / 2)).join('\n');
+      }
+      return text.substring(0, Math.ceil(text.length * 0.7)) + '...';
+    }
+  }
+}
+
+
