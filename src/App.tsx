@@ -219,7 +219,20 @@ const TEMPLATES: Record<TemplateType, { name: string; layout: string; colors: an
 // --- Helpers ---
 const renderText = (str: string) => str ? str.replace(/\*/g, '') : '';
 const getSectionTitle = (data: ResumeData, key: keyof NonNullable<ResumeData['sectionTitles']>, defaultTitle: string) => {
-  return data.sectionTitles?.[key] || defaultTitle;
+  if (data.sectionTitles?.[key]) return data.sectionTitles[key];
+  if (data.language === 'en') {
+    const enDefaults: Record<string, string> = {
+      experience: "Professional Experience",
+      education: "Education",
+      skills: "Skills",
+      languages: "Languages",
+      certifications: "Certifications",
+      interests: "Interests",
+      summary: "Profile"
+    };
+    return enDefaults[key] || defaultTitle;
+  }
+  return defaultTitle;
 };
 
 const ProfilePage = ({ user, isAdmin, setView, onLogout, onRequestDownload }: { 
@@ -2581,7 +2594,7 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
             {/* T1 Sidebar sections with improved alignment */}
             <div style={{ display: 'flex', flexDirection: 'column', marginTop: data.styleConfig?.showPhoto !== false ? '32px' : '0px' }}>
               <div style={{ marginBottom: '32px' }}>
-                <div className="t1-section-title">Contacto</div>
+                <div className="t1-section-title">{data.language === 'en' ? 'Contact' : 'Contacto'}</div>
                 <div style={{ display: 'flex', flexDirection: 'column' }}>
                   {data.personalInfo.email && <div key="email" className="t1-contact-item flex items-center gap-2.5"><span className="t1-contact-icon flex items-center justify-center shrink-0"><Mail size={12} /></span><span className="t1-contact-text leading-none">{data.personalInfo.email}</span></div>}
                   {data.personalInfo.phone && <div key="phone" className="t1-contact-item flex items-center gap-2.5"><span className="t1-contact-icon flex items-center justify-center shrink-0"><Phone size={12} /></span><span className="t1-contact-text leading-none">{data.personalInfo.phone}</span></div>}
@@ -2591,7 +2604,7 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
               
               {data.education.length > 0 && (
                 <div style={{ marginBottom: '32px' }}>
-                  <div className="t1-section-title">Formação</div>
+                  <div className="t1-section-title">{data.language === 'en' ? 'Education' : 'Formação'}</div>
                   <div style={{ display: 'flex', flexDirection: 'column' }}>
                     {data.education.map((e, idx) => (
                       <div key={e.id || `edu-${idx}`} className="t1-edu-item" style={{ marginBottom: idx === data.education.length - 1 ? 0 : '18px' }}>
@@ -2663,7 +2676,7 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
                         </div>
                         <div className="t1-exp-body">
                            <div className="t1-exp-role font-bold">{ex.position} | <span style={{color: '#4b5563', fontSize: '13px', fontWeight: '500'}}>{ex.company}</span></div>
-                           <div className="t1-exp-period text-gray-400 mt-0.5 uppercase tracking-tighter font-black text-[10px]">{ex.startDate} - {ex.current ? "Presente" : ex.endDate}</div>
+                           <div className="t1-exp-period text-gray-400 mt-0.5 uppercase tracking-tighter font-black text-[10px]">{ex.startDate} - {ex.current ? (data.language === 'en' ? 'Present' : 'Presente') : ex.endDate}</div>
                            <div className="t1-exp-desc mt-3 leading-relaxed">{renderText(ex.description)}</div>
                         </div>
                       </div>
@@ -2702,7 +2715,7 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
           <div className="t2-body">
              <div className="t2-left">
                 <div className="t2-section">
-                   <div className="t2-section-title">Contacto</div>
+                   <div className="t2-section-title">{data.language === 'en' ? 'Contact' : 'Contacto'}</div>
                    <div className="flex flex-col gap-3">
                      {data.personalInfo.email && <div key="email" className="t2-contact-row flex items-center gap-2.5"><span className="t2-contact-icon flex items-center justify-center shrink-0"><Mail size={14} /></span> <span className="t2-contact-text" style={{ lineHeight: '1.2' }}>{data.personalInfo.email}</span></div>}
                      {data.personalInfo.phone && <div key="phone" className="t2-contact-row flex items-center gap-2.5"><span className="t2-contact-icon flex items-center justify-center shrink-0"><Phone size={14} /></span> <span className="t2-contact-text" style={{ lineHeight: '1.2' }}>{data.personalInfo.phone}</span></div>}
@@ -2712,7 +2725,7 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
                 
                 {data.education.length > 0 && (
                   <div className="t2-section">
-                     <div className="t2-section-title">Formação</div>
+                     <div className="t2-section-title">{data.language === 'en' ? 'Education' : 'Formação'}</div>
                      <div className="flex flex-col gap-4">
                        {data.education.map((e, idx) => (
                          <div key={e.id || `edu-${idx}`} className="t2-edu-item">
@@ -2727,7 +2740,7 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
                 
                 {data.skills.length > 0 && (
                   <div className="t2-section">
-                     <div className="t2-section-title">Habilidades</div>
+                     <div className="t2-section-title">{data.language === 'en' ? 'Skills' : 'Habilidades'}</div>
                      <div className="flex flex-wrap gap-2">
                        {data.skills.map((s, idx) => (
                          <div key={s.id || `skill-${idx}`} className="t2-skill-item px-3 py-1 bg-white border border-gray-100 rounded shadow-sm text-xs font-bold text-gray-700">
@@ -2762,7 +2775,7 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
                           <div key={ex.id || `exp-${idx}`} className="t2-exp-item">
                              <div className="t2-exp-header">
                                 <div className="t2-exp-company">{ex.company}</div>
-                                <div className="t2-exp-period">{ex.startDate} - {ex.current ? "Presente" : ex.endDate}</div>
+                                <div className="t2-exp-period">{ex.startDate} - {ex.current ? (data.language === 'en' ? 'Present' : 'Presente') : ex.endDate}</div>
                              </div>
                              <div className="t2-exp-role">{ex.position}</div>
                              <div className="t2-exp-desc">{renderText(ex.description)}</div>
@@ -2821,7 +2834,7 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
 
                  {data.skills.length > 0 && (
                    <div>
-                      <div className="t3-section-title">Habilidades</div>
+                      <div className="t3-section-title">{data.language === 'en' ? 'Skills' : 'Habilidades'}</div>
                       <div>
                         {data.skills.map((s, idx) => (
                            <div key={s.id || `skill-${idx}`} className="t3-skill-item">
@@ -2835,7 +2848,7 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
 
                  {data.languages && data.languages.length > 0 && (
                    <div>
-                      <div className="t3-section-title">Idiomas</div>
+                      <div className="t3-section-title">{data.language === 'en' ? 'Languages' : 'Idiomas'}</div>
                       <div>
                         {data.languages.map((l, idx) => (
                            <div key={l.id || `lang-${idx}`} className="t3-skill-item">
@@ -2856,7 +2869,7 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
                          <div key={ex.id || `exp-${idx}`} className="t3-exp-item">
                             <div className="t3-exp-header">
                                <div className="t3-exp-company">{ex.company}</div>
-                               <div className="t3-exp-period">{ex.startDate} - {ex.current ? "Presente" : ex.endDate}</div>
+                               <div className="t3-exp-period">{ex.startDate} - {ex.current ? (data.language === 'en' ? 'Present' : 'Presente') : ex.endDate}</div>
                             </div>
                             <div className="t3-exp-role">{ex.position}</div>
                             <div className="t3-exp-desc">{renderText(ex.description)}</div>
@@ -2923,7 +2936,7 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
                    <p className="text-sm tracking-[0.2em] uppercase font-semibold text-white/70 mt-4">{data.personalInfo.title}</p>
                 </div>
                 <div>
-                   <h3 className="text-xl font-bold mb-5 pb-2 text-white border-b-2 border-white/20 inline-block pr-6">Contacto</h3>
+                   <h3 className="text-xl font-bold mb-5 pb-2 text-white border-b-2 border-white/20 inline-block pr-6">{data.language === 'en' ? 'Contact' : 'Contacto'}</h3>
                      <div className="flex flex-col text-[13px] opacity-90">
                        {data.personalInfo.email && <div key="email" className="flex items-center gap-2 mb-4"><Mail size={14} className="opacity-75 shrink-0" /> <span style={{ lineHeight: '1.2' }}>{data.personalInfo.email}</span></div>}
                        {data.personalInfo.phone && <div key="phone" className="flex items-center gap-2 mb-4"><Phone size={14} className="opacity-75 shrink-0" /> <span style={{ lineHeight: '1.2' }}>{data.personalInfo.phone}</span></div>}
@@ -2968,7 +2981,7 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
                              <h4 className="text-[16px] font-bold mb-1" style={{ color: '#1f2937' }}>{ex.position}</h4>
                              <div className="flex justify-between items-center mb-4">
                                 <span className="text-[13px] font-bold tracking-tight uppercase" style={{ color: '#4b5563' }}>{ex.company}</span>
-                                <span className="text-[11px] font-black bg-gray-100 px-2 py-1 rounded" style={{ color: '#6b7280' }}>{ex.startDate} - {ex.current ? "Presente" : ex.endDate}</span>
+                                <span className="text-[11px] font-black bg-gray-100 px-2 py-1 rounded" style={{ color: '#6b7280' }}>{ex.startDate} - {ex.current ? (data.language === 'en' ? 'Present' : 'Presente') : ex.endDate}</span>
                              </div>
                              <p className="text-[13px] leading-[1.7] text-left font-serif mt-1" style={{ color: '#4b5563' }}>{renderText(ex.description)}</p>
                           </div>
@@ -3057,7 +3070,7 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
                 
                 <div className="w-full mb-10">
                   <div className="mb-6 border-b-2 pb-2" style={{ borderColor: `${c.primary}40` }}>
-                     <h3 className="text-[12px] font-black uppercase tracking-[0.2em]" style={{ color: c.primary }}>Contacto</h3>
+                     <h3 className="text-[12px] font-black uppercase tracking-[0.2em]" style={{ color: c.primary }}>{data.language === 'en' ? 'Contact' : 'Contacto'}</h3>
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', fontSize: '13px', width: '100%', fontWeight: '500', color: '#374151' }}>
                      {data.personalInfo.phone && <div key="phone" className="flex items-center gap-2.5 mb-4 text-gray-700 font-semibold"><Phone size={14} className="opacity-75 shrink-0" style={{ color: c.primary }} /> <span style={{ lineHeight: '1.2' }}>{data.personalInfo.phone}</span></div>}
@@ -3184,7 +3197,7 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
                           <div className="flex-1">
                             <div className="flex justify-between items-baseline mb-1">
                                <h4 className="text-[17px] font-black text-gray-900 tracking-tight">{ex.position}</h4>
-                               <span className="text-[11px] font-bold px-3 py-1 bg-gray-100 rounded-lg text-gray-500">{ex.startDate} - {ex.current ? "Presente" : ex.endDate}</span>
+                               <span className="text-[11px] font-bold px-3 py-1 bg-gray-100 rounded-lg text-gray-500">{ex.startDate} - {ex.current ? (data.language === 'en' ? 'Present' : 'Presente') : ex.endDate}</span>
                             </div>
                             <div className="text-[14px] font-bold mb-4 flex items-center gap-2" style={{ color: c.primary }}>
                                {ex.company}
@@ -3264,7 +3277,7 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
                       <div key={ex.id || `exp-${idx}`} className={`space-y-1 ${data.styleConfig?.showTimeline !== false ? 'pl-3 border-l-2' : ''}`} style={data.styleConfig?.showTimeline !== false ? { borderLeftColor: c.primary } : {}}>
                         <h4 className="text-xs font-black text-gray-955">{ex.position}</h4>
                         <div className="text-[10px] font-bold text-gray-400">
-                          {ex.company} | {ex.startDate} - {ex.current ? "Presente" : ex.endDate}
+                          {ex.company} | {ex.startDate} - {ex.current ? (data.language === 'en' ? 'Present' : 'Presente') : ex.endDate}
                         </div>
                         <p className="text-[11px] leading-relaxed text-gray-600 mt-1">{renderText(ex.description)}</p>
                       </div>
@@ -3366,7 +3379,7 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
             <div className="w-[60%] border-r border-gray-100 pr-8 space-y-6">
               {data.personalInfo.summary && (
                 <div>
-                  <h3 className="text-xs font-black uppercase tracking-wider mb-3 text-gray-900">Síntese</h3>
+                  <h3 className="text-xs font-black uppercase tracking-wider mb-3 text-gray-900">{data.language === 'en' ? 'Summary' : 'Síntese'}</h3>
                   <p className="text-xs leading-relaxed text-gray-600 font-medium font-serif">{renderText(data.personalInfo.summary)}</p>
                 </div>
               )}
@@ -3379,7 +3392,7 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
                       <div key={ex.id || `exp-${idx}`} className="space-y-1">
                         <div className="flex justify-between items-baseline">
                           <h4 className="text-xs font-black text-gray-950">{ex.position}</h4>
-                          <span className="text-[10px] font-black text-gray-400 uppercase">{ex.startDate} - {ex.current ? "Presente" : ex.endDate}</span>
+                          <span className="text-[10px] font-black text-gray-400 uppercase">{ex.startDate} - {ex.current ? (data.language === 'en' ? 'Present' : 'Presente') : ex.endDate}</span>
                         </div>
                         <p className="text-[11px] font-black uppercase tracking-tight" style={{ color: c.primary }}>{ex.company}</p>
                         <p className="text-[11px] leading-relaxed text-gray-600 mt-1">{renderText(ex.description)}</p>
@@ -3509,7 +3522,7 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
 
             {/* CONTACT Section */}
             <div className="mb-8">
-              <h3 className="text-sm font-black uppercase tracking-wider mb-4 text-center pb-1 border-b-2 border-sky-400/50" style={{ color: c.primary }}>Contacto</h3>
+              <h3 className="text-sm font-black uppercase tracking-wider mb-4 text-center pb-1 border-b-2 border-sky-400/50" style={{ color: c.primary }}>{data.language === 'en' ? 'Contact' : 'Contacto'}</h3>
               <div className="space-y-3">
                 {data.personalInfo.email && (
                   <div className="flex items-center gap-3 text-[10px] font-bold text-gray-700">
@@ -3630,7 +3643,7 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
                         {data.styleConfig?.showTimeline !== false && <div className="absolute -left-1.5 top-1.5 w-3 h-3 rounded-full border-2 border-white shadow bg-sky-400" />}
                         <div className="flex justify-between items-baseline mb-1">
                           <h4 className="text-xs font-black text-gray-955">{ex.position}</h4>
-                          <span className="text-[9px] font-black text-sky-500 uppercase tracking-tight shrink-0">{ex.startDate} - {ex.current ? "Presente" : ex.endDate}</span>
+                          <span className="text-[9px] font-black text-sky-500 uppercase tracking-tight shrink-0">{ex.startDate} - {ex.current ? (data.language === 'en' ? 'Present' : 'Presente') : ex.endDate}</span>
                         </div>
                         <p className="text-[10px] font-bold uppercase tracking-tight mb-2" style={{ color: c.primary }}>{ex.company}</p>
                         <p className="text-[11px] leading-relaxed text-gray-600 font-medium">{renderText(ex.description)}</p>
@@ -3725,7 +3738,7 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
                         {data.styleConfig?.showTimeline !== false && <div className="absolute -left-[5px] top-1.5 w-2.5 h-2.5 rounded-full border-2 border-white" style={{ backgroundColor: c.primary }}></div>}
                         <div className="flex justify-between items-baseline">
                           <h4 className="text-xs font-bold text-gray-900 leading-tight">{ex.position}</h4>
-                          <span className="text-[9px] font-black text-gray-400 uppercase tracking-tight shrink-0">{ex.startDate} - {ex.current ? "Presente" : ex.endDate}</span>
+                          <span className="text-[9px] font-black text-gray-400 uppercase tracking-tight shrink-0">{ex.startDate} - {ex.current ? (data.language === 'en' ? 'Present' : 'Presente') : ex.endDate}</span>
                         </div>
                         <p className="text-[10px] font-black uppercase tracking-tight" style={{ color: c.primary }}>{ex.company}</p>
                         <p className="text-[11px] leading-relaxed text-gray-500 mt-1 whitespace-pre-line">{renderText(ex.description)}</p>
@@ -4004,7 +4017,7 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
                       <div key={ex.id || `exp-${idx}`} className={`space-y-1.5 ${data.styleConfig?.showTimeline !== false ? 'pl-3 border-l-2' : ''}`} style={data.styleConfig?.showTimeline !== false ? { borderLeftColor: c.primary } : {}}>
                         <div className="flex justify-between items-baseline gap-2">
                           <h4 className="text-xs font-bold text-slate-900 leading-tight">{ex.position}</h4>
-                          <span className="text-[8.5px] font-black text-slate-400 uppercase tracking-tight shrink-0">{ex.startDate} - {ex.current ? "Presente" : ex.endDate}</span>
+                          <span className="text-[8.5px] font-black text-slate-400 uppercase tracking-tight shrink-0">{ex.startDate} - {ex.current ? (data.language === 'en' ? 'Present' : 'Presente') : ex.endDate}</span>
                         </div>
                         <p className="text-[9.5px] font-black uppercase tracking-wider" style={{ color: c.primary }}>{ex.company}</p>
                         <p className="text-[11px] leading-relaxed text-gray-500 whitespace-pre-line pt-0.5">{renderText(ex.description)}</p>
@@ -4391,7 +4404,7 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
                       <div key={ex.id || `exp-${idx}`} className="space-y-1.5">
                         <div className="flex justify-between items-baseline">
                           <h4 className="text-xs font-extrabold text-slate-950 font-serif">{ex.position}</h4>
-                          <span className="text-[9px] font-black font-sans text-slate-400 shrink-0">{ex.startDate} - {ex.current ? "PRESENTE" : ex.endDate}</span>
+                          <span className="text-[9px] font-black font-sans text-slate-400 shrink-0">{ex.startDate} - {ex.current ? (data.language === 'en' ? 'PRESENT' : 'PRESENTE') : ex.endDate}</span>
                         </div>
                         <p className="text-[10px] font-bold tracking-wide font-sans text-slate-500 uppercase">{ex.company}</p>
                         <p className="text-[11px] leading-relaxed text-slate-600 whitespace-pre-line font-medium pt-0.5">{renderText(ex.description)}</p>
@@ -4494,7 +4507,7 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
               
               {/* Contact Card */}
               <div className="p-5 bg-white rounded-2xl border border-slate-100 shadow-sm space-y-4">
-                <h3 className="text-xs font-mono font-black uppercase tracking-widest text-slate-800 border-b pb-1.5" style={{ borderBottomColor: c.primary }}>Contacto</h3>
+                <h3 className="text-xs font-mono font-black uppercase tracking-widest text-slate-800 border-b pb-1.5" style={{ borderBottomColor: c.primary }}>{data.language === 'en' ? 'Contact' : 'Contacto'}</h3>
                 <div className="space-y-2.5">
                   {data.personalInfo.phone && (
                     <div className="flex items-center gap-2 text-[10px] font-bold text-slate-600 animate-fade-in">
@@ -4588,7 +4601,7 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
                       <div key={ex.id || `exp-${idx}`} className={`space-y-1 relative ${data.styleConfig?.showTimeline !== false ? 'pl-4 border-l-2' : ''}`} style={data.styleConfig?.showTimeline !== false ? { borderLeftColor: c.primary } : {}}>
                         <div className="flex justify-between items-baseline gap-2">
                           <h4 className="text-xs font-extrabold text-slate-900 leading-tight">{ex.position}</h4>
-                          <span className="text-[8px] font-black font-mono text-slate-400 uppercase tracking-tight shrink-0">{ex.startDate} - {ex.current ? "PRESENTE" : ex.endDate}</span>
+                          <span className="text-[8px] font-black font-mono text-slate-400 uppercase tracking-tight shrink-0">{ex.startDate} - {ex.current ? (data.language === 'en' ? 'PRESENT' : 'PRESENTE') : ex.endDate}</span>
                         </div>
                         <p className="text-[9px] font-black uppercase tracking-wider" style={{ color: c.primary }}>{ex.company}</p>
                         <p className="text-[10.5px] leading-relaxed text-slate-600 whitespace-pre-line mt-1">{renderText(ex.description)}</p>
@@ -6927,7 +6940,7 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
               {activeStep === 3 && ( /* Skills */
                 <div className="space-y-10">
                   <div className="space-y-6">
-                    <h3 className="text-sm font-black uppercase tracking-[0.2em] text-primary-blue">Habilidades</h3>
+                    <h3 className="text-sm font-black uppercase tracking-[0.2em] text-primary-blue">{data.language === 'en' ? 'Skills' : 'Habilidades'}</h3>
                     <div className="flex gap-2">
                        <Input 
                          placeholder="Ex: Marketing Digital" 
@@ -7033,7 +7046,7 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
                   </div>
 
                   <div className="space-y-6 pt-6 border-t border-border-main">
-                    <h3 className="text-sm font-black uppercase tracking-[0.2em] text-primary-blue">Idiomas</h3>
+                    <h3 className="text-sm font-black uppercase tracking-[0.2em] text-primary-blue">{data.language === 'en' ? 'Languages' : 'Idiomas'}</h3>
                     <div className="flex flex-col gap-3.5 bg-gray-50/50 p-4 rounded-2xl border border-gray-100">
                       <div className="grid grid-cols-2 gap-3">
                          <Input 

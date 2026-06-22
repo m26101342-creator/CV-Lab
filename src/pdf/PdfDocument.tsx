@@ -3,7 +3,20 @@ import { Document, Page, View, Text, StyleSheet, Font, Image, Svg, Path } from '
 import { ResumeData } from '../types';
 
 const getSectionTitle = (data: ResumeData, key: keyof NonNullable<ResumeData['sectionTitles']>, defaultTitle: string) => {
-  return data.sectionTitles?.[key] || defaultTitle;
+  if (data.sectionTitles?.[key]) return data.sectionTitles[key];
+  if (data.language === 'en') {
+    const enDefaults: Record<string, string> = {
+      experience: "Professional Experience",
+      education: "Education",
+      skills: "Skills",
+      languages: "Languages",
+      certifications: "Certifications",
+      interests: "Interests",
+      summary: "Profile"
+    };
+    return enDefaults[key] || defaultTitle;
+  }
+  return defaultTitle;
 };
 
 const RenderCustomSections = ({ 
@@ -142,7 +155,7 @@ const Template1 = ({ data }: { data: ResumeData }) => {
         )}
 
         <View style={{ marginBottom: 30 }}>
-          <Text style={styles.sectionTitle}>Contacto</Text>
+          <Text style={styles.sectionTitle}>{data.language === 'en' ? 'Contact' : 'Contacto'}</Text>
           <View style={styles.contactRow}><Icons.Mail /><Text style={styles.contactText}>{data.personalInfo.email}</Text></View>
           <View style={styles.contactRow}><Icons.Phone /><Text style={styles.contactText}>{data.personalInfo.phone}</Text></View>
           <View style={styles.contactRow}><Icons.MapPin /><Text style={styles.contactText}>{data.personalInfo.location}</Text></View>
@@ -186,7 +199,7 @@ const Template1 = ({ data }: { data: ResumeData }) => {
               <View key={ex.id || `exp-${idx}`} style={[styles.expItem, data.styleConfig?.showTimeline === false && { borderLeft: 'none', paddingLeft: 0, marginLeft: 0 }]}>
                 <View style={styles.expContent}>
                   <Text style={styles.expRole}>{ex.position} | <Text style={{ color: '#4B5563' }}>{ex.company}</Text></Text>
-                  <Text style={styles.expPeriod}>{ex.startDate} - {ex.current ? "Presente" : ex.endDate}</Text>
+                  <Text style={styles.expPeriod}>{ex.startDate} - {ex.current ? (data.language === 'en' ? 'Present' : 'Presente') : ex.endDate}</Text>
                   <Text style={styles.expDesc}>{ex.description.replace(/\*/g, '')}</Text>
                 </View>
               </View>
@@ -230,7 +243,7 @@ const Template2 = ({ data }: { data: ResumeData }) => {
       </View>
       <View key="t2-body" style={styles.body}>
         <View key="left-col" style={styles.leftCol}>
-          <Text style={styles.sectionTitle}>Contacto</Text>
+          <Text style={styles.sectionTitle}>{data.language === 'en' ? 'Contact' : 'Contacto'}</Text>
           <View key="c-mail" style={styles.contactItem}><Icons.Mail /><Text>{data.personalInfo.email}</Text></View>
           <View key="c-phone" style={styles.contactItem}><Icons.Phone /><Text>{data.personalInfo.phone}</Text></View>
           <View key="c-loc" style={styles.contactItem}><Icons.MapPin /><Text>{data.personalInfo.location}</Text></View>
@@ -250,7 +263,7 @@ const Template2 = ({ data }: { data: ResumeData }) => {
             <View key={ex.id || `exp-${idx}`} style={{ marginBottom: 20 }}>
               <Text style={{ fontSize: 11, fontWeight: 700 }}>{ex.position}</Text>
               <Text style={{ fontSize: 10, color: cTheme, fontWeight: 900 }}>{ex.company}</Text>
-              <Text style={{ fontSize: 8, color: '#9CA3AF', marginVertical: 4 }}>{ex.startDate} - {ex.current ? "Presente" : ex.endDate}</Text>
+              <Text style={{ fontSize: 8, color: '#9CA3AF', marginVertical: 4 }}>{ex.startDate} - {ex.current ? (data.language === 'en' ? 'Present' : 'Presente') : ex.endDate}</Text>
               <Text style={{ fontSize: 10 }}>{ex.description.replace(/\*/g, '')}</Text>
             </View>
           ))}
@@ -308,7 +321,7 @@ const Template3 = ({ data }: { data: ResumeData }) => {
           )}
         </View>
         <View style={styles.rightCol}>
-          <Text style={styles.sectionTitle}>Sobre Mim</Text>
+          <Text style={styles.sectionTitle}>{data.language === 'en' ? 'About Me' : 'Sobre Mim'}</Text>
           <Text style={{ fontSize: 10, marginBottom: 30, lineHeight: 1.6 }}>{data.personalInfo.summary.replace(/\*/g, '')}</Text>
           <Text style={styles.sectionTitle}>{getSectionTitle(data, 'experience', 'Experiência')}</Text>
           {data.experience.map((ex, idx) => (
@@ -373,7 +386,7 @@ const Template4 = ({ data }: { data: ResumeData }) => {
         )}
 
         <View style={{ marginBottom: 30 }}>
-          <Text style={styles.sectionTitleSidebar}>Contacto</Text>
+          <Text style={styles.sectionTitleSidebar}>{data.language === 'en' ? 'Contact' : 'Contacto'}</Text>
           <Text style={styles.sidebarText}>{data.personalInfo.email}</Text>
           <Text style={styles.sidebarText}>{data.personalInfo.phone}</Text>
           <Text style={styles.sidebarText}>{data.personalInfo.location}</Text>
@@ -397,7 +410,7 @@ const Template4 = ({ data }: { data: ResumeData }) => {
       <View style={styles.main}>
         {data.personalInfo.summary && (
            <View>
-             <Text style={styles.sectionTitleMain}>Perfil</Text>
+             <Text style={styles.sectionTitleMain}>{data.language === 'en' ? 'Profile' : 'Perfil'}</Text>
              <Text style={styles.summaryText}>{data.personalInfo.summary.replace(/\*/g, '')}</Text>
            </View>
         )}
@@ -507,13 +520,13 @@ const Template5 = ({ data }: { data: ResumeData }) => {
         <View style={styles.leftColumn}>
           {data.personalInfo.summary && (
             <View>
-              <Text style={[styles.leftSectionTitle, { marginTop: 0 }]}>Perfil</Text>
+              <Text style={[styles.leftSectionTitle, { marginTop: 0 }]}>{data.language === 'en' ? 'Profile' : 'Perfil'}</Text>
               <Text style={styles.leftText}>{data.personalInfo.summary.replace(/\*/g, '')}</Text>
             </View>
           )}
           
           <View>
-             <Text style={styles.leftSectionTitle}>Contacto</Text>
+             <Text style={styles.leftSectionTitle}>{data.language === 'en' ? 'Contact' : 'Contacto'}</Text>
              <Text style={styles.leftText}>{data.personalInfo.phone}</Text>
              <Text style={styles.leftText}>{data.personalInfo.email}</Text>
              <Text style={styles.leftText}>{data.personalInfo.location}</Text>
@@ -662,7 +675,7 @@ const CoverLetter = ({ data }: { data: any }) => {
       </Text>
 
       <View style={styles.footer}>
-        <Text style={{ fontSize: 10, color: '#9CA3AF', textTransform: 'uppercase', marginBottom: 5 }}>Atentamente,</Text>
+        <Text style={{ fontSize: 10, color: '#9CA3AF', textTransform: 'uppercase', marginBottom: 5 }}>{data.language === 'en' ? 'Sincerely,' : 'Atentamente,'}</Text>
         <Text style={styles.signature}>{info.fullName || 'Seu Nome'}</Text>
       </View>
     </View>
@@ -791,7 +804,7 @@ const Template7 = ({ data }: { data: ResumeData }) => {
         <View style={styles.mainCol}>
           {data.personalInfo.summary && (
             <View style={{ marginBottom: 30 }}>
-              <Text style={styles.sectionTitle}>Síntese</Text>
+              <Text style={styles.sectionTitle}>{data.language === 'en' ? 'Summary' : 'Síntese'}</Text>
               <Text style={{ fontSize: 10, lineHeight: 1.6, color: '#4B5563' }}>{data.personalInfo.summary.replace(/\*/g, '')}</Text>
             </View>
           )}
@@ -911,7 +924,7 @@ const Template8 = ({ data }: { data: ResumeData }) => {
         )}
 
         <View style={{ marginBottom: 20 }}>
-          <Text style={styles.sidebarTitle}>Contacto</Text>
+          <Text style={styles.sidebarTitle}>{data.language === 'en' ? 'Contact' : 'Contacto'}</Text>
           <View style={{ gap: 4 }}>
             {data.personalInfo.email && (
               <View style={styles.contactItem}>
@@ -976,7 +989,7 @@ const Template8 = ({ data }: { data: ResumeData }) => {
 
         {data.personalInfo.summary && (
           <View>
-            <Text style={styles.sectionTitle}>Sobre Mim</Text>
+            <Text style={styles.sectionTitle}>{data.language === 'en' ? 'About Me' : 'Sobre Mim'}</Text>
             <Text style={styles.summary}>{data.personalInfo.summary.replace(/\*/g, '')}</Text>
           </View>
         )}
@@ -1005,7 +1018,7 @@ const Template8 = ({ data }: { data: ResumeData }) => {
                 {data.styleConfig?.showTimeline !== false && <View style={styles.timelineDot} />}
                 <View style={styles.itemHeader}>
                   <Text style={styles.itemTitle}>{ex.position}</Text>
-                  <Text style={styles.itemPeriod}>{ex.startDate} - {ex.current ? "Presente" : ex.endDate}</Text>
+                  <Text style={styles.itemPeriod}>{ex.startDate} - {ex.current ? (data.language === 'en' ? 'Present' : 'Presente') : ex.endDate}</Text>
                 </View>
                 <Text style={styles.itemSubtitle}>{ex.company}</Text>
                 <Text style={styles.itemDesc}>{ex.description.replace(/\*/g, '')}</Text>
@@ -1081,7 +1094,7 @@ const Template9 = ({ data }: { data: ResumeData }) => {
       <View style={styles.body}>
         <View style={styles.leftCol}>
           <View style={styles.sidebarSection}>
-            <Text style={styles.sidebarTitle}>Contacto</Text>
+            <Text style={styles.sidebarTitle}>{data.language === 'en' ? 'Contact' : 'Contacto'}</Text>
             {data.personalInfo.email && (
               <View style={styles.contactItem}>
                 <Icons.Mail />
@@ -1117,7 +1130,7 @@ const Template9 = ({ data }: { data: ResumeData }) => {
 
           {data.certifications && data.certifications.length > 0 && (
             <View style={styles.sidebarSection}>
-              <Text style={styles.sidebarTitle}>Prêmios</Text>
+              <Text style={styles.sidebarTitle}>{data.language === 'en' ? 'Awards' : 'Prêmios'}</Text>
               {data.certifications.map((cVal, idx) => (
                 <View key={cVal.id || `cert-${idx}`} style={styles.sidebarItem}>
                   <Text style={styles.sidebarItemTitle}>{cVal.name}</Text>
@@ -1131,7 +1144,7 @@ const Template9 = ({ data }: { data: ResumeData }) => {
         <View style={styles.rightCol}>
           {data.personalInfo.summary && (
             <View>
-              <Text style={styles.sectionTitle}>Sobre Mim</Text>
+              <Text style={styles.sectionTitle}>{data.language === 'en' ? 'About Me' : 'Sobre Mim'}</Text>
               <Text style={styles.summaryText}>"{data.personalInfo.summary.replace(/\*/g, '')}"</Text>
             </View>
           )}
@@ -1143,7 +1156,7 @@ const Template9 = ({ data }: { data: ResumeData }) => {
                 <View key={ex.id || `exp-${idx}`} style={[styles.expBox, data.styleConfig?.showTimeline === false && { borderLeft: 'none', paddingLeft: 0 }]}>
                   <View style={styles.expHeader}>
                     <Text style={styles.expTitle}>{ex.position}</Text>
-                    <Text style={styles.expDate}>{ex.startDate} - {ex.current ? "Presente" : ex.endDate}</Text>
+                    <Text style={styles.expDate}>{ex.startDate} - {ex.current ? (data.language === 'en' ? 'Present' : 'Presente') : ex.endDate}</Text>
                   </View>
                   <Text style={styles.expCompany}>{ex.company}</Text>
                   <Text style={styles.expDesc}>{ex.description.replace(/\*/g, '')}</Text>
@@ -1277,7 +1290,7 @@ const Template10 = ({ data }: { data: ResumeData }) => {
       <View style={styles.body}>
         <View style={styles.leftCol}>
           <View style={styles.sidebarSection}>
-            <Text style={styles.sidebarTitle}>Contacto</Text>
+            <Text style={styles.sidebarTitle}>{data.language === 'en' ? 'Contact' : 'Contacto'}</Text>
             {data.personalInfo.phone && (
               <View style={styles.contactItem}>
                 <Icons.Phone />
@@ -1352,7 +1365,7 @@ const Template10 = ({ data }: { data: ResumeData }) => {
                 <View key={ex.id || `exp-${idx}`} style={[styles.expItem, data.styleConfig?.showTimeline === false && { borderLeft: 'none', paddingLeft: 0, marginLeft: 0 }]}>
                   <View style={styles.expHeader}>
                     <Text style={styles.expTitle}>{ex.position}</Text>
-                    <Text style={styles.expDate}>{ex.startDate} - {ex.current ? "Presente" : ex.endDate}</Text>
+                    <Text style={styles.expDate}>{ex.startDate} - {ex.current ? (data.language === 'en' ? 'Present' : 'Presente') : ex.endDate}</Text>
                   </View>
                   <Text style={styles.expCompany}>{ex.company}</Text>
                   <Text style={styles.expDesc}>{ex.description.replace(/\*/g, '')}</Text>
@@ -1476,7 +1489,7 @@ const Template11 = ({ data }: { data: ResumeData }) => {
 
         {data.personalInfo.summary && (
           <View>
-            <Text style={styles.sectionTitleBanner}>Sobre Mim</Text>
+            <Text style={styles.sectionTitleBanner}>{data.language === 'en' ? 'About Me' : 'Sobre Mim'}</Text>
             <Text style={styles.summaryText}>"{data.personalInfo.summary.replace(/\*/g, '')}"</Text>
           </View>
         )}
@@ -1518,7 +1531,7 @@ const Template11 = ({ data }: { data: ResumeData }) => {
       <View style={styles.rightCol}>
         <View>
           <View style={styles.sidebarSection}>
-            <Text style={styles.sidebarSectionHeader}>Contacto</Text>
+            <Text style={styles.sidebarSectionHeader}>{data.language === 'en' ? 'Contact' : 'Contacto'}</Text>
             {data.personalInfo.phone && (
               <View style={styles.contactItem}>
                 <Icons.Phone />
@@ -1573,7 +1586,7 @@ const Template11 = ({ data }: { data: ResumeData }) => {
 
           {data.certifications && data.certifications.length > 0 && (
             <View style={styles.sidebarSection}>
-              <Text style={styles.sidebarSectionHeader}>Prêmios</Text>
+              <Text style={styles.sidebarSectionHeader}>{data.language === 'en' ? 'Awards' : 'Prêmios'}</Text>
               {data.certifications.map((cVal, idx) => (
                 <View key={cVal.id || `cert-${idx}`} style={styles.certItem}>
                   <Text style={styles.certTitle}>{cVal.name}</Text>
@@ -1714,7 +1727,7 @@ const Template12 = ({ data }: { data: ResumeData }) => {
                 <View key={ex.id || `exp-${idx}`} style={[styles.expItem, data.styleConfig?.showTimeline === false && { borderLeft: 'none', paddingLeft: 0, marginLeft: 0 }]}>
                   <View style={styles.expHeader}>
                     <Text style={styles.expRole}>{ex.position}</Text>
-                    <Text style={styles.expPeriod}>{ex.startDate} - {ex.current ? 'PRESENTE' : ex.endDate}</Text>
+                    <Text style={styles.expPeriod}>{ex.startDate} - {ex.current ? (data.language === 'en' ? 'PRESENT' : 'PRESENTE') : ex.endDate}</Text>
                   </View>
                   <Text style={styles.expCompany}>{ex.company}</Text>
                   <Text style={styles.expDesc}>{ex.description.replace(/\*/g, '')}</Text>
@@ -1829,7 +1842,7 @@ const Template13 = ({ data }: { data: ResumeData }) => {
       <View style={styles.columns}>
         <View style={styles.sidebar}>
           <View style={styles.card}>
-            <Text style={styles.sectionHeader}>Contacto</Text>
+            <Text style={styles.sectionHeader}>{data.language === 'en' ? 'Contact' : 'Contacto'}</Text>
             {data.personalInfo.phone && (
               <View style={styles.contactItem}>
                 <Icons.Phone />
@@ -1901,7 +1914,7 @@ const Template13 = ({ data }: { data: ResumeData }) => {
                 <View key={ex.id || `exp-${idx}`} style={[styles.rowItem, data.styleConfig?.showTimeline === false && { borderLeft: 'none', paddingLeft: 0 }]}>
                   <View style={styles.rowHeader}>
                     <Text style={styles.rowHeading}>{ex.position}</Text>
-                    <Text style={styles.rowPeriod}>{ex.startDate} - {ex.current ? 'PRESENTE' : ex.endDate}</Text>
+                    <Text style={styles.rowPeriod}>{ex.startDate} - {ex.current ? (data.language === 'en' ? 'PRESENT' : 'PRESENTE') : ex.endDate}</Text>
                   </View>
                   <Text style={styles.rowSub}>{ex.company}</Text>
                   <Text style={styles.rowDesc}>{ex.description.replace(/\*/g, '')}</Text>
