@@ -153,11 +153,22 @@ export const loginWithGoogle = async () => {
             console.error("Login failed:", e);
         }
     } else {
-        console.log("[Mock Auth] Simulating login with Google. Auto signing in with admin email.");
+        const email = window.prompt("Introduza o seu Email para Login com Google (Simulação):", "cliente@gmail.com");
+        if (!email) {
+            console.log("[Mock Auth] Google Login cancelled by user.");
+            return;
+        }
+        console.log("[Mock Auth] Simulating login with Google for:", email);
+        const adminList = [
+            'ronalmaferreira04@icloud.com',
+            'sumodemanga50@gmail.com',
+            'm26101342@gmail.com'
+        ];
+        const isMockAdmin = adminList.includes(email.toLowerCase());
         mockUser = {
-            uid: 'admin_mock_123',
-            email: 'm26101342@gmail.com',
-            displayName: 'Utilizador Admin',
+            uid: isMockAdmin ? 'admin_mock_123' : `user_mock_${Math.random().toString(36).substring(2, 11)}`,
+            email: email,
+            displayName: isMockAdmin ? 'Utilizador Admin' : email.split('@')[0],
             isAnonymous: false
         };
         localStorage.setItem('cv_lab_mock_user', JSON.stringify(mockUser));

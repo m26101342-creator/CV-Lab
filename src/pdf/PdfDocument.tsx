@@ -131,12 +131,14 @@ const Template1 = ({ data }: { data: ResumeData }) => {
   return (
     <View style={styles.container}>
       <View style={styles.leftCol}>
-        {data.personalInfo.photo ? (
-          <Image src={data.personalInfo.photo} style={[styles.avatar, { borderRadius: data.personalInfo.photoStyle === 'circle' ? 60 : 10 }]} />
-        ) : (
-          <View style={styles.avatarText}>
-            <Text style={{ fontSize: 40, fontWeight: 900 }}>{data.personalInfo.fullName.charAt(0)}</Text>
-          </View>
+        {data.styleConfig?.showPhoto !== false && (
+          data.personalInfo.photo ? (
+            <Image src={data.personalInfo.photo} style={[styles.avatar, { borderRadius: data.personalInfo.photoStyle === 'circle' ? 60 : 10 }]} />
+          ) : (
+            <View style={styles.avatarText}>
+              <Text style={{ fontSize: 40, fontWeight: 900 }}>{data.personalInfo.fullName.charAt(0)}</Text>
+            </View>
+          )
         )}
 
         <View style={{ marginBottom: 30 }}>
@@ -218,7 +220,7 @@ const Template2 = ({ data }: { data: ResumeData }) => {
   return (
     <View key="t2-root">
       <View key="t2-header" style={styles.header}>
-        {data.personalInfo.photo && <Image key="photo" src={data.personalInfo.photo} style={styles.avatar} />}
+        {data.styleConfig?.showPhoto !== false && data.personalInfo.photo && <Image key="photo" src={data.personalInfo.photo} style={styles.avatar} />}
         <View key="header-text" style={styles.headerText}>
           <Text style={styles.name}>{data.personalInfo.fullName}</Text>
           <Text style={styles.title}>{data.personalInfo.title}</Text>
@@ -364,7 +366,7 @@ const Template4 = ({ data }: { data: ResumeData }) => {
           <Text style={styles.jobTitle}>{data.personalInfo.title}</Text>
         </View>
 
-        {data.personalInfo.photo && (
+        {data.styleConfig?.showPhoto !== false && data.personalInfo.photo && (
           <View style={styles.photoWrapper}>
             <Image src={data.personalInfo.photo} style={styles.photo} />
           </View>
@@ -493,7 +495,7 @@ const Template5 = ({ data }: { data: ResumeData }) => {
           <Text style={styles.title}>{data.personalInfo.title}</Text>
         </View>
         <View style={styles.headerRight}>
-          {data.personalInfo.photo && (
+          {data.styleConfig?.showPhoto !== false && data.personalInfo.photo && (
             <View style={styles.photoWrapper}>
               <Image src={data.personalInfo.photo} style={styles.photo} />
             </View>
@@ -689,7 +691,7 @@ const Template6 = ({ data }: { data: ResumeData }) => {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        {data.personalInfo.photo && <Image src={data.personalInfo.photo} style={styles.photo} />}
+        {data.styleConfig?.showPhoto !== false && data.personalInfo.photo && <Image src={data.personalInfo.photo} style={styles.photo} />}
         <Text style={styles.name}>{data.personalInfo.fullName}</Text>
         <Text style={styles.title}>{data.personalInfo.title}</Text>
         <View style={styles.contactRow}>
@@ -775,7 +777,7 @@ const Template7 = ({ data }: { data: ResumeData }) => {
           <Text style={styles.name}>{data.personalInfo.fullName}</Text>
           <Text style={styles.title}>{data.personalInfo.title}</Text>
         </View>
-        {data.personalInfo.photo && (
+        {data.styleConfig?.showPhoto !== false && data.personalInfo.photo && (
           <Image src={data.personalInfo.photo} style={{ width: 80, height: 80, borderRadius: 40, border: '3pt solid white' }} />
         )}
       </View>
@@ -897,12 +899,14 @@ const Template8 = ({ data }: { data: ResumeData }) => {
       </Svg>
 
       <View style={styles.leftCol}>
-        {data.personalInfo.photo ? (
-          <Image src={data.personalInfo.photo} style={styles.avatar} />
-        ) : (
-          <View style={styles.avatarPlaceholder}>
-            <Text style={styles.avatarText}>{data.personalInfo.fullName ? data.personalInfo.fullName.charAt(0).toUpperCase() : 'CV'}</Text>
-          </View>
+        {data.styleConfig?.showPhoto !== false && (
+          data.personalInfo.photo ? (
+            <Image src={data.personalInfo.photo} style={styles.avatar} />
+          ) : (
+            <View style={styles.avatarPlaceholder}>
+              <Text style={styles.avatarText}>{data.personalInfo.fullName ? data.personalInfo.fullName.charAt(0).toUpperCase() : 'CV'}</Text>
+            </View>
+          )
         )}
 
         <View style={{ marginBottom: 20 }}>
@@ -1062,12 +1066,14 @@ const Template9 = ({ data }: { data: ResumeData }) => {
           <Text style={styles.name}>{data.personalInfo.fullName || 'Seu Nome'}</Text>
           <Text style={styles.title}>{data.personalInfo.title || 'Cargo Desejado'}</Text>
         </View>
-        {data.personalInfo.photo ? (
-          <Image src={data.personalInfo.photo} style={styles.avatar} />
-        ) : (
-          <View style={styles.avatarPlaceholder}>
-            <Text style={styles.avatarText}>{data.personalInfo.fullName ? data.personalInfo.fullName.charAt(0).toUpperCase() : 'CV'}</Text>
-          </View>
+        {data.styleConfig?.showPhoto !== false && (
+          data.personalInfo.photo ? (
+            <Image src={data.personalInfo.photo} style={styles.avatar} />
+          ) : (
+            <View style={styles.avatarPlaceholder}>
+              <Text style={styles.avatarText}>{data.personalInfo.fullName ? data.personalInfo.fullName.charAt(0).toUpperCase() : 'CV'}</Text>
+            </View>
+          )
         )}
       </View>
 
@@ -1252,17 +1258,19 @@ const Template10 = ({ data }: { data: ResumeData }) => {
             <Text style={styles.summary}>"{data.personalInfo.summary.replace(/\*/g, '')}"</Text>
           )}
         </View>
-        <View style={styles.avatarContainer}>
-          {data.personalInfo.photo ? (
-            <Image src={data.personalInfo.photo} style={styles.avatar} />
-          ) : (
-            <View style={styles.avatarPlaceholder}>
-              <Text style={styles.avatarText}>
-                {data.personalInfo.fullName ? data.personalInfo.fullName.charAt(0).toUpperCase() : 'CV'}
-              </Text>
-            </View>
-          )}
-        </View>
+        {data.styleConfig?.showPhoto !== false && (
+          <View style={styles.avatarContainer}>
+            {data.personalInfo.photo ? (
+              <Image src={data.personalInfo.photo} style={styles.avatar} />
+            ) : (
+              <View style={styles.avatarPlaceholder}>
+                <Text style={styles.avatarText}>
+                  {data.personalInfo.fullName ? data.personalInfo.fullName.charAt(0).toUpperCase() : 'CV'}
+                </Text>
+              </View>
+            )}
+          </View>
+        )}
       </View>
 
       <View style={styles.body}>
@@ -1448,14 +1456,16 @@ const Template11 = ({ data }: { data: ResumeData }) => {
       {/* Left Main Content Block */}
       <View style={styles.leftCol}>
         <View style={styles.profileHeader}>
-          {data.personalInfo.photo ? (
-            <Image src={data.personalInfo.photo} style={styles.avatar} />
-          ) : (
-            <View style={styles.avatarPlaceholder}>
-              <Text style={styles.avatarText}>
-                {data.personalInfo.fullName ? data.personalInfo.fullName.charAt(0).toUpperCase() : 'CV'}
-              </Text>
-            </View>
+          {data.styleConfig?.showPhoto !== false && (
+            data.personalInfo.photo ? (
+              <Image src={data.personalInfo.photo} style={styles.avatar} />
+            ) : (
+              <View style={styles.avatarPlaceholder}>
+                <Text style={styles.avatarText}>
+                  {data.personalInfo.fullName ? data.personalInfo.fullName.charAt(0).toUpperCase() : 'CV'}
+                </Text>
+              </View>
+            )
           )}
           <View style={styles.nameContainer}>
             <Text style={styles.name}>{data.personalInfo.fullName || 'Seu Nome'}</Text>
@@ -1627,14 +1637,16 @@ const Template12 = ({ data }: { data: ResumeData }) => {
     <View style={styles.container}>
       <View style={styles.topHairline} />
       <View style={styles.header}>
-        {data.personalInfo.photo ? (
-          <Image src={data.personalInfo.photo} style={styles.avatar} />
-        ) : (
-          <View style={styles.avatarPlaceholder}>
-            <Text style={styles.avatarText}>
-              {data.personalInfo.fullName ? data.personalInfo.fullName.charAt(0).toUpperCase() : 'CV'}
-            </Text>
-          </View>
+        {data.styleConfig?.showPhoto !== false && (
+          data.personalInfo.photo ? (
+            <Image src={data.personalInfo.photo} style={styles.avatar} />
+          ) : (
+            <View style={styles.avatarPlaceholder}>
+              <Text style={styles.avatarText}>
+                {data.personalInfo.fullName ? data.personalInfo.fullName.charAt(0).toUpperCase() : 'CV'}
+              </Text>
+            </View>
+          )
         )}
         <Text style={styles.name}>{data.personalInfo.fullName || 'Seu Nome'}</Text>
         <Text style={styles.title}>{data.personalInfo.title || 'Cargo Desejado'}</Text>
@@ -1799,14 +1811,16 @@ const Template13 = ({ data }: { data: ResumeData }) => {
           <Text style={styles.name}>{data.personalInfo.fullName || 'Seu Nome'}</Text>
           <Text style={styles.title}>{data.personalInfo.title || 'Cargo Desejado'}</Text>
         </View>
-        {data.personalInfo.photo ? (
-          <Image src={data.personalInfo.photo} style={styles.avatar} />
-        ) : (
-          <View style={styles.avatarPlaceholder}>
-            <Text style={styles.avatarText}>
-              {data.personalInfo.fullName ? data.personalInfo.fullName.charAt(0).toUpperCase() : 'CV'}
-            </Text>
-          </View>
+        {data.styleConfig?.showPhoto !== false && (
+          data.personalInfo.photo ? (
+            <Image src={data.personalInfo.photo} style={styles.avatar} />
+          ) : (
+            <View style={styles.avatarPlaceholder}>
+              <Text style={styles.avatarText}>
+                {data.personalInfo.fullName ? data.personalInfo.fullName.charAt(0).toUpperCase() : 'CV'}
+              </Text>
+            </View>
+          )
         )}
       </View>
       <View style={styles.accentLine} />

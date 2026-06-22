@@ -121,19 +121,19 @@ const extractTextFromPDF = async (file: File): Promise<{ text: string, image?: s
 // --- UI Components ---
 
 const Button = ({ children, onClick, variant = 'primary', className = '', disabled = false, icon: Icon }: any) => {
-  const base = "px-6 py-2.5 rounded-lg font-semibold transition-all flex items-center justify-center gap-2 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed text-sm";
+  const base = "px-6 py-2.5 rounded-2xl font-bold transition-all flex items-center justify-center gap-2 active:scale-[0.96] disabled:opacity-40 disabled:cursor-not-allowed text-xs tracking-wider uppercase";
   const variants: any = {
-    primary: "bg-primary-blue text-white shadow-sm hover:bg-primary-blue/90 border border-transparent shadow-primary-blue/10 h-11",
-    secondary: "bg-white text-text-main border border-border-main shadow-sm hover:bg-gray-50 h-11",
-    outline: "border border-primary-blue text-primary-blue hover:bg-soft-blue h-11",
-    ghost: "text-text-muted hover:text-text-main hover:bg-bg-main h-11",
-    danger: "bg-red-50 text-red-600 hover:bg-red-100 h-11 border border-red-100",
+    primary: "bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-xl shadow-blue-500/15 hover:from-blue-500 hover:to-indigo-500 border border-white/20 h-11",
+    secondary: "bg-white/30 backdrop-blur-md text-gray-800 border border-white/40 shadow-sm hover:bg-white/50 h-11",
+    outline: "border border-blue-500/30 text-blue-600 bg-white/20 backdrop-blur-md hover:bg-white/40 h-11",
+    ghost: "text-gray-500 hover:text-gray-800 hover:bg-white/30 h-11",
+    danger: "bg-red-500/10 backdrop-blur-md text-red-600 hover:bg-red-500/20 h-11 border border-red-500/15",
     none: ""
   };
 
   return (
     <button onClick={onClick} className={`${base} ${variants[variant] || ''} ${className}`} disabled={disabled}>
-      {Icon && <Icon size={16} />}
+      {Icon && <Icon size={14} />}
       {children}
     </button>
   );
@@ -141,9 +141,9 @@ const Button = ({ children, onClick, variant = 'primary', className = '', disabl
 
 const Input = ({ label, value, onChange, placeholder, type = 'text', icon: Icon, disabled = false, ...props }: any) => (
   <div className="flex flex-col gap-1.5 w-full">
-    {label && <label className="text-[11px] font-semibold text-gray-700 pl-1">{label}</label>}
+    {label && <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 pl-1">{label}</label>}
     <div className="relative group">
-      {Icon && <Icon className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 transition-colors group-focus-within:text-primary-blue" size={16} />}
+      {Icon && <Icon className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 transition-colors group-focus-within:text-blue-500" size={14} />}
       <input
         {...props}
         type={type}
@@ -151,7 +151,7 @@ const Input = ({ label, value, onChange, placeholder, type = 'text', icon: Icon,
         onChange={(e) => onChange?.(e.target.value)}
         placeholder={placeholder}
         disabled={disabled}
-        className={`w-full bg-white border border-gray-200 rounded-lg px-4 h-11 text-sm focus:outline-none focus:ring-2 focus:ring-primary-blue/20 focus:border-primary-blue transition-all shadow-sm ${Icon ? 'pl-10' : ''} ${disabled ? 'opacity-50 bg-gray-50' : ''}`}
+        className={`w-full bg-white/35 backdrop-blur-md border border-white/40 rounded-xl px-4 h-11 text-sm focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500/60 transition-all shadow-sm ${Icon ? 'pl-9' : ''} ${disabled ? 'opacity-40 bg-gray-50/50' : ''}`}
       />
     </div>
   </div>
@@ -160,12 +160,12 @@ const Input = ({ label, value, onChange, placeholder, type = 'text', icon: Icon,
 const TextArea = ({ label, value, onChange, placeholder, onOptimize, isOptimizing }: any) => (
   <div className="flex flex-col gap-1.5 w-full relative">
     <div className="flex justify-between items-center px-1">
-      {label && <label className="text-[11px] font-semibold text-gray-700">{label}</label>}
+      {label && <label className="text-[10px] font-black uppercase tracking-widest text-slate-500">{label}</label>}
       {onOptimize && (
         <button 
           onClick={onOptimize}
           disabled={isOptimizing}
-          className={`text-[10px] font-bold text-primary-blue flex items-center gap-1.5 transition-all bg-soft-blue px-2.5 py-1 rounded-md border border-primary-blue/10 ${isOptimizing ? 'opacity-80 scale-95 cursor-wait' : 'hover:opacity-80 hover:bg-primary-blue/10'}`}
+          className={`text-[9px] font-bold text-blue-600 flex items-center gap-1.5 transition-all bg-white/45 backdrop-blur-md px-2.5 py-1 rounded-lg border border-white/50 ${isOptimizing ? 'opacity-80 scale-95 cursor-wait' : 'hover:opacity-85 hover:bg-white/60'}`}
         >
           {isOptimizing ? (
             <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: 'linear' }}>
@@ -174,7 +174,7 @@ const TextArea = ({ label, value, onChange, placeholder, onOptimize, isOptimizin
           ) : (
             <Plus size={10} />
           )}
-          {isOptimizing ? 'OTIMIZANDO...' : 'MELHORAR TEXTO'}
+          {isOptimizing ? 'OTIMIZANDO...' : 'MELHORAR COM IA'}
         </button>
       )}
     </div>
@@ -185,12 +185,12 @@ const TextArea = ({ label, value, onChange, placeholder, onOptimize, isOptimizin
         placeholder={placeholder}
         disabled={isOptimizing}
         rows={4}
-        className={`w-full bg-white border border-gray-200 rounded-lg p-3.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-blue/20 focus:border-primary-blue transition-all resize-y shadow-sm min-h-[140px] ${isOptimizing ? 'opacity-50' : ''}`}
+        className={`w-full bg-white/35 backdrop-blur-md border border-white/40 rounded-xl p-3.5 text-sm focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500/60 transition-all resize-y shadow-sm min-h-[140px] ${isOptimizing ? 'opacity-40' : ''}`}
       />
       {isOptimizing && (
-        <div className="absolute inset-0 bg-white/40 flex items-center justify-center rounded-lg backdrop-blur-[1px] animate-pulse">
-          <div className="w-1/2 h-1 bg-primary-blue/20 rounded-full overflow-hidden">
-             <motion.div className="h-full bg-primary-blue" initial={{ width: "0%" }} animate={{ width: "100%" }} transition={{ repeat: Infinity, duration: 1.5 }} />
+        <div className="absolute inset-0 bg-white/20 flex items-center justify-center rounded-xl backdrop-blur-sm animate-pulse">
+          <div className="w-1/2 h-1 bg-blue-500/20 rounded-full overflow-hidden">
+             <motion.div className="h-full bg-blue-500" initial={{ width: "0%" }} animate={{ width: "100%" }} transition={{ repeat: Infinity, duration: 1.5 }} />
           </div>
         </div>
       )}
@@ -4769,25 +4769,8 @@ export default function App() {
     }
   };
 
-  const handleLogoClick = async () => {
-    if (!user || user.isAnonymous) {
-      try {
-        await loginWithGoogle();
-      } catch (err) {
-        console.error("Erro no login pelo logo:", err);
-      }
-    } else {
-      const adminEmails = [
-        'ronalmaferreira04@icloud.com',
-        'sumodemanga50@gmail.com',
-        'm26101342@gmail.com'
-      ];
-      if (user.email && adminEmails.includes(user.email.toLowerCase())) {
-        setView('admin');
-      } else {
-        alert(`Olá ${user.displayName || user.email}, você está conectado com uma conta que não possui permissão de administrador.`);
-      }
-    }
+  const handleLogoClick = () => {
+    setView('landing');
   };
   const [activeStep, setActiveStep] = useState(0);
   const [originalResumeData, setOriginalResumeData] = useState<ResumeData | null>(() => {
