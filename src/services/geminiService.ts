@@ -445,11 +445,22 @@ export async function parseResumeFromText(rawText: string, imageData?: string): 
 }
 
 export async function translateResumeToEnglish(resumeData: any): Promise<any> {
-  const cacheKey = JSON.stringify(resumeData);
+  const dataToTranslate = { ...resumeData };
+  if (dataToTranslate.personalInfo) {
+    dataToTranslate.personalInfo = { ...dataToTranslate.personalInfo };
+    delete dataToTranslate.personalInfo.photo; // Remove photo base64 to avoid huge payload
+  }
+
+  const cacheKey = JSON.stringify(dataToTranslate);
   const cachedVal = getLocalCache("translate_en", cacheKey);
   if (cachedVal) {
     try {
-      return JSON.parse(cachedVal);
+      const parsedCached = JSON.parse(cachedVal);
+      // Restore photo
+      if (parsedCached.personalInfo && resumeData.personalInfo?.photo) {
+          parsedCached.personalInfo.photo = resumeData.personalInfo.photo;
+      }
+      return parsedCached;
     } catch (e) {}
   }
 
@@ -457,7 +468,7 @@ export async function translateResumeToEnglish(resumeData: any): Promise<any> {
     Você é um tradutor especialista de currículos e consultor corporativo.
     Traduza o currículo estruturado abaixo EXATAMENTE no mesmo esquema JSON para Inglês Profissional (US).
 
-    ${JSON.stringify(resumeData, null, 2)}
+    ${JSON.stringify(dataToTranslate, null, 2)}
 
     INSTRUÇÕES:
     1. Traduza tudo (cargos, descrições usando verbos como Spearheaded/Managed no passado se concluído).
@@ -482,8 +493,9 @@ export async function translateResumeToEnglish(resumeData: any): Promise<any> {
 
     setLocalCache("translate_en", cacheKey, JSON.stringify(finalData));
     return finalData;
-  } catch (error) {
-    throw new Error("Formatação/Tradução falhou no Gemini");
+  } catch (error: any) {
+    console.error("Translation error details:", error);
+    throw new Error("Formatação/Tradução falhou no Gemini: " + (error.message || error));
   }
 }
 
