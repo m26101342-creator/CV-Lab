@@ -6544,17 +6544,19 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
                    className="w-full h-14 bg-gradient-to-r from-primary-blue to-blue-700 text-white hover:from-blue-700 hover:to-blue-800 font-bold rounded-2xl text-xs uppercase tracking-widest shadow-lg shadow-blue-500/20"
                    onClick={async () => {
                      try {
-                       await loginWithGoogle();
+                       const loggedInUser = await loginWithGoogle();
                        // Check if the newly logged in user is admin
                        const adminEmails = [
                          'ronalmaferreira04@icloud.com',
                          'sumodemanga50@gmail.com',
                          'm26101342@gmail.com'
                        ];
-                       const u = auth?.currentUser;
+                       const u = loggedInUser || auth?.currentUser;
                        if (u && u.email && adminEmails.includes(u.email.toLowerCase())) {
                          setShowAuthModalAlert(false);
                          _setView('editor');
+                       } else if (u && u.email) {
+                           alert("O seu email (" + u.email + ") não tem permissões de administrador. Acesso negado.");
                        }
                      } catch(ecc) {
                        console.error(ecc);

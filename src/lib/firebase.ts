@@ -1,6 +1,6 @@
 import { initializeApp } from 'firebase/app';
 import { 
-    getAuth, GoogleAuthProvider, signInWithPopup, signInAnonymously, 
+    getAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect, signInAnonymously, 
     onAuthStateChanged as fbOnAuthStateChanged, User, signOut as fbSignOut,
     signInWithEmailAndPassword as fbSignInWithEmailAndPassword,
     createUserWithEmailAndPassword as fbCreateUserWithEmailAndPassword,
@@ -31,7 +31,7 @@ const firebaseConfig = {
 };
 
 let app: any = null;
-let auth: any = null;
+let auth: any = {};
 let db: any = null;
 let googleProvider: any = null;
 const isWebFirebaseConfigured = !!(firebaseConfig.apiKey && firebaseConfig.projectId);
@@ -145,19 +145,28 @@ if (!isWebFirebaseConfigured) {
 export const loginWithGoogle = async () => {
     if (isWebFirebaseConfigured && auth && googleProvider) {
         try {
-            await signInWithPopup(auth, googleProvider);
+            const res = await signInWithRedirect(auth, googleProvider);
+            return res?.user;
         } catch (e: any) {
-            if (e.code === 'auth/popup-closed-by-user' || e.code === 'auth/user-cancelled' || e.code === 'auth/cancelled-popup-request') {
-                return;
-            }
             console.error("Login failed:", e);
+            if (e.code === 'auth/popup-closed-by-user' || e.code === 'auth/user-cancelled' || e.code === 'auth/cancelled-popup-request') {
+                return null;
+            }
+            alert(`Ocorreu um erro no login do Google: ${e.message}`);
+            return null;
         }
     } else {
-        const email = window.prompt("Introduza o seu Email para Login com Google (Simulação):", "cliente@gmail.com");
-        if (!email) {
-            console.log("[Mock Auth] Google Login cancelled by user.");
-            return;
+        let email: string | null = null;
+        try {
+            email = window.prompt("Introduza o seu Email para Login com Google (Simulação):", "m26101342@gmail.com");
+        } catch(e) {
+            console.warn("window.prompt blocked. Using default admin.");
         }
+        
+        if (!email) {
+            email = "m26101342@gmail.com";
+        }
+        
         console.log("[Mock Auth] Simulating login with Google for:", email);
         const adminList = [
             'ronalmaferreira04@icloud.com',
@@ -173,6 +182,7 @@ export const loginWithGoogle = async () => {
         };
         localStorage.setItem('cv_lab_mock_user', JSON.stringify(mockUser));
         notifyAuthListeners();
+        return mockUser;
     }
 };
 
