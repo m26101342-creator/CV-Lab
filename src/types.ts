@@ -61,7 +61,7 @@ export interface ResumeData {
   sectionTitles?: Partial<Record<'experience' | 'education' | 'skills' | 'languages' | 'certifications' | 'interests' | 'summary', string>>;
   themeColor?: string;
   styleConfig?: ResumeStyleConfig;
-  language?: 'pt' | 'en';
+  language?: 'pt' | 'en' | 'es';
 }
 
 export interface CustomSectionItem {

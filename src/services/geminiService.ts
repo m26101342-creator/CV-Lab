@@ -505,6 +505,96 @@ export async function translateResumeToEnglish(resumeData: any): Promise<any> {
   }
 }
 
+export async function translateResumeToSpanish(resumeData: any): Promise<any> {
+  const dataToTranslate = { ...resumeData };
+  if (dataToTranslate.personalInfo) {
+    dataToTranslate.personalInfo = { ...dataToTranslate.personalInfo };
+    delete dataToTranslate.personalInfo.photo; // Remove photo base64 to avoid huge payload
+  }
+
+  const cacheKey = JSON.stringify(dataToTranslate);
+  const cachedVal = getLocalCache("translate_es", cacheKey);
+  if (cachedVal) {
+    try {
+      const parsedCached = JSON.parse(cachedVal);
+      // Restore photo
+      if (parsedCached.personalInfo && resumeData.personalInfo?.photo) {
+          parsedCached.personalInfo.photo = resumeData.personalInfo.photo;
+      }
+      return parsedCached;
+    } catch (e) {}
+  }
+
+  const prompt = `
+    Você é um tradutor especialista de currículos e consultor corporativo.
+    Traduza o currículo estruturado abaixo EXATAMENTE no mesmo esquema JSON para Espanhol Profissional.
+
+    ${JSON.stringify(dataToTranslate, null, 2)}
+
+    INSTRUÇÕES:
+    1. Traduza todo o conteúdo recebido para Espanhol Profissional. 
+    2. CRIE/PREENCHA o objeto "sectionTitles" com as traduções dos títulos padrão. Use: {"experience": "Experiencia Profesional", "education": "Educación", "skills": "Habilidades", "languages": "Idiomas", "certifications": "Certificaciones", "interests": "Intereses", "summary": "Perfil"}.
+    3. Retorne "language": "es" na raiz do JSON.
+    4. Preserve TUDO o resto exato (arrays, ids, themeColor, etc).
+    5. Retorne APENAS o JSON puro.
+  `;
+
+  try {
+    const rawResult = await generateContentDirect([{ role: 'user', parts: [{ text: prompt }] }], true, 0.1);
+    const parsed = extractJSON(rawResult);
+
+    const finalData = {
+      ...resumeData,
+      ...parsed,
+      sectionTitles: {
+          ...parsed.sectionTitles
+      },
+      language: 'es',
+      personalInfo: {
+        ...resumeData.personalInfo,
+        ...(parsed.personalInfo || {}),
+        photo: resumeData.personalInfo?.photo,
+      },
+      themeColor: resumeData.themeColor
+    };
+
+    setLocalCache("translate_es", cacheKey, JSON.stringify(finalData));
+    return finalData;
+  } catch (error: any) {
+    console.error("Translation error details:", error);
+    throw new Error("Formatação/Tradução falhou no Gemini: " + (error.message || error));
+  }
+}
+
+export async function translateLetterToSpanish(text: string): Promise<string> {
+  if (!text || text.trim().length === 0) return "";
+  const cacheKey = `letter_es_${generateHash(text)}`;
+  const cachedVal = getLocalCache("translate_letter_es", cacheKey);
+  if (cachedVal) return cachedVal;
+
+  const prompt = `
+    Você é um tradutor especialista de cartas de apresentação empresariais de Português para Espanhol Profissional.
+    Traduza o texto abaixo mantendo o mesmo tom formal, polido e profissional.
+    
+    TEXTO ORIGINAL:
+    "${text}"
+
+    INSTRUÇÕES:
+    1. Retorne APENAS o texto traduzido final, sem explicações, comentários adicionais ou notas de tradutor.
+    2. Não inclua marcas de formatação extras.
+  `;
+
+  try {
+    const rawText = await generateContentDirect([{ role: 'user', parts: [{ text: prompt }] }], false, 0.3);
+    const result = rawText.trim().replace(/\*/g, '');
+    setLocalCache("translate_letter_es", cacheKey, result);
+    return result;
+  } catch (err) {
+    console.error("Letter translation failed:", err);
+    return text; // Fallback to original
+  }
+}
+
 export async function translateLetterToEnglish(text: string): Promise<string> {
   if (!text || text.trim().length === 0) return "";
   const cacheKey = `letter_en_${generateHash(text)}`;

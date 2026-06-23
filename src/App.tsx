@@ -44,11 +44,13 @@ import {
   Video,
   Type,
   Grid,
-  Scissors
+  Scissors,
+  Minimize2,
+  Maximize2
 } from 'lucide-react';
 import { AdSenseUnit } from './components/AdSenseUnit';
 import { ResumeData, INITIAL_RESUME_DATA, TemplateType, ResumeStyleConfig } from './types.ts';
-import { optimizeResumeText, generateCoverLetter, generateFullResume, parseResumeFromText, translateResumeToEnglish, translateLetterToEnglish, alterResumeInformation } from './services/geminiService.ts';
+import { optimizeResumeText, generateCoverLetter, generateFullResume, parseResumeFromText, translateResumeToEnglish, translateLetterToEnglish, translateResumeToSpanish, translateLetterToSpanish, alterResumeInformation } from './services/geminiService.ts';
 import { pdf } from '@react-pdf/renderer';
 import { PdfDocument } from './pdf/PdfDocument';
 import * as pdfjsLib from 'pdfjs-dist';
@@ -231,6 +233,18 @@ const getSectionTitle = (data: ResumeData, key: keyof NonNullable<ResumeData['se
       summary: "Profile"
     };
     return enDefaults[key] || defaultTitle;
+  }
+  if (data.language === 'es') {
+    const esDefaults: Record<string, string> = {
+      experience: "Experiencia Profesional",
+      education: "Educación",
+      skills: "Habilidades",
+      languages: "Idiomas",
+      certifications: "Certificaciones",
+      interests: "Intereses",
+      summary: "Perfil"
+    };
+    return esDefaults[key] || defaultTitle;
   }
   return defaultTitle;
 };
@@ -1616,6 +1630,146 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
 
   const wasDraggingRef = React.useRef(false);
 
+  const touchStateRef = React.useRef<{
+    initialDist: number | null;
+    initialFontSize: number;
+    initialTitleSize: number;
+    initialPhotoSize: number;
+    initialMargins: number;
+    targetType: string | null;
+  }>({
+    initialDist: null,
+    initialFontSize: 13,
+    initialTitleSize: 26,
+    initialPhotoSize: 100,
+    initialMargins: 30,
+    targetType: null,
+  });
+
+  const handleTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
+    if (e.touches.length === 2) {
+      const dist = Math.hypot(
+        e.touches[0].clientX - e.touches[1].clientX,
+        e.touches[0].clientY - e.touches[1].clientY
+      );
+      
+      const target = e.target as HTMLElement;
+      const container = document.getElementById('resume-content');
+      let targetType = 'fontSize';
+      if (container) {
+        const selectable = findSelectableElement(target, container);
+        if (selectable) {
+          if (selectable.type === 'personalInfo' || selectable.type === 'name') {
+            targetType = 'titleSize';
+          } else if (selectable.type === 'avatar') {
+            targetType = 'photoSize';
+          } else {
+            targetType = 'fontSize';
+          }
+        } else {
+          targetType = 'margins';
+        }
+      }
+
+      touchStateRef.current = {
+        initialDist: dist,
+        initialFontSize: style.fontSize || 13,
+        initialTitleSize: style.titleSize || 26,
+        initialPhotoSize: data.personalInfo.photoSize || 100,
+        initialMargins: style.margins || 30,
+        targetType
+      };
+    }
+  };
+
+  const handleTouchMove = (e: React.TouchEvent<HTMLDivElement>) => {
+    if (e.touches.length === 2 && touchStateRef.current.initialDist !== null) {
+      if (e.cancelable) e.preventDefault();
+      const currentDist = Math.hypot(
+        e.touches[0].clientX - e.touches[1].clientX,
+        e.touches[0].clientY - e.touches[1].clientY
+      );
+      
+      const factor = currentDist / touchStateRef.current.initialDist;
+      const { targetType, initialFontSize, initialTitleSize, initialPhotoSize, initialMargins } = touchStateRef.current;
+
+      if (onChange) {
+        if (targetType === 'titleSize') {
+          const newSize = Math.max(16, Math.min(60, Math.round(initialTitleSize * factor)));
+          onChange((prev: any) => ({
+            ...prev,
+            styleConfig: { ...(prev.styleConfig || {}), titleSize: newSize }
+          }));
+        } else if (targetType === 'photoSize') {
+          const newSize = Math.max(40, Math.min(220, Math.round(initialPhotoSize * factor)));
+          onChange((prev: any) => ({
+            ...prev,
+            personalInfo: { ...prev.personalInfo, photoSize: newSize }
+          }));
+        } else if (targetType === 'margins') {
+          const newSize = Math.max(10, Math.min(80, Math.round(initialMargins * factor)));
+          onChange((prev: any) => ({
+            ...prev,
+            styleConfig: { ...(prev.styleConfig || {}), margins: newSize }
+          }));
+        } else {
+          const newSize = Math.max(8, Math.min(24, Number((initialFontSize * factor).toFixed(1))));
+          onChange((prev: any) => ({
+            ...prev,
+            styleConfig: { ...(prev.styleConfig || {}), fontSize: newSize }
+          }));
+        }
+      }
+    }
+  };
+
+  const handleTouchEnd = () => {
+    touchStateRef.current.initialDist = null;
+  };
+
+  React.useEffect(() => {
+    const el = document.getElementById('resume-content');
+    if (!el) return;
+
+    const onWheel = (e: WheelEvent) => {
+      if (e.ctrlKey) {
+        e.preventDefault();
+        const factor = e.deltaY < 0 ? 1.05 : 0.95;
+        const target = e.target as HTMLElement;
+        const container = document.getElementById('resume-content');
+        if (container && onChange) {
+          const selectable = findSelectableElement(target, container);
+          if (selectable) {
+            if (selectable.type === 'personalInfo' || selectable.type === 'name') {
+              onChange((prev: any) => {
+                const currentSize = prev.styleConfig?.titleSize || 26;
+                const newSize = Math.max(16, Math.min(60, Math.round(currentSize * factor)));
+                return { ...prev, styleConfig: { ...(prev.styleConfig || {}), titleSize: newSize } };
+              });
+            } else if (selectable.type === 'avatar') {
+              onChange((prev: any) => {
+                const currentSize = prev.personalInfo.photoSize || 100;
+                const newSize = Math.max(40, Math.min(220, Math.round(currentSize * factor)));
+                return { ...prev, personalInfo: { ...prev.personalInfo, photoSize: newSize } };
+              });
+            } else {
+              onChange((prev: any) => {
+                const currentSize = prev.styleConfig?.fontSize || 13;
+                const newSize = Math.max(8, Math.min(24, Number((currentSize * factor).toFixed(1))));
+                return { ...prev, styleConfig: { ...(prev.styleConfig || {}), fontSize: newSize } };
+              });
+            }
+          }
+        }
+      }
+    };
+
+    el.addEventListener('wheel', onWheel, { passive: false });
+    return () => {
+      el.removeEventListener('wheel', onWheel);
+    };
+  }, [onChange, style]);
+
   // Local state for direct touch and drag-to-resize/reorder action
   const [dragState, setDragState] = React.useState<{
     active: boolean;
@@ -2285,6 +2439,9 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
       onClick={handlePreviewClick}
       onMouseMove={handlePreviewMouseMove}
       onMouseLeave={() => setHoveredElement(null)}
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
     >
       {/* Absolute Overlays for Interactive Selection & Control */}
       {onChange && hoveredElement && (!selectedElement || selectedElement.id !== hoveredElement.id) && (
@@ -2317,6 +2474,105 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
               height: `${selectedElement.rect.height + 8}px`,
             }}
           />
+
+          {/* Sizing Controller Floating Bar */}
+          <div
+            data-html2canvas-ignore="true"
+            className="absolute z-50 bg-white border border-gray-200 shadow-2xl rounded-full px-2.5 py-1.5 flex items-center gap-1.5 select-none pointer-events-auto"
+            style={{
+              top: `${selectedElement.rect.top + selectedElement.rect.height + 12 < 1122 ? selectedElement.rect.top + selectedElement.rect.height + 12 : selectedElement.rect.top - 50}px`,
+              left: `${Math.max(8, Math.min(794 - 240, selectedElement.rect.left + (selectedElement.rect.width / 2) - 100))}px`,
+            }}
+          >
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                if (selectedElement.type === 'personalInfo' || selectedElement.type === 'name') {
+                  handleAdjustStyle('titleSize', -1);
+                } else if (selectedElement.type === 'avatar') {
+                  if (onChange) {
+                    onChange((prev: any) => ({
+                      ...prev,
+                      personalInfo: {
+                        ...prev.personalInfo,
+                        photoSize: Math.max(40, (prev.personalInfo.photoSize || 100) - 5)
+                      }
+                    }));
+                  }
+                } else {
+                  handleAdjustStyle('fontSize', -0.5);
+                }
+              }}
+              className="w-7 h-7 rounded-full bg-slate-50 hover:bg-slate-100 text-slate-800 flex items-center justify-center border border-gray-200 shadow-sm active:scale-90 transition-all cursor-pointer font-bold text-xs"
+              title="Diminuir"
+            >
+              <Minus size={12} />
+            </button>
+            <span className="text-[10px] font-mono font-black text-slate-700 min-w-[36px] text-center">
+              {(() => {
+                if (selectedElement.type === 'personalInfo' || selectedElement.type === 'name') {
+                  return `${style.titleSize || 26}px`;
+                } else if (selectedElement.type === 'avatar') {
+                  return `${data.personalInfo.photoSize || 100}px`;
+                } else {
+                  return `${(style.fontSize || 13).toFixed(1)}px`;
+                }
+              })()}
+            </span>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                if (selectedElement.type === 'personalInfo' || selectedElement.type === 'name') {
+                  handleAdjustStyle('titleSize', 1);
+                } else if (selectedElement.type === 'avatar') {
+                  if (onChange) {
+                    onChange((prev: any) => ({
+                      ...prev,
+                      personalInfo: {
+                        ...prev.personalInfo,
+                        photoSize: Math.min(220, (prev.personalInfo.photoSize || 100) + 5)
+                      }
+                    }));
+                  }
+                } else {
+                  handleAdjustStyle('fontSize', 0.5);
+                }
+              }}
+              className="w-7 h-7 rounded-full bg-slate-50 hover:bg-slate-100 text-slate-800 flex items-center justify-center border border-gray-200 shadow-sm active:scale-90 transition-all cursor-pointer font-bold text-xs"
+              title="Aumentar"
+            >
+              <Plus size={12} />
+            </button>
+
+            {['experience', 'education', 'skills', 'contact', 'custom'].includes(selectedElement.type) && (
+              <>
+                <div className="w-[1px] h-3.5 bg-gray-200 mx-0.5" />
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleAdjustStyle('itemSpacing', -1);
+                  }}
+                  className="w-7 h-7 rounded-full bg-slate-50 hover:bg-slate-100 text-indigo-600 flex items-center justify-center border border-indigo-100 shadow-sm active:scale-90 transition-all cursor-pointer"
+                  title="Diminuir Espaçamento"
+                >
+                  <Minimize2 size={11} />
+                </button>
+                <span className="text-[9px] font-mono font-black text-indigo-600 min-w-[28px] text-center" title="Espaçamento">
+                  {style.itemSpacing || 10}px
+                </span>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleAdjustStyle('itemSpacing', 1);
+                  }}
+                  className="w-7 h-7 rounded-full bg-slate-50 hover:bg-slate-100 text-indigo-600 flex items-center justify-center border border-indigo-100 shadow-sm active:scale-90 transition-all cursor-pointer"
+                  title="Aumentar Espaçamento"
+                >
+                  <Maximize2 size={11} />
+                </button>
+              </>
+            )}
+          </div>
           
           {/* Micro floating editor pill - compact, glassy, and completely responsive */}
           <div
@@ -5614,6 +5870,52 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
     }
   };
 
+  const handleTranslateToSpanish = async () => {
+    if (!resumeData.personalInfo.fullName && (resumeData.experience || []).length === 0 && (resumeData.education || []).length === 0 && (resumeData.skills || []).length === 0) {
+      alert("O seu currículo está vazio. Preencha algumas informações antes de traduzir!");
+      return;
+    }
+    
+    const confirmTranslate = window.confirm("Pretende mesmo traduzir o seu currículo para o Espanhol de forma automática usando Inteligência Artificial?");
+    if (!confirmTranslate) return;
+
+    setIsTranslating(true);
+    setLoading(true);
+
+    // Guardar cópia de segurança antes de traduzir
+    const backupResume = { ...resumeData };
+    const backupLetter = generatedLetter;
+    setOriginalResumeData(backupResume);
+    setOriginalLetter(backupLetter);
+    localStorage.setItem('cv_lab_original_data', JSON.stringify(backupResume));
+    localStorage.setItem('cv_lab_original_letter', backupLetter);
+
+    try {
+      const translatedData = await translateResumeToSpanish(resumeData);
+      setResumeData(translatedData);
+      localStorage.setItem('cv_lab_data', JSON.stringify(translatedData));
+
+      // Se houver uma carta gerada, traduzi-la também para Espanhol
+      if (backupLetter && backupLetter.trim().length > 10) {
+        try {
+          const translatedLetter = await translateLetterToSpanish(backupLetter);
+          setGeneratedLetter(translatedLetter);
+          localStorage.setItem('cv_lab_letter', translatedLetter);
+        } catch (letterErr) {
+          console.warn("Falha ao traduzir a carta de apresentação:", letterErr);
+        }
+      }
+
+      alert("O seu currículo (e carta de apresentação) foram traduzidos com sucesso para a versão Espanhola!");
+    } catch (error: any) {
+      console.error(error);
+      alert("Houve um erro técnico ao traduzir o currículo. Verifique se a sua chave API do Gemini está configurada.");
+    } finally {
+      setIsTranslating(false);
+      setLoading(false);
+    }
+  };
+
   const handleRevertToOriginal = () => {
     if (!originalResumeData) {
       alert("Não foi detetada nenhuma versão original guardada.");
@@ -6672,6 +6974,15 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
                   >
                     <Languages size={14} className={isTranslating ? "animate-spin" : ""} />
                     <span>{isTranslating ? "Traduzindo..." : "Versão Inglesa (IA)"}</span>
+                  </button>
+                  <button
+                    onClick={handleTranslateToSpanish}
+                    disabled={isTranslating}
+                    title="Traduzir Currículo para Espanhol com IA"
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-700 font-bold rounded-xl text-xs transition-all border border-amber-100/30 disabled:opacity-50 select-none shadow-sm cursor-pointer"
+                  >
+                    <Languages size={14} className={isTranslating ? "animate-spin" : ""} />
+                    <span>{isTranslating ? "Traduzindo..." : "Versão Espanhola (IA)"}</span>
                   </button>
                   <button
                     onClick={handleClearResumeData}
