@@ -5040,7 +5040,17 @@ export default function App() {
   };
 
   const handleLogoClick = () => {
-    setView('landing');
+    const adminEmails = [
+      'ronalmaferreira04@icloud.com',
+      'sumodemanga50@gmail.com',
+      'm26101342@gmail.com'
+    ];
+    const hasAccess = user && user.email && adminEmails.includes(user.email.toLowerCase());
+    if (hasAccess) {
+      setView('editor');
+    } else {
+      setShowAuthModalAlert(true);
+    }
   };
   const [activeStep, setActiveStep] = useState(0);
   const [originalResumeData, setOriginalResumeData] = useState<ResumeData | null>(() => {
