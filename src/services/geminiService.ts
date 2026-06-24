@@ -30,7 +30,14 @@ const getApiKey = (): string => {
   return (import.meta as any).env.VITE_GEMINI_API_KEY || "";
 };
 
-const GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent";
+const PRIMARY_MODEL = "gemini-2.5-flash";
+const FALLBACK_MODELS = [
+  "gemini-3.5-flash",
+  "gemini-3.1-flash-lite",
+  "gemini-2.5-pro"
+];
+
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 async function generateContentDirect(contents: any, jsonFormat: boolean = false, temperature: number = 0.6) {
   const apiKey = getApiKey();
@@ -49,27 +56,80 @@ async function generateContentDirect(contents: any, jsonFormat: boolean = false,
     payload.generationConfig.responseMimeType = "application/json";
   }
 
-  const response = await fetch(`${GEMINI_URL}?key=${apiKey}`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(payload)
-  });
+  const modelsToTry = [PRIMARY_MODEL, ...FALLBACK_MODELS];
+  let lastError: any = null;
 
-  if (!response.ok) {
-    const errObj = await response.json().catch(() => ({}));
-    throw new Error(errObj?.error?.message || `HTTP Error: ${response.status}`);
+  for (const model of modelsToTry) {
+    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
+    const maxRetries = 3;
+    
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        const response = await fetch(`${geminiUrl}?key=${apiKey}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(payload)
+        });
+
+        if (!response.ok) {
+          const errObj = await response.json().catch(() => ({}));
+          const errMsg = errObj?.error?.message || `HTTP Error: ${response.status}`;
+          
+          const isTransient = 
+            response.status === 429 || 
+            response.status >= 500 || 
+            errMsg.toLowerCase().includes("demand") || 
+            errMsg.toLowerCase().includes("busy") || 
+            errMsg.toLowerCase().includes("quota") || 
+            errMsg.toLowerCase().includes("limit") || 
+            errMsg.toLowerCase().includes("temporary");
+
+          if (isTransient && attempt < maxRetries) {
+            const backoffTime = attempt * 1500;
+            console.warn(`[Gemini API] Model ${model} is busy/limited. Attempt ${attempt}/${maxRetries} failed with: "${errMsg}". Retrying in ${backoffTime}ms...`);
+            await sleep(backoffTime);
+            continue;
+          }
+          
+          throw new Error(errMsg);
+        }
+
+        const data = await response.json();
+        const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+        
+        if (!rawText) {
+          throw new Error("Empty response from AI engine");
+        }
+
+        return rawText;
+
+      } catch (error: any) {
+        lastError = error;
+        const errorMsg = error?.message || String(error);
+        
+        console.warn(`[Gemini API] Failed call to ${model} on attempt ${attempt}: ${errorMsg}`);
+        
+        const isTransientErr = 
+          errorMsg.toLowerCase().includes("demand") || 
+          errorMsg.toLowerCase().includes("temporary") || 
+          errorMsg.toLowerCase().includes("limit") ||
+          errorMsg.toLowerCase().includes("busy") ||
+          errorMsg.toLowerCase().includes("fetch");
+
+        if (attempt < maxRetries && isTransientErr) {
+          const backoffTime = attempt * 1500;
+          await sleep(backoffTime);
+          continue;
+        }
+        
+        break; 
+      }
+    }
   }
 
-  const data = await response.json();
-  const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-  
-  if (!rawText) {
-    throw new Error("Empty response from AI engine");
-  }
-
-  return rawText;
+  throw new Error(lastError?.message || "Todas as tentativas de comunicação com o modelo Gemini falharam devido a alta demanda.");
 }
 
 // Extract JSON from text safely

@@ -6306,6 +6306,210 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
              <p className="text-[9px] text-text-muted opacity-40 uppercase tracking-widest mt-2">© 2026 CV LAB. Todos os direitos reservados para Lab Digital.</p>
            </div>
         </motion.footer>
+
+         {/* Auth Required Modal */}
+         <AnimatePresence>
+           {showAuthModal && (
+             <div className="fixed inset-0 bg-deep-blue/80 backdrop-blur-sm z-[9999] flex items-center justify-center p-4">
+               <motion.div 
+                  initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                  className="bg-white rounded-[40px] shadow-2xl p-10 max-w-sm w-full relative overflow-hidden text-center space-y-6"
+               >
+                  <button onClick={() => setShowAuthModal(false)} className="absolute top-6 right-6 text-gray-400 hover:text-gray-600 bg-gray-50 rounded-full p-2">
+                    <X size={20} />
+                  </button>
+                  
+                  <div className="w-16 h-16 bg-primary-blue/10 text-primary-blue flex items-center justify-center rounded-3xl mx-auto">
+                    <User size={32} />
+                  </div>
+                  
+                  <div className="space-y-1">
+                    <h2 className="text-xl font-black text-deep-blue tracking-tight">{isAuthModeLogin ? "Fazer Login" : "Criar Conta"}</h2>
+                    <p className="text-xs text-text-muted font-medium leading-relaxed">Guarde seu progresso na nuvem e aceda de qualquer dispositivo.</p>
+                  </div>
+                  
+                  <div className="space-y-3 pt-2 text-left">
+                     {authError && <p className="text-red-500 text-[10px] text-center font-bold bg-red-50 p-2 rounded-lg">{authError}</p>}
+                     {!isAuthModeLogin && (
+                       <div>
+                         <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest pl-1 mb-1 block">Nome</label>
+                         <input type="text" value={authName} onChange={e => setAuthName(e.target.value)} className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary-blue/50" placeholder="Seu nome" />
+                       </div>
+                     )}
+                     <div>
+                       <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest pl-1 mb-1 block">Email</label>
+                       <input type="email" value={authEmail} onChange={e => setAuthEmail(e.target.value)} className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary-blue/50" placeholder="exemplo@email.com" />
+                     </div>
+                     <div>
+                       <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest pl-1 mb-1 block">Senha rápida</label>
+                       <input type="password" value={authPassword} onChange={e => setAuthPassword(e.target.value)} className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary-blue/50" placeholder="••••••••" />
+                     </div>
+                     <Button 
+                       className="w-full h-12 bg-primary-blue text-white hover:bg-deep-blue rounded-xl text-sm font-black shadow-lg shadow-primary-blue/20"
+                       onClick={async () => {
+                          setAuthError('');
+                          if (!authEmail || !authPassword) {
+                             setAuthError("Preencha todos os campos.");
+                             return;
+                          }
+                          if (!auth) {
+                             setAuthError("Erro crítico: As credenciais do Firebase (API Key, etc.) não estão configuradas na aplicação. Insira-as no ficheiro src/lib/firebase.ts ou nas Definições.");
+                             return;
+                          }
+                          try {
+                             if (isAuthModeLogin) {
+                                await signInWithEmailAndPassword(auth, authEmail, authPassword);
+                             } else {
+                                const userCredential = await createUserWithEmailAndPassword(auth, authEmail, authPassword);
+                                if (authName) {
+                                  await updateProfile(userCredential.user, { displayName: authName });
+                                }
+                             }
+                             setShowAuthModal(false);
+                             setShowPaymentModal(true);
+                             setContactEmail(auth?.currentUser?.email || authEmail);
+                          } catch (e: any) {
+                             if (e.code === 'auth/email-already-in-use') setAuthError("Email já cadastrado. Tente fazer login.");
+                             else if (e.code === 'auth/weak-password') setAuthError("A senha deve ter pelo menos 6 caracteres.");
+                             else if (e.code === 'auth/invalid-credential') setAuthError("Email ou senha incorretos.");
+                             else setAuthError("Erro na autenticação. Verifique se ativou Email/Senha no Firebase Console.");
+                             console.error(e);
+                          }
+                       }}
+                     >
+                       {isAuthModeLogin ? "Entrar na Conta" : "Criar Conta Rápida"}
+                     </Button>
+                  </div>
+
+                  <div className="relative flex items-center py-2">
+                    <div className="flex-grow border-t border-gray-200"></div>
+                    <span className="flex-shrink-0 mx-4 text-gray-400 text-[10px] font-bold uppercase tracking-widest">OU</span>
+                    <div className="flex-grow border-t border-gray-200"></div>
+                  </div>
+
+                  <div className="space-y-3">
+                    <Button 
+                      onClick={async () => {
+                        const u = await loginWithGoogle();
+                        setShowAuthModal(false);
+                        if (u && (!u.isAnonymous || u.isAnonymous === undefined)) {
+                           setShowPaymentModal(true);
+                           setContactEmail(u.email || '');
+                        }
+                      }} 
+                      className="w-full h-12 bg-white border-2 border-gray-200 hover:bg-gray-50 font-black rounded-xl text-sm text-gray-900 shadow-none"
+                    >
+                      <img src="https://www.google.com/favicon.ico" alt="Google" className="w-4 h-4 mr-2" />
+                      Continuar com Google
+                    </Button>
+                    
+                    <div className="flex justify-between items-center text-xs px-2 pt-2">
+                       <button 
+                         onClick={() => setIsAuthModeLogin(!isAuthModeLogin)}
+                         className="font-bold text-primary-blue hover:underline"
+                       >
+                         {isAuthModeLogin ? "Quero criar uma conta" : "Já tenho uma conta"}
+                       </button>
+                       <button 
+                         onClick={() => setShowAuthModal(false)}
+                         className="font-bold text-gray-400 hover:text-gray-600"
+                       >
+                         Cancelar
+                       </button>
+                    </div>
+                  </div>
+
+                  <div className="pt-4 border-t border-gray-100 flex items-center justify-center gap-2">
+                    <Shield size={14} className="text-green-500" />
+                    <span className="text-[9px] font-black uppercase tracking-widest text-gray-400">Segurança de Dados Garantida</span>
+                  </div>
+               </motion.div>
+             </div>
+           )}
+         </AnimatePresence>
+
+         {/* Access Restriction Alert Modal */}
+         <AnimatePresence>
+           {showAuthModalAlert && (
+             <div className="fixed inset-0 bg-deep-blue/80 backdrop-blur-md z-[99999] flex items-center justify-center p-4">
+               <motion.div 
+                  initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                  className="bg-white rounded-[40px] shadow-2xl p-10 max-w-md w-full relative overflow-hidden text-center space-y-6 border border-slate-100"
+               >
+                  <button onClick={() => setShowAuthModalAlert(false)} className="absolute top-6 right-6 text-gray-400 hover:text-gray-600 bg-gray-50 rounded-full p-2">
+                    <X size={20} />
+                  </button>
+                  
+                  <div className="w-20 h-20 bg-red-50 text-red-500 flex items-center justify-center rounded-[2rem] mx-auto shadow-inner">
+                    <Shield size={40} className="animate-pulse" />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <h2 className="text-2xl font-black text-deep-blue tracking-tight">🔒 Acesso Exclusivo</h2>
+                    <p className="text-xs text-text-muted font-medium leading-relaxed max-w-sm mx-auto">
+                      O CV LAB agora opera como uma solução privada e exclusiva para membros autorizados da nossa equipa.
+                    </p>
+                  </div>
+
+                  <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 text-left space-y-1">
+                    <span className="text-[10px] uppercase font-black tracking-wider text-amber-800">Status de Ligação:</span>
+                    {user && !user.isAnonymous ? (
+                      <p className="text-xs font-semibold text-amber-900">
+                        Sua conta atual (<strong className="underline">{user.email}</strong>) não possui permissão para aceder ao editor ou ferramentas.
+                      </p>
+                    ) : (
+                      <p className="text-xs font-semibold text-amber-900">
+                        Você está navegando como Convidado. O site opera apenas como vitrina oficial.
+                      </p>
+                    )}
+                  </div>
+                  
+                  <div className="space-y-3">
+                    <Button 
+                      className="w-full h-14 bg-gradient-to-r from-primary-blue to-blue-700 text-white hover:from-blue-700 hover:to-blue-800 font-bold rounded-2xl text-xs uppercase tracking-widest shadow-lg shadow-blue-500/20"
+                      onClick={async () => {
+                        try {
+                          const loggedInUser = await loginWithGoogle();
+                          // Check if the newly logged in user is admin
+                          const adminEmails = [
+                            'ronalmaferreira04@icloud.com',
+                            'sumodemanga50@gmail.com',
+                            'm26101342@gmail.com'
+                          ];
+                          const u = loggedInUser || auth?.currentUser;
+                          if (u && u.email && adminEmails.includes(u.email.toLowerCase())) {
+                            setShowAuthModalAlert(false);
+                            _setView('editor');
+                          } else if (u && u.email) {
+                              alert("O seu email (" + u.email + ") não tem permissões de administrador. Acesso negado.");
+                          }
+                        } catch(ecc) {
+                          console.error(ecc);
+                        }
+                      }}
+                    >
+                      Fazer Login como Membro
+                    </Button>
+                    
+                    <button 
+                      onClick={() => setShowAuthModalAlert(false)}
+                      className="text-xs font-black text-text-muted hover:text-deep-blue uppercase tracking-widest pt-2 block mx-auto transition-colors"
+                    >
+                      Voltar à Vitrina
+                    </button>
+                  </div>
+
+                  <div className="pt-4 border-t border-gray-100 flex items-center justify-center gap-2 text-gray-400">
+                    <span className="text-[8px] font-black uppercase tracking-widest">© 2026 CV LAB ANGOLA • LAB DIGITAL</span>
+                  </div>
+               </motion.div>
+             </div>
+           )}
+         </AnimatePresence>
       </div>
     );
   }
@@ -6595,6 +6799,210 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
             </div>
           )}
         </main>
+
+        {/* Auth Required Modal */}
+        <AnimatePresence>
+          {showAuthModal && (
+            <div className="fixed inset-0 bg-deep-blue/80 backdrop-blur-sm z-[9999] flex items-center justify-center p-4">
+              <motion.div 
+                 initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                 animate={{ opacity: 1, scale: 1, y: 0 }}
+                 exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                 className="bg-white rounded-[40px] shadow-2xl p-10 max-w-sm w-full relative overflow-hidden text-center space-y-6"
+              >
+                 <button onClick={() => setShowAuthModal(false)} className="absolute top-6 right-6 text-gray-400 hover:text-gray-600 bg-gray-50 rounded-full p-2">
+                   <X size={20} />
+                 </button>
+                 
+                 <div className="w-16 h-16 bg-primary-blue/10 text-primary-blue flex items-center justify-center rounded-3xl mx-auto">
+                   <User size={32} />
+                 </div>
+                 
+                 <div className="space-y-1">
+                   <h2 className="text-xl font-black text-deep-blue tracking-tight">{isAuthModeLogin ? "Fazer Login" : "Criar Conta"}</h2>
+                   <p className="text-xs text-text-muted font-medium leading-relaxed">Guarde seu progresso na nuvem e aceda de qualquer dispositivo.</p>
+                 </div>
+                 
+                 <div className="space-y-3 pt-2 text-left">
+                    {authError && <p className="text-red-500 text-[10px] text-center font-bold bg-red-50 p-2 rounded-lg">{authError}</p>}
+                    {!isAuthModeLogin && (
+                      <div>
+                        <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest pl-1 mb-1 block">Nome</label>
+                        <input type="text" value={authName} onChange={e => setAuthName(e.target.value)} className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary-blue/50" placeholder="Seu nome" />
+                      </div>
+                    )}
+                    <div>
+                      <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest pl-1 mb-1 block">Email</label>
+                      <input type="email" value={authEmail} onChange={e => setAuthEmail(e.target.value)} className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary-blue/50" placeholder="exemplo@email.com" />
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest pl-1 mb-1 block">Senha rápida</label>
+                      <input type="password" value={authPassword} onChange={e => setAuthPassword(e.target.value)} className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary-blue/50" placeholder="••••••••" />
+                    </div>
+                    <Button 
+                      className="w-full h-12 bg-primary-blue text-white hover:bg-deep-blue rounded-xl text-sm font-black shadow-lg shadow-primary-blue/20"
+                      onClick={async () => {
+                         setAuthError('');
+                         if (!authEmail || !authPassword) {
+                            setAuthError("Preencha todos os campos.");
+                            return;
+                         }
+                         if (!auth) {
+                            setAuthError("Erro crítico: As credenciais do Firebase (API Key, etc.) não estão configuradas na aplicação. Insira-as no ficheiro src/lib/firebase.ts ou nas Definições.");
+                            return;
+                         }
+                         try {
+                            if (isAuthModeLogin) {
+                               await signInWithEmailAndPassword(auth, authEmail, authPassword);
+                            } else {
+                               const userCredential = await createUserWithEmailAndPassword(auth, authEmail, authPassword);
+                               if (authName) {
+                                 await updateProfile(userCredential.user, { displayName: authName });
+                               }
+                            }
+                            setShowAuthModal(false);
+                            setShowPaymentModal(true);
+                            setContactEmail(auth?.currentUser?.email || authEmail);
+                         } catch (e: any) {
+                            if (e.code === 'auth/email-already-in-use') setAuthError("Email já cadastrado. Tente fazer login.");
+                            else if (e.code === 'auth/weak-password') setAuthError("A senha deve ter pelo menos 6 caracteres.");
+                            else if (e.code === 'auth/invalid-credential') setAuthError("Email ou senha incorretos.");
+                            else setAuthError("Erro na autenticação. Verifique se ativou Email/Senha no Firebase Console.");
+                            console.error(e);
+                         }
+                      }}
+                    >
+                      {isAuthModeLogin ? "Entrar na Conta" : "Criar Conta Rápida"}
+                    </Button>
+                 </div>
+
+                 <div className="relative flex items-center py-2">
+                   <div className="flex-grow border-t border-gray-200"></div>
+                   <span className="flex-shrink-0 mx-4 text-gray-400 text-[10px] font-bold uppercase tracking-widest">OU</span>
+                   <div className="flex-grow border-t border-gray-200"></div>
+                 </div>
+
+                 <div className="space-y-3">
+                   <Button 
+                     onClick={async () => {
+                       const u = await loginWithGoogle();
+                       setShowAuthModal(false);
+                       if (u && (!u.isAnonymous || u.isAnonymous === undefined)) {
+                          setShowPaymentModal(true);
+                          setContactEmail(u.email || '');
+                       }
+                     }} 
+                     className="w-full h-12 bg-white border-2 border-gray-200 hover:bg-gray-50 font-black rounded-xl text-sm text-gray-900 shadow-none"
+                   >
+                     <img src="https://www.google.com/favicon.ico" alt="Google" className="w-4 h-4 mr-2" />
+                     Continuar com Google
+                   </Button>
+                   
+                   <div className="flex justify-between items-center text-xs px-2 pt-2">
+                      <button 
+                        onClick={() => setIsAuthModeLogin(!isAuthModeLogin)}
+                        className="font-bold text-primary-blue hover:underline"
+                      >
+                        {isAuthModeLogin ? "Quero criar uma conta" : "Já tenho uma conta"}
+                      </button>
+                      <button 
+                        onClick={() => setShowAuthModal(false)}
+                        className="font-bold text-gray-400 hover:text-gray-600"
+                      >
+                        Cancelar
+                      </button>
+                   </div>
+                 </div>
+
+                 <div className="pt-4 border-t border-gray-100 flex items-center justify-center gap-2">
+                   <Shield size={14} className="text-green-500" />
+                   <span className="text-[9px] font-black uppercase tracking-widest text-gray-400">Segurança de Dados Garantida</span>
+                 </div>
+              </motion.div>
+            </div>
+          )}
+        </AnimatePresence>
+
+        {/* Access Restriction Alert Modal */}
+        <AnimatePresence>
+          {showAuthModalAlert && (
+            <div className="fixed inset-0 bg-deep-blue/80 backdrop-blur-md z-[99999] flex items-center justify-center p-4">
+              <motion.div 
+                 initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                 animate={{ opacity: 1, scale: 1, y: 0 }}
+                 exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                 className="bg-white rounded-[40px] shadow-2xl p-10 max-w-md w-full relative overflow-hidden text-center space-y-6 border border-slate-100"
+              >
+                 <button onClick={() => setShowAuthModalAlert(false)} className="absolute top-6 right-6 text-gray-400 hover:text-gray-600 bg-gray-50 rounded-full p-2">
+                   <X size={20} />
+                 </button>
+                 
+                 <div className="w-20 h-20 bg-red-50 text-red-500 flex items-center justify-center rounded-[2rem] mx-auto shadow-inner">
+                   <Shield size={40} className="animate-pulse" />
+                 </div>
+                 
+                 <div className="space-y-2">
+                   <h2 className="text-2xl font-black text-deep-blue tracking-tight">🔒 Acesso Exclusivo</h2>
+                   <p className="text-xs text-text-muted font-medium leading-relaxed max-w-sm mx-auto">
+                     O CV LAB agora opera como uma solução privada e exclusiva para membros autorizados da nossa equipa.
+                   </p>
+                 </div>
+
+                 <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 text-left space-y-1">
+                   <span className="text-[10px] uppercase font-black tracking-wider text-amber-800">Status de Ligação:</span>
+                   {user && !user.isAnonymous ? (
+                     <p className="text-xs font-semibold text-amber-900">
+                       Sua conta atual (<strong className="underline">{user.email}</strong>) não possui permissão para aceder ao editor ou ferramentas.
+                     </p>
+                   ) : (
+                     <p className="text-xs font-semibold text-amber-900">
+                       Você está navegando como Convidado. O site opera apenas como vitrina oficial.
+                     </p>
+                   )}
+                 </div>
+                 
+                 <div className="space-y-3">
+                   <Button 
+                     className="w-full h-14 bg-gradient-to-r from-primary-blue to-blue-700 text-white hover:from-blue-700 hover:to-blue-800 font-bold rounded-2xl text-xs uppercase tracking-widest shadow-lg shadow-blue-500/20"
+                     onClick={async () => {
+                       try {
+                         const loggedInUser = await loginWithGoogle();
+                         // Check if the newly logged in user is admin
+                         const adminEmails = [
+                           'ronalmaferreira04@icloud.com',
+                           'sumodemanga50@gmail.com',
+                           'm26101342@gmail.com'
+                         ];
+                         const u = loggedInUser || auth?.currentUser;
+                         if (u && u.email && adminEmails.includes(u.email.toLowerCase())) {
+                           setShowAuthModalAlert(false);
+                           _setView('editor');
+                         } else if (u && u.email) {
+                             alert("O seu email (" + u.email + ") não tem permissões de administrador. Acesso negado.");
+                         }
+                       } catch(ecc) {
+                         console.error(ecc);
+                       }
+                     }}
+                   >
+                     Fazer Login como Membro
+                   </Button>
+                   
+                   <button 
+                     onClick={() => setShowAuthModalAlert(false)}
+                     className="text-xs font-black text-text-muted hover:text-deep-blue uppercase tracking-widest pt-2 block mx-auto transition-colors"
+                   >
+                     Voltar à Vitrina
+                   </button>
+                 </div>
+
+                 <div className="pt-4 border-t border-gray-100 flex items-center justify-center gap-2 text-gray-400">
+                   <span className="text-[8px] font-black uppercase tracking-widest">© 2026 CV LAB ANGOLA • LAB DIGITAL</span>
+                 </div>
+              </motion.div>
+            </div>
+          )}
+        </AnimatePresence>
       </div>
     );
   }
