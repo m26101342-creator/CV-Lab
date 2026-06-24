@@ -386,7 +386,7 @@ img {
     background: #ffffff !important;
     color: #000000 !important;
     width: 210mm !important;
-    height: 297mm !important;
+    height: auto !important;
     overflow: visible !important;
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
@@ -402,7 +402,7 @@ img {
     position: static !important;
     display: block !important;
     width: 210mm !important;
-    height: 297mm !important;
+    height: auto !important;
     margin: 0 !important;
     padding: 0 !important;
     background: #ffffff !important;
@@ -414,9 +414,9 @@ img {
     transform: none !important;
     -webkit-transform: none !important;
     width: 100% !important;
-    height: 100% !important;
+    height: auto !important;
     min-height: 100% !important;
-    max-height: 100% !important;
+    max-height: none !important;
     margin: 0 !important;
     padding: 0 !important;
     box-shadow: none !important;
@@ -425,17 +425,14 @@ img {
   
   #resume-content, #cover-letter-content {
     width: 210mm !important;
-    height: 297mm !important;
+    height: auto !important;
     min-height: 297mm !important;
-    max-height: 297mm !important;
+    max-height: none !important;
     box-sizing: border-box !important;
     border: none !important;
     margin: 0 !important;
     padding: 0 !important;
     box-shadow: none !important;
-    page-break-after: avoid !important;
-    page-break-before: avoid !important;
-    page-break-inside: avoid !important;
   }
 }
 

@@ -1604,7 +1604,7 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
   const theme = TEMPLATES[templateId] || TEMPLATES.t1_executive;
   const c = { ...theme.colors, primary: data.themeColor || theme.colors.primary };
 
-  const style = data.styleConfig || {
+  const defaultStyle = {
     fontSize: 13,
     titleSize: 26,
     sectionSpacing: 25,
@@ -1615,6 +1615,7 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
     fontFamily: 'sans',
     photoBorderRadius: 50
   };
+  const style = { ...defaultStyle, ...(data.styleConfig || {}) };
 
   const handleTitleChange = (key: keyof NonNullable<ResumeData['sectionTitles']>, value: string) => {
     if (onChange) {
@@ -2734,8 +2735,15 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
         /* Overrides de tamanho de letra individuais por secção */
         
         /* 1. Contacto / Informações Pessoais */
-        #resume-content [class*="-contact-item"],
-        #resume-content [class*="-contact-text"],
+        #resume-content [class*="-contact-item"] span,
+        #resume-content [class*="-contact-item"] p,
+        #resume-content [class*="-contact-item"] div,
+        #resume-content span[class*="-contact-text"],
+        #resume-content p[class*="-contact-text"],
+        #resume-content div[class*="-contact-text"],
+        #resume-content span.t1-contact-text,
+        #resume-content span.t2-contact-text,
+        #resume-content span.t3-contact-text,
         #resume-content .t1-contact-text,
         #resume-content .t2-contact-text,
         #resume-content .t3-contact-text {
@@ -2747,6 +2755,16 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
         }
 
         /* 2. Resumo / Perfil */
+        #resume-content p.t1-bio,
+        #resume-content p.t2-bio,
+        #resume-content p.t3-bio,
+        #resume-content div.t1-bio,
+        #resume-content div.t2-bio,
+        #resume-content div.t3-bio,
+        #resume-content p[class*="-bio"],
+        #resume-content div[class*="-bio"],
+        #resume-content p[class*="-summary"],
+        #resume-content div[class*="-summary"],
         #resume-content .t1-bio,
         #resume-content .t2-bio,
         #resume-content .t3-bio,
@@ -2760,6 +2778,22 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
         #resume-content [class*="-exp"] {
           font-size: ${style.experienceSize || style.fontSize || 13}px !important;
         }
+        #resume-content p[class*="-exp-desc"],
+        #resume-content div[class*="-exp-desc"],
+        #resume-content span[class*="-exp-role"],
+        #resume-content div[class*="-exp-role"],
+        #resume-content span[class*="-exp-company"],
+        #resume-content div[class*="-exp-company"],
+        #resume-content span[class*="-exp-date"],
+        #resume-content div[class*="-exp-date"],
+        #resume-content p.t1-exp-desc,
+        #resume-content p.t2-exp-desc,
+        #resume-content p.t3-exp-desc,
+        #resume-content div.t1-exp-role,
+        #resume-content div.t2-exp-role,
+        #resume-content div.t3-exp-role,
+        #resume-content [class*="-exp-desc"] p,
+        #resume-content [class*="-exp-desc"] li,
         #resume-content [class*="-exp-desc"],
         #resume-content [class*="-exp-role"],
         #resume-content [class*="-exp-company"],
@@ -2775,6 +2809,9 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
         #resume-content .t1-exp-desc,
         #resume-content .t2-exp-desc,
         #resume-content .t3-exp-desc,
+        #resume-content p.t1-exp-desc,
+        #resume-content p.t2-exp-desc,
+        #resume-content p.t3-exp-desc,
         #resume-content [class*="-exp-desc"] p,
         #resume-content [class*="-exp-desc"] li {
           font-size: ${Math.max(8, (style.experienceSize || style.fontSize || 13) - 2)}px !important;
@@ -2785,6 +2822,21 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
         #resume-content [class*="-edu"] {
           font-size: ${style.educationSize || style.fontSize || 13}px !important;
         }
+        #resume-content div[class*="-edu-school"],
+        #resume-content span[class*="-edu-school"],
+        #resume-content div[class*="-edu-degree"],
+        #resume-content span[class*="-edu-degree"],
+        #resume-content div[class*="-edu-year"],
+        #resume-content span[class*="-edu-year"],
+        #resume-content div.t1-edu-school,
+        #resume-content div.t1-edu-degree,
+        #resume-content div.t1-edu-year,
+        #resume-content div.t2-edu-school,
+        #resume-content div.t2-edu-degree,
+        #resume-content div.t2-edu-year,
+        #resume-content div.t3-edu-school,
+        #resume-content div.t3-edu-degree,
+        #resume-content div.t3-edu-year,
         #resume-content [class*="-edu-school"],
         #resume-content [class*="-edu-degree"],
         #resume-content [class*="-edu-year"],
@@ -2802,11 +2854,23 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
         #resume-content .t1-edu-year,
         #resume-content .t2-edu-year,
         #resume-content .t3-edu-year,
+        #resume-content div.t1-edu-year,
+        #resume-content div.t2-edu-year,
+        #resume-content div.t3-edu-year,
+        #resume-content span[class*="-edu-year"],
+        #resume-content div[class*="-edu-year"],
         #resume-content [class*="-edu-year"] {
           font-size: ${Math.max(8, (style.educationSize || style.fontSize || 13) - 2)}px !important;
         }
 
         /* 5. Competências / Habilidades */
+        #resume-content span.t1-skill-tag,
+        #resume-content span.t2-skill-tag,
+        #resume-content span.t3-skill-tag,
+        #resume-content span[class*="-skill-tag"],
+        #resume-content div[class*="-skill-tag"],
+        #resume-content [class*="-skills"] span,
+        #resume-content [class*="-skill"] span,
         #resume-content [class*="-skills"],
         #resume-content [class*="-skill"],
         #resume-content .t1-skill-tag,
@@ -2816,52 +2880,47 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
         }
 
         /* 6. Idiomas */
+        #resume-content [class*="-languages"] span,
+        #resume-content [class*="-language"] span,
+        #resume-content [class*="-languages"] div,
+        #resume-content [class*="-language"] div,
+        #resume-content div.t1-language span,
+        #resume-content div.t2-language span,
+        #resume-content div.t3-language span,
         #resume-content [class*="-languages"],
         #resume-content [class*="-language"] {
           font-size: ${style.languagesSize || style.fontSize || 13}px !important;
         }
-        #resume-content [class*="-languages"] span,
-        #resume-content [class*="-language"] span,
-        #resume-content [class*="-languages"] div,
-        #resume-content [class*="-language"] div {
-          font-size: ${style.languagesSize || style.fontSize || 13}px !important;
-        }
 
         /* 7. Certificações */
+        #resume-content [class*="-certifications"] span,
+        #resume-content [class*="-certification"] span,
+        #resume-content [class*="-certifications"] div,
+        #resume-content [class*="-certification"] div,
         #resume-content [class*="-certifications"],
         #resume-content [class*="-certification"] {
           font-size: ${style.certificationsSize || style.fontSize || 13}px !important;
         }
-        #resume-content [class*="-certifications"] span,
-        #resume-content [class*="-certification"] span,
-        #resume-content [class*="-certifications"] div,
-        #resume-content [class*="-certification"] div {
-          font-size: ${style.certificationsSize || style.fontSize || 13}px !important;
-        }
 
         /* 8. Interesses */
+        #resume-content [class*="-interests"] span,
+        #resume-content [class*="-interest"] span,
+        #resume-content [class*="-interests"] div,
+        #resume-content [class*="-interest"] div,
         #resume-content [class*="-interests"],
         #resume-content [class*="-interest"] {
           font-size: ${style.interestsSize || style.fontSize || 13}px !important;
         }
-        #resume-content [class*="-interests"] span,
-        #resume-content [class*="-interest"] span,
-        #resume-content [class*="-interests"] div,
-        #resume-content [class*="-interest"] div {
-          font-size: ${style.interestsSize || style.fontSize || 13}px !important;
-        }
 
         /* 9. Seções Personalizadas */
-        #resume-content [class*="-custom-section"],
-        #resume-content [class*="-custom"] {
-          font-size: ${style.customSize || style.fontSize || 13}px !important;
-        }
         #resume-content [class*="-custom-section"] span,
         #resume-content [class*="-custom"] span,
         #resume-content [class*="-custom-section"] div,
         #resume-content [class*="-custom"] div,
         #resume-content [class*="-custom-section"] p,
-        #resume-content [class*="-custom"] p {
+        #resume-content [class*="-custom"] p,
+        #resume-content [class*="-custom-section"],
+        #resume-content [class*="-custom"] {
           font-size: ${style.customSize || style.fontSize || 13}px !important;
         }
         #resume-content [class*="-custom-section"] .t1-exp-desc,
@@ -2986,10 +3045,10 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
               </div>
             )}
             {/* T1 Sidebar sections with improved alignment */}
-            <div style={{ display: 'flex', flexDirection: 'column', marginTop: data.styleConfig?.showPhoto !== false ? '32px' : '0px' }}>
+            <div style={{ display: 'block', marginTop: data.styleConfig?.showPhoto !== false ? '32px' : '0px' }}>
               <div style={{ marginBottom: '32px' }}>
                 <div className="t1-section-title">{data.language === 'en' ? 'Contact' : 'Contacto'}</div>
-                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                <div style={{ display: 'block' }}>
                   {data.personalInfo.email && <div key="email" className="t1-contact-item flex items-center gap-2.5"><span className="t1-contact-icon flex items-center justify-center shrink-0"><Mail size={12} /></span><span className="t1-contact-text leading-none">{data.personalInfo.email}</span></div>}
                   {data.personalInfo.phone && <div key="phone" className="t1-contact-item flex items-center gap-2.5"><span className="t1-contact-icon flex items-center justify-center shrink-0"><Phone size={12} /></span><span className="t1-contact-text leading-none">{data.personalInfo.phone}</span></div>}
                   {data.personalInfo.location && <div key="loc" className="t1-contact-item flex items-center gap-2.5"><span className="t1-contact-icon flex items-center justify-center shrink-0"><MapPin size={12} /></span><span className="t1-contact-text leading-none">{data.personalInfo.location}</span></div>}
@@ -2999,7 +3058,7 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
               {data.education.length > 0 && (
                 <div style={{ marginBottom: '32px' }}>
                   <div className="t1-section-title">{data.language === 'en' ? 'Education' : 'Formação'}</div>
-                  <div style={{ display: 'flex', flexDirection: 'column' }}>
+                  <div style={{ display: 'block' }}>
                     {data.education.map((e, idx) => (
                       <div key={e.id || `edu-${idx}`} className="t1-edu-item" style={{ marginBottom: idx === data.education.length - 1 ? 0 : '18px' }}>
                         <div className="t1-edu-degree">{e.degree}</div>
@@ -3025,7 +3084,7 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
               {data.languages && data.languages.length > 0 && (
                 <div style={{ marginBottom: '32px' }}>
                   <EditableTitle as="div" className="t1-section-title" defaultText="Idiomas" text={getSectionTitle(data, 'languages', 'Idiomas')} onSave={onChange ? (v) => handleTitleChange('languages', v) : undefined} />
-                  <div style={{ display: 'flex', flexDirection: 'column' }}>
+                  <div style={{ display: 'block' }}>
                     {data.languages.map((l, idx) => (
                        <div key={l.id || `lang-${idx}`} className="flex justify-between items-center text-[12px] opacity-90" style={{ marginBottom: idx === data.languages.length - 1 ? 0 : '12px' }}>
                          <span className="font-bold">{l.name}</span>
@@ -3039,9 +3098,9 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
               {data.customSections?.map((cs, idx) => (
                 <div key={cs.id || `cs-${idx}`} style={{ marginBottom: '32px' }}>
                   <div className="t1-section-title">{cs.title}</div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <div style={{ display: 'block' }}>
                     {cs.items.map((item, idxx) => (
-                       <div key={item.id || `csi-${idxx}`} className="flex flex-col text-[12px] opacity-90">
+                       <div key={item.id || `csi-${idxx}`} className="flex flex-col text-[12px] opacity-90" style={{ marginBottom: idxx === cs.items.length - 1 ? 0 : '8px' }}>
                          <span className="font-bold mb-1">{item.name}</span>
                          {item.description && <span className="opacity-80 leading-relaxed font-serif text-[11px] whitespace-pre-wrap">{item.description}</span>}
                        </div>
@@ -8478,11 +8537,11 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
 
         {/* Scaled Wrapper to prevent horizontal scroll and extra vertical whitespace */}
         <div 
-          className="flex justify-center w-full print:h-[1122px]"
+          className="flex justify-center w-full print:h-auto"
           style={{ height: `${resumeHeight * previewScale}px` }}
         >
           <div 
-            className="origin-top transition-all duration-700 print:shadow-none print:w-full shadow-[0_60px_120px_-20px_rgba(0,0,0,0.2)]"
+            className="origin-top transition-all duration-700 print:shadow-none print:w-full print:h-auto shadow-[0_60px_120px_-20px_rgba(0,0,0,0.2)]"
             style={{ 
               transform: `scale(${previewScale})`,
               width: '794px',
