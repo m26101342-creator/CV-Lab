@@ -12,6 +12,15 @@ export interface ResumeStyleConfig {
   photoBorderRadius?: number; // em px ou %, ex: 999
   showTimeline?: boolean;  // mostrar linha do tempo (pontos) na experiência/educação
   showPhoto?: boolean;     // mostrar círculo da foto de perfil ou iniciais do nome
+  contactSize?: number;
+  summarySize?: number;
+  experienceSize?: number;
+  educationSize?: number;
+  skillsSize?: number;
+  languagesSize?: number;
+  customSize?: number;
+  certificationsSize?: number;
+  interestsSize?: number;
 }
 
 export interface ResumeData {

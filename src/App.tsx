@@ -2731,6 +2731,144 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
           margin-top: ${Math.max(10, (style.sectionSpacing || 25) - 5)}px !important;
         }
 
+        /* Overrides de tamanho de letra individuais por secção */
+        
+        /* 1. Contacto / Informações Pessoais */
+        #resume-content [class*="-contact-item"],
+        #resume-content [class*="-contact-text"],
+        #resume-content .t1-contact-text,
+        #resume-content .t2-contact-text,
+        #resume-content .t3-contact-text {
+          font-size: ${style.contactSize || style.fontSize || 13}px !important;
+        }
+        #resume-content [class*="-contact-icon"] svg {
+          width: ${Math.max(10, (style.contactSize || style.fontSize || 13) - 1)}px !important;
+          height: ${Math.max(10, (style.contactSize || style.fontSize || 13) - 1)}px !important;
+        }
+
+        /* 2. Resumo / Perfil */
+        #resume-content .t1-bio,
+        #resume-content .t2-bio,
+        #resume-content .t3-bio,
+        #resume-content [class*="-bio"],
+        #resume-content [class*="-summary"] {
+          font-size: ${style.summarySize || style.fontSize || 13}px !important;
+        }
+
+        /* 3. Experiência */
+        #resume-content [class*="-experience"],
+        #resume-content [class*="-exp"] {
+          font-size: ${style.experienceSize || style.fontSize || 13}px !important;
+        }
+        #resume-content [class*="-exp-desc"],
+        #resume-content [class*="-exp-role"],
+        #resume-content [class*="-exp-company"],
+        #resume-content [class*="-exp-date"],
+        #resume-content .t1-exp-desc,
+        #resume-content .t2-exp-desc,
+        #resume-content .t3-exp-desc,
+        #resume-content .t1-exp-role,
+        #resume-content .t2-exp-role,
+        #resume-content .t3-exp-role {
+          font-size: ${style.experienceSize || style.fontSize || 13}px !important;
+        }
+        #resume-content .t1-exp-desc,
+        #resume-content .t2-exp-desc,
+        #resume-content .t3-exp-desc,
+        #resume-content [class*="-exp-desc"] p,
+        #resume-content [class*="-exp-desc"] li {
+          font-size: ${Math.max(8, (style.experienceSize || style.fontSize || 13) - 2)}px !important;
+        }
+
+        /* 4. Estudos / Educação */
+        #resume-content [class*="-education"],
+        #resume-content [class*="-edu"] {
+          font-size: ${style.educationSize || style.fontSize || 13}px !important;
+        }
+        #resume-content [class*="-edu-school"],
+        #resume-content [class*="-edu-degree"],
+        #resume-content [class*="-edu-year"],
+        #resume-content .t1-edu-school,
+        #resume-content .t1-edu-degree,
+        #resume-content .t1-edu-year,
+        #resume-content .t2-edu-school,
+        #resume-content .t2-edu-degree,
+        #resume-content .t2-edu-year,
+        #resume-content .t3-edu-school,
+        #resume-content .t3-edu-degree,
+        #resume-content .t3-edu-year {
+          font-size: ${style.educationSize || style.fontSize || 13}px !important;
+        }
+        #resume-content .t1-edu-year,
+        #resume-content .t2-edu-year,
+        #resume-content .t3-edu-year,
+        #resume-content [class*="-edu-year"] {
+          font-size: ${Math.max(8, (style.educationSize || style.fontSize || 13) - 2)}px !important;
+        }
+
+        /* 5. Competências / Habilidades */
+        #resume-content [class*="-skills"],
+        #resume-content [class*="-skill"],
+        #resume-content .t1-skill-tag,
+        #resume-content .t2-skill-tag,
+        #resume-content .t3-skill-tag {
+          font-size: ${style.skillsSize || style.fontSize || 13}px !important;
+        }
+
+        /* 6. Idiomas */
+        #resume-content [class*="-languages"],
+        #resume-content [class*="-language"] {
+          font-size: ${style.languagesSize || style.fontSize || 13}px !important;
+        }
+        #resume-content [class*="-languages"] span,
+        #resume-content [class*="-language"] span,
+        #resume-content [class*="-languages"] div,
+        #resume-content [class*="-language"] div {
+          font-size: ${style.languagesSize || style.fontSize || 13}px !important;
+        }
+
+        /* 7. Certificações */
+        #resume-content [class*="-certifications"],
+        #resume-content [class*="-certification"] {
+          font-size: ${style.certificationsSize || style.fontSize || 13}px !important;
+        }
+        #resume-content [class*="-certifications"] span,
+        #resume-content [class*="-certification"] span,
+        #resume-content [class*="-certifications"] div,
+        #resume-content [class*="-certification"] div {
+          font-size: ${style.certificationsSize || style.fontSize || 13}px !important;
+        }
+
+        /* 8. Interesses */
+        #resume-content [class*="-interests"],
+        #resume-content [class*="-interest"] {
+          font-size: ${style.interestsSize || style.fontSize || 13}px !important;
+        }
+        #resume-content [class*="-interests"] span,
+        #resume-content [class*="-interest"] span,
+        #resume-content [class*="-interests"] div,
+        #resume-content [class*="-interest"] div {
+          font-size: ${style.interestsSize || style.fontSize || 13}px !important;
+        }
+
+        /* 9. Seções Personalizadas */
+        #resume-content [class*="-custom-section"],
+        #resume-content [class*="-custom"] {
+          font-size: ${style.customSize || style.fontSize || 13}px !important;
+        }
+        #resume-content [class*="-custom-section"] span,
+        #resume-content [class*="-custom"] span,
+        #resume-content [class*="-custom-section"] div,
+        #resume-content [class*="-custom"] div,
+        #resume-content [class*="-custom-section"] p,
+        #resume-content [class*="-custom"] p {
+          font-size: ${style.customSize || style.fontSize || 13}px !important;
+        }
+        #resume-content [class*="-custom-section"] .t1-exp-desc,
+        #resume-content [class*="-custom"] .t1-exp-desc {
+          font-size: ${Math.max(8, (style.customSize || style.fontSize || 13) - 2)}px !important;
+        }
+
         /* Document margins padding control */
         #resume-content .t1-left,
         #resume-content .t2-left {
@@ -8013,6 +8151,104 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
                              <input type="checkbox" className="sr-only peer" checked={resumeData.styleConfig?.showTimeline ?? true} onChange={(e) => setResumeData(p => ({...p, styleConfig: {...(p.styleConfig||{}), showTimeline: e.target.checked}}))} />
                              <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary-blue"></div>
                            </label>
+                        </div>
+                     </div>
+                  </div>
+
+                  <div className="p-6 bg-white border border-border-main rounded-3xl space-y-6">
+                     <div className="space-y-1">
+                        <h4 className="text-[10px] font-black uppercase tracking-widest text-primary-blue">Tamanho de Letra por Secção</h4>
+                        <p className="text-[10px] text-text-muted font-medium">Ajuste o tamanho do texto e subtextos de cada secção de forma individual.</p>
+                     </div>
+                     <div className="space-y-4 divide-y divide-gray-100">
+                        {/* Informações de Contacto */}
+                        <div className="flex items-center justify-between pt-3 first:pt-0">
+                           <span className="text-[11px] font-bold text-gray-700 uppercase tracking-wide">Contacto / Redes</span>
+                           <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-100 rounded-xl px-1.5 py-1">
+                              <button type="button" title="Diminuir" onClick={() => setResumeData(prev => ({...prev, styleConfig: {...(prev.styleConfig || {}), contactSize: Math.max(8, Number(((prev.styleConfig?.contactSize || prev.styleConfig?.fontSize || 13) - 0.5).toFixed(1)))} }))} className="p-1 hover:bg-slate-100 active:bg-slate-200 rounded-lg text-gray-500 cursor-pointer"><Minus size={11} /></button>
+                              <span className="min-w-[42px] text-center font-mono text-gray-800 text-[10px] font-bold">{(resumeData.styleConfig?.contactSize || resumeData.styleConfig?.fontSize || 13).toFixed(1)}px</span>
+                              <button type="button" title="Aumentar" onClick={() => setResumeData(prev => ({...prev, styleConfig: {...(prev.styleConfig || {}), contactSize: Math.min(22, Number(((prev.styleConfig?.contactSize || prev.styleConfig?.fontSize || 13) + 0.5).toFixed(1)))} }))} className="p-1 hover:bg-slate-100 active:bg-slate-200 rounded-lg text-gray-500 cursor-pointer"><Plus size={11} /></button>
+                           </div>
+                        </div>
+
+                        {/* Resumo / Bio */}
+                        <div className="flex items-center justify-between pt-3">
+                           <span className="text-[11px] font-bold text-gray-700 uppercase tracking-wide">Resumo / Perfil</span>
+                           <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-100 rounded-xl px-1.5 py-1">
+                              <button type="button" title="Diminuir" onClick={() => setResumeData(prev => ({...prev, styleConfig: {...(prev.styleConfig || {}), summarySize: Math.max(8, Number(((prev.styleConfig?.summarySize || prev.styleConfig?.fontSize || 13) - 0.5).toFixed(1)))} }))} className="p-1 hover:bg-slate-100 active:bg-slate-200 rounded-lg text-gray-500 cursor-pointer"><Minus size={11} /></button>
+                              <span className="min-w-[42px] text-center font-mono text-gray-800 text-[10px] font-bold">{(resumeData.styleConfig?.summarySize || resumeData.styleConfig?.fontSize || 13).toFixed(1)}px</span>
+                              <button type="button" title="Aumentar" onClick={() => setResumeData(prev => ({...prev, styleConfig: {...(prev.styleConfig || {}), summarySize: Math.min(22, Number(((prev.styleConfig?.summarySize || prev.styleConfig?.fontSize || 13) + 0.5).toFixed(1)))} }))} className="p-1 hover:bg-slate-100 active:bg-slate-200 rounded-lg text-gray-500 cursor-pointer"><Plus size={11} /></button>
+                           </div>
+                        </div>
+
+                        {/* Experiência */}
+                        <div className="flex items-center justify-between pt-3">
+                           <span className="text-[11px] font-bold text-gray-700 uppercase tracking-wide">Experiência</span>
+                           <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-100 rounded-xl px-1.5 py-1">
+                              <button type="button" title="Diminuir" onClick={() => setResumeData(prev => ({...prev, styleConfig: {...(prev.styleConfig || {}), experienceSize: Math.max(8, Number(((prev.styleConfig?.experienceSize || prev.styleConfig?.fontSize || 13) - 0.5).toFixed(1)))} }))} className="p-1 hover:bg-slate-100 active:bg-slate-200 rounded-lg text-gray-500 cursor-pointer"><Minus size={11} /></button>
+                              <span className="min-w-[42px] text-center font-mono text-gray-800 text-[10px] font-bold">{(resumeData.styleConfig?.experienceSize || resumeData.styleConfig?.fontSize || 13).toFixed(1)}px</span>
+                              <button type="button" title="Aumentar" onClick={() => setResumeData(prev => ({...prev, styleConfig: {...(prev.styleConfig || {}), experienceSize: Math.min(22, Number(((prev.styleConfig?.experienceSize || prev.styleConfig?.fontSize || 13) + 0.5).toFixed(1)))} }))} className="p-1 hover:bg-slate-100 active:bg-slate-200 rounded-lg text-gray-500 cursor-pointer"><Plus size={11} /></button>
+                           </div>
+                        </div>
+
+                        {/* Educação */}
+                        <div className="flex items-center justify-between pt-3">
+                           <span className="text-[11px] font-bold text-gray-700 uppercase tracking-wide">Estudos / Educação</span>
+                           <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-100 rounded-xl px-1.5 py-1">
+                              <button type="button" title="Diminuir" onClick={() => setResumeData(prev => ({...prev, styleConfig: {...(prev.styleConfig || {}), educationSize: Math.max(8, Number(((prev.styleConfig?.educationSize || prev.styleConfig?.fontSize || 13) - 0.5).toFixed(1)))} }))} className="p-1 hover:bg-slate-100 active:bg-slate-200 rounded-lg text-gray-500 cursor-pointer"><Minus size={11} /></button>
+                              <span className="min-w-[42px] text-center font-mono text-gray-800 text-[10px] font-bold">{(resumeData.styleConfig?.educationSize || resumeData.styleConfig?.fontSize || 13).toFixed(1)}px</span>
+                              <button type="button" title="Aumentar" onClick={() => setResumeData(prev => ({...prev, styleConfig: {...(prev.styleConfig || {}), educationSize: Math.min(22, Number(((prev.styleConfig?.educationSize || prev.styleConfig?.fontSize || 13) + 0.5).toFixed(1)))} }))} className="p-1 hover:bg-slate-100 active:bg-slate-200 rounded-lg text-gray-500 cursor-pointer"><Plus size={11} /></button>
+                           </div>
+                        </div>
+
+                        {/* Competências */}
+                        <div className="flex items-center justify-between pt-3">
+                           <span className="text-[11px] font-bold text-gray-700 uppercase tracking-wide">Habilidades</span>
+                           <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-100 rounded-xl px-1.5 py-1">
+                              <button type="button" title="Diminuir" onClick={() => setResumeData(prev => ({...prev, styleConfig: {...(prev.styleConfig || {}), skillsSize: Math.max(8, Number(((prev.styleConfig?.skillsSize || prev.styleConfig?.fontSize || 13) - 0.5).toFixed(1)))} }))} className="p-1 hover:bg-slate-100 active:bg-slate-200 rounded-lg text-gray-500 cursor-pointer"><Minus size={11} /></button>
+                              <span className="min-w-[42px] text-center font-mono text-gray-800 text-[10px] font-bold">{(resumeData.styleConfig?.skillsSize || resumeData.styleConfig?.fontSize || 13).toFixed(1)}px</span>
+                              <button type="button" title="Aumentar" onClick={() => setResumeData(prev => ({...prev, styleConfig: {...(prev.styleConfig || {}), skillsSize: Math.min(22, Number(((prev.styleConfig?.skillsSize || prev.styleConfig?.fontSize || 13) + 0.5).toFixed(1)))} }))} className="p-1 hover:bg-slate-100 active:bg-slate-200 rounded-lg text-gray-500 cursor-pointer"><Plus size={11} /></button>
+                           </div>
+                        </div>
+
+                        {/* Idiomas */}
+                        <div className="flex items-center justify-between pt-3">
+                           <span className="text-[11px] font-bold text-gray-700 uppercase tracking-wide">Idiomas</span>
+                           <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-100 rounded-xl px-1.5 py-1">
+                              <button type="button" title="Diminuir" onClick={() => setResumeData(prev => ({...prev, styleConfig: {...(prev.styleConfig || {}), languagesSize: Math.max(8, Number(((prev.styleConfig?.languagesSize || prev.styleConfig?.fontSize || 13) - 0.5).toFixed(1)))} }))} className="p-1 hover:bg-slate-100 active:bg-slate-200 rounded-lg text-gray-500 cursor-pointer"><Minus size={11} /></button>
+                              <span className="min-w-[42px] text-center font-mono text-gray-800 text-[10px] font-bold">{(resumeData.styleConfig?.languagesSize || resumeData.styleConfig?.fontSize || 13).toFixed(1)}px</span>
+                              <button type="button" title="Aumentar" onClick={() => setResumeData(prev => ({...prev, styleConfig: {...(prev.styleConfig || {}), languagesSize: Math.min(22, Number(((prev.styleConfig?.languagesSize || prev.styleConfig?.fontSize || 13) + 0.5).toFixed(1)))} }))} className="p-1 hover:bg-slate-100 active:bg-slate-200 rounded-lg text-gray-500 cursor-pointer"><Plus size={11} /></button>
+                           </div>
+                        </div>
+
+                        {/* Certificações */}
+                        <div className="flex items-center justify-between pt-3">
+                           <span className="text-[11px] font-bold text-gray-700 uppercase tracking-wide">Certificações</span>
+                           <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-100 rounded-xl px-1.5 py-1">
+                              <button type="button" title="Diminuir" onClick={() => setResumeData(prev => ({...prev, styleConfig: {...(prev.styleConfig || {}), certificationsSize: Math.max(8, Number(((prev.styleConfig?.certificationsSize || prev.styleConfig?.fontSize || 13) - 0.5).toFixed(1)))} }))} className="p-1 hover:bg-slate-100 active:bg-slate-200 rounded-lg text-gray-500 cursor-pointer"><Minus size={11} /></button>
+                              <span className="min-w-[42px] text-center font-mono text-gray-800 text-[10px] font-bold">{(resumeData.styleConfig?.certificationsSize || resumeData.styleConfig?.fontSize || 13).toFixed(1)}px</span>
+                              <button type="button" title="Aumentar" onClick={() => setResumeData(prev => ({...prev, styleConfig: {...(prev.styleConfig || {}), certificationsSize: Math.min(22, Number(((prev.styleConfig?.certificationsSize || prev.styleConfig?.fontSize || 13) + 0.5).toFixed(1)))} }))} className="p-1 hover:bg-slate-100 active:bg-slate-200 rounded-lg text-gray-500 cursor-pointer"><Plus size={11} /></button>
+                           </div>
+                        </div>
+
+                        {/* Interesses */}
+                        <div className="flex items-center justify-between pt-3">
+                           <span className="text-[11px] font-bold text-gray-700 uppercase tracking-wide">Interesses</span>
+                           <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-100 rounded-xl px-1.5 py-1">
+                              <button type="button" title="Diminuir" onClick={() => setResumeData(prev => ({...prev, styleConfig: {...(prev.styleConfig || {}), interestsSize: Math.max(8, Number(((prev.styleConfig?.interestsSize || prev.styleConfig?.fontSize || 13) - 0.5).toFixed(1)))} }))} className="p-1 hover:bg-slate-100 active:bg-slate-200 rounded-lg text-gray-500 cursor-pointer"><Minus size={11} /></button>
+                              <span className="min-w-[42px] text-center font-mono text-gray-800 text-[10px] font-bold">{(resumeData.styleConfig?.interestsSize || resumeData.styleConfig?.fontSize || 13).toFixed(1)}px</span>
+                              <button type="button" title="Aumentar" onClick={() => setResumeData(prev => ({...prev, styleConfig: {...(prev.styleConfig || {}), interestsSize: Math.min(22, Number(((prev.styleConfig?.interestsSize || prev.styleConfig?.fontSize || 13) + 0.5).toFixed(1)))} }))} className="p-1 hover:bg-slate-100 active:bg-slate-200 rounded-lg text-gray-500 cursor-pointer"><Plus size={11} /></button>
+                           </div>
+                        </div>
+
+                        {/* Secções Personalizadas */}
+                        <div className="flex items-center justify-between pt-3">
+                           <span className="text-[11px] font-bold text-gray-700 uppercase tracking-wide">Personalizadas</span>
+                           <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-100 rounded-xl px-1.5 py-1">
+                              <button type="button" title="Diminuir" onClick={() => setResumeData(prev => ({...prev, styleConfig: {...(prev.styleConfig || {}), customSize: Math.max(8, Number(((prev.styleConfig?.customSize || prev.styleConfig?.fontSize || 13) - 0.5).toFixed(1)))} }))} className="p-1 hover:bg-slate-100 active:bg-slate-200 rounded-lg text-gray-500 cursor-pointer"><Minus size={11} /></button>
+                              <span className="min-w-[42px] text-center font-mono text-gray-800 text-[10px] font-bold">{(resumeData.styleConfig?.customSize || resumeData.styleConfig?.fontSize || 13).toFixed(1)}px</span>
+                              <button type="button" title="Aumentar" onClick={() => setResumeData(prev => ({...prev, styleConfig: {...(prev.styleConfig || {}), customSize: Math.min(22, Number(((prev.styleConfig?.customSize || prev.styleConfig?.fontSize || 13) + 0.5).toFixed(1)))} }))} className="p-1 hover:bg-slate-100 active:bg-slate-200 rounded-lg text-gray-500 cursor-pointer"><Plus size={11} /></button>
+                           </div>
                         </div>
                      </div>
                   </div>
