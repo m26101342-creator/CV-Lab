@@ -21,6 +21,7 @@ export interface ResumeStyleConfig {
   customSize?: number;
   certificationsSize?: number;
   interestsSize?: number;
+  sectionPositions?: Record<string, 'left' | 'right'>;
 }
 
 export interface ResumeData {
@@ -119,4 +120,4 @@ export const INITIAL_RESUME_DATA: ResumeData = {
   }
 };
 
-export type TemplateType = 't1_executive' | 't2_geometric' | 't3_modern' | 't4_barnabas' | 't5_jonathan' | 't6_creative' | 't7_professional' | 't8_geometric_blue' | 't9_emerald_pill' | 't10_johan' | 't11_kelly' | 't12_maria' | 't13_tazi';
+export type TemplateType = 't1_executive' | 't2_geometric' | 't3_modern' | 't4_barnabas' | 't5_jonathan' | 't6_creative' | 't7_professional' | 't8_geometric_blue' | 't9_emerald_pill' | 't10_johan' | 't11_kelly' | 't12_maria' | 't13_tazi' | 't14_europass_classic' | 't15_europass_modern';

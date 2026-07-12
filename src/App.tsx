@@ -215,7 +215,9 @@ const TEMPLATES: Record<TemplateType, { name: string; layout: string; colors: an
   t10_johan: { name: 'Ronalma', layout: 'custom-t10', colors: { primary: '#1A365D', text: '#4A5568', heading: '#111827', soft: '#F7FAFC', lines: '#E2E8F0' } },
   t11_kelly: { name: 'Bezinho', layout: 'custom-t11', colors: { primary: '#EA580C', text: '#374151', heading: '#111827', soft: '#FFF7ED', lines: '#FFEDD5' } },
   t12_maria: { name: 'Maria', layout: 'custom-t12', colors: { primary: '#801D38', text: '#374151', heading: '#4C1021', soft: '#FFF5F6', lines: '#F5E1E4' } },
-  t13_tazi: { name: 'Tazi', layout: 'custom-t13', colors: { primary: '#0B4F6C', text: '#334155', heading: '#0F172A', soft: '#EBF5F8', lines: '#D0E5EB' } }
+  t13_tazi: { name: 'Tazi', layout: 'custom-t13', colors: { primary: '#0B4F6C', text: '#334155', heading: '#0F172A', soft: '#EBF5F8', lines: '#D0E5EB' } },
+  t14_europass_classic: { name: 'Europass Clássico', layout: 'custom-europass-classic', colors: { primary: '#003399', text: '#374151', heading: '#003399', soft: '#f4f6f7', lines: '#d1d5db' } },
+  t15_europass_modern: { name: 'Europass Moderno', layout: 'custom-europass-modern', colors: { primary: '#003399', text: '#374151', heading: '#003399', soft: '#f3f4f6', lines: '#d1d5db' } }
 };
 
 // --- Helpers ---
@@ -3935,200 +3937,374 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
         </div>
       )}
 
-      {theme.layout === 'custom-t8' && (
-        <div className="flex flex-row w-full min-h-[1122px] h-auto bg-white text-left font-sans overflow-visible relative">
-          {/* Top Geometric Accent */}
-          <div className="absolute top-0 left-0 right-0 h-44 bg-gradient-to-r from-blue-900 to-blue-700 pointer-events-none" style={{ clipPath: 'polygon(0 0, 100% 0, 100% 40%, 0% 100%)', backgroundColor: c.primary }}></div>
-          <div className="absolute top-0 left-0 right-0 h-44 bg-sky-400/30 pointer-events-none" style={{ clipPath: 'polygon(0 0, 100% 0, 100% 15%, 0% 85%)' }}></div>
-          
-          {/* Bottom Geometric Accent */}
-          <div className="absolute bottom-0 left-0 right-0 h-10 pointer-events-none" style={{ clipPath: 'polygon(0 100%, 100% 100%, 100% 0, 0% 100%)', backgroundColor: c.primary }}></div>
-          <div className="absolute bottom-0 left-0 right-0 h-10 bg-sky-400/20 pointer-events-none" style={{ clipPath: 'polygon(0 100%, 100% 100%, 100% 30%, 0% 100%)' }}></div>
+      {theme.layout === 'custom-t8' && (() => {
+        const getSectionCol = (key: string, def: 'left' | 'right') => {
+          return data.styleConfig?.sectionPositions?.[key] || def;
+        };
+        return (
+          <div className="flex flex-row w-full min-h-[1122px] h-auto bg-white text-left font-sans overflow-visible relative">
+            {/* Top Geometric Accent */}
+            <div className="absolute top-0 left-0 right-0 h-44 bg-gradient-to-r from-blue-900 to-blue-700 pointer-events-none" style={{ clipPath: 'polygon(0 0, 100% 0, 100% 40%, 0% 100%)', backgroundColor: c.primary }}></div>
+            <div className="absolute top-0 left-0 right-0 h-44 bg-sky-400/30 pointer-events-none" style={{ clipPath: 'polygon(0 0, 100% 0, 100% 15%, 0% 85%)' }}></div>
+            
+            {/* Bottom Geometric Accent */}
+            <div className="absolute bottom-0 left-0 right-0 h-10 pointer-events-none" style={{ clipPath: 'polygon(0 100%, 100% 100%, 100% 0, 0% 100%)', backgroundColor: c.primary }}></div>
+            <div className="absolute bottom-0 left-0 right-0 h-10 bg-sky-400/20 pointer-events-none" style={{ clipPath: 'polygon(0 100%, 100% 100%, 100% 30%, 0% 100%)' }}></div>
 
-          {/* Left Column (Light Gray Background / Sidebar) */}
-          <div className="w-[35%] bg-gray-50 h-full p-8 pt-10 flex flex-col relative z-10 border-r border-gray-100 shrink-0">
-            {/* Avatar Wrap */}
-            {data.styleConfig?.showPhoto !== false && (
-              <div className="flex flex-col items-center mb-8 relative">
-                <div 
-                  className="rounded-full border-4 shadow-lg overflow-hidden flex items-center justify-center bg-white" 
-                  style={{ 
-                    borderColor: '#38BDF8', // Cyan border
-                    width: `${data.personalInfo.photoSize || 110}px`,
-                    height: `${data.personalInfo.photoSize || 110}px`
-                  }} 
-                >
-                  {data.personalInfo.photo ? (
-                    <img 
-                      src={data.personalInfo.photo} 
-                      referrerPolicy="no-referrer" 
-                      className="object-cover object-top w-full h-full" 
-                    />
-                  ) : (
-                    <div className="text-3xl font-black text-gray-300">
-                      {data.personalInfo.fullName ? data.personalInfo.fullName.charAt(0).toUpperCase() : 'CV'}
+            {/* Left Column (Light Gray Background / Sidebar) */}
+            <div className="w-[35%] bg-gray-50 h-full p-8 pt-10 flex flex-col relative z-10 border-r border-gray-100 shrink-0">
+              {/* Avatar Wrap */}
+              {data.styleConfig?.showPhoto !== false && (
+                <div className="flex flex-col items-center mb-8 relative">
+                  <div 
+                    className="rounded-full border-4 shadow-lg overflow-hidden flex items-center justify-center bg-white" 
+                    style={{ 
+                      borderColor: '#38BDF8', // Cyan border
+                      width: `${data.personalInfo.photoSize || 110}px`,
+                      height: `${data.personalInfo.photoSize || 110}px`
+                    }} 
+                  >
+                    {data.personalInfo.photo ? (
+                      <img 
+                        src={data.personalInfo.photo} 
+                        referrerPolicy="no-referrer" 
+                        className="object-cover object-top w-full h-full" 
+                      />
+                    ) : (
+                      <div className="text-3xl font-black text-gray-300">
+                        {data.personalInfo.fullName ? data.personalInfo.fullName.charAt(0).toUpperCase() : 'CV'}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* CONTACT Section (Always in Left Sidebar) */}
+              <div className="mb-8">
+                <h3 className="text-sm font-black uppercase tracking-wider mb-4 text-center pb-1 border-b-2 border-sky-400/50" style={{ color: c.primary }}>{data.language === 'en' ? 'Contact' : 'Contacto'}</h3>
+                <div className="space-y-3">
+                  {data.personalInfo.email && (
+                    <div className="flex items-center gap-3 text-[10px] font-bold text-gray-700">
+                      <span className="w-6 h-6 rounded-full bg-sky-400 flex items-center justify-center text-white shrink-0 shadow-sm"><Mail size={11} /></span>
+                      <span className="truncate">{data.personalInfo.email}</span>
+                    </div>
+                  )}
+                  {data.personalInfo.phone && (
+                    <div className="flex items-center gap-3 text-[10px] font-bold text-gray-700">
+                      <span className="w-6 h-6 rounded-full bg-sky-400 flex items-center justify-center text-white shrink-0 shadow-sm"><Phone size={11} /></span>
+                      <span>{data.personalInfo.phone}</span>
+                    </div>
+                  )}
+                  {data.personalInfo.location && (
+                    <div className="flex items-center gap-3 text-[10px] font-bold text-gray-700">
+                      <span className="w-6 h-6 rounded-full bg-sky-400 flex items-center justify-center text-white shrink-0 shadow-sm"><MapPin size={11} /></span>
+                      <span>{data.personalInfo.location}</span>
+                    </div>
+                  )}
+                  {data.personalInfo.website && (
+                    <div className="flex items-center gap-3 text-[10px] font-bold text-gray-700">
+                      <span className="w-6 h-6 rounded-full bg-sky-400 flex items-center justify-center text-white shrink-0 shadow-sm"><Globe size={11} /></span>
+                      <span className="truncate">{data.personalInfo.website}</span>
                     </div>
                   )}
                 </div>
               </div>
-            )}
 
-            {/* CONTACT Section */}
-            <div className="mb-8">
-              <h3 className="text-sm font-black uppercase tracking-wider mb-4 text-center pb-1 border-b-2 border-sky-400/50" style={{ color: c.primary }}>{data.language === 'en' ? 'Contact' : 'Contacto'}</h3>
-              <div className="space-y-3">
-                {data.personalInfo.email && (
-                  <div className="flex items-center gap-3 text-[10px] font-bold text-gray-700">
-                    <span className="w-6 h-6 rounded-full bg-sky-400 flex items-center justify-center text-white shrink-0 shadow-sm"><Mail size={11} /></span>
-                    <span className="truncate">{data.personalInfo.email}</span>
-                  </div>
-                )}
-                {data.personalInfo.phone && (
-                  <div className="flex items-center gap-3 text-[10px] font-bold text-gray-700">
-                    <span className="w-6 h-6 rounded-full bg-sky-400 flex items-center justify-center text-white shrink-0 shadow-sm"><Phone size={11} /></span>
-                    <span>{data.personalInfo.phone}</span>
-                  </div>
-                )}
-                {data.personalInfo.location && (
-                  <div className="flex items-center gap-3 text-[10px] font-bold text-gray-700">
-                    <span className="w-6 h-6 rounded-full bg-sky-400 flex items-center justify-center text-white shrink-0 shadow-sm"><MapPin size={11} /></span>
-                    <span>{data.personalInfo.location}</span>
-                  </div>
-                )}
-                {data.personalInfo.website && (
-                  <div className="flex items-center gap-3 text-[10px] font-bold text-gray-700">
-                    <span className="w-6 h-6 rounded-full bg-sky-400 flex items-center justify-center text-white shrink-0 shadow-sm"><Globe size={11} /></span>
-                    <span className="truncate">{data.personalInfo.website}</span>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* SKILLS Section with Rating Dots */}
-            {data.skills.length > 0 && (
-              <div className="mb-8">
-                <EditableTitle as="h3" className="text-sm font-black uppercase tracking-wider mb-4 text-center pb-1 border-b-2 border-sky-400/50"  style={{ color: c.primary }} defaultText="Habilidades" text={getSectionTitle(data, 'skills', 'Habilidades')} onSave={onChange ? (v) => handleTitleChange('skills', v) : undefined} />
-                <div className="space-y-2.5">
-                  {data.skills.filter(s => s && s.name).map((s, idx) => {
-                    const dotsCount = s.level === 'Especialista' ? 5 : s.level === 'Avançado' ? 4 : s.level === 'Intermédio' ? 3 : s.level === 'Básico' ? 2 : s.level === 'Iniciante' ? 1 : 0;
-                    const showDots = s.level && s.level !== 'Ocultar';
-                    return (
-                      <div key={s.id || `skill-${idx}`} className="flex justify-between items-center text-[10px]">
-                        <span className="font-bold text-gray-700 mr-2 truncate">{s.name}</span>
-                        {showDots && (
-                          <div className="flex gap-1 shrink-0">
-                            {[1, 2, 3, 4, 5].map(dot => (
-                              <div 
-                                key={dot} 
-                                className={`w-2 h-2 rounded-full transition-colors duration-300 ${dot <= dotsCount ? 'bg-sky-400' : 'bg-gray-200'}`}
-                                style={dot <= dotsCount ? { backgroundColor: c.primary } : {}}
-                              />
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-
-            {/* HOBBIES / INTERESTS Section */}
-            {data.interests && data.interests.length > 0 && (
-              <div>
-                <EditableTitle as="h3" className="text-sm font-black uppercase tracking-wider mb-4 text-center pb-1 border-b-2 border-sky-400/50"  style={{ color: c.primary }} defaultText="Interesses" text={getSectionTitle(data, 'interests', 'Interesses')} onSave={onChange ? (v) => handleTitleChange('interests', v) : undefined} />
-                <div className="flex flex-wrap gap-1.5 justify-center">
-                  {data.interests.map((interest, idx) => (
-                    <span key={idx} className="px-2.5 py-1 bg-white border border-gray-200 rounded-full text-[9px] font-bold text-gray-600 shadow-sm">
-                      {interest}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Right Column (White Background) */}
-          <div className="w-[65%] h-full p-8 pt-6 flex flex-col relative z-20 overflow-hidden">
-            {/* Header / Name Block */}
-            <div className="mb-8 mt-4">
-              <h1 className="text-3xl font-black text-white drop-shadow-md tracking-wider uppercase mb-1">{data.personalInfo.fullName }</h1>
-              <p className="text-xs font-bold text-sky-300 tracking-[0.25em] uppercase">{data.personalInfo.title }</p>
-            </div>
-
-            <div className="space-y-6 flex-1 overflow-hidden mt-6">
-              {/* ABOUT ME Section */}
-              {data.personalInfo.summary && (
-                <div>
-                  <div className="inline-block py-1.5 px-5 rounded-full text-[10px] font-black uppercase tracking-wider text-white mb-3" style={{ backgroundColor: c.primary }}>
-                    Sobre Mim
-                  </div>
-                  <p className="text-xs leading-relaxed text-gray-600 font-medium">{renderText(data.personalInfo.summary)}</p>
+              {/* ABOUT ME / SUMMARY (if left) */}
+              {getSectionCol('summary', 'right') === 'left' && data.personalInfo.summary && (
+                <div className="mb-8">
+                  <EditableTitle as="h3" className="text-sm font-black uppercase tracking-wider mb-4 text-center pb-1 border-b-2 border-sky-400/50" style={{ color: c.primary }} defaultText="Sobre Mim" text={getSectionTitle(data, 'summary', 'Sobre Mim')} onSave={onChange ? (v) => handleTitleChange('summary', v) : undefined} />
+                  <p className="text-[10px] leading-relaxed text-gray-600 font-medium text-justify">{renderText(data.personalInfo.summary)}</p>
                 </div>
               )}
 
-              {/* EDUCATION Section */}
-              {data.education.length > 0 && (
-                <div>
-                  <EditableTitle as="div" className="inline-block py-1.5 px-5 rounded-full text-[10px] font-black uppercase tracking-wider text-white mb-4"  style={{ backgroundColor: c.primary }} defaultText="Formação Académica" text={getSectionTitle(data, 'education', 'Formação Académica')} onSave={onChange ? (v) => handleTitleChange('education', v) : undefined} />
+              {/* EDUCATION (if left) */}
+              {getSectionCol('education', 'right') === 'left' && data.education && data.education.length > 0 && (
+                <div className="mb-8">
+                  <EditableTitle as="h3" className="text-sm font-black uppercase tracking-wider mb-4 text-center pb-1 border-b-2 border-sky-400/50" style={{ color: c.primary }} defaultText="Formação Académica" text={getSectionTitle(data, 'education', 'Formação Académica')} onSave={onChange ? (v) => handleTitleChange('education', v) : undefined} />
                   <div className="space-y-4">
                     {data.education.map((e, idx) => (
-                      <div key={e.id || `edu-${idx}`} className={`relative ${data.styleConfig?.showTimeline !== false ? 'pl-6 border-l-2 border-sky-400/30' : ''}`}>
-                        {data.styleConfig?.showTimeline !== false && <div className="absolute -left-1.5 top-1.5 w-3 h-3 rounded-full border-2 border-white shadow bg-sky-400" />}
+                      <div key={e.id || `edu-${idx}`} className="text-[10px]">
                         <div className="flex justify-between items-baseline mb-0.5">
-                          <h4 className="text-xs font-black text-gray-900">{e.degree}</h4>
-                          <span className="text-[9px] font-black text-sky-500 uppercase tracking-tight shrink-0">{e.startDate} - {e.endDate}</span>
+                          <h4 className="font-black text-gray-900 uppercase">{e.degree}</h4>
+                          <span className="text-[8px] font-black text-sky-500 uppercase tracking-tight shrink-0">{e.startDate} - {e.endDate}</span>
                         </div>
-                        <p className="text-[10px] text-gray-500 font-bold">{e.institution}</p>
+                        <p className="text-[9px] text-gray-500 font-bold">{e.institution}</p>
                       </div>
                     ))}
                   </div>
                 </div>
               )}
 
-              {/* EXPERIENCE Section */}
-              {data.experience.length > 0 && (
-                <div>
-                  <EditableTitle as="div" className="inline-block py-1.5 px-5 rounded-full text-[10px] font-black uppercase tracking-wider text-white mb-4"  style={{ backgroundColor: c.primary }} defaultText="Experiência Profissional" text={getSectionTitle(data, 'experience', 'Experiência Profissional')} onSave={onChange ? (v) => handleTitleChange('experience', v) : undefined} />
+              {/* EXPERIENCE (if left) */}
+              {getSectionCol('experience', 'right') === 'left' && data.experience && data.experience.length > 0 && (
+                <div className="mb-8">
+                  <EditableTitle as="h3" className="text-sm font-black uppercase tracking-wider mb-4 text-center pb-1 border-b-2 border-sky-400/50" style={{ color: c.primary }} defaultText="Experiência Profissional" text={getSectionTitle(data, 'experience', 'Experiência Profissional')} onSave={onChange ? (v) => handleTitleChange('experience', v) : undefined} />
                   <div className="space-y-4">
                     {data.experience.map((ex, idx) => (
-                      <div key={ex.id || `exp-${idx}`} className={`relative ${data.styleConfig?.showTimeline !== false ? 'pl-6 border-l-2 border-sky-400/30' : ''}`}>
-                        {data.styleConfig?.showTimeline !== false && <div className="absolute -left-1.5 top-1.5 w-3 h-3 rounded-full border-2 border-white shadow bg-sky-400" />}
-                        <div className="flex justify-between items-baseline mb-1">
-                          <h4 className="text-xs font-black text-gray-955">{ex.position}</h4>
-                          <span className="text-[9px] font-black text-sky-500 uppercase tracking-tight shrink-0">{ex.startDate} - {ex.current ? (data.language === 'en' ? 'Present' : 'Presente') : ex.endDate}</span>
+                      <div key={ex.id || `exp-${idx}`} className="text-[10px]">
+                        <div className="flex justify-between items-baseline mb-0.5">
+                          <h4 className="font-black text-gray-95 uppercase">{ex.position}</h4>
+                          <span className="text-[8px] font-black text-sky-500 uppercase tracking-tight shrink-0">{ex.startDate} - {ex.current ? (data.language === 'en' ? 'Present' : 'Presente') : ex.endDate}</span>
                         </div>
-                        <p className="text-[10px] font-bold uppercase tracking-tight mb-2" style={{ color: c.primary }}>{ex.company}</p>
-                        <p className="text-[11px] leading-relaxed text-gray-600 font-medium">{renderText(ex.description)}</p>
+                        <p className="font-bold uppercase tracking-tight text-[9px] mb-1.5" style={{ color: c.primary }}>{ex.company}</p>
+                        <p className="leading-relaxed text-gray-600 font-medium text-justify text-[9.5px]">{renderText(ex.description)}</p>
                       </div>
                     ))}
                   </div>
                 </div>
               )}
 
-              {/* CUSTOM SECTIONS */}
-              {data.customSections?.map((cs, idx) => (
-                <div key={cs.id || `cs-${idx}`}>
-                  <div className="inline-block py-1.5 px-5 rounded-full text-[10px] font-black uppercase tracking-wider text-white mb-4" style={{ backgroundColor: c.primary }}>
-                    {cs.title}
-                  </div>
-                  <div className="space-y-4">
-                    {cs.items.map((item, idxx) => (
-                      <div key={item.id || `csi-${idxx}`} className={`relative ${data.styleConfig?.showTimeline !== false ? 'pl-6 border-l-2 border-sky-400/30' : ''}`}>
-                        {data.styleConfig?.showTimeline !== false && <div className="absolute -left-1.5 top-1.5 w-3 h-3 rounded-full border-2 border-white shadow bg-sky-400" />}
-                        <div className="flex justify-between items-baseline mb-1">
-                          <h4 className="text-xs font-black text-gray-955">{item.name}</h4>
+              {/* SKILLS (if left) */}
+              {getSectionCol('skills', 'left') === 'left' && data.skills && data.skills.length > 0 && (
+                <div className="mb-8">
+                  <EditableTitle as="h3" className="text-sm font-black uppercase tracking-wider mb-4 text-center pb-1 border-b-2 border-sky-400/50" style={{ color: c.primary }} defaultText="Habilidades" text={getSectionTitle(data, 'skills', 'Habilidades')} onSave={onChange ? (v) => handleTitleChange('skills', v) : undefined} />
+                  <div className="space-y-2.5">
+                    {data.skills.filter(s => s && s.name).map((s, idx) => {
+                      const dotsCount = s.level === 'Especialista' ? 5 : s.level === 'Avançado' ? 4 : s.level === 'Intermédio' ? 3 : s.level === 'Básico' ? 2 : s.level === 'Iniciante' ? 1 : 0;
+                      const showDots = s.level && s.level !== 'Ocultar';
+                      return (
+                        <div key={s.id || `skill-${idx}`} className="flex justify-between items-center text-[10px]">
+                          <span className="font-bold text-gray-700 mr-2 truncate">{s.name}</span>
+                          {showDots && (
+                            <div className="flex gap-1 shrink-0">
+                              {[1, 2, 3, 4, 5].map(dot => (
+                                <div 
+                                  key={dot} 
+                                  className={`w-2 h-2 rounded-full transition-colors duration-300 ${dot <= dotsCount ? 'bg-sky-400' : 'bg-gray-200'}`}
+                                  style={dot <= dotsCount ? { backgroundColor: c.primary } : {}}
+                                />
+                              ))}
+                            </div>
+                          )}
                         </div>
-                        {item.description && <p className="text-[11px] leading-relaxed text-gray-600 font-medium mt-1">{renderText(item.description)}</p>}
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* LANGUAGES (if left) */}
+              {getSectionCol('languages', 'left') === 'left' && data.languages && data.languages.length > 0 && (
+                <div className="mb-8">
+                  <EditableTitle as="h3" className="text-sm font-black uppercase tracking-wider mb-4 text-center pb-1 border-b-2 border-sky-400/50" style={{ color: c.primary }} defaultText="Idiomas" text={getSectionTitle(data, 'languages', 'Idiomas')} onSave={onChange ? (v) => handleTitleChange('languages', v) : undefined} />
+                  <div className="space-y-2">
+                    {data.languages.map((l, idx) => (
+                      <div key={l.id || `lang-${idx}`} className="flex justify-between items-center text-[10px] font-bold text-gray-700">
+                        <span>{l.name}</span>
+                        <span className="text-[8px] uppercase tracking-wide px-1.5 py-0.5 bg-sky-100 rounded text-sky-800">{l.level}</span>
                       </div>
                     ))}
                   </div>
                 </div>
-              ))}
+              )}
+
+              {/* CERTIFICATIONS (if left) */}
+              {getSectionCol('certifications', 'left') === 'left' && data.certifications && data.certifications.length > 0 && (
+                <div className="mb-8">
+                  <EditableTitle as="h3" className="text-sm font-black uppercase tracking-wider mb-4 text-center pb-1 border-b-2 border-sky-400/50" style={{ color: c.primary }} defaultText="Certificações" text={getSectionTitle(data, 'certifications', 'Certificações')} onSave={onChange ? (v) => handleTitleChange('certifications', v) : undefined} />
+                  <div className="space-y-2">
+                    {data.certifications.map((cert, idx) => (
+                      <div key={cert.id || `cert-${idx}`} className="text-[10px] text-gray-700">
+                        <div className="font-bold">{cert.name}</div>
+                        {cert.date && <div className="text-[8px] text-gray-400 font-bold uppercase tracking-wider mt-0.5">{cert.date}</div>}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* INTERESTS (if left) */}
+              {getSectionCol('interests', 'left') === 'left' && data.interests && data.interests.length > 0 && (
+                <div className="mb-8">
+                  <EditableTitle as="h3" className="text-sm font-black uppercase tracking-wider mb-4 text-center pb-1 border-b-2 border-sky-400/50" style={{ color: c.primary }} defaultText="Interesses" text={getSectionTitle(data, 'interests', 'Interesses')} onSave={onChange ? (v) => handleTitleChange('interests', v) : undefined} />
+                  <div className="flex flex-wrap gap-1.5 justify-center">
+                    {data.interests.map((interest, idx) => (
+                      <span key={idx} className="px-2.5 py-1 bg-white border border-gray-200 rounded-full text-[9px] font-bold text-gray-600 shadow-sm">
+                        {interest}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* CUSTOM SECTIONS (if left) */}
+              {data.customSections?.map((cs, idx) => {
+                if (getSectionCol('custom_' + cs.id, 'right') !== 'left') return null;
+                return (
+                  <div key={cs.id || `cs-${idx}`} className="mb-8">
+                    <h3 className="text-sm font-black uppercase tracking-wider mb-4 text-center pb-1 border-b-2 border-sky-400/50" style={{ color: c.primary }}>{cs.title}</h3>
+                    <div className="space-y-3">
+                      {cs.items.map((item, idxx) => (
+                        <div key={item.id || `csi-${idxx}`} className="text-[10px]">
+                          <h4 className="font-black text-gray-900 uppercase">{item.name}</h4>
+                          {item.description && <p className="text-[9.5px] leading-relaxed text-gray-600 font-medium mt-1 text-justify">{renderText(item.description)}</p>}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Right Column (White Background) */}
+            <div className="w-[65%] h-full p-8 pt-6 flex flex-col relative z-20 overflow-hidden">
+              {/* Header / Name Block */}
+              <div className="mb-8 mt-4">
+                <h1 className="text-3xl font-black text-white drop-shadow-md tracking-wider uppercase mb-1">{data.personalInfo.fullName}</h1>
+                <p className="text-xs font-bold text-sky-300 tracking-[0.25em] uppercase">{data.personalInfo.title}</p>
+              </div>
+
+              <div className="space-y-6 flex-1 overflow-hidden mt-6">
+                {/* ABOUT ME / SUMMARY (if right) */}
+                {getSectionCol('summary', 'right') === 'right' && data.personalInfo.summary && (
+                  <div>
+                    <div className="inline-block py-1.5 px-5 rounded-full text-[10px] font-black uppercase tracking-wider text-white mb-3" style={{ backgroundColor: c.primary }}>
+                      Sobre Mim
+                    </div>
+                    <p className="text-xs leading-relaxed text-gray-600 font-medium text-justify">{renderText(data.personalInfo.summary)}</p>
+                  </div>
+                )}
+
+                {/* EDUCATION (if right) */}
+                {getSectionCol('education', 'right') === 'right' && data.education && data.education.length > 0 && (
+                  <div>
+                    <EditableTitle as="div" className="inline-block py-1.5 px-5 rounded-full text-[10px] font-black uppercase tracking-wider text-white mb-4" style={{ backgroundColor: c.primary }} defaultText="Formação Académica" text={getSectionTitle(data, 'education', 'Formação Académica')} onSave={onChange ? (v) => handleTitleChange('education', v) : undefined} />
+                    <div className="space-y-4">
+                      {data.education.map((e, idx) => (
+                        <div key={e.id || `edu-${idx}`} className={`relative ${data.styleConfig?.showTimeline !== false ? 'pl-6 border-l-2 border-sky-400/30' : ''}`}>
+                          {data.styleConfig?.showTimeline !== false && <div className="absolute -left-1.5 top-1.5 w-3 h-3 rounded-full border-2 border-white shadow bg-sky-400" />}
+                          <div className="flex justify-between items-baseline mb-0.5">
+                            <h4 className="text-xs font-black text-gray-900">{e.degree}</h4>
+                            <span className="text-[9px] font-black text-sky-500 uppercase tracking-tight shrink-0">{e.startDate} - {e.endDate}</span>
+                          </div>
+                          <p className="text-[10px] text-gray-500 font-bold">{e.institution}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* EXPERIENCE (if right) */}
+                {getSectionCol('experience', 'right') === 'right' && data.experience && data.experience.length > 0 && (
+                  <div>
+                    <EditableTitle as="div" className="inline-block py-1.5 px-5 rounded-full text-[10px] font-black uppercase tracking-wider text-white mb-4" style={{ backgroundColor: c.primary }} defaultText="Experiência Profissional" text={getSectionTitle(data, 'experience', 'Experiência Profissional')} onSave={onChange ? (v) => handleTitleChange('experience', v) : undefined} />
+                    <div className="space-y-4">
+                      {data.experience.map((ex, idx) => (
+                        <div key={ex.id || `exp-${idx}`} className={`relative ${data.styleConfig?.showTimeline !== false ? 'pl-6 border-l-2 border-sky-400/30' : ''}`}>
+                          {data.styleConfig?.showTimeline !== false && <div className="absolute -left-1.5 top-1.5 w-3 h-3 rounded-full border-2 border-white shadow bg-sky-400" />}
+                          <div className="flex justify-between items-baseline mb-1">
+                            <h4 className="text-xs font-black text-gray-955">{ex.position}</h4>
+                            <span className="text-[9px] font-black text-sky-500 uppercase tracking-tight shrink-0">{ex.startDate} - {ex.current ? (data.language === 'en' ? 'Present' : 'Presente') : ex.endDate}</span>
+                          </div>
+                          <p className="text-[10px] font-bold uppercase tracking-tight mb-2" style={{ color: c.primary }}>{ex.company}</p>
+                          <p className="text-[11px] leading-relaxed text-gray-600 font-medium text-justify">{renderText(ex.description)}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* SKILLS (if right) */}
+                {getSectionCol('skills', 'left') === 'right' && data.skills && data.skills.length > 0 && (
+                  <div>
+                    <EditableTitle as="div" className="inline-block py-1.5 px-5 rounded-full text-[10px] font-black uppercase tracking-wider text-white mb-4" style={{ backgroundColor: c.primary }} defaultText="Habilidades" text={getSectionTitle(data, 'skills', 'Habilidades')} onSave={onChange ? (v) => handleTitleChange('skills', v) : undefined} />
+                    <div className="grid grid-cols-2 gap-4">
+                      {data.skills.filter(s => s && s.name).map((s, idx) => {
+                        const dotsCount = s.level === 'Especialista' ? 5 : s.level === 'Avançado' ? 4 : s.level === 'Intermédio' ? 3 : s.level === 'Básico' ? 2 : s.level === 'Iniciante' ? 1 : 0;
+                        const showDots = s.level && s.level !== 'Ocultar';
+                        return (
+                          <div key={s.id || `skill-${idx}`} className="flex justify-between items-center text-xs">
+                            <span className="font-bold text-gray-700 mr-2 truncate">{s.name}</span>
+                            {showDots && (
+                              <div className="flex gap-1 shrink-0">
+                                {[1, 2, 3, 4, 5].map(dot => (
+                                  <div 
+                                    key={dot} 
+                                    className={`w-2.5 h-2.5 rounded-full transition-colors duration-300 ${dot <= dotsCount ? 'bg-sky-400' : 'bg-gray-200'}`}
+                                    style={dot <= dotsCount ? { backgroundColor: c.primary } : {}}
+                                  />
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {/* LANGUAGES (if right) */}
+                {getSectionCol('languages', 'left') === 'right' && data.languages && data.languages.length > 0 && (
+                  <div>
+                    <EditableTitle as="div" className="inline-block py-1.5 px-5 rounded-full text-[10px] font-black uppercase tracking-wider text-white mb-4" style={{ backgroundColor: c.primary }} defaultText="Idiomas" text={getSectionTitle(data, 'languages', 'Idiomas')} onSave={onChange ? (v) => handleTitleChange('languages', v) : undefined} />
+                    <div className="grid grid-cols-2 gap-4">
+                      {data.languages.map((l, idx) => (
+                        <div key={l.id || `lang-${idx}`} className="flex justify-between items-center text-xs font-bold text-gray-700 pb-1.5 border-b border-gray-100">
+                          <span>{l.name}</span>
+                          <span className="text-[9px] uppercase tracking-wide px-2 py-0.5 bg-sky-100 rounded text-sky-800">{l.level}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* CERTIFICATIONS (if right) */}
+                {getSectionCol('certifications', 'left') === 'right' && data.certifications && data.certifications.length > 0 && (
+                  <div>
+                    <EditableTitle as="div" className="inline-block py-1.5 px-5 rounded-full text-[10px] font-black uppercase tracking-wider text-white mb-4" style={{ backgroundColor: c.primary }} defaultText="Certificações" text={getSectionTitle(data, 'certifications', 'Certificações')} onSave={onChange ? (v) => handleTitleChange('certifications', v) : undefined} />
+                    <div className="grid grid-cols-2 gap-x-6 gap-y-3">
+                      {data.certifications.map((cert, idx) => (
+                        <div key={cert.id || `cert-${idx}`} className="text-xs text-gray-700 pb-1.5 border-b border-gray-100">
+                          <div className="font-bold">{cert.name}</div>
+                          {cert.date && <div className="text-[9px] text-gray-400 font-bold uppercase tracking-wider mt-0.5">{cert.date}</div>}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* INTERESTS (if right) */}
+                {getSectionCol('interests', 'left') === 'right' && data.interests && data.interests.length > 0 && (
+                  <div>
+                    <EditableTitle as="div" className="inline-block py-1.5 px-5 rounded-full text-[10px] font-black uppercase tracking-wider text-white mb-4" style={{ backgroundColor: c.primary }} defaultText="Interesses" text={getSectionTitle(data, 'interests', 'Interesses')} onSave={onChange ? (v) => handleTitleChange('interests', v) : undefined} />
+                    <div className="flex flex-wrap gap-2">
+                      {data.interests.map((interest, idx) => (
+                        <span key={idx} className="px-3 py-1 bg-slate-50 border border-slate-200 rounded-full text-xs font-bold text-gray-600 shadow-sm">
+                          {interest}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* CUSTOM SECTIONS (if right) */}
+                {data.customSections?.map((cs, idx) => {
+                  if (getSectionCol('custom_' + cs.id, 'right') !== 'right') return null;
+                  return (
+                    <div key={cs.id || `cs-${idx}`}>
+                      <div className="inline-block py-1.5 px-5 rounded-full text-[10px] font-black uppercase tracking-wider text-white mb-4" style={{ backgroundColor: c.primary }}>
+                        {cs.title}
+                      </div>
+                      <div className="space-y-4">
+                        {cs.items.map((item, idxx) => (
+                          <div key={item.id || `csi-${idxx}`} className={`relative ${data.styleConfig?.showTimeline !== false ? 'pl-6 border-l-2 border-sky-400/30' : ''}`}>
+                            {data.styleConfig?.showTimeline !== false && <div className="absolute -left-1.5 top-1.5 w-3 h-3 rounded-full border-2 border-white shadow bg-sky-400" />}
+                            <div className="flex justify-between items-baseline mb-1">
+                              <h4 className="text-xs font-black text-gray-955">{item.name}</h4>
+                            </div>
+                            {item.description && <p className="text-[11px] leading-relaxed text-gray-600 font-medium mt-1 text-justify">{renderText(item.description)}</p>}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {theme.layout === 'custom-t9' && (
         <div className="flex flex-col w-full min-h-[1122px] h-auto bg-white text-left font-sans overflow-visible relative">
@@ -5118,11 +5294,579 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
           </div>
 
           {/* Graphical Minimal Footer Block */}
-          <div className="h-6 w-full mt-auto bg-slate-950 flex items-center justify-between px-8 text-[7.5px] text-slate-500 font-mono font-black uppercase tracking-widest shrink-0 font-mono">
+          <div className="h-6 w-full mt-auto bg-slate-950 flex items-center justify-between px-8 text-[7.5px] text-slate-500 font-mono font-black uppercase tracking-widest shrink-0">
             <span>CV LAB AUTOMATED GENERATOR</span>
             <span style={{ color: c.primary }}>● COMPLIANT WEB DESIGNS</span>
           </div>
 
+        </div>
+      )}
+
+      {/* Europass Clássico */}
+      {theme.layout === 'custom-europass-classic' && (
+        <div 
+          id="resume-content"
+          className="bg-white flex flex-col w-full min-h-[1122px] h-auto text-left font-sans overflow-visible relative print:shadow-none"
+          style={{ 
+            padding: `${data.styleConfig?.margins || 35}px`,
+            fontSize: `${data.styleConfig?.fontSize || 13}px`,
+            lineHeight: data.styleConfig?.lineHeight || 1.4
+          }}
+        >
+          {/* Top Header Block with Europass Seal */}
+          <div className="relative pb-6 mb-6">
+            {/* Europass Seal Top Right (Enlarged and aligned) */}
+            <div className="absolute top-0 right-0">
+              <img 
+                src="https://i.supaimg.com/6bc04951-8cbe-4706-9f0c-a01f9ea9a6c4/a3ccfdcc-7d55-45b6-8c75-2543d5eedaad.png" 
+                alt="Europass Logo" 
+                className="h-20 md:h-24 object-contain"
+                referrerPolicy="no-referrer"
+              />
+            </div>
+
+            <div className="grid grid-cols-[170px_1fr] gap-x-8">
+              {/* Profile Photo */}
+              <div className="flex justify-end border-r border-gray-200 pr-6 pb-4">
+                {data.styleConfig?.showPhoto !== false && (
+                  <div 
+                    className="overflow-hidden border border-gray-300 shadow-sm" 
+                    style={{ 
+                      borderRadius: data.personalInfo.photoStyle === 'square' ? '8px' : '50%',
+                      width: `${data.personalInfo.photoSize || 85}px`,
+                      height: `${data.personalInfo.photoSize || 85}px`,
+                      fontSize: `${(data.personalInfo.photoSize || 85) * 0.4}px`,
+                      lineHeight: `${data.personalInfo.photoSize || 85}px`,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      background: '#f1f5f9'
+                    }}
+                  >
+                    {data.personalInfo.photo ? (
+                      <img 
+                        src={data.personalInfo.photo} 
+                        referrerPolicy="no-referrer" 
+                        alt="Profile" 
+                        className="w-full h-full object-cover object-top" 
+                      />
+                    ) : (
+                      data.personalInfo.fullName ? data.personalInfo.fullName.charAt(0).toUpperCase() : 'CV'
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Name and Title */}
+              <div className="text-left pl-2 pr-44 pt-1">
+                <h1 
+                  className="font-extrabold text-[#003399] tracking-tight leading-none mb-1.5"
+                  style={{ fontSize: `${data.styleConfig?.titleSize || 26}px` }}
+                >
+                  {data.personalInfo.fullName || 'Carlos Almeida'}
+                </h1>
+                {data.personalInfo.title && (
+                  <p className="text-xs font-bold text-gray-500 uppercase tracking-widest">
+                    {data.personalInfo.title}
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Personal Info Row (Contact details) */}
+          <div className="grid grid-cols-[170px_1fr] gap-x-8 mb-6">
+            <div className="text-right border-r border-gray-200 pr-6 text-xs font-black uppercase tracking-wider text-[#003399] py-1">
+              {data.language === 'en' ? 'PERSONAL INFORMATION' : 'INFORMAÇÃO PESSOAL'}
+            </div>
+            <div className="text-left pl-2 space-y-1.5 text-xs text-gray-700">
+              {data.personalInfo.phone && (
+                <div className="flex gap-2">
+                  <span className="font-bold text-gray-400 w-[140px] uppercase text-[10px] tracking-wide">{data.language === 'en' ? 'Phone:' : 'Número de telemóvel:'}</span>
+                  <span className="font-medium text-gray-800">{data.personalInfo.phone}</span>
+                </div>
+              )}
+              {data.personalInfo.email && (
+                <div className="flex gap-2">
+                  <span className="font-bold text-gray-400 w-[140px] uppercase text-[10px] tracking-wide">{data.language === 'en' ? 'Email:' : 'Endereço de email:'}</span>
+                  <span className="font-medium text-gray-800 break-all">{data.personalInfo.email}</span>
+                </div>
+              )}
+              {data.personalInfo.location && (
+                <div className="flex gap-2">
+                  <span className="font-bold text-gray-400 w-[140px] uppercase text-[10px] tracking-wide">{data.language === 'en' ? 'Address:' : 'Endereço:'}</span>
+                  <span className="font-medium text-gray-800">{data.personalInfo.location}</span>
+                </div>
+              )}
+              {data.personalInfo.website && (
+                <div className="flex gap-2">
+                  <span className="font-bold text-gray-400 w-[140px] uppercase text-[10px] tracking-wide">Website/LinkedIn:</span>
+                  <span className="font-medium text-[#003399] underline break-all">{data.personalInfo.website}</span>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Summary Row */}
+          {data.personalInfo.summary && (
+            <div className="grid grid-cols-[170px_1fr] gap-x-8 mb-6">
+              <div className="text-right border-r border-gray-200 pr-6 text-xs font-black uppercase tracking-wider text-[#003399] py-1">
+                {getSectionTitle(data, 'summary', data.language === 'en' ? 'ABOUT ME' : 'SOBRE MIM')}
+              </div>
+              <div className="text-left pl-2 text-gray-700 leading-relaxed text-xs text-justify">
+                {renderText(data.personalInfo.summary)}
+              </div>
+            </div>
+          )}
+
+          {/* Experience Section */}
+          {data.experience.length > 0 && (
+            <>
+              <div className="grid grid-cols-[170px_1fr] gap-x-8 mb-4">
+                <div className="text-right border-r border-gray-200 pr-6 text-xs font-black uppercase tracking-wider text-[#003399] py-1">
+                  {getSectionTitle(data, 'experience', 'EXPERIÊNCIA PROFISSIONAL')}
+                </div>
+                <div className="border-b border-gray-200 pb-1 flex items-center"></div>
+              </div>
+              {data.experience.map((ex, idx) => (
+                <div key={ex.id || `exp-${idx}`} className="grid grid-cols-[170px_1fr] gap-x-8 mb-5 last:mb-6">
+                  <div className="text-right border-r border-gray-200 pr-6 text-[11px] font-bold text-gray-400 uppercase tracking-wider pt-0.5">
+                    {ex.startDate} – {ex.current ? (data.language === 'en' ? 'PRESENT' : 'ATUAL') : ex.endDate}
+                  </div>
+                  <div className="text-left pl-2">
+                    <div className="font-extrabold text-gray-950 text-xs uppercase tracking-tight">
+                      {ex.position}
+                    </div>
+                    <div className="text-xs text-[#003399] font-bold mt-0.5">
+                      {ex.company}
+                    </div>
+                    {ex.description && (
+                      <div className="mt-2 space-y-1">
+                        {ex.description.split('\n').filter(Boolean).map((bullet, bIdx) => (
+                          <p key={bIdx} className="text-[11.5px] text-gray-600 leading-relaxed text-justify">
+                            {bullet.replace(/^-\s*|^•\s*/, '')}
+                          </p>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </>
+          )}
+
+          {/* Education Section */}
+          {data.education.length > 0 && (
+            <>
+              <div className="grid grid-cols-[170px_1fr] gap-x-8 mb-4">
+                <div className="text-right border-r border-gray-200 pr-6 text-xs font-black uppercase tracking-wider text-[#003399] py-1">
+                  {getSectionTitle(data, 'education', 'EDUCAÇÃO E FORMAÇÃO')}
+                </div>
+                <div className="border-b border-gray-200 pb-1 flex items-center"></div>
+              </div>
+              {data.education.map((e, idx) => (
+                <div key={e.id || `edu-${idx}`} className="grid grid-cols-[170px_1fr] gap-x-8 mb-5 last:mb-6">
+                  <div className="text-right border-r border-gray-200 pr-6 text-[11px] font-bold text-gray-400 uppercase tracking-wider pt-0.5">
+                    {e.startDate} – {e.endDate}
+                  </div>
+                  <div className="text-left pl-2">
+                    <div className="font-extrabold text-gray-950 text-xs uppercase tracking-tight">
+                      {e.degree}
+                    </div>
+                    <div className="text-xs text-[#003399] font-bold mt-0.5">
+                      {e.institution}
+                    </div>
+                    {e.description && (
+                      <p className="text-[11.5px] text-gray-600 mt-2 leading-relaxed text-justify">{e.description}</p>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </>
+          )}
+
+          {/* Skills Section */}
+          {data.skills.length > 0 && (
+            <>
+              <div className="grid grid-cols-[170px_1fr] gap-x-8 mb-4">
+                <div className="text-right border-r border-gray-200 pr-6 text-xs font-black uppercase tracking-wider text-[#003399] py-1">
+                  {getSectionTitle(data, 'skills', 'COMPETÊNCIAS')}
+                </div>
+                <div className="border-b border-gray-200 pb-1 flex items-center"></div>
+              </div>
+              <div className="grid grid-cols-[170px_1fr] gap-x-8 mb-6">
+                <div className="text-right border-r border-gray-200 pr-6"></div>
+                <div className="text-left pl-2 grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2">
+                  {data.skills.map((s, idx) => (
+                    <div key={s.id || `skill-${idx}`} className="flex justify-between items-center border-b border-gray-100 pb-1.5 text-xs">
+                      <span className="font-bold text-gray-800">{s.name}</span>
+                      {s.level !== 'Ocultar' && (
+                        <span className="text-[9px] text-[#003399] font-bold uppercase tracking-wider bg-blue-50 px-2.5 py-0.5 rounded">
+                          {s.level}
+                        </span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </>
+          )}
+
+          {/* Languages Section */}
+          {data.languages && data.languages.length > 0 && (
+            <>
+              <div className="grid grid-cols-[170px_1fr] gap-x-8 mb-4">
+                <div className="text-right border-r border-gray-200 pr-6 text-xs font-black uppercase tracking-wider text-[#003399] py-1">
+                  {getSectionTitle(data, 'languages', 'IDIOMAS')}
+                </div>
+                <div className="border-b border-gray-200 pb-1 flex items-center"></div>
+              </div>
+              <div className="grid grid-cols-[170px_1fr] gap-x-8 mb-6">
+                <div className="text-right border-r border-gray-200 pr-6"></div>
+                <div className="text-left pl-2 grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2">
+                  {data.languages.map((l, idx) => (
+                    <div key={l.id || `lang-${idx}`} className="flex justify-between items-center border-b border-gray-100 pb-1.5 text-xs">
+                      <span className="font-bold text-gray-800">{l.name}</span>
+                      <span className="text-[9px] font-black tracking-wider text-gray-500 uppercase bg-slate-100 px-2 py-0.5 rounded">{l.level}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </>
+          )}
+
+          {/* Certifications Section */}
+          {data.certifications && data.certifications.length > 0 && (
+            <>
+              <div className="grid grid-cols-[170px_1fr] gap-x-8 mb-4">
+                <div className="text-right border-r border-gray-200 pr-6 text-xs font-black uppercase tracking-wider text-[#003399] py-1">
+                  {getSectionTitle(data, 'certifications', 'CERTIFICAÇÕES')}
+                </div>
+                <div className="border-b border-gray-200 pb-1 flex items-center"></div>
+              </div>
+              <div className="grid grid-cols-[170px_1fr] gap-x-8 mb-6">
+                <div className="text-right border-r border-gray-200 pr-6"></div>
+                <div className="text-left pl-2 grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2">
+                  {data.certifications.map((cert, idx) => (
+                    <div key={cert.id || `cert-${idx}`} className="flex justify-between items-center border-b border-gray-100 pb-1.5 text-xs">
+                      <span className="font-bold text-gray-800">{cert.name}</span>
+                      {cert.date && <span className="text-[10px] text-gray-400 font-medium">{cert.date}</span>}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </>
+          )}
+
+          {/* Interests Section */}
+          {data.interests && data.interests.length > 0 && (
+            <>
+              <div className="grid grid-cols-[170px_1fr] gap-x-8 mb-4">
+                <div className="text-right border-r border-gray-200 pr-6 text-xs font-black uppercase tracking-wider text-[#003399] py-1">
+                  {getSectionTitle(data, 'interests', 'INTERESSES')}
+                </div>
+                <div className="border-b border-gray-200 pb-1 flex items-center"></div>
+              </div>
+              <div className="grid grid-cols-[170px_1fr] gap-x-8 mb-6">
+                <div className="text-right border-r border-gray-200 pr-6"></div>
+                <div className="text-left pl-2 flex flex-wrap gap-2">
+                  {data.interests.map((interest, idx) => (
+                    <span key={idx} className="bg-slate-100 text-slate-700 text-xs px-3 py-1 rounded font-medium">
+                      {interest}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </>
+          )}
+
+          {/* Custom Sections */}
+          {data.customSections?.map((cs, idx) => (
+            <div key={cs.id || `cs-${idx}`} className="mb-6">
+              <div className="grid grid-cols-[170px_1fr] gap-x-8 mb-4">
+                <div className="text-right border-r border-gray-200 pr-6 text-xs font-black uppercase tracking-wider text-[#003399] py-1">
+                  {cs.title}
+                </div>
+                <div className="border-b border-gray-200 pb-1 flex items-center"></div>
+              </div>
+              <div className="grid grid-cols-[170px_1fr] gap-x-8">
+                <div className="text-right border-r border-gray-200 pr-6"></div>
+                <div className="text-left pl-2 space-y-4 w-full">
+                  {cs.items.map((item, idxx) => (
+                    <div key={item.id || `csi-${idxx}`} className="flex flex-col text-xs pb-3 border-b border-gray-100 last:border-0 last:pb-0">
+                      <span className="font-bold text-gray-900">{item.name}</span>
+                      {item.description && <span className="text-gray-600 text-[11.5px] leading-relaxed mt-1 whitespace-pre-wrap text-justify">{item.description}</span>}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Europass Moderno */}
+      {theme.layout === 'custom-europass-modern' && (
+        <div 
+          id="resume-content"
+          className="bg-white flex w-full min-h-[1122px] h-auto text-left font-sans overflow-visible relative print:shadow-none"
+          style={{ 
+            fontSize: `${data.styleConfig?.fontSize || 13}px`,
+            lineHeight: data.styleConfig?.lineHeight || 1.4
+          }}
+        >
+          {/* Left Column (Sidebar) */}
+          <div className="w-[260px] shrink-0 bg-[#f4f6f8] border-r border-gray-200 p-6 flex flex-col gap-6">
+            {/* Profile Photo */}
+            {data.styleConfig?.showPhoto !== false && (
+              <div className="flex justify-center mt-4">
+                <div 
+                  className="overflow-hidden border border-gray-300 shadow-sm bg-white" 
+                  style={{ 
+                    borderRadius: data.personalInfo.photoStyle === 'square' ? '8px' : '50%',
+                    width: `${data.personalInfo.photoSize || 100}px`,
+                    height: `${data.personalInfo.photoSize || 100}px`,
+                    fontSize: `${(data.personalInfo.photoSize || 100) * 0.4}px`,
+                    lineHeight: `${data.personalInfo.photoSize || 100}px`,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }}
+                >
+                  {data.personalInfo.photo ? (
+                    <img 
+                      src={data.personalInfo.photo} 
+                      referrerPolicy="no-referrer" 
+                      alt="Profile" 
+                      className="w-full h-full object-cover object-top" 
+                    />
+                  ) : (
+                    data.personalInfo.fullName ? data.personalInfo.fullName.charAt(0).toUpperCase() : 'CV'
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Name and title */}
+            <div className="text-center mt-2">
+              <h2 className="font-extrabold text-gray-900 tracking-tight leading-tight text-lg uppercase text-[#003399]">
+                {data.personalInfo.fullName || 'Carlos Almeida'}
+              </h2>
+              {data.personalInfo.title && (
+                <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mt-1.5">
+                  {data.personalInfo.title}
+                </p>
+              )}
+            </div>
+
+            {/* Contacts Section */}
+            <div className="space-y-3">
+              <h3 className="text-xs font-black text-[#003399] uppercase tracking-widest border-b border-gray-300 pb-1">
+                {data.language === 'en' ? 'CONTACT' : 'CONTACTO'}
+              </h3>
+              <div className="space-y-2.5 text-xs text-gray-700">
+                {data.personalInfo.email && (
+                  <div className="flex gap-2 items-start">
+                    <span className="text-gray-400 mt-0.5 shrink-0"><Mail size={12} /></span>
+                    <span className="break-all font-medium">{data.personalInfo.email}</span>
+                  </div>
+                )}
+                {data.personalInfo.phone && (
+                  <div className="flex gap-2 items-start">
+                    <span className="text-gray-400 mt-0.5 shrink-0"><Phone size={12} /></span>
+                    <span className="font-medium">{data.personalInfo.phone}</span>
+                  </div>
+                )}
+                {data.personalInfo.location && (
+                  <div className="flex gap-2 items-start">
+                    <span className="text-gray-400 mt-0.5 shrink-0"><MapPin size={12} /></span>
+                    <span className="font-medium">{data.personalInfo.location}</span>
+                  </div>
+                )}
+                {data.personalInfo.website && (
+                  <div className="flex gap-2 items-start">
+                    <span className="text-gray-400 mt-0.5 shrink-0"><Globe size={12} /></span>
+                    <span className="break-all text-[#003399] underline font-medium">{data.personalInfo.website}</span>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Languages in left sidebar */}
+            {data.languages && data.languages.length > 0 && (
+              <div className="space-y-3">
+                <h3 className="text-xs font-black text-[#003399] uppercase tracking-widest border-b border-gray-300 pb-1">
+                  {getSectionTitle(data, 'languages', 'IDIOMAS')}
+                </h3>
+                <div className="space-y-2.5">
+                  {data.languages.map((l, idx) => (
+                    <div key={l.id || `lang-${idx}`} className="flex justify-between items-center text-xs">
+                      <span className="font-bold text-gray-800">{l.name}</span>
+                      <span className="text-[9px] font-bold tracking-wider text-gray-400 uppercase">{l.level}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Interests in Sidebar */}
+            {data.interests && data.interests.length > 0 && (
+              <div className="space-y-3">
+                <h3 className="text-xs font-black text-[#003399] uppercase tracking-widest border-b border-gray-300 pb-1">
+                  {getSectionTitle(data, 'interests', 'INTERESSES')}
+                </h3>
+                <div className="flex flex-wrap gap-1.5">
+                  {data.interests.map((interest, idx) => (
+                    <span key={idx} className="bg-white border border-gray-200 text-slate-700 text-[10px] px-2 py-0.5 rounded font-medium shadow-sm">
+                      {interest}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Right Column (Content) */}
+          <div className="flex-1 p-8 flex flex-col gap-6 bg-white">
+            {/* Top-Right Europass Logo */}
+            <div className="flex justify-end shrink-0 pb-2 border-b border-gray-100">
+              <img 
+                src="https://i.supaimg.com/6bc04951-8cbe-4706-9f0c-a01f9ea9a6c4/a3ccfdcc-7d55-45b6-8c75-2543d5eedaad.png" 
+                alt="Europass Logo" 
+                className="h-20 md:h-24 object-contain"
+                referrerPolicy="no-referrer"
+              />
+            </div>
+
+            {/* Profile Summary */}
+            {data.personalInfo.summary && (
+              <div className="space-y-2">
+                <h3 className="text-xs font-black text-[#003399] uppercase tracking-widest border-b-2 border-gray-100 pb-1">
+                  {getSectionTitle(data, 'summary', data.language === 'en' ? 'ABOUT ME' : 'SOBRE MIM')}
+                </h3>
+                <p className="text-gray-700 leading-relaxed text-xs text-justify">{renderText(data.personalInfo.summary)}</p>
+              </div>
+            )}
+
+            {/* Experience */}
+            {data.experience.length > 0 && (
+              <div className="space-y-4">
+                <h3 className="text-xs font-black text-[#003399] uppercase tracking-widest border-b-2 border-gray-100 pb-1">
+                  {getSectionTitle(data, 'experience', 'EXPERIÊNCIA PROFISSIONAL')}
+                </h3>
+                <div className="space-y-4">
+                  {data.experience.map((ex, idx) => (
+                    <div key={ex.id || `exp-${idx}`} className="grid grid-cols-12 gap-3">
+                      <div className="col-span-3 text-[10px] font-bold text-gray-400 uppercase tracking-wide pt-0.5">
+                        {ex.startDate} – {ex.current ? (data.language === 'en' ? 'PRESENT' : 'ATUAL') : ex.endDate}
+                      </div>
+                      <div className="col-span-9">
+                        <div className="font-extrabold text-gray-950 text-xs uppercase tracking-tight">
+                          {ex.position}
+                        </div>
+                        <div className="text-xs text-[#003399] font-bold mt-0.5">
+                          {ex.company}
+                        </div>
+                        {ex.description && (
+                          <div className="mt-2 space-y-1">
+                            {ex.description.split('\n').filter(Boolean).map((bullet, bIdx) => (
+                              <p key={bIdx} className="text-[11.5px] text-gray-600 leading-relaxed text-justify">
+                                {bullet.replace(/^-\s*|^•\s*/, '')}
+                              </p>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Education */}
+            {data.education.length > 0 && (
+              <div className="space-y-4">
+                <h3 className="text-xs font-black text-[#003399] uppercase tracking-widest border-b-2 border-gray-100 pb-1">
+                  {getSectionTitle(data, 'education', 'EDUCAÇÃO E FORMAÇÃO')}
+                </h3>
+                <div className="space-y-4">
+                  {data.education.map((e, idx) => (
+                    <div key={e.id || `edu-${idx}`} className="grid grid-cols-12 gap-3">
+                      <div className="col-span-3 text-[10px] font-bold text-gray-400 uppercase tracking-wide pt-0.5">
+                        {e.startDate} – {e.endDate}
+                      </div>
+                      <div className="col-span-9">
+                        <div className="font-extrabold text-gray-950 text-xs uppercase tracking-tight">
+                          {e.degree}
+                        </div>
+                        <div className="text-xs text-[#003399] font-bold mt-0.5">
+                          {e.institution}
+                        </div>
+                        {e.description && (
+                          <p className="text-[11.5px] text-gray-600 mt-2 leading-relaxed text-justify">{e.description}</p>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Skills / Competências */}
+            {data.skills.length > 0 && (
+              <div className="space-y-3">
+                <h3 className="text-xs font-black text-[#003399] uppercase tracking-widest border-b-2 border-gray-100 pb-1">
+                  {getSectionTitle(data, 'skills', 'COMPETÊNCIAS')}
+                </h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1.5">
+                  {data.skills.map((s, idx) => (
+                    <div key={s.id || `skill-${idx}`} className="flex justify-between items-center border-b border-gray-100 pb-1 text-xs">
+                      <span className="font-bold text-gray-800">{s.name}</span>
+                      {s.level !== 'Ocultar' && (
+                        <span className="text-[9px] text-[#003399] font-bold uppercase tracking-wider bg-blue-50 px-2 py-0.5 rounded">
+                          {s.level}
+                        </span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Certifications */}
+            {data.certifications && data.certifications.length > 0 && (
+              <div className="space-y-3">
+                <h3 className="text-xs font-black text-[#003399] uppercase tracking-widest border-b-2 border-gray-100 pb-1">
+                  {getSectionTitle(data, 'certifications', 'CERTIFICAÇÕES')}
+                </h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2">
+                  {data.certifications.map((cert, idx) => (
+                    <div key={cert.id || `cert-${idx}`} className="flex justify-between items-center border-b border-gray-100 pb-1 text-xs">
+                      <span className="font-bold text-gray-800">{cert.name}</span>
+                      {cert.date && <span className="text-[10px] text-gray-400 font-medium">{cert.date}</span>}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Custom Sections */}
+            {data.customSections?.map((cs, idx) => (
+              <div key={cs.id || `cs-${idx}`} className="space-y-3">
+                <h3 className="text-xs font-black text-[#003399] uppercase tracking-widest border-b-2 border-gray-100 pb-1">
+                  {cs.title}
+                </h3>
+                <div className="space-y-4">
+                  {cs.items.map((item, idxx) => (
+                    <div key={item.id || `csi-${idxx}`} className="flex flex-col text-xs pb-3 border-b border-gray-100 last:border-0 last:pb-0">
+                      <span className="font-bold text-gray-900">{item.name}</span>
+                      {item.description && <span className="text-gray-600 text-[11.5px] leading-relaxed mt-1 whitespace-pre-wrap text-justify">{item.description}</span>}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       )}
       </div>
@@ -5299,6 +6043,16 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
   const [template, setTemplate] = useState<TemplateType>(() => {
     return (localStorage.getItem('cv_lab_template') as TemplateType) || 't1_executive';
   });
+
+  const [templateCategory, setTemplateCategory] = useState<'general' | 'europass'>('general');
+
+  useEffect(() => {
+    if (template === 't14_europass_classic' || template === 't15_europass_modern') {
+      setTemplateCategory('europass');
+    } else {
+      setTemplateCategory('general');
+    }
+  }, [template]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -8312,41 +9066,149 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
                      </div>
                   </div>
 
+                  {/* Posicionamento de Secções (Apenas para Layout 8 e layouts de duas colunas) */}
+                  <div className="p-6 bg-white border border-border-main rounded-3xl space-y-6">
+                     <div className="space-y-1">
+                        <h4 className="text-[10px] font-black uppercase tracking-widest text-primary-blue">Posicionamento das Secções</h4>
+                        <p className="text-[10px] text-text-muted font-medium">Mova cada secção entre a coluna Esquerda (Sidebar) ou Direita (Principal) no seu currículo.</p>
+                     </div>
+                     <div className="space-y-4 divide-y divide-gray-100">
+                        {(() => {
+                           const renderRow = (label: string, key: string, def: 'left' | 'right') => {
+                              const currentPos = resumeData.styleConfig?.sectionPositions?.[key] || def;
+                              return (
+                                 <div key={key} className="flex items-center justify-between pt-3 first:pt-0">
+                                    <span className="text-[11px] font-bold text-gray-700 uppercase tracking-wide truncate pr-2 max-w-[140px]">{label}</span>
+                                    <div className="flex bg-slate-100 p-0.5 rounded-xl border border-slate-200/50 shrink-0">
+                                       <button
+                                          type="button"
+                                          onClick={() => {
+                                             setResumeData(prev => ({
+                                                ...prev,
+                                                styleConfig: {
+                                                   ...(prev.styleConfig || {}),
+                                                   sectionPositions: {
+                                                      ...(prev.styleConfig?.sectionPositions || {}),
+                                                      [key]: 'left'
+                                                   }
+                                                }
+                                             }));
+                                          }}
+                                          className={`px-3 py-1 text-[9px] font-black uppercase tracking-wider rounded-lg transition-all ${currentPos === 'left' ? 'bg-white text-primary-blue shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}
+                                       >
+                                          Esquerda
+                                       </button>
+                                       <button
+                                          type="button"
+                                          onClick={() => {
+                                             setResumeData(prev => ({
+                                                ...prev,
+                                                styleConfig: {
+                                                   ...(prev.styleConfig || {}),
+                                                   sectionPositions: {
+                                                      ...(prev.styleConfig?.sectionPositions || {}),
+                                                      [key]: 'right'
+                                                   }
+                                                }
+                                             }));
+                                          }}
+                                          className={`px-3 py-1 text-[9px] font-black uppercase tracking-wider rounded-lg transition-all ${currentPos === 'right' ? 'bg-white text-primary-blue shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}
+                                       >
+                                          Direita
+                                       </button>
+                                    </div>
+                                 </div>
+                              );
+                           };
+
+                           return (
+                              <>
+                                 {renderRow('Sobre Mim', 'summary', 'right')}
+                                 {resumeData.experience && resumeData.experience.length > 0 && renderRow('Experiência', 'experience', 'right')}
+                                 {resumeData.education && resumeData.education.length > 0 && renderRow('Educação', 'education', 'right')}
+                                 {resumeData.skills && resumeData.skills.length > 0 && renderRow('Habilidades', 'skills', 'left')}
+                                 {resumeData.languages && resumeData.languages.length > 0 && renderRow('Idiomas', 'languages', 'left')}
+                                 {resumeData.certifications && resumeData.certifications.length > 0 && renderRow('Certificações', 'certifications', 'left')}
+                                 {resumeData.interests && resumeData.interests.length > 0 && renderRow('Interesses', 'interests', 'left')}
+                                 {resumeData.customSections?.map(cs => renderRow(cs.title || 'Personalizada', `custom_${cs.id}`, 'right'))}
+                              </>
+                           );
+                        })()}
+                     </div>
+                  </div>
+
+                  {/* Category Selection Tabs */}
+                  <div className="flex bg-slate-100 p-1 rounded-2xl border border-slate-200/50 mb-4">
+                    <button
+                      type="button"
+                      onClick={() => setTemplateCategory('general')}
+                      className={`flex-1 py-2.5 text-xs font-black uppercase tracking-wider rounded-xl transition-all ${templateCategory === 'general' ? 'bg-white text-primary-blue shadow-md' : 'text-slate-500 hover:text-slate-800'}`}
+                    >
+                      💡 Modelos Gerais
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setTemplateCategory('europass')}
+                      className={`flex-1 py-2.5 text-xs font-black uppercase tracking-wider rounded-xl transition-all flex items-center justify-center gap-1.5 ${templateCategory === 'europass' ? 'bg-[#003399] text-white shadow-md' : 'text-slate-500 hover:text-slate-800'}`}
+                    >
+                      🇪🇺 Modelos Europeus
+                    </button>
+                  </div>
+
                   <div className="grid grid-cols-1 gap-3">
-                    {Object.entries(TEMPLATES).map(([id, t]) => (
-                      <button
-                        key={id}
-                        onClick={() => setTemplate(id as TemplateType)}
-                        className={`group relative flex items-center gap-4 p-4 rounded-3xl border-2 transition-all duration-300 ${template === id ? 'border-primary-blue bg-soft-blue/10 shadow-md' : 'border-border-main hover:border-primary-blue/20 bg-white'}`}
-                      >
-                         <div 
-                           className="w-20 h-20 rounded-2xl flex flex-col overflow-hidden shrink-0 border border-black/5 shadow-inner transition-colors duration-500"
-                           style={{ background: resumeData.themeColor || t.colors.primary }}
-                         >
-                            <div className="h-5 w-full bg-white/20"></div>
-                            <div className="p-3 space-y-1.5 flex-1 flex flex-col justify-center">
-                               <div className="h-1.5 w-2/3 bg-white/40 rounded-full"></div>
-                               <div className="h-1.5 w-full bg-white/20 rounded-full"></div>
-                               <div className="h-1.5 w-full bg-white/20 rounded-full"></div>
-                            </div>
-                         </div>
-                         <div className="text-left flex-1 min-w-0">
-                           <span className="text-sm font-black uppercase tracking-widest block truncate text-deep-blue">
-                             {t.name}
-                           </span>
-                           <span className="text-[10px] text-text-muted font-bold uppercase tracking-tight opacity-70">
-                             Layout {t.layout.split('-')[1]}
-                           </span>
-                         </div>
-                         {template === id ? (
-                           <div className="w-8 h-8 bg-primary-blue text-white rounded-full flex items-center justify-center shadow-lg">
-                              <CheckCircle size={18} />
-                           </div>
-                         ) : (
-                           <div className="w-6 h-6 rounded-full border-2 border-border-main group-hover:border-primary-blue/30 shrink-0"></div>
-                         )}
-                      </button>
-                    ))}
+                    {Object.entries(TEMPLATES)
+                      .filter(([id]) => {
+                        const isEuropass = id === 't14_europass_classic' || id === 't15_europass_modern';
+                        return templateCategory === 'europass' ? isEuropass : !isEuropass;
+                      })
+                      .map(([id, t]) => {
+                        const isEuropass = id === 't14_europass_classic' || id === 't15_europass_modern';
+                        return (
+                          <button
+                            key={id}
+                            onClick={() => setTemplate(id as TemplateType)}
+                            className={`group relative flex items-center gap-4 p-4 rounded-3xl border-2 transition-all duration-300 ${template === id ? 'border-primary-blue bg-soft-blue/10 shadow-md' : 'border-border-main hover:border-primary-blue/20 bg-white'}`}
+                          >
+                             {isEuropass ? (
+                               <div className="w-20 h-20 rounded-2xl flex flex-col items-center justify-center overflow-hidden shrink-0 border border-slate-200 shadow-inner bg-slate-50 p-2">
+                                 <img 
+                                   src="https://i.supaimg.com/6bc04951-8cbe-4706-9f0c-a01f9ea9a6c4/a3ccfdcc-7d55-45b6-8c75-2543d5eedaad.png" 
+                                   alt="Europass" 
+                                   className="w-full h-full object-contain"
+                                   referrerPolicy="no-referrer"
+                                 />
+                               </div>
+                             ) : (
+                               <div 
+                                 className="w-20 h-20 rounded-2xl flex flex-col overflow-hidden shrink-0 border border-black/5 shadow-inner transition-colors duration-500"
+                                 style={{ background: resumeData.themeColor || t.colors.primary }}
+                               >
+                                  <div className="h-5 w-full bg-white/20"></div>
+                                  <div className="p-3 space-y-1.5 flex-1 flex flex-col justify-center">
+                                     <div className="h-1.5 w-2/3 bg-white/40 rounded-full"></div>
+                                     <div className="h-1.5 w-full bg-white/20 rounded-full"></div>
+                                     <div className="h-1.5 w-full bg-white/20 rounded-full"></div>
+                                  </div>
+                               </div>
+                             )}
+                             <div className="text-left flex-1 min-w-0">
+                               <span className="text-sm font-black uppercase tracking-widest block truncate text-deep-blue">
+                                 {t.name}
+                               </span>
+                               <span className="text-[10px] text-text-muted font-bold uppercase tracking-tight opacity-70">
+                                 {isEuropass ? 'Modelo Europeu oficial' : `Layout ${t.layout.split('-')[1]}`}
+                               </span>
+                             </div>
+                             {template === id ? (
+                               <div className="w-8 h-8 bg-primary-blue text-white rounded-full flex items-center justify-center shadow-lg">
+                                  <CheckCircle size={18} />
+                               </div>
+                             ) : (
+                               <div className="w-6 h-6 rounded-full border-2 border-border-main group-hover:border-primary-blue/30 shrink-0"></div>
+                             )}
+                          </button>
+                        );
+                      })}
                   </div>
                 </div>
               )}
