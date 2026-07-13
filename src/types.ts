@@ -22,6 +22,7 @@ export interface ResumeStyleConfig {
   certificationsSize?: number;
   interestsSize?: number;
   sectionPositions?: Record<string, 'left' | 'right'>;
+  iconColor?: string;
 }
 
 export interface ResumeData {

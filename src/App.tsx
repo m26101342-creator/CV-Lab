@@ -2952,6 +2952,39 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
         #resume-content .t2-contact-row {
           margin-bottom: ${style.itemSpacing}px !important;
         }
+
+        /* Custom Icon Colors */
+        ${style.iconColor ? `
+        #resume-content svg {
+          stroke: ${style.iconColor} !important;
+          color: ${style.iconColor} !important;
+        }
+        #resume-content .t1-contact-icon,
+        #resume-content .t2-contact-icon,
+        #resume-content .t3-contact-icon,
+        #resume-content [class*="-contact-icon"],
+        #resume-content [class*="contact-icon"],
+        #resume-content .bg-sky-400,
+        #resume-content .text-sky-400,
+        #resume-content [class*="text-sky-"],
+        #resume-content [class*="bg-sky-"] {
+          background-color: ${style.iconColor} !important;
+          border-color: ${style.iconColor} !important;
+          color: ${style.iconColor} !important;
+        }
+        /* Keep white icons inside background circles/boxes white */
+        #resume-content .t1-contact-icon svg,
+        #resume-content .bg-sky-400 svg,
+        #resume-content [class*="bg-sky-"] svg {
+          stroke: #ffffff !important;
+          color: #ffffff !important;
+        }
+        /* Support for timeline dots, skill stars, checkmarks, line dividers, etc */
+        #resume-content [class*="border-sky-"],
+        #resume-content .border-sky-400 {
+          border-color: ${style.iconColor} !important;
+        }
+        ` : ''}
       `}</style>
       
       {/* Canva-style interactive guidelines overlay */}
@@ -8904,8 +8937,8 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
                     <p className="text-xs text-text-muted">Personalize a identidade do seu documento.</p>
                   </div>
 
-                  <div className="p-6 bg-soft-blue/30 rounded-3xl border border-primary-blue/10 space-y-4">
-                    <div className="flex items-center justify-between">
+                  <div className="p-6 bg-soft-blue/30 rounded-3xl border border-primary-blue/10 space-y-5">
+                    <div className="flex items-center justify-between pb-3 border-b border-primary-blue/5">
                        <span className="text-[10px] font-black uppercase text-primary-blue tracking-widest">Cor Principal</span>
                        <div className="flex gap-2">
                           {['#1B2A4A', '#064E3B', '#7F1D1D', '#0369A1', '#0D4A45', '#4A4C53'].map(color => (
@@ -8922,6 +8955,37 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
                                 type="color" 
                                 className="absolute inset-0 opacity-0 cursor-pointer"
                                 onChange={(e) => setResumeData(p => ({ ...p, themeColor: e.target.value }))}
+                             />
+                          </div>
+                       </div>
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                       <div className="flex flex-col">
+                          <span className="text-[10px] font-black uppercase text-primary-blue tracking-widest">Cor dos Ícones</span>
+                          <span className="text-[9px] text-gray-500 font-semibold mt-0.5">Altere a cor de todos os ícones</span>
+                       </div>
+                       <div className="flex gap-2 items-center">
+                          <button
+                            onClick={() => setResumeData(p => ({ ...p, styleConfig: { ...(p.styleConfig || {}), iconColor: undefined } }))}
+                            className={`px-2 py-1 text-[9px] font-bold uppercase tracking-wider rounded border border-gray-200 bg-white transition-all ${!resumeData.styleConfig?.iconColor ? 'border-primary-blue text-primary-blue shadow-sm' : 'text-gray-500'}`}
+                          >
+                             Padrão
+                          </button>
+                          {['#38BDF8', '#3B82F6', '#10B981', '#EF4444', '#F59E0B', '#6366F1'].map(color => (
+                            <button 
+                              key={color}
+                              onClick={() => setResumeData(p => ({ ...p, styleConfig: { ...(p.styleConfig || {}), iconColor: color } }))}
+                              className={`w-6 h-6 rounded-full border-2 transition-all ${resumeData.styleConfig?.iconColor === color ? 'border-primary-blue scale-125' : 'border-transparent'}`}
+                              style={{ backgroundColor: color }}
+                            />
+                          ))}
+                          <div className="relative w-8 h-8 rounded-full border-2 border-white shadow-sm overflow-hidden flex items-center justify-center bg-white cursor-pointer">
+                             <Plus size={14} className="text-text-muted" />
+                             <input 
+                                type="color" 
+                                className="absolute inset-0 opacity-0 cursor-pointer"
+                                onChange={(e) => setResumeData(p => ({ ...p, styleConfig: { ...(p.styleConfig || {}), iconColor: e.target.value } }))}
                              />
                           </div>
                        </div>
