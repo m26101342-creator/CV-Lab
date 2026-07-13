@@ -2955,33 +2955,30 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
 
         /* Custom Icon Colors */
         ${style.iconColor ? `
+        /* 1. Target all SVGs inside the resume to change icon stroke/color */
         #resume-content svg {
           stroke: ${style.iconColor} !important;
           color: ${style.iconColor} !important;
         }
-        #resume-content .t1-contact-icon,
-        #resume-content .t2-contact-icon,
-        #resume-content .t3-contact-icon,
-        #resume-content [class*="-contact-icon"],
-        #resume-content [class*="contact-icon"],
-        #resume-content .bg-sky-400,
-        #resume-content .text-sky-400,
-        #resume-content [class*="text-sky-"],
-        #resume-content [class*="bg-sky-"] {
+
+        /* 2. Target specific elements that act as solid icon backgrounds, timeline dots, or skill rating dots */
+        #resume-content span.bg-sky-400,
+        #resume-content div.bg-sky-400,
+        #resume-content .bg-sky-400 {
           background-color: ${style.iconColor} !important;
           border-color: ${style.iconColor} !important;
-          color: ${style.iconColor} !important;
         }
-        /* Keep white icons inside background circles/boxes white */
-        #resume-content .t1-contact-icon svg,
-        #resume-content .bg-sky-400 svg,
-        #resume-content [class*="bg-sky-"] svg {
+
+        /* 3. Keep white icons inside background circles/boxes white for high contrast legibility */
+        #resume-content span.bg-sky-400 svg,
+        #resume-content div.bg-sky-400 svg,
+        #resume-content .bg-sky-400 svg {
           stroke: #ffffff !important;
           color: #ffffff !important;
         }
-        /* Support for timeline dots, skill stars, checkmarks, line dividers, etc */
-        #resume-content [class*="border-sky-"],
-        #resume-content .border-sky-400 {
+
+        /* 4. Support for timeline vertical lines, heading underscores, and other sky-400 borders */
+        #resume-content [class*="border-sky-400"] {
           border-color: ${style.iconColor} !important;
         }
         ` : ''}
@@ -8972,7 +8969,7 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
                           >
                              Padrão
                           </button>
-                          {['#38BDF8', '#3B82F6', '#10B981', '#EF4444', '#F59E0B', '#6366F1'].map(color => (
+                          {['#000000', '#38BDF8', '#3B82F6', '#10B981', '#EF4444', '#F59E0B', '#6366F1'].map(color => (
                             <button 
                               key={color}
                               onClick={() => setResumeData(p => ({ ...p, styleConfig: { ...(p.styleConfig || {}), iconColor: color } }))}
