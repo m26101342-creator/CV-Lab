@@ -2859,6 +2859,33 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
                     </>
                   )}
                 </button>
+
+                {(selectedElement.type === 'education' || selectedElement.type === 'experience') && selectedElement.id && (
+                  <>
+                    <div className="w-[1px] h-3.5 bg-slate-800" />
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (onChange) {
+                          onChange((prev: any) => {
+                            if (selectedElement.type === 'education') {
+                              return { ...prev, education: (prev.education || []).filter((item: any) => item.id !== selectedElement.id) };
+                            } else if (selectedElement.type === 'experience') {
+                              return { ...prev, experience: (prev.experience || []).filter((item: any) => item.id !== selectedElement.id) };
+                            }
+                            return prev;
+                          });
+                        }
+                        setSelectedElement(null);
+                      }}
+                      className="flex items-center gap-1 px-2.5 py-1 text-[10px] font-bold text-rose-300 hover:text-white hover:bg-rose-900/60 rounded-full cursor-pointer transition-all"
+                      title="Eliminar este item do currículo"
+                    >
+                      <Trash2 size={11} className="text-rose-400" />
+                      <span>Eliminar</span>
+                    </button>
+                  </>
+                )}
               </>
             )}
 
@@ -6960,6 +6987,13 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
     }));
   };
 
+  const removeEducation = (id?: string, index?: number) => {
+    setResumeData(prev => ({
+      ...prev,
+      education: (prev.education || []).filter((ed, i) => id ? ed.id !== id : i !== index)
+    }));
+  };
+
   const handleOptimize = async (type: 'summary' | 'experience' | 'skills', index?: number) => {
     const optId = type === 'experience' ? `exp-${index}` : type;
     setOptimizingId(optId);
@@ -8836,7 +8870,19 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
               {activeStep === 2 && ( /* Education */
                 <div className="space-y-6">
                   {(resumeData.education || []).map((ed, i) => (
-                    <div key={ed.id || `edu-${i}`} className="p-5 bg-bg-main rounded-2xl border border-border-main space-y-5">
+                    <div key={ed.id || `edu-${i}`} className="p-5 bg-bg-main rounded-2xl border border-border-main space-y-5 relative group">
+                       <div className="flex items-center justify-between pb-2 border-b border-gray-100">
+                          <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Formação #{i + 1}</span>
+                          <button 
+                            type="button"
+                            onClick={() => removeEducation(ed.id, i)} 
+                            className="p-1.5 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors flex items-center gap-1.5 text-xs font-semibold cursor-pointer"
+                            title="Eliminar esta formação"
+                          >
+                             <Trash2 size={15} />
+                             <span>Eliminar</span>
+                          </button>
+                       </div>
                        <Input label="Instituição" value={ed.institution} onChange={(v: string) => {
                          const n = [...resumeData.education]; n[i].institution = v; setResumeData(p => ({...p, education: n}));
                        }} />
@@ -8846,10 +8892,10 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
                        <div className="grid grid-cols-2 gap-4">
                           <Input label="Início" value={ed.startDate} onChange={(v: string) => {
                             const n = [...resumeData.education]; n[i].startDate = v; setResumeData(p => ({...p, education: n}));
-                          }} />
+                          }} placeholder="Ex: 2018" />
                           <Input label="Fim" value={ed.endDate} onChange={(v: string) => {
                             const n = [...resumeData.education]; n[i].endDate = v; setResumeData(p => ({...p, education: n}));
-                          }} />
+                          }} placeholder="Ex: 2022" />
                        </div>
                     </div>
                   ))}
