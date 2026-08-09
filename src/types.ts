@@ -23,6 +23,13 @@ export interface ResumeStyleConfig {
   interestsSize?: number;
   sectionPositions?: Record<string, 'left' | 'right'>;
   iconColor?: string;
+  showEuropassSeal?: boolean;
+  europassSealPosition?: 'top-left' | 'top-center' | 'top-right' | 'bottom-left' | 'bottom-right' | 'header-left' | 'header-right';
+  europassSealSize?: number;
+  europassSealOffsetX?: number;
+  europassSealOffsetY?: number;
+  europassSealStyle?: 'standard' | 'white' | 'badge' | 'minimal';
+  europassSealBgProtection?: boolean;
 }
 
 export interface ResumeData {

@@ -71,8 +71,10 @@ async function generateContentWithRetry(params: {
         const msg = error.message || String(error);
         console.warn(`[GEMINI] Model ${model} (attempt ${attempt}/3) failed: ${msg}`);
         
-        if (msg.includes("429") || msg.includes("503") || msg.includes("QUOTA_EXCEEDED") || msg.includes("UNAVAILABLE") || msg.includes("demand") || msg.includes("quota")) {
-          await sleep(attempt * 1500);
+        // Retry automatic after 2 seconds on API instability
+        if (attempt < 3) {
+          console.log(`[GEMINI] Aguardando 2 segundos para tentar novamente... (Tentativa ${attempt + 1}/3)`);
+          await sleep(2000);
         } else {
           break;
         }
@@ -80,7 +82,7 @@ async function generateContentWithRetry(params: {
     }
   }
 
-  throw lastError || new Error("Failed to generate content with any model");
+  throw lastError || new Error("Não foi possível comunicar com a API do Google após tentativas com retry de 2 segundos.");
 }
 
 // Helper to robustly extract and parse JSON from Gemini's response, handling markdown codeblocks gracefully

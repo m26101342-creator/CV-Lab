@@ -87,8 +87,8 @@ async function generateContentDirect(contents: any, jsonFormat: boolean = false,
             errMsg.toLowerCase().includes("temporary");
 
           if (isTransient && attempt < maxRetries) {
-            const backoffTime = attempt * 1500;
-            console.warn(`[Gemini API] Model ${model} is busy/limited. Attempt ${attempt}/${maxRetries} failed with: "${errMsg}". Retrying in ${backoffTime}ms...`);
+            const backoffTime = 2000;
+            console.warn(`[Gemini API] Model ${model} is busy/limited. Attempt ${attempt}/${maxRetries} failed with: "${errMsg}". Retrying in 2 seconds...`);
             await sleep(backoffTime);
             continue;
           }
@@ -119,7 +119,7 @@ async function generateContentDirect(contents: any, jsonFormat: boolean = false,
           errorMsg.toLowerCase().includes("fetch");
 
         if (attempt < maxRetries && isTransientErr) {
-          const backoffTime = attempt * 1500;
+          const backoffTime = 2000;
           await sleep(backoffTime);
           continue;
         }

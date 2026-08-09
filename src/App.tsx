@@ -167,7 +167,7 @@ const TextArea = ({ label, value, onChange, placeholder, onOptimize, isOptimizin
         <button 
           onClick={onOptimize}
           disabled={isOptimizing}
-          className={`text-[9px] font-bold text-blue-600 flex items-center gap-1.5 transition-all bg-white/45 backdrop-blur-md px-2.5 py-1 rounded-lg border border-white/50 ${isOptimizing ? 'opacity-80 scale-95 cursor-wait' : 'hover:opacity-85 hover:bg-white/60'}`}
+          className={`text-[9px] font-bold text-blue-600 flex items-center gap-1.5 transition-all bg-white/45 backdrop-blur-md px-2.5 py-1 rounded-lg border border-white/50 ${isOptimizing ? 'opacity-80 scale-95 pointer-events-none cursor-not-allowed' : 'hover:opacity-85 hover:bg-white/60'}`}
         >
           {isOptimizing ? (
             <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: 'linear' }}>
@@ -176,7 +176,7 @@ const TextArea = ({ label, value, onChange, placeholder, onOptimize, isOptimizin
           ) : (
             <Plus size={10} />
           )}
-          {isOptimizing ? 'OTIMIZANDO...' : 'MELHORAR COM IA'}
+          {isOptimizing ? 'A PROCESSAR...' : 'MELHORAR COM IA'}
         </button>
       )}
     </div>
@@ -564,7 +564,7 @@ const ProfilePage = ({ user, isAdmin, setView, onLogout, onRequestDownload }: {
                                             {isGeneratingThis ? (
                                                 <>
                                                     <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin font-sans"></div>
-                                                    <span>Compilando...</span>
+                                                    <span>A processar...</span>
                                                 </>
                                             ) : (
                                                 <>
@@ -793,7 +793,7 @@ const MyResumesPage = ({ user, setView, onRequestDownload }: {
                                    {isGenerating === `${item.id}-${item.subType}` ? (
                                        <div className="flex items-center gap-2">
                                            <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                                           <span>PROCESSANDO...</span>
+                                           <span>A PROCESSAR...</span>
                                        </div>
                                    ) : (
                                        <><Download size={16} className="mr-2" /> BAIXAR AGORA</>
@@ -1599,6 +1599,208 @@ const EditableTitle = ({
         title="Clique para editar o título da seção"
       />
     </Component>
+  );
+};
+
+const EuropassSealOverlay = ({ 
+  data, 
+  templateId, 
+  onChange 
+}: { 
+  data: ResumeData; 
+  templateId: TemplateType; 
+  onChange?: React.Dispatch<React.SetStateAction<ResumeData>> 
+}) => {
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragStart, setDragStart] = useState<{ x: number; y: number; initialOffX: number; initialOffY: number } | null>(null);
+
+  const isEuropassTemplate = templateId === 't14_europass_classic' || templateId === 't15_europass_modern';
+  const showSeal = data.styleConfig?.showEuropassSeal ?? isEuropassTemplate;
+
+  const position = data.styleConfig?.europassSealPosition || 'top-right';
+  const size = data.styleConfig?.europassSealSize || 70;
+  const offX = data.styleConfig?.europassSealOffsetX || 0;
+  const offY = data.styleConfig?.europassSealOffsetY || 0;
+  const margin = data.styleConfig?.margins || 30;
+  const styleVariant = data.styleConfig?.europassSealStyle || 'standard';
+  const bgProtection = data.styleConfig?.europassSealBgProtection ?? true;
+
+  let posStyle: React.CSSProperties = {
+    position: 'absolute',
+    zIndex: 40,
+    cursor: onChange ? (isDragging ? 'grabbing' : 'grab') : 'default',
+    userSelect: 'none',
+    touchAction: 'none'
+  };
+
+  switch (position) {
+    case 'top-left':
+      posStyle = { ...posStyle, top: `${margin + offY}px`, left: `${margin + offX}px` };
+      break;
+    case 'top-center':
+      posStyle = { ...posStyle, top: `${margin + offY}px`, left: `calc(50% + ${offX}px)`, transform: 'translateX(-50%)' };
+      break;
+    case 'top-right':
+      posStyle = { ...posStyle, top: `${margin + offY}px`, right: `${margin - offX}px` };
+      break;
+    case 'bottom-left':
+      posStyle = { ...posStyle, bottom: `${margin - offY}px`, left: `${margin + offX}px` };
+      break;
+    case 'bottom-right':
+      posStyle = { ...posStyle, bottom: `${margin - offY}px`, right: `${margin - offX}px` };
+      break;
+    case 'header-left':
+      posStyle = { ...posStyle, top: `${15 + offY}px`, left: `${15 + offX}px` };
+      break;
+    case 'header-right':
+      posStyle = { ...posStyle, top: `${15 + offY}px`, right: `${15 + offX}px` };
+      break;
+    default:
+      posStyle = { ...posStyle, top: `${margin + offY}px`, right: `${margin - offX}px` };
+      break;
+  }
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    if (!onChange) return;
+    e.stopPropagation();
+    e.preventDefault();
+    setIsDragging(true);
+    setDragStart({
+      x: e.clientX,
+      y: e.clientY,
+      initialOffX: offX,
+      initialOffY: offY
+    });
+  };
+
+  useEffect(() => {
+    if (!isDragging || !dragStart || !onChange) return;
+
+    const handleMouseMove = (e: MouseEvent) => {
+      const deltaX = e.clientX - dragStart.x;
+      const deltaY = e.clientY - dragStart.y;
+
+      let newOffX = dragStart.initialOffX + deltaX;
+      if (position === 'top-right' || position === 'bottom-right' || position === 'header-right') {
+        newOffX = dragStart.initialOffX - deltaX;
+      }
+
+      const newOffY = dragStart.initialOffY + deltaY;
+
+      onChange((prev) => ({
+        ...prev,
+        styleConfig: {
+          ...(prev.styleConfig || {}),
+          europassSealOffsetX: Math.round(newOffX),
+          europassSealOffsetY: Math.round(newOffY)
+        }
+      }));
+    };
+
+    const handleMouseUp = () => {
+      setIsDragging(false);
+      setDragStart(null);
+    };
+
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [isDragging, dragStart, position, onChange]);
+
+  if (!showSeal) return null;
+
+  const content = (
+    <>
+      {styleVariant === 'badge' ? (
+        <div 
+          className="flex flex-col items-center justify-center p-2 rounded-full bg-[#003399] text-white shadow-md border-2 border-amber-300"
+          style={{ width: `${size}px`, height: `${size}px` }}
+        >
+          <div className="relative w-full h-full flex items-center justify-center">
+            <div className="absolute inset-0 flex items-center justify-center">
+              <svg viewBox="0 0 100 100" className="w-full h-full p-1">
+                {[...Array(12)].map((_, i) => {
+                  const angle = (i * 30 - 90) * (Math.PI / 180);
+                  const r = 38;
+                  const cx = 50 + r * Math.cos(angle);
+                  const cy = 50 + r * Math.sin(angle);
+                  return (
+                    <polygon
+                      key={i}
+                      points={`${cx},${cy-3} ${cx+1},${cy-1} ${cx+3},${cy-1} ${cx+1.5},${cy+0.5} ${cx+2},${cy+2.5} ${cx},${cy+1} ${cx-2},${cy+2.5} ${cx-1.5},${cy+0.5} ${cx-3},${cy-1} ${cx-1},${cy-1}`}
+                      fill="#FFCC00"
+                    />
+                  );
+                })}
+              </svg>
+            </div>
+            <span className="font-extrabold tracking-tighter uppercase text-[8px] sm:text-[9px] text-white z-10 font-sans drop-shadow-sm">
+              EUROPASS
+            </span>
+          </div>
+        </div>
+      ) : styleVariant === 'white' ? (
+        <img 
+          src="https://i.supaimg.com/6bc04951-8cbe-4706-9f0c-a01f9ea9a6c4/a3ccfdcc-7d55-45b6-8c75-2543d5eedaad.png" 
+          alt="Europass Logo" 
+          style={{ height: `${size}px` }}
+          className="object-contain filter brightness-0 invert"
+          referrerPolicy="no-referrer"
+        />
+      ) : styleVariant === 'minimal' ? (
+        <div 
+          className="flex items-center gap-2 px-3 py-1.5 bg-[#003399] text-white rounded-xl shadow-sm border border-blue-400/30 shrink-0"
+          style={{ height: `${Math.max(28, size * 0.5)}px` }}
+        >
+          <div className="w-5 h-5 relative shrink-0">
+            <svg viewBox="0 0 100 100" className="w-full h-full">
+              {[...Array(12)].map((_, i) => {
+                const angle = (i * 30 - 90) * (Math.PI / 180);
+                const r = 38;
+                const cx = 50 + r * Math.cos(angle);
+                const cy = 50 + r * Math.sin(angle);
+                return (
+                  <polygon
+                    key={i}
+                    points={`${cx},${cy-3} ${cx+1},${cy-1} ${cx+3},${cy-1} ${cx+1.5},${cy+0.5} ${cx+2},${cy+2.5} ${cx},${cy+1} ${cx-2},${cy+2.5} ${cx-1.5},${cy+0.5} ${cx-3},${cy-1} ${cx-1},${cy-1}`}
+                    fill="#FFCC00"
+                  />
+                );
+              })}
+            </svg>
+          </div>
+          <span className="font-extrabold tracking-wider text-[10px] uppercase font-sans">europass</span>
+        </div>
+      ) : (
+        <img 
+          src="https://i.supaimg.com/6bc04951-8cbe-4706-9f0c-a01f9ea9a6c4/a3ccfdcc-7d55-45b6-8c75-2543d5eedaad.png" 
+          alt="Europass Logo" 
+          style={{ height: `${size}px` }}
+          className="object-contain"
+          referrerPolicy="no-referrer"
+        />
+      )}
+    </>
+  );
+
+  return (
+    <div 
+      style={posStyle} 
+      onMouseDown={handleMouseDown}
+      className={`group relative transition-all rounded-lg ${isDragging ? 'scale-105 shadow-xl ring-2 ring-blue-500' : 'hover:ring-2 hover:ring-blue-400/50'}`}
+      title="Selo Europass (Clique e arraste para ajustar a posição)"
+    >
+      {content}
+
+      {onChange && (
+        <div data-html2canvas-ignore="true" className="opacity-0 group-hover:opacity-100 transition-opacity absolute -top-6 left-1/2 -translate-x-1/2 bg-[#003399] text-white text-[8px] font-black uppercase px-2 py-0.5 rounded shadow whitespace-nowrap pointer-events-none z-50">
+          🇪🇺 Arraste para mover o selo
+        </div>
+      )}
+    </div>
   );
 };
 
@@ -2446,6 +2648,9 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
     >
+      {/* Universal Europass Seal Overlay */}
+      <EuropassSealOverlay data={data} templateId={templateId} onChange={onChange} />
+
       {/* Absolute Overlays for Interactive Selection & Control */}
       {onChange && hoveredElement && (!selectedElement || selectedElement.id !== hoveredElement.id) && (
         <div 
@@ -2616,11 +2821,20 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
                 <button
                   disabled={isProcessingAI || selectedElement.type === 'skills' || selectedElement.type === 'languages' || selectedElement.type === 'personalInfo'}
                   onClick={(e) => { e.stopPropagation(); handleUpdateInformation('expand'); }}
-                  className="flex items-center gap-1 px-2.5 py-1 text-[10px] font-bold text-slate-200 hover:text-white hover:bg-slate-800 rounded-full cursor-pointer disabled:opacity-30 disabled:hover:bg-transparent transition-all"
+                  className="flex items-center gap-1 px-2.5 py-1 text-[10px] font-bold text-slate-200 hover:text-white hover:bg-slate-800 rounded-full cursor-pointer disabled:opacity-40 disabled:pointer-events-none disabled:cursor-not-allowed transition-all"
                   title="Expandir informações usando Inteligência Artificial"
                 >
-                  <Sparkles size={11} className="text-emerald-400 font-bold" />
-                  <span>Expandir</span>
+                  {isProcessingAI ? (
+                    <>
+                      <div className="w-3 h-3 border border-emerald-400 border-t-transparent rounded-full animate-spin"></div>
+                      <span>A processar...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles size={11} className="text-emerald-400 font-bold" />
+                      <span>Expandir</span>
+                    </>
+                  )}
                 </button>
 
                 {/* Vertical column separator */}
@@ -2630,11 +2844,20 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
                 <button
                   disabled={isProcessingAI || selectedElement.type === 'skills' || selectedElement.type === 'languages' || selectedElement.type === 'personalInfo'}
                   onClick={(e) => { e.stopPropagation(); handleUpdateInformation('shorten'); }}
-                  className="flex items-center gap-1 px-2.5 py-1 text-[10px] font-bold text-slate-200 hover:text-white hover:bg-slate-800 rounded-full cursor-pointer disabled:opacity-30 disabled:hover:bg-transparent transition-all"
+                  className="flex items-center gap-1 px-2.5 py-1 text-[10px] font-bold text-slate-200 hover:text-white hover:bg-slate-800 rounded-full cursor-pointer disabled:opacity-40 disabled:pointer-events-none disabled:cursor-not-allowed transition-all"
                   title="Resumir texto usando Inteligência Artificial"
                 >
-                  <Scissors size={10} className="text-rose-400 font-bold" />
-                  <span>Resumir</span>
+                  {isProcessingAI ? (
+                    <>
+                      <div className="w-3 h-3 border border-rose-400 border-t-transparent rounded-full animate-spin"></div>
+                      <span>A processar...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Scissors size={10} className="text-rose-400 font-bold" />
+                      <span>Resumir</span>
+                    </>
+                  )}
                 </button>
               </>
             )}
@@ -5345,16 +5568,6 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
         >
           {/* Top Header Block with Europass Seal */}
           <div className="relative pb-6 mb-6">
-            {/* Europass Seal Top Right (Enlarged and aligned) */}
-            <div className="absolute top-0 right-0">
-              <img 
-                src="https://i.supaimg.com/6bc04951-8cbe-4706-9f0c-a01f9ea9a6c4/a3ccfdcc-7d55-45b6-8c75-2543d5eedaad.png" 
-                alt="Europass Logo" 
-                className="h-20 md:h-24 object-contain"
-                referrerPolicy="no-referrer"
-              />
-            </div>
-
             <div className="grid grid-cols-[170px_1fr] gap-x-8">
               {/* Profile Photo */}
               <div className="flex justify-end border-r border-gray-200 pr-6 pb-4">
@@ -5757,17 +5970,12 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
           </div>
 
           {/* Right Column (Content) */}
-          <div className="flex-1 p-8 flex flex-col gap-6 bg-white">
-            {/* Top-Right Europass Logo */}
-            <div className="flex justify-end shrink-0 pb-2 border-b border-gray-100">
-              <img 
-                src="https://i.supaimg.com/6bc04951-8cbe-4706-9f0c-a01f9ea9a6c4/a3ccfdcc-7d55-45b6-8c75-2543d5eedaad.png" 
-                alt="Europass Logo" 
-                className="h-20 md:h-24 object-contain"
-                referrerPolicy="no-referrer"
-              />
-            </div>
-
+          <div className={`flex-1 p-8 flex flex-col gap-6 bg-white ${
+            (data.styleConfig?.showEuropassSeal ?? true) && 
+            (data.styleConfig?.europassSealPosition === 'top-right' || data.styleConfig?.europassSealPosition === 'header-right' || !data.styleConfig?.europassSealPosition)
+              ? 'pt-14' 
+              : ''
+          }`}>
             {/* Profile Summary */}
             {data.personalInfo.summary && (
               <div className="space-y-2">
@@ -8367,21 +8575,21 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
                   )}
                   <button
                     onClick={handleTranslateToEnglish}
-                    disabled={isTranslating}
+                    disabled={isTranslating || loading}
                     title="Traduzir Currículo para Inglês com IA"
-                    className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold rounded-xl text-xs transition-all border border-indigo-100/30 disabled:opacity-50 select-none shadow-sm cursor-pointer"
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold rounded-xl text-xs transition-all border border-indigo-100/30 disabled:opacity-50 disabled:pointer-events-none disabled:cursor-not-allowed select-none shadow-sm cursor-pointer"
                   >
                     <Languages size={14} className={isTranslating ? "animate-spin" : ""} />
-                    <span>{isTranslating ? "Traduzindo..." : "Versão Inglesa (IA)"}</span>
+                    <span>{isTranslating ? "A processar..." : "Versão Inglesa (IA)"}</span>
                   </button>
                   <button
                     onClick={handleTranslateToSpanish}
-                    disabled={isTranslating}
+                    disabled={isTranslating || loading}
                     title="Traduzir Currículo para Espanhol com IA"
-                    className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-700 font-bold rounded-xl text-xs transition-all border border-amber-100/30 disabled:opacity-50 select-none shadow-sm cursor-pointer"
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-700 font-bold rounded-xl text-xs transition-all border border-amber-100/30 disabled:opacity-50 disabled:pointer-events-none disabled:cursor-not-allowed select-none shadow-sm cursor-pointer"
                   >
                     <Languages size={14} className={isTranslating ? "animate-spin" : ""} />
-                    <span>{isTranslating ? "Traduzindo..." : "Versão Espanhola (IA)"}</span>
+                    <span>{isTranslating ? "A processar..." : "Versão Espanhola (IA)"}</span>
                   </button>
                   <button
                     onClick={handleClearResumeData}
@@ -8456,7 +8664,7 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
                           {isImporting ? (
                             <>
                               <div className="w-4 h-4 border-2 border-blue-600/30 border-t-blue-600 rounded-full animate-spin"></div>
-                              <span>{importProgress}</span>
+                              <span>{importProgress || "A processar..."}</span>
                             </>
                           ) : (
                             <>
@@ -8573,14 +8781,14 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
                     <p className="text-xs text-white/70 font-medium leading-relaxed">Otimize seu tempo! Receba sugestões de alto impacto para preencher seu resumo e histórico profissional com base no cargo informado.</p>
                     <Button 
                       variant="none"
-                      className="w-full bg-white text-deep-blue hover:bg-white/90 h-11 text-[10px] font-black uppercase tracking-widest shadow-lg shadow-black/10 transition-all active:scale-95" 
+                      className="w-full bg-white text-deep-blue hover:bg-white/90 h-11 text-[10px] font-black uppercase tracking-widest shadow-lg shadow-black/10 transition-all active:scale-95 disabled:opacity-50 disabled:pointer-events-none disabled:cursor-not-allowed" 
                       onClick={handleAutoFill}
                       disabled={loading}
                     >
                       {loading ? (
                          <div className="flex items-center gap-2">
                            <div className="w-3 h-3 border-2 border-primary-blue border-t-transparent rounded-full animate-spin"></div>
-                           <span>Sincronizando Dados...</span>
+                           <span>A processar...</span>
                          </div>
                       ) : (
                         <div className="flex items-center gap-2">
@@ -9029,6 +9237,200 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
                      </div>
                   </div>
 
+                  {/* Europass Seal Settings Card */}
+                  <div className="p-6 bg-gradient-to-br from-blue-50/80 to-indigo-50/50 border border-blue-200/60 rounded-3xl space-y-5 shadow-sm">
+                     <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                           <span className="text-xl">🇪🇺</span>
+                           <div>
+                              <h4 className="text-[11px] font-black uppercase tracking-widest text-blue-950">Selo Europass</h4>
+                              <p className="text-[10px] text-blue-600/90 font-semibold">Exibir selo em qualquer modelo de currículo</p>
+                           </div>
+                        </div>
+                        <label className="relative inline-flex items-center cursor-pointer">
+                           <input 
+                             type="checkbox" 
+                             className="sr-only peer" 
+                             checked={resumeData.styleConfig?.showEuropassSeal ?? (template === 't14_europass_classic' || template === 't15_europass_modern')} 
+                             onChange={(e) => setResumeData(p => ({
+                               ...p, 
+                               styleConfig: {
+                                 ...(p.styleConfig || {}), 
+                                 showEuropassSeal: e.target.checked
+                               }
+                             }))} 
+                           />
+                           <div className="w-10 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#003399]"></div>
+                        </label>
+                     </div>
+
+                     {(resumeData.styleConfig?.showEuropassSeal ?? (template === 't14_europass_classic' || template === 't15_europass_modern')) && (
+                       <div className="space-y-4 pt-3 border-t border-blue-200/60">
+                          {/* Background Protection Toggle */}
+                          {/* Position selector */}
+                          <div className="space-y-2">
+                             <label className="text-[10px] font-bold text-gray-700 uppercase tracking-wider block">
+                                Posição do Selo no Documento
+                             </label>
+                             <div className="grid grid-cols-3 gap-1.5 p-1 bg-white/80 rounded-2xl border border-blue-100">
+                                {[
+                                  { id: 'top-left', label: '↖️ Topo Esq.' },
+                                  { id: 'top-center', label: '⬆️ Topo Centro' },
+                                  { id: 'top-right', label: '↗️ Topo Dir.' },
+                                  { id: 'bottom-left', label: '↙️ Base Esq.' },
+                                  { id: 'bottom-right', label: '↘️ Base Dir.' },
+                                  { id: 'header-right', label: '🏷️ Cabeçalho' },
+                                ].map((pos) => (
+                                  <button
+                                    key={pos.id}
+                                    type="button"
+                                    onClick={() => setResumeData(p => ({
+                                      ...p,
+                                      styleConfig: {
+                                        ...(p.styleConfig || {}),
+                                        europassSealPosition: pos.id as any
+                                      }
+                                    }))}
+                                    className={`py-2 px-1 text-[9px] font-bold uppercase rounded-xl transition-all cursor-pointer ${
+                                      (resumeData.styleConfig?.europassSealPosition || 'top-right') === pos.id
+                                        ? 'bg-[#003399] text-white shadow-sm'
+                                        : 'text-gray-600 hover:bg-blue-50/80'
+                                    }`}
+                                  >
+                                    {pos.label}
+                                  </button>
+                                ))}
+                             </div>
+                          </div>
+
+                          {/* Seal Style / Variant */}
+                          <div className="space-y-2">
+                             <label className="text-[10px] font-bold text-gray-700 uppercase tracking-wider block">
+                                Estilo do Selo
+                             </label>
+                             <div className="grid grid-cols-3 gap-1.5 p-1 bg-white/80 rounded-2xl border border-blue-100">
+                                {[
+                                  { id: 'standard', label: 'Oficial Azul' },
+                                  { id: 'white', label: 'Invertido' },
+                                  { id: 'badge', label: 'Emblema' }
+                                ].map((st) => (
+                                  <button
+                                    key={st.id}
+                                    type="button"
+                                    onClick={() => setResumeData(p => ({
+                                      ...p,
+                                      styleConfig: {
+                                        ...(p.styleConfig || {}),
+                                        europassSealStyle: st.id as any
+                                      }
+                                    }))}
+                                    className={`py-2 px-1 text-[9px] font-bold uppercase rounded-xl transition-all cursor-pointer ${
+                                      (resumeData.styleConfig?.europassSealStyle || 'standard') === st.id
+                                        ? 'bg-[#003399] text-white shadow-sm'
+                                        : 'text-gray-600 hover:bg-blue-50/80'
+                                    }`}
+                                  >
+                                    {st.label}
+                                  </button>
+                                ))}
+                             </div>
+                          </div>
+
+                          {/* Seal Size Slider */}
+                          <div className="space-y-2">
+                             <div className="flex justify-between text-[10px] font-bold text-gray-700 uppercase tracking-wider">
+                                <span>Tamanho do Selo</span>
+                                <span className="font-mono text-blue-900">{resumeData.styleConfig?.europassSealSize || 70}px</span>
+                             </div>
+                             <input 
+                               type="range" 
+                               min="30" 
+                               max="200" 
+                               step="2" 
+                               value={resumeData.styleConfig?.europassSealSize || 70} 
+                               onChange={(e) => setResumeData(p => ({
+                                 ...p, 
+                                 styleConfig: {
+                                   ...(p.styleConfig || {}), 
+                                   europassSealSize: Number(e.target.value)
+                                 }
+                               }))} 
+                               className="w-full h-1.5 bg-blue-200/80 rounded-lg appearance-none cursor-pointer accent-[#003399]" 
+                             />
+                          </div>
+
+                          {/* Fine-tune X / Y Offsets */}
+                          <div className="space-y-3 pt-2 border-t border-blue-200/60">
+                             <div className="flex justify-between items-center">
+                                <span className="text-[10px] font-bold text-gray-700 uppercase tracking-wider">Ajuste Fino de Posição</span>
+                                <button
+                                  type="button"
+                                  onClick={() => setResumeData(p => ({
+                                    ...p,
+                                    styleConfig: {
+                                      ...(p.styleConfig || {}),
+                                      europassSealOffsetX: 0,
+                                      europassSealOffsetY: 0
+                                    }
+                                  }))}
+                                  className="text-[9px] font-bold text-blue-600 hover:underline cursor-pointer"
+                                >
+                                  Resetar Posição
+                                </button>
+                             </div>
+
+                             <div className="space-y-1.5">
+                                <div className="flex justify-between text-[9px] text-gray-600 font-semibold">
+                                   <span>Deslocamento Horizontal (X)</span>
+                                   <span className="font-mono">{resumeData.styleConfig?.europassSealOffsetX || 0}px</span>
+                                </div>
+                                <input 
+                                  type="range" 
+                                  min="-200" 
+                                  max="200" 
+                                  step="2" 
+                                  value={resumeData.styleConfig?.europassSealOffsetX || 0} 
+                                  onChange={(e) => setResumeData(p => ({
+                                    ...p, 
+                                    styleConfig: {
+                                      ...(p.styleConfig || {}), 
+                                      europassSealOffsetX: Number(e.target.value)
+                                    }
+                                  }))} 
+                                  className="w-full h-1 bg-blue-200/60 rounded-lg appearance-none cursor-pointer accent-[#003399]" 
+                                />
+                             </div>
+
+                             <div className="space-y-1.5">
+                                <div className="flex justify-between text-[9px] text-gray-600 font-semibold">
+                                   <span>Deslocamento Vertical (Y)</span>
+                                   <span className="font-mono">{resumeData.styleConfig?.europassSealOffsetY || 0}px</span>
+                                </div>
+                                <input 
+                                  type="range" 
+                                  min="-200" 
+                                  max="200" 
+                                  step="2" 
+                                  value={resumeData.styleConfig?.europassSealOffsetY || 0} 
+                                  onChange={(e) => setResumeData(p => ({
+                                    ...p, 
+                                    styleConfig: {
+                                      ...(p.styleConfig || {}), 
+                                      europassSealOffsetY: Number(e.target.value)
+                                    }
+                                  }))} 
+                                  className="w-full h-1 bg-blue-200/60 rounded-lg appearance-none cursor-pointer accent-[#003399]" 
+                                />
+                             </div>
+
+                             <p className="text-[9px] text-blue-700 font-semibold italic bg-blue-100/50 p-2 rounded-xl border border-blue-200/50">
+                               💡 Você também pode clicar e arrastar o selo diretamente na pré-visualização para reposicioná-lo!
+                             </p>
+                          </div>
+                       </div>
+                     )}
+                  </div>
+
                   <div className="p-6 bg-white border border-border-main rounded-3xl space-y-6">
                      <div className="space-y-1">
                         <h4 className="text-[10px] font-black uppercase tracking-widest text-primary-blue">Tamanho de Letra por Secção</h4>
@@ -9343,11 +9745,11 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
                              <h4 className="text-lg font-black text-deep-blue">Carta de Apresentação</h4>
                              <p className="text-xs text-text-muted font-medium leading-relaxed">Destaque sua candidatura! Gere uma carta estratégica e personalizada para a vaga dos seus sonhos.</p>
                              
-                             <Button variant="none" className="w-full bg-primary-blue text-white hover:bg-deep-blue h-12 text-sm font-black uppercase tracking-widest shadow-xl shadow-primary-blue/20 transition-all rounded-2xl" onClick={handleCreateCoverLetter} disabled={loading}>
+                             <Button variant="none" className="w-full bg-primary-blue text-white hover:bg-deep-blue h-12 text-sm font-black uppercase tracking-widest shadow-xl shadow-primary-blue/20 transition-all rounded-2xl disabled:opacity-50 disabled:pointer-events-none disabled:cursor-not-allowed" onClick={handleCreateCoverLetter} disabled={loading}>
                                 {loading ? (
                                    <div className="flex items-center justify-center gap-2">
                                       <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                                      <span>A Redigir...</span>
+                                      <span>A processar...</span>
                                    </div>
                                 ) : "Gerar Carta Premium"}
                              </Button>
@@ -9423,7 +9825,24 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
               <Grid size={14} className={showAlignGuides ? "text-white" : "text-gray-400"} />
               {showAlignGuides ? 'Modo de Medição: Ligado' : 'Ajustes de Layout'}
             </button>
-            <button title="Descarga PDF" onClick={() => window.print()} className="p-2 bg-text-main text-white hover:bg-deep-blue rounded-xl shadow-lg transition-colors cursor-pointer"><Download size={14} /></button>
+            <button 
+              title={isDownloading ? "A processar PDF..." : "Descarregar PDF"} 
+              onClick={handleDownloadPdf} 
+              disabled={isDownloading}
+              className="px-3 py-1.5 bg-text-main text-white hover:bg-deep-blue rounded-xl shadow-lg transition-colors cursor-pointer disabled:opacity-50 disabled:pointer-events-none disabled:cursor-not-allowed flex items-center gap-1.5 text-xs font-bold"
+            >
+              {isDownloading ? (
+                <>
+                  <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                  <span>A processar...</span>
+                </>
+              ) : (
+                <>
+                  <Download size={14} />
+                  <span>PDF</span>
+                </>
+              )}
+            </button>
           </div>
         </div>
 
