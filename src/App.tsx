@@ -584,7 +584,7 @@ const ProfilePage = ({ user, isAdmin, setView, onLogout, onRequestDownload }: {
     );
 };
 
-const CoverLetterRenderer = React.memo(({ content, personalInfo, themeColor, language = 'pt', onChangeContent }: { content: string; personalInfo: any; themeColor?: string; language?: string; onChangeContent?: (content: string) => void }) => {
+const CoverLetterRenderer = React.memo(({ content, personalInfo, themeColor, language = 'pt', onChangeContent, subject, onChangeSubject }: { content: string; personalInfo: any; themeColor?: string; language?: string; onChangeContent?: (content: string) => void; subject?: string; onChangeSubject?: (subject: string) => void }) => {
   const c = { primary: themeColor || '#1B2A4A' };
   const info = personalInfo || {};
   const isEn = language === 'en';
@@ -595,6 +595,8 @@ const CoverLetterRenderer = React.memo(({ content, personalInfo, themeColor, lan
   
   const wRender = 794 / densityScale;
   const hRender = 1122 / densityScale;
+
+  const defaultSubject = isEn ? 'Spontaneous Application' : 'Candidatura Espontânea';
 
   return (
     <div 
@@ -619,7 +621,7 @@ const CoverLetterRenderer = React.memo(({ content, personalInfo, themeColor, lan
         }}
       >
          {/* Minimalist Professional Header */}
-         <div className="flex justify-between items-start pb-8 mb-10 mt-4">
+         <div className="flex justify-between items-start pb-6 mb-6">
            <div className="space-y-1.5 max-w-[80%]">
              <h1 className="text-[32px] font-black tracking-tight leading-none" style={{ color: c.primary }}>
                {info.fullName }
@@ -630,9 +632,27 @@ const CoverLetterRenderer = React.memo(({ content, personalInfo, themeColor, lan
            </div>
          </div>
 
-         <div className="flex justify-between items-end mb-12 text-[12px] uppercase tracking-widest font-bold text-gray-400">
-           <span>{isEn ? 'Spontaneous Application' : 'Candidatura Espontânea'}</span>
-           <span>{(info.location ? info.location.split(',')[0] + ', ' : '') + new Date().toLocaleDateString(isEn ? 'en-US' : 'pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })}</span>
+         {/* Sub-header with Subject and Date */}
+         <div className="flex justify-between items-center mb-10 pb-3 border-b border-gray-100 text-[12px] font-bold text-gray-500">
+           <div className="flex items-center gap-2 max-w-[72%]">
+             <span className="text-gray-400 uppercase tracking-widest text-[11px] shrink-0 font-extrabold">{isEn ? 'Subject:' : 'Assunto:'}</span>
+             {onChangeSubject ? (
+               <input
+                 type="text"
+                 className="bg-transparent border-b border-dashed border-gray-300 hover:border-blue-500 focus:border-blue-600 focus:bg-blue-50/50 outline-none font-bold text-gray-800 text-[13px] w-full px-1.5 py-0.5 transition-all print:hidden"
+                 value={subject !== undefined ? subject : ''}
+                 placeholder={defaultSubject}
+                 onChange={(e) => onChangeSubject(e.target.value)}
+                 title="Clique para editar o assunto da candidatura"
+               />
+             ) : null}
+             <span className={`font-bold text-gray-800 text-[13px] ${onChangeSubject ? 'hidden print:inline' : 'inline'}`}>
+               {subject || defaultSubject}
+             </span>
+           </div>
+           <span className="text-gray-400 uppercase tracking-widest text-[11px] shrink-0 text-right">
+             {(info.location ? info.location.split(',')[0] + ', ' : '') + new Date().toLocaleDateString(isEn ? 'en-US' : 'pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })}
+           </span>
          </div>
          
          <div className="flex-1 w-full relative">
@@ -6301,6 +6321,9 @@ Considero-me um profissional orientado para soluções e com grande capacidade d
 
 Agradeço desde já a atenção demonstrada em analisar o meu currículo em anexo e coloco-me à disposição para uma entrevista, onde poderei detalhar como a minha experiência será útil para as vossas futuras iniciativas.`;
   });
+  const [letterSubject, setLetterSubject] = useState(() => {
+    return localStorage.getItem('cv_lab_letter_subject') || 'Candidatura Espontânea';
+  });
   const [tempSkill, setTempSkill] = useState("");
   const [tempLanguage, setTempLanguage] = useState("");
   const [tempLanguageLevel, setTempLanguageLevel] = useState("Fluente");
@@ -6343,6 +6366,13 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
     }, 500);
     return () => clearTimeout(timer);
   }, [generatedLetter]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      localStorage.setItem('cv_lab_letter_subject', letterSubject);
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [letterSubject]);
   const [previewScale, setPreviewScale] = useState(0.85);
   const [showAlignGuides, setShowAlignGuides] = useState(false);
   const [activeVisualTab, setActiveVisualTab] = useState<'sizes' | 'reorder' | 'alignment'>('sizes');
@@ -6789,7 +6819,7 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
       : `${resumeData.personalInfo.fullName.replace(/\s+/g, '_')}_Curriculo.pdf`;
 
     const data = isCoverLetterMode 
-      ? { content: generatedLetter, personalInfo: resumeData.personalInfo, themeColor: resumeData.themeColor, language: resumeData.language } 
+      ? { content: generatedLetter, personalInfo: resumeData.personalInfo, themeColor: resumeData.themeColor, language: resumeData.language, subject: letterSubject } 
       : resumeData;
 
     await downloadHtmlDocumentAsPdf(data, isCoverLetterMode ? 'cover_letter' : 'resume', template, filename);
@@ -6824,7 +6854,8 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
             coverLetter: {
                 content: generatedLetter,
                 personalInfo: resumeData.personalInfo,
-                themeColor: resumeData.themeColor
+                themeColor: resumeData.themeColor,
+                subject: letterSubject
             }
         },
         contactEmail: contactEmail,
@@ -6997,7 +7028,7 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
   const removeEducation = (id?: string, index?: number) => {
     setResumeData(prev => ({
       ...prev,
-      education: (prev.education || []).filter((ed, i) => id ? ed.id !== id : i !== index)
+      education: (prev.education || []).filter((ed, i) => index !== undefined ? i !== index : ed.id !== id)
     }));
   };
 
@@ -7033,7 +7064,8 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
 
   const handleCreateCoverLetter = async () => {
     setLoading(true);
-    const content = await generateCoverLetter(resumeData, resumeData.personalInfo.title || "Vaga de Emprego");
+    const subjectToUse = letterSubject || resumeData.personalInfo.title || "Vaga de Emprego";
+    const content = await generateCoverLetter(resumeData, subjectToUse);
     setGeneratedLetter(content);
     setIsCoverLetterMode(true);
     setLoading(false);
@@ -9758,30 +9790,50 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
                       </div>
                    </div>
 
-                   <div className="p-8 bg-white border-2 border-dashed border-primary-blue/30 rounded-3xl text-center space-y-4 overflow-hidden relative">
+                   <div className="p-6 bg-white border border-gray-200 rounded-3xl space-y-5 shadow-sm text-left relative overflow-hidden">
+                      <div className="space-y-2">
+                         <label className="text-xs font-black text-deep-blue uppercase tracking-wider block flex items-center gap-2">
+                           <FileText size={16} className="text-primary-blue" />
+                           Assunto da Candidatura / Vaga Pretendida
+                         </label>
+                         <Input 
+                           value={letterSubject}
+                           onChange={(v: string) => setLetterSubject(v)}
+                           placeholder="Ex: Candidatura para a vaga de Gestor de Projectos"
+                         />
+                         <p className="text-[11px] text-text-muted font-medium leading-relaxed">
+                           Insira o assunto ou vaga (ex: Candidatura à vaga de Engenheiro - Ref. #2026). O assunto é exibido no cabeçalho da carta e direciona a geração de texto por IA.
+                         </p>
+                      </div>
+
                       <AnimatePresence mode="wait">
                         {generatedLetter ? (
                           <motion.div 
                             key="success"
-                            initial={{ opacity: 0, scale: 0.9 }}
+                            initial={{ opacity: 0, scale: 0.95 }}
                             animate={{ opacity: 1, scale: 1 }}
-                            className="space-y-4"
+                            className="space-y-3 pt-3 border-t border-gray-100"
                           >
-                             <div className="w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto relative">
-                                <motion.div animate={{ scale: [1, 1.2, 1] }} transition={{ repeat: Infinity, duration: 2 }} className="absolute inset-0 bg-green-100 rounded-full opacity-50"></motion.div>
-                                <CheckCircle size={32} className="relative z-10" />
+                             <div className="p-3 bg-green-50 border border-green-200 rounded-2xl flex items-center gap-3 text-green-800">
+                                <CheckCircle size={20} className="text-green-600 shrink-0" />
+                                <div>
+                                  <h5 className="text-xs font-bold">Carta Pronta</h5>
+                                  <p className="text-[10px] text-green-700/80">Pode editar o assunto ou o texto diretamente no pré-visualizador.</p>
+                                </div>
                              </div>
-                             <h4 className="text-lg font-black text-deep-blue">Carta Gerada com Sucesso</h4>
-                             <p className="text-xs text-text-muted font-medium">A sua carta foi adaptada para o seu cargo e já está pronta.</p>
                              
-                             <Button className="w-full bg-white text-primary-blue border border-primary-blue hover:bg-primary-blue/5" onClick={() => { setIsCoverLetterMode(true); setShowPreviewModal(true); }}>
-                               Visualizar Carta
-                              </Button>
-                              <Button className="w-full bg-primary-blue text-white hover:bg-[#0052cc] h-12 text-sm font-black rounded-xl" onClick={() => { setIsCoverLetterMode(true); setTimeout(handlePrint, 100); }} icon={Printer}>
-                                Imprimir Carta
-                             </Button>
-                             <Button className="w-full hidden" onClick={() => {}} disabled={isDownloading} icon={Download}>
-                               {isDownloading ? "Gerando PDF..." : "Baixar Carta em PDF"}
+                             <div className="grid grid-cols-2 gap-2">
+                               <Button className="w-full bg-white text-primary-blue border border-primary-blue hover:bg-primary-blue/5 text-xs font-bold" onClick={() => { setIsCoverLetterMode(true); setShowPreviewModal(true); }}>
+                                 Visualizar Carta
+                               </Button>
+                               <Button className="w-full bg-primary-blue text-white hover:bg-[#0052cc] text-xs font-black rounded-xl" onClick={() => { setIsCoverLetterMode(true); setTimeout(handlePrint, 100); }} icon={Printer}>
+                                 Imprimir Carta
+                               </Button>
+                             </div>
+
+                             <Button variant="ghost" className="w-full text-xs text-primary-blue hover:bg-primary-blue/10 border border-primary-blue/20 h-10 font-bold flex items-center justify-center gap-2" onClick={handleCreateCoverLetter} disabled={loading}>
+                               <Sparkles size={14} />
+                               {loading ? "A Regerar..." : "Regerar Carta com IA (Novo Assunto)"}
                              </Button>
                           </motion.div>
                         ) : (
@@ -9790,14 +9842,12 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
                             exit={{ opacity: 0 }}
-                            className="space-y-4"
+                            className="space-y-4 pt-3 border-t border-gray-100"
                           >
-                             <div className="w-16 h-16 bg-soft-blue text-primary-blue rounded-2xl flex items-center justify-center mx-auto mb-2">
-                                <FileText size={32} />
-                             </div>
-                             <h4 className="text-lg font-black text-deep-blue">Carta de Apresentação</h4>
-                             <p className="text-xs text-text-muted font-medium leading-relaxed">Destaque sua candidatura! Gere uma carta estratégica e personalizada para a vaga dos seus sonhos.</p>
-                             
+                             <p className="text-xs text-text-muted font-medium leading-relaxed">
+                               Destaque a sua candidatura! Gere uma carta de apresentação estratégica personalizada com base no seu perfil e no assunto definido acima.
+                             </p>
+
                              <Button variant="none" className="w-full bg-primary-blue text-white hover:bg-deep-blue h-12 text-sm font-black uppercase tracking-widest shadow-xl shadow-primary-blue/20 transition-all rounded-2xl disabled:opacity-50 disabled:pointer-events-none disabled:cursor-not-allowed" onClick={handleCreateCoverLetter} disabled={loading}>
                                 {loading ? (
                                    <div className="flex items-center justify-center gap-2">
@@ -9819,154 +9869,39 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
         <footer className="p-6 border-t border-border-main bg-white flex justify-between gap-4">
            <Button variant="ghost" disabled={activeStep === 0} onClick={() => setActiveStep(s => s - 1)}>Anterior</Button>
            <Button disabled={activeStep === 5} onClick={() => setActiveStep(s => s + 1)} className="px-10" icon={ChevronRight}>
-             {activeStep === 5 ? 'Concluído' : 'Próximo'}
+             {activeStep === 5 ? "Concluído" : "Próximo"}
            </Button>
         </footer>
       </aside>
 
-      {/* Preview Section - Transformed to Modal explicitly on request/mobile, always visible and beautifully scaled on desktop/PC */}
-      <main className={`flex-1 overflow-y-auto overflow-x-hidden w-full custom-scrollbar transition-all duration-300 print:flex print:bg-white print:p-0 print:m-0 print:overflow-visible flex-col items-center ${
-        showPreviewModal 
-          ? 'fixed inset-0 z-50 bg-bg-main/95 backdrop-blur-md pt-20 pb-8 px-2 flex' 
-          : isDownloading 
-            ? 'fixed top-0 left-0 z-[-50] flex opacity-100 pointer-events-none' 
-            : 'hidden md:flex md:relative md:bg-[#EEF2F6] md:py-12 md:px-6 print:flex'
-      }`}>
-        
-        {loading && (
-          <div className="fixed inset-0 bg-white/60 backdrop-blur-md z-[100] flex flex-col items-center justify-center gap-6 print:hidden">
-             <div className="w-16 h-16 border-4 border-primary-blue border-t-transparent rounded-full animate-spin shadow-2xl"></div>
-             <div className="flex flex-col items-center gap-2">
-               <img 
-                 src="https://i.supaimg.com/6bc04951-8cbe-4706-9f0c-a01f9ea9a6c4/f7862e8c-46f6-4d82-a9e0-b9cb52c6fc4f.png" 
-                 alt="CV LAB" 
-                 className="h-12 w-auto object-contain brightness-0 invert"
-                 referrerPolicy="no-referrer" 
-               />
-               <p className="font-black text-primary-blue text-[10px] tracking-[0.3em] uppercase animate-pulse">Sincronizando com o Sistema</p>
-             </div>
-          </div>
-        )}
-
-        {/* Top toolbar replacing the floating bottom bar */}
-        <div className="w-full relative shrink-0 z-40 bg-white/90 backdrop-blur-md rounded-2xl px-4 py-3 flex flex-wrap items-center justify-center sm:justify-between gap-4 border border-gray-200/80 shadow-sm print:hidden mb-6 mt-2 max-w-[794px]">
-          <div className="flex items-center gap-3">
-             <button title="Diminuir Zoom" onClick={() => { setIsAutoFit(false); setPreviewScale(prev => Math.max(0.4, Number((prev - 0.05).toFixed(2)))); }} className="p-1.5 hover:bg-gray-100 active:bg-gray-200 rounded-xl transition-colors cursor-pointer text-gray-500 hover:text-gray-900"><Minus size={14} /></button>
-             <span className="min-w-[48px] text-center font-mono text-gray-800 text-xs font-bold">{Math.round(previewScale * 100)}%</span>
-             <button title="Aumentar Zoom" onClick={() => { setIsAutoFit(false); setPreviewScale(prev => Math.min(1.5, Number((prev + 0.05).toFixed(2)))); }} className="p-1.5 hover:bg-gray-100 active:bg-gray-200 rounded-xl transition-colors cursor-pointer text-gray-500 hover:text-gray-900"><Plus size={14} /></button>
-          </div>
-          
-          <div className="h-5 w-px bg-gray-200 hidden sm:block"></div>
-
-          <div className="flex items-center gap-1 bg-slate-50 border border-slate-100 rounded-xl px-1.5 py-1">
-            <button title="Diminuir Tamanho de Letra" onClick={() => setResumeData(prev => ({...prev, styleConfig: {...(prev.styleConfig || {fontSize:13}), fontSize: Math.max(8, Number(((prev.styleConfig?.fontSize || 13) - 0.5).toFixed(1)))} }))} className="p-1 hover:bg-slate-100 active:bg-slate-200 rounded-lg text-gray-500"><Minus size={11} /></button>
-            <span className="min-w-[42px] text-center font-mono text-gray-800 text-[10px] tracking-wide flex items-center justify-center gap-1" title="Tamanho de Letra Atual">
-              <Type size={10} className="text-gray-400" />
-              <span>{(resumeData.styleConfig?.fontSize || 13).toFixed(1)}</span>
-            </span>
-            <button title="Aumentar Tamanho de Letra" onClick={() => setResumeData(prev => ({...prev, styleConfig: {...(prev.styleConfig || {fontSize:13}), fontSize: Math.min(22, Number(((prev.styleConfig?.fontSize || 13) + 0.5).toFixed(1)))} }))} className="p-1 hover:bg-slate-100 active:bg-slate-200 rounded-lg text-gray-500"><Plus size={11} /></button>
-          </div>
-          
-          <div className="h-5 w-px bg-gray-200 hidden sm:block"></div>
-
-          <div className="flex items-center gap-2">
-            <button 
-              onClick={() => setShowAlignGuides(!showAlignGuides)}
-              title={showAlignGuides ? "Desativar Modo de Alinhamento e Réguas" : "Ativar Modo de Alinhamento e Ajustes Finos"}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-wider transition-colors cursor-pointer ${showAlignGuides ? 'bg-primary-blue text-white shadow-md shadow-primary-blue/20' : 'bg-gray-100 text-gray-600 hover:bg-gray-200 hover:text-gray-900'}`}
-            >
-              <Grid size={14} className={showAlignGuides ? "text-white" : "text-gray-400"} />
-              {showAlignGuides ? 'Modo de Medição: Ligado' : 'Ajustes de Layout'}
-            </button>
-            <button 
-              title={isDownloading ? "A processar PDF..." : "Descarregar PDF"} 
-              onClick={handleDownloadPdf} 
-              disabled={isDownloading}
-              className="px-3 py-1.5 bg-text-main text-white hover:bg-deep-blue rounded-xl shadow-lg transition-colors cursor-pointer disabled:opacity-50 disabled:pointer-events-none disabled:cursor-not-allowed flex items-center gap-1.5 text-xs font-bold"
-            >
-              {isDownloading ? (
-                <>
-                  <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                  <span>A processar...</span>
-                </>
-              ) : (
-                <>
-                  <Download size={14} />
-                  <span>PDF</span>
-                </>
-              )}
-            </button>
-          </div>
-        </div>
-
-        {/* Page Limit Warning / Auto Align Trigger */}
-        {!isCoverLetterMode && resumeHeight > 1125 && (
-          <div className="w-full max-w-[794px] mb-6 bg-amber-50 border border-amber-200/80 rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4 animate-fade-in shadow-sm print:hidden">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center shrink-0">
-                <AlertCircle size={20} className="text-amber-600" />
-              </div>
-              <div className="text-left font-sans">
-                <h4 className="text-xs font-black text-amber-900 uppercase tracking-wide">O conteúdo ultrapassa 1 página A4</h4>
-                <p className="text-[11px] text-amber-700/80 font-bold leading-normal mt-0.5 animate-pulse">O currículo está longo demais e pode sofrer quebra de página imprópria na impressão.</p>
-              </div>
+      {/* Main Preview */}
+      <main className="flex-1 bg-[#1a2332] p-8 overflow-y-auto flex justify-center items-start relative select-none scrollbar-hide">
+         <div className="flex flex-col items-center gap-6 my-auto max-w-full">
+            <div className="bg-white/5 backdrop-blur-md p-2 rounded-2xl border border-white/10 flex items-center gap-3 shadow-xl z-20">
+               <button onClick={() => setPreviewScale(s => Math.max(0.4, s - 0.05))} className="p-2 hover:bg-white/10 rounded-xl text-white transition-all"><Minus size={16} /></button>
+               <span className="text-xs font-bold text-white min-w-[45px] text-center">{Math.round(previewScale * 100)}%</span>
+               <button onClick={() => setPreviewScale(s => Math.min(1.3, s + 0.05))} className="p-2 hover:bg-white/10 rounded-xl text-white transition-all"><Plus size={16} /></button>
             </div>
-            <button 
-              onClick={handleAutoAlign}
-              className="px-4 py-2.5 bg-amber-600 hover:bg-amber-700 active:scale-95 text-white rounded-xl text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5 shadow-md shadow-amber-600/10 transition-all cursor-pointer whitespace-nowrap font-sans"
-            >
-              <Zap size={14} className="animate-bounce text-amber-100" />
-              Reorganizar Layout
-            </button>
-          </div>
-        )}
 
-        {/* Modal Close & Actions Header */}
-        {showPreviewModal && (
-          <div className="fixed top-0 left-0 right-0 h-16 bg-white/95 backdrop-blur-md border-b border-border-main flex items-center justify-start px-4 md:px-8 print:hidden shadow-sm z-[60]">
-             <button onClick={() => setShowPreviewModal(false)} className="flex items-center gap-2 text-xs font-bold text-text-muted hover:text-text-main transition-colors">
-               <X size={16}/> <span>Sair da Pré-visualização</span>
-             </button>
-          </div>
-        )}
-
-        {/* Scaled Wrapper to prevent horizontal scroll and extra vertical whitespace */}
-        <div 
-          className="flex justify-center w-full print:h-auto"
-          style={{ height: `${resumeHeight * previewScale}px` }}
-        >
-          <div 
-            className="origin-top transition-all duration-700 print:shadow-none print:w-full print:h-auto shadow-[0_60px_120px_-20px_rgba(0,0,0,0.2)]"
-            style={{ 
-              transform: `scale(${previewScale})`,
-              width: '794px',
-              height: `${resumeHeight}px`,
-              flexShrink: 0
-            }}
-          >
-             <AnimatePresence mode="wait">
-               {isCoverLetterMode ? (
-                 <motion.div 
-                   key="letter"
-                   initial={{ opacity: 0, y: 20 }}
-                   animate={{ opacity: 1, y: 0 }}
-                   className="relative"
-                 >
-                    <button data-html2canvas-ignore="true" onClick={() => setIsCoverLetterMode(false)} className="absolute top-8 left-8 text-[10px] font-black uppercase text-primary-blue tracking-widest flex items-center gap-2 print:hidden z-10 group bg-soft-blue px-4 py-2 rounded-full hover:bg-primary-blue hover:text-white transition-all">
-                       <ChevronLeft size={14} className="group-hover:-translate-x-1 transition-transform" /> Voltar ao Editor
-                    </button>
-                    <CoverLetterRenderer content={generatedLetter} personalInfo={resumeData.personalInfo} themeColor={resumeData.themeColor} language={resumeData.language} onChangeContent={setGeneratedLetter} />
-                 </motion.div>
-               ) : (
-                 <ResumeRenderer data={resumeData} templateId={template} showGuides={showAlignGuides} onChange={setResumeData} />
-               )}
-             </AnimatePresence>
-          </div>
-        </div>
+            <div className="transition-all duration-300 origin-top shadow-2xl rounded-sm" style={{ transform: `scale(${previewScale})` }}>
+              <AnimatePresence mode="wait">
+                {isCoverLetterMode ? (
+                  <motion.div key="letter" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="relative group">
+                     <button data-html2canvas-ignore="true" onClick={() => setIsCoverLetterMode(false)} className="absolute top-8 left-8 text-[10px] font-black uppercase text-primary-blue tracking-widest flex items-center gap-2 print:hidden z-10 group bg-soft-blue px-4 py-2 rounded-full hover:bg-primary-blue hover:text-white transition-all">
+                        <ChevronLeft size={14} className="group-hover:-translate-x-1 transition-transform" /> Voltar ao Editor
+                     </button>
+                     <CoverLetterRenderer content={generatedLetter} personalInfo={resumeData.personalInfo} themeColor={resumeData.themeColor} language={resumeData.language} onChangeContent={setGeneratedLetter} subject={letterSubject} onChangeSubject={setLetterSubject} />
+                  </motion.div>
+                ) : (
+                  <ResumeRenderer data={resumeData} templateId={template} showGuides={showAlignGuides} onChange={setResumeData} />
+                )}
+              </AnimatePresence>
+           </div>
+         </div>
       </main>
 
       {/* WhatsApp Support Floating Button - Only on Landing Page */}
-      {((view as any) === 'landing' || (view as any) === '') && (
+      {((view as any) === "landing" || (view as any) === "") && (
         <motion.a
           href="https://wa.me/+244954748806"
           target="_blank"
@@ -9988,19 +9923,19 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
         <div 
           id="temp-download-container" 
           style={{ 
-            position: 'fixed', 
-            top: '0px', 
-            left: '0px', 
-            width: '794px', 
-            height: 'auto', 
-            minHeight: '1122px',
-            overflow: 'visible',
-            zIndex: 99999, // Render inside viewport with high z-index under the loading overlay
-            pointerEvents: 'none',
-            backgroundColor: '#ffffff'
+            position: "fixed", 
+            top: "0px", 
+            left: "0px", 
+            width: "794px", 
+            height: "auto", 
+            minHeight: "1122px",
+            overflow: "visible",
+            zIndex: 99999,
+            pointerEvents: "none",
+            backgroundColor: "#ffffff"
           }}
         >
-          {tempDownloadData.type === 'resume' ? (
+          {tempDownloadData.type === "resume" ? (
             <ResumeRenderer 
               data={tempDownloadData.data} 
               templateId={tempDownloadData.templateId} 
@@ -10011,18 +9946,11 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
               personalInfo={tempDownloadData.data.personalInfo} 
               themeColor={tempDownloadData.data.themeColor} 
               language={tempDownloadData.data.language}
+              subject={tempDownloadData.data.subject || letterSubject}
             />
           )}
         </div>,
         document.body
-      )}
-
-      {isDownloading && (
-        <div className="fixed inset-0 bg-slate-950/95 backdrop-blur-md flex flex-col items-center justify-center z-[100000] text-white select-none">
-          <div className="w-16 h-16 border-4 border-white/20 border-t-white rounded-full animate-spin mb-6"></div>
-          <p className="text-xl font-black uppercase tracking-[0.2em] text-white">Preparando Alta Definição</p>
-          <p className="text-xs text-slate-400 mt-2 font-bold tracking-wide uppercase">Organizando auto-escala e compilando página única perfeita...</p>
-        </div>
       )}
     </div>
   );
