@@ -2987,6 +2987,7 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
         /* Overrides de tamanho de letra individuais por secção */
         
         /* 1. Contacto / Informações Pessoais */
+        #resume-content .cv-contact-text,
         #resume-content [class*="-contact-item"] span,
         #resume-content [class*="-contact-item"] p,
         #resume-content [class*="-contact-item"] div,
@@ -3000,10 +3001,16 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
         #resume-content .t2-contact-text,
         #resume-content .t3-contact-text {
           font-size: ${style.contactSize || style.fontSize || 13}px !important;
+          word-break: break-all !important;
+          overflow-wrap: anywhere !important;
+          white-space: normal !important;
+          text-overflow: clip !important;
         }
-        #resume-content [class*="-contact-icon"] svg {
+        #resume-content [class*="-contact-icon"] svg,
+        #resume-content [class*="contact"] svg {
           width: ${Math.max(10, (style.contactSize || style.fontSize || 13) - 1)}px !important;
           height: ${Math.max(10, (style.contactSize || style.fontSize || 13) - 1)}px !important;
+          min-width: ${Math.max(10, (style.contactSize || style.fontSize || 13) - 1)}px !important;
         }
 
         /* 2. Resumo / Perfil */
@@ -4264,27 +4271,27 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
                 <h3 className="text-sm font-black uppercase tracking-wider mb-4 text-center pb-1 border-b-2 border-sky-400/50" style={{ color: c.primary }}>{data.language === 'en' ? 'Contact' : 'Contacto'}</h3>
                 <div className="space-y-3">
                   {data.personalInfo.email && (
-                    <div className="flex items-center gap-3 text-[10px] font-bold text-gray-700">
-                      <span className="w-6 h-6 rounded-full bg-sky-400 flex items-center justify-center text-white shrink-0 shadow-sm"><Mail size={11} /></span>
-                      <span className="truncate">{data.personalInfo.email}</span>
+                    <div className="flex items-start gap-3 text-[10px] font-bold text-gray-700">
+                      <span className="w-6 h-6 rounded-full bg-sky-400 flex items-center justify-center text-white shrink-0 shadow-sm mt-0.5"><Mail size={11} /></span>
+                      <span className="cv-contact-text break-all min-w-0">{data.personalInfo.email}</span>
                     </div>
                   )}
                   {data.personalInfo.phone && (
-                    <div className="flex items-center gap-3 text-[10px] font-bold text-gray-700">
-                      <span className="w-6 h-6 rounded-full bg-sky-400 flex items-center justify-center text-white shrink-0 shadow-sm"><Phone size={11} /></span>
-                      <span>{data.personalInfo.phone}</span>
+                    <div className="flex items-start gap-3 text-[10px] font-bold text-gray-700">
+                      <span className="w-6 h-6 rounded-full bg-sky-400 flex items-center justify-center text-white shrink-0 shadow-sm mt-0.5"><Phone size={11} /></span>
+                      <span className="cv-contact-text break-words min-w-0">{data.personalInfo.phone}</span>
                     </div>
                   )}
                   {data.personalInfo.location && (
-                    <div className="flex items-center gap-3 text-[10px] font-bold text-gray-700">
-                      <span className="w-6 h-6 rounded-full bg-sky-400 flex items-center justify-center text-white shrink-0 shadow-sm"><MapPin size={11} /></span>
-                      <span>{data.personalInfo.location}</span>
+                    <div className="flex items-start gap-3 text-[10px] font-bold text-gray-700">
+                      <span className="w-6 h-6 rounded-full bg-sky-400 flex items-center justify-center text-white shrink-0 shadow-sm mt-0.5"><MapPin size={11} /></span>
+                      <span className="cv-contact-text break-words min-w-0">{data.personalInfo.location}</span>
                     </div>
                   )}
                   {data.personalInfo.website && (
-                    <div className="flex items-center gap-3 text-[10px] font-bold text-gray-700">
-                      <span className="w-6 h-6 rounded-full bg-sky-400 flex items-center justify-center text-white shrink-0 shadow-sm"><Globe size={11} /></span>
-                      <span className="truncate">{data.personalInfo.website}</span>
+                    <div className="flex items-start gap-3 text-[10px] font-bold text-gray-700">
+                      <span className="w-6 h-6 rounded-full bg-sky-400 flex items-center justify-center text-white shrink-0 shadow-sm mt-0.5"><Globe size={11} /></span>
+                      <span className="cv-contact-text break-all min-w-0">{data.personalInfo.website}</span>
                     </div>
                   )}
                 </div>
@@ -5419,27 +5426,27 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
                 <h3 className="text-xs font-mono font-black uppercase tracking-widest text-slate-800 border-b pb-1.5" style={{ borderBottomColor: c.primary }}>{data.language === 'en' ? 'Contact' : 'Contacto'}</h3>
                 <div className="space-y-2.5">
                   {data.personalInfo.phone && (
-                    <div className="flex items-center gap-2 text-[10px] font-bold text-slate-600 animate-fade-in">
-                      <Phone size={11} className="shrink-0" style={{ color: c.primary }} />
-                      <span className="truncate">{data.personalInfo.phone}</span>
+                    <div className="flex items-start gap-2 text-[10px] font-bold text-slate-600 animate-fade-in">
+                      <Phone size={11} className="shrink-0 mt-0.5" style={{ color: c.primary }} />
+                      <span className="cv-contact-text break-words min-w-0">{data.personalInfo.phone}</span>
                     </div>
                   )}
                   {data.personalInfo.email && (
-                    <div className="flex items-center gap-2 text-[10px] font-bold text-slate-600">
-                      <Mail size={11} className="shrink-0" style={{ color: c.primary }} />
-                      <span className="break-all">{data.personalInfo.email}</span>
+                    <div className="flex items-start gap-2 text-[10px] font-bold text-slate-600">
+                      <Mail size={11} className="shrink-0 mt-0.5" style={{ color: c.primary }} />
+                      <span className="cv-contact-text break-all min-w-0">{data.personalInfo.email}</span>
                     </div>
                   )}
                   {data.personalInfo.location && (
-                    <div className="flex items-center gap-2 text-[10px] font-bold text-slate-600">
-                      <MapPin size={11} className="shrink-0" style={{ color: c.primary }} />
-                      <span className="truncate">{data.personalInfo.location}</span>
+                    <div className="flex items-start gap-2 text-[10px] font-bold text-slate-600">
+                      <MapPin size={11} className="shrink-0 mt-0.5" style={{ color: c.primary }} />
+                      <span className="cv-contact-text break-words min-w-0">{data.personalInfo.location}</span>
                     </div>
                   )}
                   {data.personalInfo.website && (
-                    <div className="flex items-center gap-2 text-[10px] font-bold text-slate-600">
-                      <Globe size={11} className="shrink-0" style={{ color: c.primary }} />
-                      <span className="break-all">{data.personalInfo.website}</span>
+                    <div className="flex items-start gap-2 text-[10px] font-bold text-slate-600">
+                      <Globe size={11} className="shrink-0 mt-0.5" style={{ color: c.primary }} />
+                      <span className="cv-contact-text break-all min-w-0">{data.personalInfo.website}</span>
                     </div>
                   )}
                 </div>
