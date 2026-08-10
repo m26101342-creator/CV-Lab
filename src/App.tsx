@@ -9862,11 +9862,11 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
       </aside>
 
       {/* Main Preview */}
-      <main className={`flex-1 bg-[#1a2332] p-3 sm:p-8 overflow-y-auto overflow-x-hidden ${showPreviewModal ? 'flex' : 'hidden md:flex'} flex-col items-center justify-start relative select-none scrollbar-hide touch-pan-y`}>
-         <div className="flex flex-col items-center gap-4 sm:gap-6 my-auto max-w-full w-full">
+      <main className={`flex-1 bg-[#1a2332] p-3 sm:p-8 overflow-y-auto overflow-x-hidden ${showPreviewModal ? 'flex' : 'hidden md:flex'} flex-col items-center justify-start relative select-none scrollbar-hide touch-pan-y print:p-0 print:bg-white print:overflow-visible print:block print:w-full print:h-auto`}>
+         <div className="flex flex-col items-center gap-4 sm:gap-6 my-auto max-w-full w-full print:gap-0 print:m-0 print:p-0 print:w-full print:block">
             
             {/* Top Toolbar for Preview & Zoom Controls */}
-            <div className="bg-white/10 backdrop-blur-md p-1.5 px-3 rounded-2xl border border-white/15 flex flex-wrap items-center justify-center gap-1.5 sm:gap-2 shadow-2xl z-20 max-w-full">
+            <div className="bg-white/10 backdrop-blur-md p-1.5 px-3 rounded-2xl border border-white/15 flex flex-wrap items-center justify-center gap-1.5 sm:gap-2 shadow-2xl z-20 max-w-full print:hidden">
                {/* Mobile "Voltar ao Editor" button when modal preview is active */}
                {showPreviewModal && (
                  <button 
@@ -9988,14 +9988,14 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
 
             {/* Document Scaled Wrapper Box (Pure CSS layout box calculation) */}
             <div 
-              className="relative flex justify-center items-start transition-all duration-300 max-w-full overflow-hidden"
+              className="scaled-preview-container relative flex justify-center items-start transition-all duration-300 max-w-full overflow-hidden"
               style={{
                 width: `${Math.round(794 * previewScale)}px`,
                 height: `${Math.round((resumeHeight || 1122) * previewScale)}px`,
               }}
             >
               <div 
-                className="transition-all duration-300 origin-top shadow-2xl rounded-sm" 
+                className="scaled-preview-inner transition-all duration-300 origin-top shadow-2xl rounded-sm" 
                 style={{ 
                   width: '794px', 
                   minHeight: `${resumeHeight || 1122}px`, 
@@ -10024,7 +10024,7 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
       {/* Fullscreen Document Preview Modal */}
       <AnimatePresence>
         {showFullscreenModal && (
-          <div className="fixed inset-0 bg-[#0f172a]/95 backdrop-blur-xl z-[99999] flex flex-col items-center justify-between p-4 sm:p-6 overflow-hidden">
+          <div className="fixed inset-0 bg-[#0f172a]/95 backdrop-blur-xl z-[99999] flex flex-col items-center justify-between p-4 sm:p-6 overflow-hidden print:hidden">
             {/* Modal Header */}
             <div className="w-full max-w-5xl flex items-center justify-between pb-4 border-b border-white/10 shrink-0">
               <div className="flex items-center gap-3">

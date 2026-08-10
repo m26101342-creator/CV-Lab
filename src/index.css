@@ -392,12 +392,18 @@ img {
     print-color-adjust: exact !important;
   }
   
-  /* Hide UI chrome */
-  .print\:hidden {
+  /* Hide all UI elements explicitly marked print:hidden or UI chrome */
+  .print\:hidden,
+  aside,
+  header,
+  nav,
+  footer,
+  #temp-download-container,
+  .no-print {
     display: none !important;
   }
   
-  /* Reset layout structure to focus solely on active preview section */
+  /* Ensure main preview container is visible and full A4 width */
   main {
     position: static !important;
     display: block !important;
@@ -409,30 +415,54 @@ img {
     overflow: visible !important;
   }
   
-  /* Neutralize the scaling of wrapper classes on print, forcing exact 1:1 scale (A4) */
-  .origin-top, div.origin-top {
+  /* Neutralize scaling container wrappers so document prints at 1:1 scale (A4) */
+  .scaled-preview-container {
+    width: 210mm !important;
+    height: auto !important;
+    min-height: 297mm !important;
+    max-width: none !important;
+    max-height: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+    position: static !important;
+    display: block !important;
+  }
+  
+  .scaled-preview-inner {
     transform: none !important;
     -webkit-transform: none !important;
-    width: 100% !important;
+    width: 210mm !important;
     height: auto !important;
-    min-height: 100% !important;
+    min-height: 297mm !important;
+    max-width: none !important;
     max-height: none !important;
     margin: 0 !important;
     padding: 0 !important;
     box-shadow: none !important;
+    border: none !important;
     position: static !important;
+    display: block !important;
   }
-  
-  #resume-content, #cover-letter-content {
+
+  /* Target the actual printable content */
+  #resume-content, 
+  #cover-letter-content {
     width: 210mm !important;
     height: auto !important;
     min-height: 297mm !important;
+    max-width: none !important;
     max-height: none !important;
     box-sizing: border-box !important;
     border: none !important;
     margin: 0 !important;
     padding: 0 !important;
     box-shadow: none !important;
+    transform: none !important;
+    -webkit-transform: none !important;
+    background: #ffffff !important;
+    page-break-after: avoid;
+    break-after: avoid;
   }
 }
 
