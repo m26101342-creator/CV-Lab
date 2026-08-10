@@ -9862,16 +9862,16 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
       </aside>
 
       {/* Main Preview */}
-      <main className="flex-1 bg-[#1a2332] p-3 sm:p-8 overflow-y-auto overflow-x-hidden flex flex-col items-center justify-start relative select-none scrollbar-hide touch-pan-y">
+      <main className={`flex-1 bg-[#1a2332] p-3 sm:p-8 overflow-y-auto overflow-x-hidden ${showPreviewModal ? 'flex' : 'hidden md:flex'} flex-col items-center justify-start relative select-none scrollbar-hide touch-pan-y`}>
          <div className="flex flex-col items-center gap-4 sm:gap-6 my-auto max-w-full w-full">
             
             {/* Top Toolbar for Preview & Zoom Controls */}
-            <div className="bg-white/10 backdrop-blur-md p-2 px-3 rounded-2xl border border-white/15 flex flex-wrap items-center justify-center gap-2 shadow-2xl z-20 max-w-full">
+            <div className="bg-white/10 backdrop-blur-md p-1.5 px-3 rounded-2xl border border-white/15 flex flex-wrap items-center justify-center gap-1.5 sm:gap-2 shadow-2xl z-20 max-w-full">
                {/* Mobile "Voltar ao Editor" button when modal preview is active */}
                {showPreviewModal && (
                  <button 
                    onClick={() => setShowPreviewModal(false)}
-                   className="md:hidden flex items-center gap-1.5 px-3 py-1.5 bg-white text-deep-blue font-bold text-xs rounded-xl shadow-md hover:bg-slate-100 transition-all active:scale-95"
+                   className="md:hidden flex items-center gap-1.5 px-3 py-1.5 bg-white text-deep-blue font-bold text-xs rounded-xl shadow-md hover:bg-slate-100 transition-all active:scale-95 shrink-0"
                  >
                    <ChevronLeft size={16} />
                    <span>Voltar ao Editor</span>
@@ -9882,18 +9882,17 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
                <button 
                  onClick={handleAutoFit}
                  title="Ajustar automaticamente à largura da tela"
-                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                 className={`flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-bold transition-all shrink-0 ${
                    isAutoFit 
                      ? 'bg-primary-blue text-white shadow-lg shadow-primary-blue/30 ring-2 ring-white/30' 
                      : 'bg-white/10 text-white/80 hover:bg-white/20 hover:text-white'
                  }`}
                >
                  <Maximize2 size={14} />
-                 <span className="hidden xs:inline">Ajustar à Tela</span>
-                 {isAutoFit && <span className="text-[9px] bg-white/20 px-1.5 py-0.2 rounded-full uppercase font-black">Auto</span>}
+                 <span>Ajustar à Tela</span>
                </button>
 
-               <div className="h-4 w-px bg-white/20 hidden xs:block"></div>
+               <div className="h-4 w-px bg-white/20 hidden sm:block"></div>
 
                {/* Zoom Out */}
                <button 
@@ -9902,16 +9901,16 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
                    setPreviewScale(s => Number(Math.max(0.15, s - 0.05).toFixed(2)));
                  }} 
                  title="Diminuir Zoom"
-                 className="p-1.5 hover:bg-white/20 rounded-xl text-white transition-all active:scale-90"
+                 className="p-1.5 hover:bg-white/20 rounded-xl text-white transition-all active:scale-90 shrink-0"
                >
                  <Minus size={16} />
                </button>
 
                {/* Zoom Percentage Dropdown */}
-               <div className="relative">
+               <div className="relative shrink-0">
                  <button 
                    onClick={() => setShowZoomMenu(prev => !prev)}
-                   className="flex items-center gap-1 px-2.5 py-1 bg-white/10 hover:bg-white/20 rounded-xl text-xs font-bold text-white transition-all min-w-[65px] justify-center"
+                   className="flex items-center gap-1 px-2.5 py-1 bg-white/10 hover:bg-white/20 rounded-xl text-xs font-bold text-white transition-all min-w-[60px] justify-center"
                  >
                    <span>{Math.round(previewScale * 100)}%</span>
                    <ChevronDown size={12} className={`transition-transform duration-200 ${showZoomMenu ? 'rotate-180' : ''}`} />
@@ -9969,38 +9968,39 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
                    setPreviewScale(s => Number(Math.min(2.0, s + 0.05).toFixed(2)));
                  }} 
                  title="Aumentar Zoom"
-                 className="p-1.5 hover:bg-white/20 rounded-xl text-white transition-all active:scale-90"
+                 className="p-1.5 hover:bg-white/20 rounded-xl text-white transition-all active:scale-90 shrink-0"
                >
                  <Plus size={16} />
                </button>
 
-               <div className="h-4 w-px bg-white/20 hidden xs:block"></div>
+               <div className="h-4 w-px bg-white/20 hidden sm:block"></div>
 
                {/* Fullscreen Preview Button */}
                <button 
                  onClick={() => setShowFullscreenModal(true)}
                  title="Visualizar em Tela Cheia"
-                 className="flex items-center gap-1.5 px-2.5 py-1.5 bg-white/10 hover:bg-white/20 rounded-xl text-xs font-bold text-white transition-all"
+                 className="flex items-center gap-1 px-2.5 py-1.5 bg-white/10 hover:bg-white/20 rounded-xl text-xs font-bold text-white transition-all shrink-0"
                >
                  <Eye size={14} />
-                 <span className="hidden sm:inline">Tela Cheia</span>
+                 <span>Tela Cheia</span>
                </button>
             </div>
 
             {/* Document Scaled Wrapper Box (Pure CSS layout box calculation) */}
             <div 
-              className="relative flex justify-center items-start transition-all duration-300 max-w-full"
+              className="relative flex justify-center items-start transition-all duration-300 max-w-full overflow-hidden"
               style={{
                 width: `${Math.round(794 * previewScale)}px`,
                 height: `${Math.round((resumeHeight || 1122) * previewScale)}px`,
               }}
             >
               <div 
-                className="transition-all duration-300 origin-top-left shadow-2xl rounded-sm" 
+                className="transition-all duration-300 origin-top shadow-2xl rounded-sm" 
                 style={{ 
                   width: '794px', 
                   minHeight: `${resumeHeight || 1122}px`, 
-                  transform: `scale(${previewScale})` 
+                  transform: `scale(${previewScale})`,
+                  transformOrigin: 'top center'
                 }}
               >
                 <AnimatePresence mode="wait">
@@ -10061,18 +10061,19 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
             {/* Modal Scrollable Content Area */}
             <div className="flex-1 w-full overflow-y-auto overflow-x-hidden flex justify-center items-start py-6 scrollbar-hide">
               <div 
-                className="relative flex justify-center items-start transition-all duration-300 max-w-full my-auto"
+                className="relative flex justify-center items-start transition-all duration-300 max-w-full my-auto overflow-hidden"
                 style={{
                   width: `${Math.round(794 * previewScale)}px`,
                   height: `${Math.round((resumeHeight || 1122) * previewScale)}px`,
                 }}
               >
                 <div 
-                  className="transition-all duration-300 origin-top-left shadow-2xl rounded-sm bg-white" 
+                  className="transition-all duration-300 origin-top shadow-2xl rounded-sm bg-white" 
                   style={{ 
                     width: '794px', 
                     minHeight: `${resumeHeight || 1122}px`, 
-                    transform: `scale(${previewScale})` 
+                    transform: `scale(${previewScale})`,
+                    transformOrigin: 'top center'
                   }}
                 >
                   {isCoverLetterMode ? (
