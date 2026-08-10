@@ -46,7 +46,10 @@ import {
   Grid,
   Scissors,
   Minimize2,
-  Maximize2
+  Maximize2,
+  Check,
+  ChevronDown,
+  Eye
 } from 'lucide-react';
 import { AdSenseUnit } from './components/AdSenseUnit';
 import { ResumeData, INITIAL_RESUME_DATA, TemplateType, ResumeStyleConfig } from './types.ts';
@@ -6483,28 +6486,34 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
 
   const [resumeHeight, setResumeHeight] = useState(1122);
   const [isAutoFit, setIsAutoFit] = useState(true);
+  const [showFullscreenModal, setShowFullscreenModal] = useState(false);
+  const [showZoomMenu, setShowZoomMenu] = useState(false);
 
-  // Auto-fit previewScale on desktop resize if dynamic auto-fit is enabled
+  // Unified auto-fit calculation for preview document
+  const handleAutoFit = () => {
+    setIsAutoFit(true);
+    const width = window.innerWidth;
+    const isDesktop = width >= 1024;
+    let availableWidth = width - 24;
+
+    if (isDesktop && !showPreviewModal) {
+      const sidebarWidth = width >= 1280 ? 540 : (width >= 1024 ? 460 : 380);
+      availableWidth = width - sidebarWidth - 48;
+    } else {
+      availableWidth = width - 24;
+    }
+
+    const optScale = availableWidth / 794;
+    const fittedScale = Math.min(1.05, Math.max(0.18, optScale));
+    setPreviewScale(Number(fittedScale.toFixed(3)));
+  };
+
   useEffect(() => {
-    const autoFit = () => {
-      if (!isAutoFit) return;
-      if (window.innerWidth >= 1024) {
-        const sidebarWidth = window.innerWidth >= 1280 ? 600 : 500;
-        const availableWidth = window.innerWidth - sidebarWidth - 48; // subtract side-padding
-        const optScale = availableWidth / 794;
-        const fittedScale = Math.min(1.05, Math.max(0.45, optScale));
-        setPreviewScale(fittedScale);
-      } else {
-        const availableWidth = window.innerWidth - 32;
-        const optScale = availableWidth / 794;
-        setPreviewScale(Math.min(1.0, Math.max(0.4, optScale)));
-      }
-    };
-
-    autoFit();
-    window.addEventListener('resize', autoFit);
-    return () => window.removeEventListener('resize', autoFit);
-  }, [view, isAutoFit]);
+    if (!isAutoFit) return;
+    handleAutoFit();
+    window.addEventListener('resize', handleAutoFit);
+    return () => window.removeEventListener('resize', handleAutoFit);
+  }, [view, showPreviewModal, isAutoFit]);
 
   // Monitor and measure the actual height of the rendered content (Resume or Cover Letter)
   useEffect(() => {
@@ -6558,29 +6567,7 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
   const nextBanner = () => setCurrentBanner((prev) => (prev + 1) % banners.length);
   const prevBanner = () => setCurrentBanner((prev) => (prev - 1 + banners.length) % banners.length);
 
-  useEffect(() => {
-    const handleResize = () => {
-      const width = window.innerWidth;
-      const isDesktop = width >= 1024;
-      
-      if (isDesktop && !showPreviewModal) {
-        // Layout lado-a-lado no PC: subtrai a largura correspondente do editor sidebar
-        const sidebarWidth = width >= 1280 ? 600 : 500;
-        const availableWidth = width - sidebarWidth - 64; // Margem e padding confortáveis
-        const scale = availableWidth / 794;
-        setPreviewScale(Math.min(scale, 1));
-      } else {
-        // Layout modal no mobile/tablet
-        const availableWidth = width - 40; // 20px padding de cada lado
-        const scale = availableWidth / 794;
-        setPreviewScale(Math.min(scale, 1));
-      }
-    };
-    
-    handleResize();
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, [showPreviewModal]);
+  // Window resize is handled by unified handleAutoFit hook above
 
   // Presence & Visitor Tracking
   useEffect(() => {
@@ -9875,30 +9862,254 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
       </aside>
 
       {/* Main Preview */}
-      <main className="flex-1 bg-[#1a2332] p-8 overflow-y-auto flex justify-center items-start relative select-none scrollbar-hide">
-         <div className="flex flex-col items-center gap-6 my-auto max-w-full">
-            <div className="bg-white/5 backdrop-blur-md p-2 rounded-2xl border border-white/10 flex items-center gap-3 shadow-xl z-20">
-               <button onClick={() => setPreviewScale(s => Math.max(0.4, s - 0.05))} className="p-2 hover:bg-white/10 rounded-xl text-white transition-all"><Minus size={16} /></button>
-               <span className="text-xs font-bold text-white min-w-[45px] text-center">{Math.round(previewScale * 100)}%</span>
-               <button onClick={() => setPreviewScale(s => Math.min(1.3, s + 0.05))} className="p-2 hover:bg-white/10 rounded-xl text-white transition-all"><Plus size={16} /></button>
+      <main className="flex-1 bg-[#1a2332] p-3 sm:p-8 overflow-y-auto overflow-x-hidden flex flex-col items-center justify-start relative select-none scrollbar-hide touch-pan-y">
+         <div className="flex flex-col items-center gap-4 sm:gap-6 my-auto max-w-full w-full">
+            
+            {/* Top Toolbar for Preview & Zoom Controls */}
+            <div className="bg-white/10 backdrop-blur-md p-2 px-3 rounded-2xl border border-white/15 flex flex-wrap items-center justify-center gap-2 shadow-2xl z-20 max-w-full">
+               {/* Mobile "Voltar ao Editor" button when modal preview is active */}
+               {showPreviewModal && (
+                 <button 
+                   onClick={() => setShowPreviewModal(false)}
+                   className="md:hidden flex items-center gap-1.5 px-3 py-1.5 bg-white text-deep-blue font-bold text-xs rounded-xl shadow-md hover:bg-slate-100 transition-all active:scale-95"
+                 >
+                   <ChevronLeft size={16} />
+                   <span>Voltar ao Editor</span>
+                 </button>
+               )}
+
+               {/* Auto-Fit Toggle Button */}
+               <button 
+                 onClick={handleAutoFit}
+                 title="Ajustar automaticamente à largura da tela"
+                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                   isAutoFit 
+                     ? 'bg-primary-blue text-white shadow-lg shadow-primary-blue/30 ring-2 ring-white/30' 
+                     : 'bg-white/10 text-white/80 hover:bg-white/20 hover:text-white'
+                 }`}
+               >
+                 <Maximize2 size={14} />
+                 <span className="hidden xs:inline">Ajustar à Tela</span>
+                 {isAutoFit && <span className="text-[9px] bg-white/20 px-1.5 py-0.2 rounded-full uppercase font-black">Auto</span>}
+               </button>
+
+               <div className="h-4 w-px bg-white/20 hidden xs:block"></div>
+
+               {/* Zoom Out */}
+               <button 
+                 onClick={() => {
+                   setIsAutoFit(false);
+                   setPreviewScale(s => Number(Math.max(0.15, s - 0.05).toFixed(2)));
+                 }} 
+                 title="Diminuir Zoom"
+                 className="p-1.5 hover:bg-white/20 rounded-xl text-white transition-all active:scale-90"
+               >
+                 <Minus size={16} />
+               </button>
+
+               {/* Zoom Percentage Dropdown */}
+               <div className="relative">
+                 <button 
+                   onClick={() => setShowZoomMenu(prev => !prev)}
+                   className="flex items-center gap-1 px-2.5 py-1 bg-white/10 hover:bg-white/20 rounded-xl text-xs font-bold text-white transition-all min-w-[65px] justify-center"
+                 >
+                   <span>{Math.round(previewScale * 100)}%</span>
+                   <ChevronDown size={12} className={`transition-transform duration-200 ${showZoomMenu ? 'rotate-180' : ''}`} />
+                 </button>
+
+                 <AnimatePresence>
+                   {showZoomMenu && (
+                     <motion.div
+                       initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                       animate={{ opacity: 1, y: 0, scale: 1 }}
+                       exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                       className="absolute top-full mt-2 left-1/2 -translate-x-1/2 bg-[#1a2332] border border-white/20 rounded-2xl shadow-2xl p-1 z-50 min-w-[170px] backdrop-blur-xl"
+                     >
+                       <button
+                         onClick={() => {
+                           handleAutoFit();
+                           setShowZoomMenu(false);
+                         }}
+                         className={`w-full text-left px-3 py-2 rounded-xl text-xs font-bold flex items-center justify-between transition-colors ${isAutoFit ? 'bg-primary-blue text-white' : 'text-slate-200 hover:bg-white/10'}`}
+                       >
+                         <span>⚡ Ajustar à Tela</span>
+                         {isAutoFit && <Check size={14} />}
+                       </button>
+                       <div className="my-1 border-t border-white/10"></div>
+                       {[
+                         { label: '25% - Vista Geral', value: 0.25 },
+                         { label: '40% - Compacto', value: 0.40 },
+                         { label: '50% - Metade', value: 0.50 },
+                         { label: '75% - Médio', value: 0.75 },
+                         { label: '100% - Tamanho Real', value: 1.0 },
+                         { label: '125% - Ampliado', value: 1.25 },
+                       ].map((opt) => (
+                         <button
+                           key={opt.value}
+                           onClick={() => {
+                             setIsAutoFit(false);
+                             setPreviewScale(opt.value);
+                             setShowZoomMenu(false);
+                           }}
+                           className={`w-full text-left px-3 py-1.5 rounded-xl text-xs font-medium flex items-center justify-between transition-colors ${!isAutoFit && Math.abs(previewScale - opt.value) < 0.02 ? 'bg-white/20 text-white font-bold' : 'text-slate-300 hover:bg-white/10'}`}
+                         >
+                           <span>{opt.label}</span>
+                           {!isAutoFit && Math.abs(previewScale - opt.value) < 0.02 && <Check size={14} />}
+                         </button>
+                       ))}
+                     </motion.div>
+                   )}
+                 </AnimatePresence>
+               </div>
+
+               {/* Zoom In */}
+               <button 
+                 onClick={() => {
+                   setIsAutoFit(false);
+                   setPreviewScale(s => Number(Math.min(2.0, s + 0.05).toFixed(2)));
+                 }} 
+                 title="Aumentar Zoom"
+                 className="p-1.5 hover:bg-white/20 rounded-xl text-white transition-all active:scale-90"
+               >
+                 <Plus size={16} />
+               </button>
+
+               <div className="h-4 w-px bg-white/20 hidden xs:block"></div>
+
+               {/* Fullscreen Preview Button */}
+               <button 
+                 onClick={() => setShowFullscreenModal(true)}
+                 title="Visualizar em Tela Cheia"
+                 className="flex items-center gap-1.5 px-2.5 py-1.5 bg-white/10 hover:bg-white/20 rounded-xl text-xs font-bold text-white transition-all"
+               >
+                 <Eye size={14} />
+                 <span className="hidden sm:inline">Tela Cheia</span>
+               </button>
             </div>
 
-            <div className="transition-all duration-300 origin-top shadow-2xl rounded-sm" style={{ transform: `scale(${previewScale})` }}>
-              <AnimatePresence mode="wait">
-                {isCoverLetterMode ? (
-                  <motion.div key="letter" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="relative group">
-                     <button data-html2canvas-ignore="true" onClick={() => setIsCoverLetterMode(false)} className="absolute top-8 left-8 text-[10px] font-black uppercase text-primary-blue tracking-widest flex items-center gap-2 print:hidden z-10 group bg-soft-blue px-4 py-2 rounded-full hover:bg-primary-blue hover:text-white transition-all">
-                        <ChevronLeft size={14} className="group-hover:-translate-x-1 transition-transform" /> Voltar ao Editor
-                     </button>
-                     <CoverLetterRenderer content={generatedLetter} personalInfo={resumeData.personalInfo} themeColor={resumeData.themeColor} language={resumeData.language} onChangeContent={setGeneratedLetter} subject={letterSubject} onChangeSubject={setLetterSubject} />
-                  </motion.div>
-                ) : (
-                  <ResumeRenderer data={resumeData} templateId={template} showGuides={showAlignGuides} onChange={setResumeData} />
-                )}
-              </AnimatePresence>
-           </div>
+            {/* Document Scaled Wrapper Box (Pure CSS layout box calculation) */}
+            <div 
+              className="relative flex justify-center items-start transition-all duration-300 max-w-full"
+              style={{
+                width: `${Math.round(794 * previewScale)}px`,
+                height: `${Math.round((resumeHeight || 1122) * previewScale)}px`,
+              }}
+            >
+              <div 
+                className="transition-all duration-300 origin-top-left shadow-2xl rounded-sm" 
+                style={{ 
+                  width: '794px', 
+                  minHeight: `${resumeHeight || 1122}px`, 
+                  transform: `scale(${previewScale})` 
+                }}
+              >
+                <AnimatePresence mode="wait">
+                  {isCoverLetterMode ? (
+                    <motion.div key="letter" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="relative group">
+                       <button data-html2canvas-ignore="true" onClick={() => setIsCoverLetterMode(false)} className="absolute top-8 left-8 text-[10px] font-black uppercase text-primary-blue tracking-widest flex items-center gap-2 print:hidden z-10 group bg-soft-blue px-4 py-2 rounded-full hover:bg-primary-blue hover:text-white transition-all">
+                          <ChevronLeft size={14} className="group-hover:-translate-x-1 transition-transform" /> Voltar ao Editor
+                       </button>
+                       <CoverLetterRenderer content={generatedLetter} personalInfo={resumeData.personalInfo} themeColor={resumeData.themeColor} language={resumeData.language} onChangeContent={setGeneratedLetter} subject={letterSubject} onChangeSubject={setLetterSubject} />
+                    </motion.div>
+                  ) : (
+                    <ResumeRenderer data={resumeData} templateId={template} showGuides={showAlignGuides} onChange={setResumeData} />
+                  )}
+                </AnimatePresence>
+              </div>
+            </div>
+
          </div>
       </main>
+
+      {/* Fullscreen Document Preview Modal */}
+      <AnimatePresence>
+        {showFullscreenModal && (
+          <div className="fixed inset-0 bg-[#0f172a]/95 backdrop-blur-xl z-[99999] flex flex-col items-center justify-between p-4 sm:p-6 overflow-hidden">
+            {/* Modal Header */}
+            <div className="w-full max-w-5xl flex items-center justify-between pb-4 border-b border-white/10 shrink-0">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-primary-blue/20 text-primary-blue flex items-center justify-center font-black">
+                  <FileText size={20} />
+                </div>
+                <div>
+                  <h3 className="text-white font-bold text-sm sm:text-base">
+                    {isCoverLetterMode ? 'Carta de Apresentação (Página Completa)' : 'Currículo Vitae (Página Completa)'}
+                  </h3>
+                  <p className="text-slate-400 text-xs">
+                    {resumeData.personalInfo.fullName || 'Sem nome'} • {template}
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <Button 
+                  onClick={handlePrint} 
+                  className="h-9 px-3 text-xs font-bold bg-white text-slate-900 hover:bg-slate-200 rounded-xl" 
+                  icon={Printer}
+                >
+                  Imprimir
+                </Button>
+                <button 
+                  onClick={() => setShowFullscreenModal(false)}
+                  className="p-2 bg-white/10 hover:bg-white/20 text-white rounded-xl transition-all"
+                >
+                  <X size={20} />
+                </button>
+              </div>
+            </div>
+
+            {/* Modal Scrollable Content Area */}
+            <div className="flex-1 w-full overflow-y-auto overflow-x-hidden flex justify-center items-start py-6 scrollbar-hide">
+              <div 
+                className="relative flex justify-center items-start transition-all duration-300 max-w-full my-auto"
+                style={{
+                  width: `${Math.round(794 * previewScale)}px`,
+                  height: `${Math.round((resumeHeight || 1122) * previewScale)}px`,
+                }}
+              >
+                <div 
+                  className="transition-all duration-300 origin-top-left shadow-2xl rounded-sm bg-white" 
+                  style={{ 
+                    width: '794px', 
+                    minHeight: `${resumeHeight || 1122}px`, 
+                    transform: `scale(${previewScale})` 
+                  }}
+                >
+                  {isCoverLetterMode ? (
+                    <CoverLetterRenderer content={generatedLetter} personalInfo={resumeData.personalInfo} themeColor={resumeData.themeColor} language={resumeData.language} onChangeContent={setGeneratedLetter} subject={letterSubject} onChangeSubject={setLetterSubject} />
+                  ) : (
+                    <ResumeRenderer data={resumeData} templateId={template} showGuides={false} />
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Bottom Toolbar */}
+            <div className="w-full max-w-md bg-slate-900/90 border border-white/15 backdrop-blur-md p-2 rounded-2xl flex items-center justify-between gap-3 shadow-2xl shrink-0">
+              <button 
+                onClick={handleAutoFit} 
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold text-white transition-all flex items-center gap-1.5 ${isAutoFit ? 'bg-primary-blue' : 'bg-white/10 hover:bg-white/20'}`}
+              >
+                <Maximize2 size={14} />
+                <span>Ajustar à Tela</span>
+              </button>
+
+              <div className="flex items-center gap-2">
+                <button onClick={() => { setIsAutoFit(false); setPreviewScale(s => Math.max(0.15, s - 0.05)); }} className="p-1.5 text-white hover:bg-white/10 rounded-xl"><Minus size={16} /></button>
+                <span className="text-xs font-bold text-white min-w-[45px] text-center">{Math.round(previewScale * 100)}%</span>
+                <button onClick={() => { setIsAutoFit(false); setPreviewScale(s => Math.min(2.0, s + 0.05)); }} className="p-1.5 text-white hover:bg-white/10 rounded-xl"><Plus size={16} /></button>
+              </div>
+
+              <button 
+                onClick={() => setShowFullscreenModal(false)}
+                className="px-3 py-1.5 bg-white/10 hover:bg-white/20 text-white rounded-xl text-xs font-bold"
+              >
+                Fechar
+              </button>
+            </div>
+          </div>
+        )}
+      </AnimatePresence>
 
       {/* WhatsApp Support Floating Button - Only on Landing Page */}
       {((view as any) === "landing" || (view as any) === "") && (
