@@ -6702,6 +6702,101 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
   const [isAutoFit, setIsAutoFit] = useState(true);
   const [showFullscreenModal, setShowFullscreenModal] = useState(false);
   const [showZoomMenu, setShowZoomMenu] = useState(false);
+  const [showRealtimePanel, setShowRealtimePanel] = useState(false);
+
+  // 1-Click A4 Content Auto-Fit
+  const handleAutoFitA4Content = () => {
+    const element = document.getElementById(isCoverLetterMode ? 'cover-letter-content' : 'resume-content');
+    if (!element) return;
+
+    const targetHeight = 1118; // Target A4 single page height
+    const currentMeasured = element.scrollHeight;
+
+    if (Math.abs(currentMeasured - targetHeight) < 20) {
+      alert("O seu documento já está perfeitamente ajustado para 1 Página A4!");
+      return;
+    }
+
+    const ratio = targetHeight / currentMeasured;
+    
+    setResumeData(prev => {
+      const sc = prev.styleConfig || {};
+      const curFS = sc.fontSize || 13;
+      const curTitle = sc.titleSize || 26;
+      const curSec = sc.sectionSpacing || 25;
+      const curItem = sc.itemSpacing || 10;
+      const curMargins = sc.margins || 30;
+
+      const clamp = (val: number, min: number, max: number) => Math.min(max, Math.max(min, Number(val.toFixed(1))));
+
+      const newFS = clamp(curFS * ratio, 9.5, 16);
+      const newTitle = clamp(curTitle * ratio, 18, 38);
+      const newSec = clamp(curSec * ratio, 10, 35);
+      const newItem = clamp(curItem * ratio, 4, 18);
+      const newMargins = clamp(curMargins * ratio, 12, 45);
+
+      const scaleIndiv = (val?: number) => clamp((val || curFS) * ratio, 9, 18);
+
+      return {
+        ...prev,
+        styleConfig: {
+          ...sc,
+          fontSize: newFS,
+          titleSize: newTitle,
+          sectionSpacing: newSec,
+          itemSpacing: newItem,
+          margins: newMargins,
+          contactSize: scaleIndiv(sc.contactSize),
+          summarySize: scaleIndiv(sc.summarySize),
+          experienceSize: scaleIndiv(sc.experienceSize),
+          educationSize: scaleIndiv(sc.educationSize),
+          skillsSize: scaleIndiv(sc.skillsSize),
+          languagesSize: scaleIndiv(sc.languagesSize),
+          certificationsSize: scaleIndiv(sc.certificationsSize),
+          interestsSize: scaleIndiv(sc.interestsSize),
+          customSize: scaleIndiv(sc.customSize),
+        }
+      };
+    });
+  };
+
+  // Master Global Size Adjuster (- / +)
+  const handleGlobalSizeChange = (delta: number) => {
+    setResumeData(prev => {
+      const sc = prev.styleConfig || {};
+      const baseFS = sc.fontSize || 13;
+      const newBaseFS = Math.min(20, Math.max(8, Number((baseFS + delta).toFixed(1))));
+
+      const updateSize = (currentVal?: number) => {
+        const cur = currentVal || baseFS;
+        return Math.min(24, Math.max(8, Number((cur + delta).toFixed(1))));
+      };
+
+      const newTitle = Math.min(48, Math.max(16, Number(((sc.titleSize || 26) + delta * 1.5).toFixed(1))));
+      const newSec = Math.min(45, Math.max(8, Number(((sc.sectionSpacing || 25) + delta * 1.2).toFixed(1))));
+      const newMargins = Math.min(60, Math.max(10, Number(((sc.margins || 30) + delta * 1.5).toFixed(1))));
+
+      return {
+        ...prev,
+        styleConfig: {
+          ...sc,
+          fontSize: newBaseFS,
+          titleSize: newTitle,
+          sectionSpacing: newSec,
+          margins: newMargins,
+          contactSize: updateSize(sc.contactSize),
+          summarySize: updateSize(sc.summarySize),
+          experienceSize: updateSize(sc.experienceSize),
+          educationSize: updateSize(sc.educationSize),
+          skillsSize: updateSize(sc.skillsSize),
+          languagesSize: updateSize(sc.languagesSize),
+          certificationsSize: updateSize(sc.certificationsSize),
+          interestsSize: updateSize(sc.interestsSize),
+          customSize: updateSize(sc.customSize),
+        }
+      };
+    });
+  };
 
   // Unified auto-fit calculation for preview document
   const handleAutoFit = () => {
@@ -10180,9 +10275,18 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
           </AnimatePresence>
         </div>
 
-        <footer className="p-6 border-t border-border-main bg-white flex justify-between gap-4">
+        <footer className="p-4 sm:p-6 border-t border-border-main bg-white flex items-center justify-between gap-2 z-40">
            <Button variant="ghost" disabled={activeStep === 0} onClick={() => setActiveStep(s => s - 1)}>Anterior</Button>
-           <Button disabled={activeStep === 5} onClick={() => setActiveStep(s => s + 1)} className="px-10" icon={ChevronRight}>
+           
+           <button 
+             onClick={() => setShowPreviewModal(true)} 
+             className="md:hidden flex items-center gap-1.5 px-4 py-2 bg-primary-blue text-white font-extrabold text-xs rounded-xl shadow-md hover:bg-blue-600 transition-all active:scale-95"
+           >
+             <Eye size={16} />
+             <span>Ver Currículo</span>
+           </button>
+
+           <Button disabled={activeStep === 5} onClick={() => setActiveStep(s => s + 1)} className="px-6 sm:px-10" icon={ChevronRight}>
              {activeStep === 5 ? "Concluído" : "Próximo"}
            </Button>
         </footer>
@@ -10205,10 +10309,60 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
                  </button>
                )}
 
-               {/* Auto-Fit Toggle Button */}
+               {/* Auto-Fit A4 Page Content Button */}
+               <button 
+                 onClick={handleAutoFitA4Content}
+                 title="Ajustar automaticamente todo o currículo para caber perfeitamente numa página A4"
+                 className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs rounded-xl shadow-lg transition-all active:scale-95 shrink-0"
+               >
+                 <Sparkles size={14} />
+                 <span>Encaixar em 1 Pág. A4</span>
+               </button>
+
+               {/* Global Text Size Adjuster (- / +) */}
+               <div className="flex items-center gap-1 bg-white/10 p-1 rounded-xl border border-white/15 shrink-0">
+                 <span className="text-[10px] font-bold uppercase text-slate-200 px-1 hidden sm:inline">Tamanho Geral:</span>
+                 <button 
+                   onClick={() => handleGlobalSizeChange(-0.5)} 
+                   title="Diminuir todo o texto do currículo de uma só vez"
+                   className="p-1 hover:bg-white/20 rounded-lg text-white font-bold text-xs active:scale-90 transition-transform"
+                 >
+                   <Minus size={13} />
+                 </button>
+                 <span className="text-xs font-mono font-black text-white px-1 min-w-[36px] text-center">
+                   {(resumeData.styleConfig?.fontSize || 13).toFixed(1)}px
+                 </span>
+                 <button 
+                   onClick={() => handleGlobalSizeChange(0.5)} 
+                   title="Aumentar todo o texto do currículo de uma só vez"
+                   className="p-1 hover:bg-white/20 rounded-lg text-white font-bold text-xs active:scale-90 transition-transform"
+                 >
+                   <Plus size={13} />
+                 </button>
+               </div>
+
+               <div className="h-4 w-px bg-white/20 hidden sm:block"></div>
+
+               {/* Realtime Style & Formatting Controls Panel Toggle */}
+               <button 
+                 onClick={() => setShowRealtimePanel(prev => !prev)}
+                 title="Ajustes e Tamanhos em Tempo Real"
+                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all shrink-0 ${
+                   showRealtimePanel 
+                     ? 'bg-amber-500 text-slate-950 shadow-lg shadow-amber-500/30' 
+                     : 'bg-white/10 text-white hover:bg-white/20'
+                 }`}
+               >
+                 <Type size={14} />
+                 <span>Ajustes em Tempo Real</span>
+               </button>
+
+               <div className="h-4 w-px bg-white/20 hidden sm:block"></div>
+
+               {/* Screen Zoom Auto-Fit */}
                <button 
                  onClick={handleAutoFit}
-                 title="Ajustar automaticamente à largura da tela"
+                 title="Ajustar zoom à largura da tela"
                  className={`flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-bold transition-all shrink-0 ${
                    isAutoFit 
                      ? 'bg-primary-blue text-white shadow-lg shadow-primary-blue/30 ring-2 ring-white/30' 
@@ -10216,10 +10370,8 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
                  }`}
                >
                  <Maximize2 size={14} />
-                 <span>Ajustar à Tela</span>
+                 <span>Zoom Tela</span>
                </button>
-
-               <div className="h-4 w-px bg-white/20 hidden sm:block"></div>
 
                {/* Zoom Out */}
                <button 
@@ -10258,7 +10410,7 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
                          }}
                          className={`w-full text-left px-3 py-2 rounded-xl text-xs font-bold flex items-center justify-between transition-colors ${isAutoFit ? 'bg-primary-blue text-white' : 'text-slate-200 hover:bg-white/10'}`}
                        >
-                         <span>⚡ Ajustar à Tela</span>
+                         <span>⚡ Zoom Tela Automático</span>
                          {isAutoFit && <Check size={14} />}
                        </button>
                        <div className="my-1 border-t border-white/10"></div>
@@ -10312,6 +10464,201 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
                  <span>Tela Cheia</span>
                </button>
             </div>
+
+            {/* Interactive Real-Time Adjustments Panel Overlay */}
+            <AnimatePresence>
+              {showRealtimePanel && (
+                <motion.div
+                  initial={{ opacity: 0, y: -10, scale: 0.98 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: -10, scale: 0.98 }}
+                  className="w-full max-w-2xl bg-[#0f172a]/95 border border-white/20 backdrop-blur-2xl rounded-3xl p-4 sm:p-5 text-white shadow-2xl z-30 space-y-4 text-left my-2"
+                >
+                  <div className="flex items-center justify-between border-b border-white/10 pb-3">
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center font-bold">
+                        <Type size={18} />
+                      </div>
+                      <div>
+                        <h4 className="text-xs font-black uppercase tracking-wider text-white">Painel de Ajustes em Tempo Real</h4>
+                        <p className="text-[10px] text-slate-400 font-medium">
+                          {isCoverLetterMode ? 'Ajuste e formate a sua Carta de Apresentação' : 'Ajuste o tamanho de letra, espaçamentos e cores do Currículo instantaneamente'}
+                        </p>
+                      </div>
+                    </div>
+                    <button 
+                      onClick={() => setShowRealtimePanel(false)} 
+                      className="p-1.5 hover:bg-white/10 text-slate-300 hover:text-white rounded-xl transition-colors"
+                    >
+                      <X size={18} />
+                    </button>
+                  </div>
+
+                  {/* Quick Action Buttons */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={handleAutoFitA4Content}
+                      className="flex items-center justify-center gap-2 p-3 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white rounded-2xl font-black text-xs shadow-lg transition-all active:scale-95"
+                    >
+                      <Sparkles size={16} />
+                      <span>⚡ Encaixar Conteúdo em 1 Página A4</span>
+                    </button>
+
+                    <div className="flex items-center justify-between p-2.5 bg-white/10 rounded-2xl border border-white/10">
+                      <span className="text-[11px] font-bold text-slate-200 uppercase tracking-wider pl-1">Escala Global de Texto:</span>
+                      <div className="flex items-center gap-1.5 bg-slate-900/80 px-2 py-1 rounded-xl border border-white/15">
+                        <button type="button" onClick={() => handleGlobalSizeChange(-0.5)} className="p-1 hover:bg-white/20 rounded-lg text-white"><Minus size={12} /></button>
+                        <span className="text-xs font-mono font-black text-amber-400 min-w-[40px] text-center">{(resumeData.styleConfig?.fontSize || 13).toFixed(1)}px</span>
+                        <button type="button" onClick={() => handleGlobalSizeChange(0.5)} className="p-1 hover:bg-white/20 rounded-lg text-white"><Plus size={12} /></button>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Sliders for Spacings & Margins */}
+                  {!isCoverLetterMode && (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-white/10 text-xs">
+                      <div className="space-y-1">
+                        <div className="flex justify-between font-bold text-slate-300 text-[10px] uppercase">
+                          <span>Espaçamento de Secções</span>
+                          <span className="text-amber-400 font-mono">{resumeData.styleConfig?.sectionSpacing || 25}px</span>
+                        </div>
+                        <input 
+                          type="range" min="8" max="40" step="1" 
+                          value={resumeData.styleConfig?.sectionSpacing || 25} 
+                          onChange={(e) => setResumeData(p => ({...p, styleConfig: {...(p.styleConfig||{}), sectionSpacing: Number(e.target.value)}}))} 
+                          className="w-full h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-amber-400" 
+                        />
+                      </div>
+
+                      <div className="space-y-1">
+                        <div className="flex justify-between font-bold text-slate-300 text-[10px] uppercase">
+                          <span>Espaçamento Interno</span>
+                          <span className="text-amber-400 font-mono">{resumeData.styleConfig?.itemSpacing || 10}px</span>
+                        </div>
+                        <input 
+                          type="range" min="4" max="24" step="1" 
+                          value={resumeData.styleConfig?.itemSpacing || 10} 
+                          onChange={(e) => setResumeData(p => ({...p, styleConfig: {...(p.styleConfig||{}), itemSpacing: Number(e.target.value)}}))} 
+                          className="w-full h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-amber-400" 
+                        />
+                      </div>
+
+                      <div className="space-y-1">
+                        <div className="flex justify-between font-bold text-slate-300 text-[10px] uppercase">
+                          <span>Margens da Folha</span>
+                          <span className="text-amber-400 font-mono">{resumeData.styleConfig?.margins || 30}px</span>
+                        </div>
+                        <input 
+                          type="range" min="10" max="60" step="1" 
+                          value={resumeData.styleConfig?.margins || 30} 
+                          onChange={(e) => setResumeData(p => ({...p, styleConfig: {...(p.styleConfig||{}), margins: Number(e.target.value)}}))} 
+                          className="w-full h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-amber-400" 
+                        />
+                      </div>
+
+                      <div className="space-y-1">
+                        <div className="flex justify-between font-bold text-slate-300 text-[10px] uppercase">
+                          <span>Tamanho do Nome</span>
+                          <span className="text-amber-400 font-mono">{resumeData.styleConfig?.titleSize || 26}px</span>
+                        </div>
+                        <input 
+                          type="range" min="16" max="48" step="1" 
+                          value={resumeData.styleConfig?.titleSize || 26} 
+                          onChange={(e) => setResumeData(p => ({...p, styleConfig: {...(p.styleConfig||{}), titleSize: Number(e.target.value)}}))} 
+                          className="w-full h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-amber-400" 
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Cover Letter Formatting Options */}
+                  {isCoverLetterMode && (
+                    <div className="space-y-3 pt-2 border-t border-white/10">
+                      <div className="space-y-1.5">
+                        <label className="text-[10px] font-bold text-slate-300 uppercase tracking-wider block">Assunto da Carta</label>
+                        <input 
+                          type="text" 
+                          value={letterSubject} 
+                          onChange={(e) => setLetterSubject(e.target.value)} 
+                          className="w-full px-3 py-2 bg-slate-800 border border-white/15 rounded-xl text-xs text-white placeholder-slate-400 focus:outline-none focus:border-amber-400" 
+                          placeholder="Ex: Candidatura para a vaga de Engenheiro..." 
+                        />
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div className="space-y-1">
+                          <span className="text-[10px] font-bold text-slate-300 uppercase block">Tamanho do Assunto</span>
+                          <div className="flex bg-slate-800 p-1 rounded-xl border border-white/10 gap-1">
+                            {[
+                              { id: 'sm', label: '12' },
+                              { id: 'md', label: '14' },
+                              { id: 'lg', label: '16' },
+                              { id: 'xl', label: '18' },
+                              { id: '2xl', label: '21' },
+                            ].map((sz) => (
+                              <button
+                                key={sz.id}
+                                type="button"
+                                onClick={() => setLetterSubjectStyle(prev => ({ ...prev, fontSize: sz.id as any }))}
+                                className={`flex-1 py-1 text-[10px] font-bold rounded-lg transition-all ${letterSubjectStyle.fontSize === sz.id ? 'bg-amber-500 text-slate-950 font-black' : 'text-slate-300 hover:bg-white/10'}`}
+                              >
+                                {sz.label}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+
+                        <div className="space-y-1">
+                          <span className="text-[10px] font-bold text-slate-300 uppercase block">Disposição</span>
+                          <div className="flex bg-slate-800 p-1 rounded-xl border border-white/10 gap-1">
+                            <button
+                              type="button"
+                              onClick={() => setLetterSubjectStyle(prev => ({ ...prev, layout: 'inline' }))}
+                              className={`flex-1 py-1 text-[10px] font-bold rounded-lg transition-all ${letterSubjectStyle.layout === 'inline' ? 'bg-amber-500 text-slate-950 font-black' : 'text-slate-300 hover:bg-white/10'}`}
+                            >
+                              Linha
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setLetterSubjectStyle(prev => ({ ...prev, layout: 'block' }))}
+                              className={`flex-1 py-1 text-[10px] font-bold rounded-lg transition-all ${letterSubjectStyle.layout === 'block' ? 'bg-amber-500 text-slate-950 font-black' : 'text-slate-300 hover:bg-white/10'}`}
+                            >
+                              Bloco Destaque
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Color Palette Picker */}
+                  <div className="pt-2 border-t border-white/10 flex items-center justify-between">
+                    <span className="text-[10px] font-bold text-slate-300 uppercase">Cor Principal do Modelo:</span>
+                    <div className="flex items-center gap-1.5">
+                      {['#003399', '#0284c7', '#0d9488', '#059669', '#dc2626', '#d97706', '#4f46e5', '#1e293b'].map(col => (
+                        <button
+                          key={col}
+                          type="button"
+                          onClick={() => setResumeData(prev => ({ ...prev, themeColor: col }))}
+                          className={`w-6 h-6 rounded-full border-2 transition-all ${resumeData.themeColor === col ? 'border-amber-400 scale-125 shadow-lg' : 'border-transparent hover:scale-110'}`}
+                          style={{ backgroundColor: col }}
+                        />
+                      ))}
+                      <div className="relative w-6 h-6 rounded-full border border-white/30 overflow-hidden cursor-pointer flex items-center justify-center bg-white/10">
+                        <Plus size={12} className="text-white" />
+                        <input
+                          type="color"
+                          value={resumeData.themeColor || '#003399'}
+                          onChange={(e) => setResumeData(prev => ({ ...prev, themeColor: e.target.value }))}
+                          className="absolute inset-0 opacity-0 cursor-pointer"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
 
             {/* Document Scaled Wrapper Box (Pure CSS layout box calculation) */}
             <div 
@@ -10433,24 +10780,41 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
             </div>
 
             {/* Modal Bottom Toolbar */}
-            <div className="w-full max-w-md bg-slate-900/90 border border-white/15 backdrop-blur-md p-2 rounded-2xl flex items-center justify-between gap-3 shadow-2xl shrink-0">
+            <div className="w-full max-w-2xl bg-slate-900/95 border border-white/20 backdrop-blur-2xl p-2 px-3 rounded-2xl flex flex-wrap items-center justify-between gap-2 shadow-2xl shrink-0 z-50">
               <button 
-                onClick={handleAutoFit} 
-                className={`px-3 py-1.5 rounded-xl text-xs font-bold text-white transition-all flex items-center gap-1.5 ${isAutoFit ? 'bg-primary-blue' : 'bg-white/10 hover:bg-white/20'}`}
+                onClick={handleAutoFitA4Content} 
+                className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs rounded-xl shadow-lg transition-all active:scale-95 flex items-center gap-1.5 shrink-0"
               >
-                <Maximize2 size={14} />
-                <span>Ajustar à Tela</span>
+                <Sparkles size={14} />
+                <span>Encaixar em 1 Pág. A4</span>
               </button>
 
-              <div className="flex items-center gap-2">
-                <button onClick={() => { setIsAutoFit(false); setPreviewScale(s => Math.max(0.15, s - 0.05)); }} className="p-1.5 text-white hover:bg-white/10 rounded-xl"><Minus size={16} /></button>
-                <span className="text-xs font-bold text-white min-w-[45px] text-center">{Math.round(previewScale * 100)}%</span>
-                <button onClick={() => { setIsAutoFit(false); setPreviewScale(s => Math.min(2.0, s + 0.05)); }} className="p-1.5 text-white hover:bg-white/10 rounded-xl"><Plus size={16} /></button>
+              <div className="flex items-center gap-1 bg-white/10 p-1 rounded-xl border border-white/15 shrink-0">
+                <span className="text-[10px] font-bold uppercase text-slate-200 px-1 hidden sm:inline">Texto:</span>
+                <button onClick={() => handleGlobalSizeChange(-0.5)} className="p-1 hover:bg-white/20 rounded-lg text-white font-bold text-xs"><Minus size={13} /></button>
+                <span className="text-xs font-mono font-black text-white px-1 min-w-[36px] text-center">{(resumeData.styleConfig?.fontSize || 13).toFixed(1)}px</span>
+                <button onClick={() => handleGlobalSizeChange(0.5)} className="p-1 hover:bg-white/20 rounded-lg text-white font-bold text-xs"><Plus size={13} /></button>
               </div>
 
               <button 
+                onClick={() => setShowRealtimePanel(prev => !prev)} 
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1 shrink-0 ${showRealtimePanel ? 'bg-amber-500 text-slate-950 font-black' : 'bg-white/10 text-white hover:bg-white/20'}`}
+              >
+                <Type size={14} />
+                <span>Ajustes</span>
+              </button>
+
+              <button 
+                onClick={handleAutoFit} 
+                className={`px-2.5 py-1.5 rounded-xl text-xs font-bold text-white transition-all flex items-center gap-1 shrink-0 ${isAutoFit ? 'bg-primary-blue' : 'bg-white/10 hover:bg-white/20'}`}
+              >
+                <Maximize2 size={14} />
+                <span className="hidden sm:inline">Zoom Tela</span>
+              </button>
+
+              <button 
                 onClick={() => setShowFullscreenModal(false)}
-                className="px-3 py-1.5 bg-white/10 hover:bg-white/20 text-white rounded-xl text-xs font-bold"
+                className="px-3 py-1.5 bg-white/20 hover:bg-white/30 text-white rounded-xl text-xs font-bold shrink-0"
               >
                 Fechar
               </button>
