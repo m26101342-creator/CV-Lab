@@ -6537,6 +6537,8 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
   const [tempSkill, setTempSkill] = useState("");
   const [tempLanguage, setTempLanguage] = useState("");
   const [tempLanguageLevel, setTempLanguageLevel] = useState("Fluente");
+  const [tempCertName, setTempCertName] = useState("");
+  const [tempCertDate, setTempCertDate] = useState("");
   const [showPreviewModal, setShowPreviewModal] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
   const [isTranslating, setIsTranslating] = useState(false);
@@ -7310,6 +7312,22 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
     setResumeData(prev => ({
       ...prev,
       languages: [...(prev.languages || []), { id, name, level }]
+    }));
+  };
+
+  const addCertification = (name: string, date: string = '') => {
+    if (!name.trim()) return;
+    const id = Math.random().toString(36).substring(7);
+    setResumeData(prev => ({
+      ...prev,
+      certifications: [...(prev.certifications || []), { id, name, date }]
+    }));
+  };
+
+  const removeCertification = (id?: string, index?: number) => {
+    setResumeData(prev => ({
+      ...prev,
+      certifications: (prev.certifications || []).filter((c, i) => index !== undefined ? i !== index : c.id !== id)
     }));
   };
 
@@ -9411,6 +9429,102 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
                              </div>
                            ))}
                         </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Certificações e Cursos */}
+                  <div className="space-y-6 pt-6 border-t border-border-main">
+                    <div className="flex justify-between items-center">
+                      <h3 className="text-sm font-black uppercase tracking-[0.2em] text-primary-blue flex items-center gap-2">
+                        <Award size={16} />
+                        <span>{resumeData.language === 'en' ? 'Certifications & Courses' : 'Certificações e Cursos'}</span>
+                      </h3>
+                      <Button 
+                        variant="secondary" 
+                        onClick={() => {
+                          const id = Math.random().toString(36).substring(7);
+                          setResumeData(prev => ({
+                            ...prev,
+                            certifications: [...(prev.certifications || []), { id, name: '', date: '' }]
+                          }));
+                        }}
+                        className="text-xs font-bold"
+                      >
+                        <Plus size={14} className="mr-1" /> Adicionar
+                      </Button>
+                    </div>
+
+                    <div className="flex flex-col gap-3.5 bg-gray-50/50 p-4 rounded-2xl border border-gray-100">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <Input 
+                          placeholder="Ex: Certificação Scrum Master, Python Avançado" 
+                          value={tempCertName}
+                          onChange={setTempCertName}
+                          label="Nome da Certificação / Curso"
+                        />
+                        <Input 
+                          placeholder="Ex: 2023, Out 2022" 
+                          value={tempCertDate}
+                          onChange={setTempCertDate}
+                          label="Data / Ano (Opcional)"
+                        />
+                      </div>
+                      <Button onClick={() => {
+                        if (!tempCertName.trim()) return;
+                        addCertification(tempCertName, tempCertDate);
+                        setTempCertName("");
+                        setTempCertDate("");
+                      }} className="w-full">Adicionar Certificação / Curso</Button>
+                    </div>
+
+                    {resumeData.certifications && resumeData.certifications.length > 0 ? (
+                      <div className="space-y-3">
+                        <label className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider pl-1">
+                          Certificados e Cursos Adicionados ({resumeData.certifications.length})
+                        </label>
+                        <div className="space-y-3">
+                          {(resumeData.certifications || []).map((cert, idx) => (
+                            <div key={cert.id || `cert-item-${idx}`} className="flex items-end gap-3.5 bg-white p-3.5 rounded-2xl border border-border-main shadow-sm transition-all hover:shadow-md">
+                              <div className="flex-1">
+                                <Input 
+                                  label="Nome do Curso / Certificado"
+                                  placeholder="Ex: Scrum Master, Google Analytics" 
+                                  value={cert.name || ""} 
+                                  onChange={(newVal) => {
+                                    const updated = [...(resumeData.certifications || [])];
+                                    updated[idx] = { ...updated[idx], name: newVal };
+                                    setResumeData(prev => ({ ...prev, certifications: updated }));
+                                  }}
+                                />
+                              </div>
+                              <div className="w-[120px] sm:w-[140px]">
+                                <Input 
+                                  label="Data / Ano"
+                                  placeholder="Ex: 2023" 
+                                  value={cert.date || ""} 
+                                  onChange={(newVal) => {
+                                    const updated = [...(resumeData.certifications || [])];
+                                    updated[idx] = { ...updated[idx], date: newVal };
+                                    setResumeData(prev => ({ ...prev, certifications: updated }));
+                                  }}
+                                />
+                              </div>
+                              <button 
+                                type="button"
+                                onClick={() => removeCertification(cert.id, idx)}
+                                className="p-3 text-red-500 hover:bg-red-50 rounded-lg transition-colors border border-transparent hover:border-red-100 hover:text-red-600 bg-gray-50 hover:bg-red-50/50 mb-[1px]"
+                                title="Eliminar Certificação"
+                              >
+                                <Trash2 size={16} />
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="text-center py-4 px-3 border border-dashed border-gray-200 rounded-2xl text-gray-400 text-xs font-medium">
+                        Nenhuma certificação ou curso adicionado ainda. Preencha acima para adicionar.
                       </div>
                     )}
                   </div>
