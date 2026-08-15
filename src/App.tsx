@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
@@ -6540,6 +6540,27 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
   const [tempCertName, setTempCertName] = useState("");
   const [tempCertDate, setTempCertDate] = useState("");
   const [showPreviewModal, setShowPreviewModal] = useState(false);
+  const stepsScrollRef = useRef<HTMLDivElement>(null);
+
+  const scrollCategories = (direction: 'left' | 'right') => {
+    if (stepsScrollRef.current) {
+      stepsScrollRef.current.scrollBy({
+        left: direction === 'left' ? -220 : 220,
+        behavior: 'smooth'
+      });
+    }
+  };
+
+  useEffect(() => {
+    if (stepsScrollRef.current) {
+      const container = stepsScrollRef.current;
+      const inner = container.firstElementChild as HTMLElement;
+      if (inner && inner.children[activeStep]) {
+        const activeTab = inner.children[activeStep] as HTMLElement;
+        activeTab.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+      }
+    }
+  }, [activeStep]);
   const [isDownloading, setIsDownloading] = useState(false);
   const [isTranslating, setIsTranslating] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
@@ -8902,44 +8923,86 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
           </div>
           <div className="flex items-center gap-2">
             <div className="px-3 py-1 bg-soft-blue text-primary-blue text-[9px] font-black rounded-full hidden md:block">PASSO {activeStep + 1}/6</div>
-            <Button variant="outline" className="h-9 px-4 text-xs font-bold md:hidden" onClick={() => { setShowPreviewModal(true); const m = document.querySelector('main'); if (m) m.scrollTop = 0; }} icon={ExternalLink}>Ver currículo</Button>
+            <Button 
+              variant="outline" 
+              className="h-9 px-4 text-xs font-bold flex bg-white text-primary-blue border-primary-blue/30 hover:bg-soft-blue" 
+              onClick={() => { 
+                setIsCoverLetterMode(false); 
+                setShowPreviewModal(true); 
+                setShowFullscreenModal(true); 
+                window.scrollTo({ top: 0, left: 0, behavior: 'instant' }); 
+                const m = document.querySelector('main'); 
+                if (m) m.scrollTop = 0; 
+              }} 
+              icon={ExternalLink}
+            >
+              Ver currículo
+            </Button>
             <Button className="h-9 px-4 text-xs font-bold flex bg-primary-blue text-white hover:bg-[#0052cc] rounded-full shadow-md" onClick={handlePrint} icon={Printer}>Imprimir</Button>
           </div>
         </header>
 
-        {/* New Visual Stepper / Tabs */}
-        <div className="bg-bg-main/30 border-b border-border-main overflow-x-auto no-scrollbar">
-          <div className="flex px-4 py-3 min-w-max gap-1">
-            {editorSteps.map((step, idx) => {
-              const StepIcon = step.icon;
-              const isActive = activeStep === idx;
-              const isPast = activeStep > idx;
-              
-              return (
-                <button 
-                  key={idx}
-                  onClick={() => setActiveStep(idx)}
-                  className={`flex flex-col items-center gap-1.5 px-4 py-2 rounded-xl transition-all relative group
-                    ${isActive ? 'bg-white shadow-sm ring-1 ring-primary-blue/10' : 'hover:bg-white/50'}`}
-                >
-                  <div className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-300
-                    ${isActive ? 'bg-primary-blue text-white shadow-lg shadow-primary-blue/30 scale-110' : isPast ? 'bg-primary-blue/10 text-primary-blue' : 'bg-gray-100 text-gray-400'}`}>
-                    <StepIcon size={18} />
-                  </div>
-                  <span className={`text-[10px] font-black uppercase tracking-wider transition-colors
-                    ${isActive ? 'text-primary-blue' : 'text-text-muted group-hover:text-text-main'}`}>
-                    {step.title}
-                  </span>
-                  {isActive && (
-                    <motion.div 
-                      layoutId="active-step-indicator"
-                      className="absolute -bottom-3 left-1/4 right-1/4 h-0.5 bg-primary-blue rounded-full"
-                    />
-                  )}
-                </button>
-              );
-            })}
+        {/* New Visual Stepper / Tabs with PC horizontal scroll & mouse drag support */}
+        <div className="relative bg-bg-main/30 border-b border-border-main group/stepper">
+          <button 
+            type="button"
+            onClick={() => scrollCategories('left')}
+            className="absolute left-1 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-white/95 shadow-md border border-gray-200 text-gray-700 flex items-center justify-center hover:bg-white hover:scale-110 active:scale-95 transition-all z-20"
+            title="Anterior categoria"
+          >
+            <ChevronLeft size={16} />
+          </button>
+
+          <div 
+            ref={stepsScrollRef}
+            onWheel={(e) => {
+              if (e.deltaY !== 0) {
+                e.currentTarget.scrollLeft += e.deltaY;
+              }
+            }}
+            className="overflow-x-auto no-scrollbar scroll-smooth px-8 py-3 cursor-grab active:cursor-grabbing select-none"
+          >
+            <div className="flex min-w-max gap-1">
+              {editorSteps.map((step, idx) => {
+                const StepIcon = step.icon;
+                const isActive = activeStep === idx;
+                const isPast = activeStep > idx;
+                
+                return (
+                  <button 
+                    key={idx}
+                    onClick={() => setActiveStep(idx)}
+                    className={`flex flex-col items-center gap-1.5 px-4 py-2 rounded-xl transition-all relative group
+                      ${isActive ? 'bg-white shadow-sm ring-1 ring-primary-blue/10' : 'hover:bg-white/50'}`}
+                  >
+                    <div className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-300
+                      ${isActive ? 'bg-primary-blue text-white shadow-lg shadow-primary-blue/30 scale-110' : isPast ? 'bg-primary-blue/10 text-primary-blue' : 'bg-gray-100 text-gray-400'}`}>
+                      <StepIcon size={18} />
+                    </div>
+                    <span className={`text-[10px] font-black uppercase tracking-wider transition-colors whitespace-nowrap
+                      ${isActive ? 'text-primary-blue' : 'text-text-muted group-hover:text-text-main'}`}>
+                      {step.title}
+                    </span>
+                    {isActive && (
+                      <motion.div 
+                        layoutId="active-step-indicator"
+                        className="absolute -bottom-3 left-1/4 right-1/4 h-0.5 bg-primary-blue rounded-full"
+                      />
+                    )}
+                  </button>
+                );
+              })}
+            </div>
           </div>
+
+          <button 
+            type="button"
+            onClick={() => scrollCategories('right')}
+            className="absolute right-1 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-white/95 shadow-md border border-gray-200 text-gray-700 flex items-center justify-center hover:bg-white hover:scale-110 active:scale-95 transition-all z-20"
+            title="Próxima categoria"
+          >
+            <ChevronRight size={16} />
+          </button>
         </div>
 
         <div className="flex-1 overflow-y-auto p-8 space-y-10 custom-scrollbar">
@@ -10186,7 +10249,21 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
                       <h3 className="text-2xl font-black leading-tight">Documento Finalizado!</h3>
                       <p className="text-sm opacity-80 font-medium text-balance">O seu combo profissional (CV + Carta) está pronto para ser enviado.</p>
                       
-                      <Button variant="outline" className="w-full text-white border-white hover:bg-white/10" onClick={() => { setIsCoverLetterMode(false); setShowPreviewModal(true); }} icon={ExternalLink}>Ver currículo</Button>
+                      <Button 
+                        variant="outline" 
+                        className="w-full text-white border-white hover:bg-white/10" 
+                        onClick={() => { 
+                          setIsCoverLetterMode(false); 
+                          setShowPreviewModal(true); 
+                          setShowFullscreenModal(true); 
+                          window.scrollTo({ top: 0, left: 0, behavior: 'instant' }); 
+                          const m = document.querySelector('main'); 
+                          if (m) m.scrollTop = 0; 
+                        }} 
+                        icon={ExternalLink}
+                      >
+                        Ver currículo
+                      </Button>
                       <Button className="w-full bg-white text-primary-blue hover:bg-white/90 h-12 text-sm font-black rounded-xl shadow-lg border-0" onClick={() => { setIsCoverLetterMode(false); setTimeout(handlePrint, 100); }} icon={Printer}>
                         Imprimir Currículo
                       </Button>
@@ -10402,12 +10479,14 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
            
            <button 
              onClick={() => {
+               setIsCoverLetterMode(false);
                setShowPreviewModal(true);
+               setShowFullscreenModal(true);
                window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
                const m = document.querySelector('main');
                if (m) m.scrollTop = 0;
              }} 
-             className="md:hidden flex items-center gap-1.5 px-4 py-2 bg-primary-blue text-white font-extrabold text-xs rounded-xl shadow-md hover:bg-blue-600 transition-all active:scale-95"
+             className="flex items-center gap-1.5 px-4 py-2 bg-primary-blue text-white font-extrabold text-xs rounded-xl shadow-md hover:bg-blue-600 transition-all active:scale-95"
            >
              <Eye size={16} />
              <span>Ver Currículo</span>
@@ -10425,14 +10504,14 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
             
             {/* Top Toolbar for Preview & Zoom Controls */}
             <div className="bg-white/10 backdrop-blur-md p-1.5 px-3 rounded-2xl border border-white/15 flex flex-wrap items-center justify-center gap-1.5 sm:gap-2 shadow-2xl z-20 max-w-full print:hidden">
-               {/* Mobile "Voltar ao Editor" button when modal preview is active */}
+               {/* "Voltar ao Editor" button when modal preview is active */}
                {showPreviewModal && (
                  <button 
                    onClick={() => {
                      setShowPreviewModal(false);
                      window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
                    }}
-                   className="md:hidden flex items-center gap-1.5 px-3 py-1.5 bg-white text-deep-blue font-bold text-xs rounded-xl shadow-md hover:bg-slate-100 transition-all active:scale-95 shrink-0"
+                   className="flex items-center gap-1.5 px-3 py-1.5 bg-white text-deep-blue font-bold text-xs rounded-xl shadow-md hover:bg-slate-100 transition-all active:scale-95 shrink-0"
                  >
                    <ChevronLeft size={16} />
                    <span>Voltar ao Editor</span>
