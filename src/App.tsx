@@ -6725,6 +6725,7 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
   const [isAutoFit, setIsAutoFit] = useState(true);
   const [showFullscreenModal, setShowFullscreenModal] = useState(false);
   const [showZoomMenu, setShowZoomMenu] = useState(false);
+  const [showFullscreenZoomMenu, setShowFullscreenZoomMenu] = useState(false);
   const [showRealtimePanel, setShowRealtimePanel] = useState(false);
 
   // 1-Click A4 Content Auto-Fit
@@ -10499,7 +10500,16 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
       </aside>
 
       {/* Main Preview */}
-      <main className={`flex-1 h-full w-full bg-[#1a2332] p-3 sm:p-8 overflow-y-auto overflow-x-hidden ${showPreviewModal ? 'flex' : 'hidden md:flex'} flex-col items-center justify-start relative select-none scrollbar-hide touch-pan-y print:p-0 print:bg-white print:overflow-visible print:block print:w-full print:h-auto`}>
+      <main 
+        onWheel={(e) => {
+          if (e.ctrlKey || e.metaKey) {
+            e.preventDefault();
+            setIsAutoFit(false);
+            setPreviewScale(s => Number(Math.min(2.5, Math.max(0.18, s + (e.deltaY < 0 ? 0.05 : -0.05))).toFixed(2)));
+          }
+        }}
+        className={`flex-1 h-full w-full bg-[#1a2332] p-3 sm:p-8 overflow-y-auto overflow-x-auto ${showPreviewModal ? 'flex' : 'hidden md:flex'} flex-col items-center justify-start relative select-none scrollbar-hide touch-pan-y print:p-0 print:bg-white print:overflow-visible print:block print:w-full print:h-auto`}
+      >
          <div className="flex flex-col items-center gap-4 sm:gap-6 my-0 py-2 sm:py-4 max-w-full w-full print:gap-0 print:m-0 print:p-0 print:w-full print:block">
             
             {/* Top Toolbar for Preview & Zoom Controls */}
@@ -10586,7 +10596,7 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
                <button 
                  onClick={() => {
                    setIsAutoFit(false);
-                   setPreviewScale(s => Number(Math.max(0.15, s - 0.05).toFixed(2)));
+                   setPreviewScale(s => Number(Math.max(0.18, s - 0.05).toFixed(2)));
                  }} 
                  title="Diminuir Zoom"
                  className="p-1.5 hover:bg-white/20 rounded-xl text-white transition-all active:scale-90 shrink-0"
@@ -10610,7 +10620,7 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
                        initial={{ opacity: 0, y: 10, scale: 0.95 }}
                        animate={{ opacity: 1, y: 0, scale: 1 }}
                        exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                       className="absolute top-full mt-2 left-1/2 -translate-x-1/2 bg-[#1a2332] border border-white/20 rounded-2xl shadow-2xl p-1 z-50 min-w-[170px] backdrop-blur-xl"
+                       className="absolute top-full mt-2 left-1/2 -translate-x-1/2 bg-[#1a2332] border border-white/20 rounded-2xl shadow-2xl p-1 z-50 min-w-[180px] backdrop-blur-xl"
                      >
                        <button
                          onClick={() => {
@@ -10630,6 +10640,8 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
                          { label: '75% - Médio', value: 0.75 },
                          { label: '100% - Tamanho Real', value: 1.0 },
                          { label: '125% - Ampliado', value: 1.25 },
+                         { label: '150% - Detalhado', value: 1.50 },
+                         { label: '200% - Grande', value: 2.0 },
                        ].map((opt) => (
                          <button
                            key={opt.value}
@@ -10653,7 +10665,7 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
                <button 
                  onClick={() => {
                    setIsAutoFit(false);
-                   setPreviewScale(s => Number(Math.min(2.0, s + 0.05).toFixed(2)));
+                   setPreviewScale(s => Number(Math.min(2.5, s + 0.05).toFixed(2)));
                  }} 
                  title="Aumentar Zoom"
                  className="p-1.5 hover:bg-white/20 rounded-xl text-white transition-all active:scale-90 shrink-0"
@@ -10869,9 +10881,9 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
               )}
             </AnimatePresence>
 
-            {/* Document Scaled Wrapper Box (Pure CSS layout box calculation) */}
+            {/* Document Scaled Wrapper Box */}
             <div 
-              className="scaled-preview-container relative flex justify-center items-start transition-all duration-300 max-w-full overflow-hidden"
+              className="scaled-preview-container relative flex justify-center items-start transition-all duration-300 max-w-full overflow-x-auto overflow-y-hidden"
               style={{
                 width: `${Math.round(794 * previewScale)}px`,
                 height: `${Math.round((resumeHeight || 1122) * previewScale)}px`,
@@ -10917,16 +10929,16 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
       {/* Fullscreen Document Preview Modal */}
       <AnimatePresence>
         {showFullscreenModal && (
-          <div className="fixed inset-0 bg-[#0f172a]/95 backdrop-blur-xl z-[99999] flex flex-col items-center justify-between p-4 sm:p-6 overflow-hidden print:hidden">
+          <div className="fixed inset-0 bg-[#0f172a]/95 backdrop-blur-xl z-[99999] flex flex-col items-center justify-between p-3 sm:p-6 overflow-hidden print:hidden">
             {/* Modal Header */}
-            <div className="w-full max-w-5xl flex items-center justify-between pb-4 border-b border-white/10 shrink-0">
+            <div className="w-full max-w-6xl flex flex-wrap items-center justify-between pb-3 border-b border-white/10 shrink-0 gap-2">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-2xl bg-primary-blue/20 text-primary-blue flex items-center justify-center font-black">
+                <div className="w-10 h-10 rounded-2xl bg-primary-blue/20 text-primary-blue flex items-center justify-center font-black shrink-0">
                   <FileText size={20} />
                 </div>
                 <div>
                   <h3 className="text-white font-bold text-sm sm:text-base">
-                    {isCoverLetterMode ? 'Carta de Apresentação (Página Completa)' : 'Currículo Vitae (Página Completa)'}
+                    {isCoverLetterMode ? 'Carta de Apresentação (Visualização)' : 'Currículo Vitae (Visualização)'}
                   </h3>
                   <p className="text-slate-400 text-xs">
                     {resumeData.personalInfo.fullName || 'Sem nome'} • {template}
@@ -10934,10 +10946,114 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
                 </div>
               </div>
 
+              {/* Fullscreen Zoom Controls Bar inside Header */}
+              <div className="flex items-center gap-1.5 bg-white/10 backdrop-blur-md p-1.5 rounded-2xl border border-white/15 shadow-lg">
+                <button 
+                  onClick={handleAutoFit}
+                  title="Ajustar zoom à largura da tela"
+                  className={`flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                    isAutoFit ? 'bg-primary-blue text-white shadow-md ring-2 ring-white/30' : 'bg-white/10 text-white/80 hover:bg-white/20 hover:text-white'
+                  }`}
+                >
+                  <Maximize2 size={14} />
+                  <span className="hidden sm:inline">Zoom Tela</span>
+                </button>
+
+                <button 
+                  onClick={() => {
+                    setIsAutoFit(false);
+                    setPreviewScale(s => Number(Math.max(0.18, s - 0.05).toFixed(2)));
+                  }} 
+                  title="Diminuir Zoom"
+                  className="p-1.5 hover:bg-white/20 rounded-xl text-white transition-all active:scale-90"
+                >
+                  <Minus size={16} />
+                </button>
+
+                {/* Zoom % Selector Dropdown */}
+                <div className="relative">
+                  <button 
+                    onClick={() => setShowFullscreenZoomMenu(prev => !prev)}
+                    className="flex items-center gap-1 px-2.5 py-1 bg-white/15 hover:bg-white/25 rounded-xl text-xs font-mono font-bold text-white transition-all min-w-[65px] justify-center"
+                  >
+                    <span>{Math.round(previewScale * 100)}%</span>
+                    <ChevronDown size={12} className={`transition-transform duration-200 ${showFullscreenZoomMenu ? 'rotate-180' : ''}`} />
+                  </button>
+
+                  <AnimatePresence>
+                    {showFullscreenZoomMenu && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                        className="absolute top-full mt-2 left-1/2 -translate-x-1/2 bg-[#0f172a] border border-white/20 rounded-2xl shadow-2xl p-1 z-[100000] min-w-[180px] backdrop-blur-xl"
+                      >
+                        <button
+                          onClick={() => {
+                            handleAutoFit();
+                            setShowFullscreenZoomMenu(false);
+                          }}
+                          className={`w-full text-left px-3 py-2 rounded-xl text-xs font-bold flex items-center justify-between transition-colors ${isAutoFit ? 'bg-primary-blue text-white' : 'text-slate-200 hover:bg-white/10'}`}
+                        >
+                          <span>⚡ Zoom Tela Automático</span>
+                          {isAutoFit && <Check size={14} />}
+                        </button>
+                        <div className="my-1 border-t border-white/10"></div>
+                        {[
+                          { label: '25% - Vista Geral', value: 0.25 },
+                          { label: '40% - Compacto', value: 0.40 },
+                          { label: '50% - Metade', value: 0.50 },
+                          { label: '75% - Médio', value: 0.75 },
+                          { label: '100% - Tamanho Real', value: 1.0 },
+                          { label: '125% - Ampliado', value: 1.25 },
+                          { label: '150% - Detalhado', value: 1.50 },
+                          { label: '200% - Grande', value: 2.0 },
+                        ].map((opt) => (
+                          <button
+                            key={opt.value}
+                            onClick={() => {
+                              setIsAutoFit(false);
+                              setPreviewScale(opt.value);
+                              setShowFullscreenZoomMenu(false);
+                            }}
+                            className={`w-full text-left px-3 py-1.5 rounded-xl text-xs font-medium flex items-center justify-between transition-colors ${!isAutoFit && Math.abs(previewScale - opt.value) < 0.02 ? 'bg-white/20 text-white font-bold' : 'text-slate-300 hover:bg-white/10'}`}
+                          >
+                            <span>{opt.label}</span>
+                            {!isAutoFit && Math.abs(previewScale - opt.value) < 0.02 && <Check size={14} />}
+                          </button>
+                        ))}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+
+                <button 
+                  onClick={() => {
+                    setIsAutoFit(false);
+                    setPreviewScale(s => Number(Math.min(2.5, s + 0.05).toFixed(2)));
+                  }} 
+                  title="Aumentar Zoom"
+                  className="p-1.5 hover:bg-white/20 rounded-xl text-white transition-all active:scale-90"
+                >
+                  <Plus size={16} />
+                </button>
+
+                <div className="h-4 w-px bg-white/20 hidden sm:block"></div>
+
+                <button 
+                  onClick={handleAutoFitA4Content}
+                  title="Ajustar automaticamente todo o conteúdo em 1 Página A4"
+                  className="hidden sm:flex items-center gap-1 px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl shadow-md transition-all active:scale-95"
+                >
+                  <Sparkles size={13} />
+                  <span>Enc. A4</span>
+                </button>
+              </div>
+
               <div className="flex items-center gap-2">
                 <Button 
                   onClick={handlePrint} 
-                  className="h-9 px-3 text-xs font-bold bg-white text-slate-900 hover:bg-slate-200 rounded-xl" 
+                  className="h-9 px-4 text-xs font-bold bg-white text-slate-900 hover:bg-slate-200 rounded-xl shadow-md" 
                   icon={Printer}
                 >
                   Imprimir
@@ -10945,6 +11061,7 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
                 <button 
                   onClick={() => setShowFullscreenModal(false)}
                   className="p-2 bg-white/10 hover:bg-white/20 text-white rounded-xl transition-all"
+                  title="Fechar pré-visualização"
                 >
                   <X size={20} />
                 </button>
@@ -10952,9 +11069,18 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
             </div>
 
             {/* Modal Scrollable Content Area */}
-            <div className="flex-1 w-full overflow-y-auto overflow-x-hidden flex justify-center items-start py-6 scrollbar-hide">
+            <div 
+              onWheel={(e) => {
+                if (e.ctrlKey || e.metaKey) {
+                  e.preventDefault();
+                  setIsAutoFit(false);
+                  setPreviewScale(s => Number(Math.min(2.5, Math.max(0.18, s + (e.deltaY < 0 ? 0.05 : -0.05))).toFixed(2)));
+                }
+              }}
+              className="flex-1 w-full overflow-y-auto overflow-x-auto flex justify-center items-start py-6 scrollbar-hide"
+            >
               <div 
-                className="relative flex justify-center items-start transition-all duration-300 max-w-full my-0 py-2 sm:py-6 overflow-hidden"
+                className="relative flex justify-center items-start transition-all duration-300 max-w-full my-0 py-2 sm:py-6 overflow-visible"
                 style={{
                   width: `${Math.round(794 * previewScale)}px`,
                   height: `${Math.round((resumeHeight || 1122) * previewScale)}px`,
@@ -10989,14 +11115,55 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
             </div>
 
             {/* Modal Bottom Toolbar */}
-            <div className="w-full max-w-2xl bg-slate-900/95 border border-white/20 backdrop-blur-2xl p-2 px-3 rounded-2xl flex flex-wrap items-center justify-between gap-2 shadow-2xl shrink-0 z-50">
+            <div className="w-full max-w-3xl bg-slate-900/95 border border-white/20 backdrop-blur-2xl p-2 px-4 rounded-2xl flex flex-wrap items-center justify-between gap-2 shadow-2xl shrink-0 z-50">
               <button 
                 onClick={handleAutoFitA4Content} 
                 className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs rounded-xl shadow-lg transition-all active:scale-95 flex items-center gap-1.5 shrink-0"
               >
                 <Sparkles size={14} />
-                <span>Encaixar em 1 Pág. A4</span>
+                <span>Encaixar A4</span>
               </button>
+
+              {/* Full Zoom Controls (- / % / + / Zoom Tela) */}
+              <div className="flex items-center gap-1 bg-white/10 p-1 rounded-xl border border-white/15 shrink-0">
+                <button 
+                  onClick={() => {
+                    setIsAutoFit(false);
+                    setPreviewScale(s => Number(Math.max(0.18, s - 0.05).toFixed(2)));
+                  }}
+                  title="Diminuir Zoom"
+                  className="p-1 hover:bg-white/20 rounded-lg text-white font-bold transition-transform active:scale-90"
+                >
+                  <Minus size={15} />
+                </button>
+
+                <button
+                  onClick={() => setShowFullscreenZoomMenu(prev => !prev)}
+                  className="flex items-center gap-1 px-2 py-0.5 bg-white/10 hover:bg-white/20 rounded-lg text-xs font-mono font-bold text-white transition-all min-w-[55px] justify-center"
+                >
+                  <span>{Math.round(previewScale * 100)}%</span>
+                  <ChevronDown size={12} className={`transition-transform duration-200 ${showFullscreenZoomMenu ? 'rotate-180' : ''}`} />
+                </button>
+
+                <button 
+                  onClick={() => {
+                    setIsAutoFit(false);
+                    setPreviewScale(s => Number(Math.min(2.5, s + 0.05).toFixed(2)));
+                  }}
+                  title="Aumentar Zoom"
+                  className="p-1 hover:bg-white/20 rounded-lg text-white font-bold transition-transform active:scale-90"
+                >
+                  <Plus size={15} />
+                </button>
+
+                <button
+                  onClick={handleAutoFit}
+                  title="Zoom Tela"
+                  className={`ml-1 px-2 py-1 rounded-lg text-xs font-bold transition-all ${isAutoFit ? 'bg-primary-blue text-white' : 'bg-white/10 text-white/80 hover:bg-white/20'}`}
+                >
+                  <Maximize2 size={13} />
+                </button>
+              </div>
 
               <div className="flex items-center gap-1 bg-white/10 p-1 rounded-xl border border-white/15 shrink-0">
                 <span className="text-[10px] font-bold uppercase text-slate-200 px-1 hidden sm:inline">Texto:</span>
@@ -11011,14 +11178,6 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
               >
                 <Type size={14} />
                 <span>Ajustes</span>
-              </button>
-
-              <button 
-                onClick={handleAutoFit} 
-                className={`px-2.5 py-1.5 rounded-xl text-xs font-bold text-white transition-all flex items-center gap-1 shrink-0 ${isAutoFit ? 'bg-primary-blue' : 'bg-white/10 hover:bg-white/20'}`}
-              >
-                <Maximize2 size={14} />
-                <span className="hidden sm:inline">Zoom Tela</span>
               </button>
 
               <button 
