@@ -6864,6 +6864,14 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
     };
   }, [resumeData, template, isCoverLetterMode, generatedLetter, view, showPreviewModal]);
 
+  useEffect(() => {
+    if (showPreviewModal) {
+      window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+      const mainElem = document.querySelector('main');
+      if (mainElem) mainElem.scrollTop = 0;
+    }
+  }, [showPreviewModal]);
+
   const [currentBanner, setCurrentBanner] = useState(0);
 
   const banners = [
@@ -8587,7 +8595,7 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
   const c = { ...currentTheme.colors, primary: resumeData.themeColor || currentTheme.colors.primary };
 
   return (
-    <div className="min-h-screen bg-bg-main flex flex-col md:flex-row justify-start md:h-screen md:overflow-y-auto md:overflow-x-hidden print:bg-white print:h-auto print:overflow-visible">
+    <div className="h-[100dvh] h-screen w-full overflow-hidden bg-bg-main flex flex-col md:flex-row justify-start print:bg-white print:h-auto print:overflow-visible">
       
       {/* Payment Modal Overlay */}
       <AnimatePresence>
@@ -8879,7 +8887,7 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
       </AnimatePresence>
 
       {/* Sidebar Editor */}
-      <aside className={`w-full max-w-3xl mx-auto md:max-w-none md:mx-0 md:w-[380px] lg:w-[460px] xl:w-[540px] bg-white border-r border-border-main flex flex-col shadow-2xl z-30 print:hidden shrink-0 ${showPreviewModal ? 'hidden' : 'flex'}`}>
+      <aside className={`w-full h-full max-w-3xl mx-auto md:max-w-none md:mx-0 md:w-[380px] lg:w-[460px] xl:w-[540px] bg-white border-r border-border-main flex flex-col shadow-2xl z-30 print:hidden shrink-0 overflow-hidden ${showPreviewModal ? 'hidden' : 'flex'}`}>
         <header className="p-4 border-b border-border-main flex items-center justify-between sticky top-0 bg-white z-40 shadow-sm">
           <div className="flex items-center gap-3">
              <button onClick={() => setView('landing')} className="p-2 hover:bg-bg-main rounded-xl transition-colors text-text-muted">
@@ -8894,7 +8902,7 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
           </div>
           <div className="flex items-center gap-2">
             <div className="px-3 py-1 bg-soft-blue text-primary-blue text-[9px] font-black rounded-full hidden md:block">PASSO {activeStep + 1}/6</div>
-            <Button variant="outline" className="h-9 px-4 text-xs font-bold md:hidden" onClick={() => setShowPreviewModal(true)} icon={ExternalLink}>Ver currículo</Button>
+            <Button variant="outline" className="h-9 px-4 text-xs font-bold md:hidden" onClick={() => { setShowPreviewModal(true); const m = document.querySelector('main'); if (m) m.scrollTop = 0; }} icon={ExternalLink}>Ver currículo</Button>
             <Button className="h-9 px-4 text-xs font-bold flex bg-primary-blue text-white hover:bg-[#0052cc] rounded-full shadow-md" onClick={handlePrint} icon={Printer}>Imprimir</Button>
           </div>
         </header>
@@ -10393,7 +10401,12 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
            <Button variant="ghost" disabled={activeStep === 0} onClick={() => setActiveStep(s => s - 1)}>Anterior</Button>
            
            <button 
-             onClick={() => setShowPreviewModal(true)} 
+             onClick={() => {
+               setShowPreviewModal(true);
+               window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+               const m = document.querySelector('main');
+               if (m) m.scrollTop = 0;
+             }} 
              className="md:hidden flex items-center gap-1.5 px-4 py-2 bg-primary-blue text-white font-extrabold text-xs rounded-xl shadow-md hover:bg-blue-600 transition-all active:scale-95"
            >
              <Eye size={16} />
@@ -10407,15 +10420,18 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
       </aside>
 
       {/* Main Preview */}
-      <main className={`flex-1 bg-[#1a2332] p-3 sm:p-8 overflow-y-auto overflow-x-hidden ${showPreviewModal ? 'flex' : 'hidden md:flex'} flex-col items-center justify-start relative select-none scrollbar-hide touch-pan-y print:p-0 print:bg-white print:overflow-visible print:block print:w-full print:h-auto`}>
-         <div className="flex flex-col items-center gap-4 sm:gap-6 my-auto max-w-full w-full print:gap-0 print:m-0 print:p-0 print:w-full print:block">
+      <main className={`flex-1 h-full w-full bg-[#1a2332] p-3 sm:p-8 overflow-y-auto overflow-x-hidden ${showPreviewModal ? 'flex' : 'hidden md:flex'} flex-col items-center justify-start relative select-none scrollbar-hide touch-pan-y print:p-0 print:bg-white print:overflow-visible print:block print:w-full print:h-auto`}>
+         <div className="flex flex-col items-center gap-4 sm:gap-6 my-0 py-2 sm:py-4 max-w-full w-full print:gap-0 print:m-0 print:p-0 print:w-full print:block">
             
             {/* Top Toolbar for Preview & Zoom Controls */}
             <div className="bg-white/10 backdrop-blur-md p-1.5 px-3 rounded-2xl border border-white/15 flex flex-wrap items-center justify-center gap-1.5 sm:gap-2 shadow-2xl z-20 max-w-full print:hidden">
                {/* Mobile "Voltar ao Editor" button when modal preview is active */}
                {showPreviewModal && (
                  <button 
-                   onClick={() => setShowPreviewModal(false)}
+                   onClick={() => {
+                     setShowPreviewModal(false);
+                     window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+                   }}
                    className="md:hidden flex items-center gap-1.5 px-3 py-1.5 bg-white text-deep-blue font-bold text-xs rounded-xl shadow-md hover:bg-slate-100 transition-all active:scale-95 shrink-0"
                  >
                    <ChevronLeft size={16} />
@@ -10859,7 +10875,7 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
             {/* Modal Scrollable Content Area */}
             <div className="flex-1 w-full overflow-y-auto overflow-x-hidden flex justify-center items-start py-6 scrollbar-hide">
               <div 
-                className="relative flex justify-center items-start transition-all duration-300 max-w-full my-auto overflow-hidden"
+                className="relative flex justify-center items-start transition-all duration-300 max-w-full my-0 py-2 sm:py-6 overflow-hidden"
                 style={{
                   width: `${Math.round(794 * previewScale)}px`,
                   height: `${Math.round((resumeHeight || 1122) * previewScale)}px`,
