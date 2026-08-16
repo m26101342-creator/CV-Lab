@@ -92,7 +92,7 @@ export interface ResumeData {
     description?: string; 
   }[];
   customSections?: CustomSection[];
-  sectionTitles?: Partial<Record<'experience' | 'education' | 'skills' | 'languages' | 'certifications' | 'interests' | 'summary', string>>;
+  sectionTitles?: Partial<Record<'experience' | 'education' | 'skills' | 'languages' | 'certifications' | 'interests' | 'summary' | 'contact' | string, string>>;
   themeColor?: string;
   styleConfig?: ResumeStyleConfig;
   language?: 'pt' | 'en' | 'es';
