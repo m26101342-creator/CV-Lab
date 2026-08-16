@@ -1,5 +1,15 @@
 import { LucideIcon, Briefcase, GraduationCap, MapPin, Phone, Mail, Globe, Award, Languages, PenTool } from 'lucide-react';
 
+export interface CoverLetterSubjectStyle {
+  fontSize?: 'sm' | 'md' | 'lg' | 'xl' | '2xl';
+  fontWeight?: 'normal' | 'semibold' | 'bold' | 'black';
+  align?: 'left' | 'center' | 'right';
+  layout?: 'inline' | 'block';
+  uppercase?: boolean;
+  showPrefix?: boolean;
+  showSubject?: boolean;
+}
+
 export interface ResumeStyleConfig {
   fontSize?: number;       // em px, padrão 13 ou 14
   titleSize?: number;      // em px, padrão 24 ou 28

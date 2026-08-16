@@ -600,6 +600,7 @@ export interface CoverLetterSubjectStyle {
   layout?: 'inline' | 'block';
   uppercase?: boolean;
   showPrefix?: boolean;
+  showSubject?: boolean;
 }
 
 const CoverLetterRenderer = React.memo(({ 
@@ -634,8 +635,11 @@ const CoverLetterRenderer = React.memo(({
     layout: subjectStyle?.layout || 'inline',
     uppercase: subjectStyle?.uppercase ?? false,
     showPrefix: subjectStyle?.showPrefix ?? true,
+    showSubject: subjectStyle?.showSubject ?? true,
   };
   
+  const showSubject = currentStyle.showSubject !== false;
+
   // Calculate a scaling factor dynamic for super long cover letters to keep them strictly on 1 page
   const textLength = content ? content.length : 0;
   const densityScale = textLength > 1200 ? Math.max(0.68, Math.min(1.0, 1 - (textLength - 1200) * 0.00025)) : 1.0;
@@ -712,143 +716,167 @@ const CoverLetterRenderer = React.memo(({
          {/* Inline Quick Subject Formatting Bar (Visible in Editor) */}
          {onChangeSubjectStyle && (
            <div className="print:hidden mb-4 p-2 bg-slate-900 text-white rounded-xl shadow-md border border-slate-700/80 flex flex-wrap items-center justify-between gap-2 text-xs">
-             <div className="flex items-center gap-1">
-               <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 px-1">Tamanho:</span>
-               {(['sm', 'md', 'lg', 'xl', '2xl'] as const).map((sz) => (
-                 <button
-                   key={sz}
-                   type="button"
-                   onClick={() => onChangeSubjectStyle({ ...currentStyle, fontSize: sz })}
-                   className={`px-2 py-0.5 text-[10px] font-extrabold rounded transition-all ${currentStyle.fontSize === sz ? 'bg-blue-600 text-white shadow-sm' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'}`}
-                 >
-                   {sz === 'sm' ? '12px' : sz === 'md' ? '14px' : sz === 'lg' ? '16px' : sz === 'xl' ? '18px' : '21px'}
-                 </button>
-               ))}
-             </div>
-
-             <div className="flex items-center gap-1">
-               <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 px-1">Disposição:</span>
+             <div className="flex items-center gap-1.5">
                <button
                  type="button"
-                 onClick={() => onChangeSubjectStyle({ ...currentStyle, layout: 'inline' })}
-                 className={`px-2 py-0.5 text-[10px] font-bold rounded transition-all ${currentStyle.layout === 'inline' ? 'bg-blue-600 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'}`}
+                 onClick={() => onChangeSubjectStyle({ ...currentStyle, showSubject: !showSubject })}
+                 className={`px-2.5 py-1 text-[10px] font-extrabold rounded-lg transition-all flex items-center gap-1 ${showSubject ? 'bg-emerald-600 text-white shadow-sm' : 'bg-rose-600/90 text-white'}`}
+                 title={showSubject ? 'Ocultar Assunto da Carta' : 'Ativar Assunto na Carta'}
                >
-                 Em Linha
-               </button>
-               <button
-                 type="button"
-                 onClick={() => onChangeSubjectStyle({ ...currentStyle, layout: 'block' })}
-                 className={`px-2 py-0.5 text-[10px] font-bold rounded transition-all ${currentStyle.layout === 'block' ? 'bg-blue-600 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'}`}
-               >
-                 Bloco Destaque
+                 {showSubject ? '✓ Assunto Ativo' : '✕ Assunto Oculto'}
                </button>
              </div>
 
-             <div className="flex items-center gap-1">
-               <button
-                 type="button"
-                 onClick={() => onChangeSubjectStyle({ ...currentStyle, align: 'left' })}
-                 className={`p-1 rounded transition-all ${currentStyle.align === 'left' ? 'bg-blue-600 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'}`}
-                 title="Alinhar à Esquerda"
-               >
-                 <AlignLeft size={13} />
-               </button>
-               <button
-                 type="button"
-                 onClick={() => onChangeSubjectStyle({ ...currentStyle, align: 'center' })}
-                 className={`p-1 rounded transition-all ${currentStyle.align === 'center' ? 'bg-blue-600 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'}`}
-                 title="Alinhar ao Centro"
-               >
-                 <AlignCenter size={13} />
-               </button>
-               <button
-                 type="button"
-                 onClick={() => onChangeSubjectStyle({ ...currentStyle, align: 'right' })}
-                 className={`p-1 rounded transition-all ${currentStyle.align === 'right' ? 'bg-blue-600 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'}`}
-                 title="Alinhar à Direita"
-               >
-                 <AlignRight size={13} />
-               </button>
-               
-               <button
-                 type="button"
-                 onClick={() => onChangeSubjectStyle({ ...currentStyle, uppercase: !currentStyle.uppercase })}
-                 className={`px-1.5 py-0.5 text-[10px] font-bold rounded transition-all ${currentStyle.uppercase ? 'bg-blue-600 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'}`}
-                 title="Alternar Maiúsculas"
-               >
-                 AA
-               </button>
+             {showSubject && (
+               <>
+                 <div className="flex items-center gap-1">
+                   <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 px-1">Tamanho:</span>
+                   {(['sm', 'md', 'lg', 'xl', '2xl'] as const).map((sz) => (
+                     <button
+                       key={sz}
+                       type="button"
+                       onClick={() => onChangeSubjectStyle({ ...currentStyle, fontSize: sz })}
+                       className={`px-2 py-0.5 text-[10px] font-extrabold rounded transition-all ${currentStyle.fontSize === sz ? 'bg-blue-600 text-white shadow-sm' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'}`}
+                     >
+                       {sz === 'sm' ? '12px' : sz === 'md' ? '14px' : sz === 'lg' ? '16px' : sz === 'xl' ? '18px' : '21px'}
+                     </button>
+                   ))}
+                 </div>
 
-               <button
-                 type="button"
-                 onClick={() => onChangeSubjectStyle({ ...currentStyle, fontWeight: currentStyle.fontWeight === 'black' ? 'normal' : 'black' })}
-                 className={`px-1.5 py-0.5 text-[10px] font-extrabold rounded transition-all ${currentStyle.fontWeight === 'black' || currentStyle.fontWeight === 'bold' ? 'bg-blue-600 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'}`}
-                 title="Alternar Negrito"
-               >
-                 B
-               </button>
-             </div>
+                 <div className="flex items-center gap-1">
+                   <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 px-1">Disposição:</span>
+                   <button
+                     type="button"
+                     onClick={() => onChangeSubjectStyle({ ...currentStyle, layout: 'inline' })}
+                     className={`px-2 py-0.5 text-[10px] font-bold rounded transition-all ${currentStyle.layout === 'inline' ? 'bg-blue-600 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'}`}
+                   >
+                     Em Linha
+                   </button>
+                   <button
+                     type="button"
+                     onClick={() => onChangeSubjectStyle({ ...currentStyle, layout: 'block' })}
+                     className={`px-2 py-0.5 text-[10px] font-bold rounded transition-all ${currentStyle.layout === 'block' ? 'bg-blue-600 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'}`}
+                   >
+                     Bloco Destaque
+                   </button>
+                 </div>
+
+                 <div className="flex items-center gap-1">
+                   <button
+                     type="button"
+                     onClick={() => onChangeSubjectStyle({ ...currentStyle, align: 'left' })}
+                     className={`p-1 rounded transition-all ${currentStyle.align === 'left' ? 'bg-blue-600 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'}`}
+                     title="Alinhar à Esquerda"
+                   >
+                     <AlignLeft size={13} />
+                   </button>
+                   <button
+                     type="button"
+                     onClick={() => onChangeSubjectStyle({ ...currentStyle, align: 'center' })}
+                     className={`p-1 rounded transition-all ${currentStyle.align === 'center' ? 'bg-blue-600 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'}`}
+                     title="Alinhar ao Centro"
+                   >
+                     <AlignCenter size={13} />
+                   </button>
+                   <button
+                     type="button"
+                     onClick={() => onChangeSubjectStyle({ ...currentStyle, align: 'right' })}
+                     className={`p-1 rounded transition-all ${currentStyle.align === 'right' ? 'bg-blue-600 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'}`}
+                     title="Alinhar à Direita"
+                   >
+                     <AlignRight size={13} />
+                   </button>
+                   
+                   <button
+                     type="button"
+                     onClick={() => onChangeSubjectStyle({ ...currentStyle, uppercase: !currentStyle.uppercase })}
+                     className={`px-1.5 py-0.5 text-[10px] font-bold rounded transition-all ${currentStyle.uppercase ? 'bg-blue-600 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'}`}
+                     title="Alternar Maiúsculas"
+                   >
+                     AA
+                   </button>
+
+                   <button
+                     type="button"
+                     onClick={() => onChangeSubjectStyle({ ...currentStyle, fontWeight: currentStyle.fontWeight === 'black' ? 'normal' : 'black' })}
+                     className={`px-1.5 py-0.5 text-[10px] font-extrabold rounded transition-all ${currentStyle.fontWeight === 'black' || currentStyle.fontWeight === 'bold' ? 'bg-blue-600 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'}`}
+                     title="Alternar Negrito"
+                   >
+                     B
+                   </button>
+                 </div>
+               </>
+             )}
            </div>
          )}
 
          {/* Sub-header with Subject and Date according to Layout choice */}
-         {isBlock ? (
-           <div className="mb-8 space-y-3">
-             <div className="flex justify-between items-center text-gray-400 uppercase tracking-widest text-[11px] pb-2 border-b border-gray-100">
-               <span className="font-extrabold text-gray-400">{isEn ? 'COVER LETTER' : 'CARTA DE APRESENTAÇÃO'}</span>
-               <span>
+         {showSubject ? (
+           isBlock ? (
+             <div className="mb-8 space-y-3">
+               <div className="flex justify-between items-center text-gray-400 uppercase tracking-widest text-[11px] pb-2 border-b border-gray-100">
+                 <span className="font-extrabold text-gray-400">{isEn ? 'COVER LETTER' : 'CARTA DE APRESENTAÇÃO'}</span>
+                 <span>
+                   {(info.location ? info.location.split(',')[0] + ', ' : '') + new Date().toLocaleDateString(isEn ? 'en-US' : 'pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })}
+                 </span>
+               </div>
+
+               <div className={`p-3.5 rounded-xl bg-gray-50/90 border border-gray-200/80 print:bg-transparent print:border-b-2 print:border-t-0 print:border-x-0 print:border-gray-800 print:rounded-none flex flex-col gap-1 transition-all ${alignClass}`}>
+                 {currentStyle.showPrefix && (
+                   <span className="text-gray-400 uppercase tracking-widest text-[10px] font-black">
+                     {isEn ? 'Subject:' : 'Assunto:'}
+                   </span>
+                 )}
+                 <div className="w-full">
+                   {onChangeSubject ? (
+                     <input
+                       type="text"
+                       className={`bg-transparent border-b border-dashed border-gray-300 hover:border-blue-500 focus:border-blue-600 focus:bg-blue-50/50 outline-none w-full px-1 py-0.5 transition-all print:hidden ${sizeClass} ${weightClass} ${alignClass} ${isUpper ? 'uppercase tracking-wide' : ''}`}
+                       value={subject !== undefined ? subject : ''}
+                       placeholder={defaultSubject}
+                       onChange={(e) => onChangeSubject(e.target.value)}
+                       title="Clique para editar o assunto da candidatura"
+                     />
+                   ) : null}
+                   <span className={`${sizeClass} ${weightClass} ${alignClass} ${isUpper ? 'uppercase tracking-wide' : ''} text-gray-900 ${onChangeSubject ? 'hidden print:block' : 'block'}`}>
+                     {subject || defaultSubject}
+                   </span>
+                 </div>
+               </div>
+             </div>
+           ) : (
+             <div className="flex justify-between items-center mb-10 pb-3 border-b border-gray-100 text-[12px] text-gray-500 gap-4">
+               <div className={`flex items-center gap-2 flex-1 max-w-[75%] ${alignClass}`}>
+                 {currentStyle.showPrefix && (
+                   <span className="text-gray-400 uppercase tracking-widest text-[11px] shrink-0 font-extrabold">
+                     {isEn ? 'Subject:' : 'Assunto:'}
+                   </span>
+                 )}
+                 <div className="flex-1 w-full">
+                   {onChangeSubject ? (
+                     <input
+                       type="text"
+                       className={`bg-transparent border-b border-dashed border-gray-300 hover:border-blue-500 focus:border-blue-600 focus:bg-blue-50/50 outline-none w-full px-1.5 py-0.5 transition-all print:hidden ${sizeClass} ${weightClass} ${alignClass} ${isUpper ? 'uppercase tracking-wide' : ''}`}
+                       value={subject !== undefined ? subject : ''}
+                       placeholder={defaultSubject}
+                       onChange={(e) => onChangeSubject(e.target.value)}
+                       title="Clique para editar o assunto da candidatura"
+                     />
+                   ) : null}
+                   <span className={`${sizeClass} ${weightClass} ${alignClass} ${isUpper ? 'uppercase tracking-wide' : ''} text-gray-800 ${onChangeSubject ? 'hidden print:inline-block' : 'inline-block'}`}>
+                     {subject || defaultSubject}
+                   </span>
+                 </div>
+               </div>
+               <span className="text-gray-400 uppercase tracking-widest text-[11px] shrink-0 text-right">
                  {(info.location ? info.location.split(',')[0] + ', ' : '') + new Date().toLocaleDateString(isEn ? 'en-US' : 'pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })}
                </span>
              </div>
-
-             <div className={`p-3.5 rounded-xl bg-gray-50/90 border border-gray-200/80 print:bg-transparent print:border-b-2 print:border-t-0 print:border-x-0 print:border-gray-800 print:rounded-none flex flex-col gap-1 transition-all ${alignClass}`}>
-               {currentStyle.showPrefix && (
-                 <span className="text-gray-400 uppercase tracking-widest text-[10px] font-black">
-                   {isEn ? 'Subject:' : 'Assunto:'}
-                 </span>
-               )}
-               <div className="w-full">
-                 {onChangeSubject ? (
-                   <input
-                     type="text"
-                     className={`bg-transparent border-b border-dashed border-gray-300 hover:border-blue-500 focus:border-blue-600 focus:bg-blue-50/50 outline-none w-full px-1 py-0.5 transition-all print:hidden ${sizeClass} ${weightClass} ${alignClass} ${isUpper ? 'uppercase tracking-wide' : ''}`}
-                     value={subject !== undefined ? subject : ''}
-                     placeholder={defaultSubject}
-                     onChange={(e) => onChangeSubject(e.target.value)}
-                     title="Clique para editar o assunto da candidatura"
-                   />
-                 ) : null}
-                 <span className={`${sizeClass} ${weightClass} ${alignClass} ${isUpper ? 'uppercase tracking-wide' : ''} text-gray-900 ${onChangeSubject ? 'hidden print:block' : 'block'}`}>
-                   {subject || defaultSubject}
-                 </span>
-               </div>
-             </div>
-           </div>
+           )
          ) : (
-           <div className="flex justify-between items-center mb-10 pb-3 border-b border-gray-100 text-[12px] text-gray-500 gap-4">
-             <div className={`flex items-center gap-2 flex-1 max-w-[75%] ${alignClass}`}>
-               {currentStyle.showPrefix && (
-                 <span className="text-gray-400 uppercase tracking-widest text-[11px] shrink-0 font-extrabold">
-                   {isEn ? 'Subject:' : 'Assunto:'}
-                 </span>
-               )}
-               <div className="flex-1 w-full">
-                 {onChangeSubject ? (
-                   <input
-                     type="text"
-                     className={`bg-transparent border-b border-dashed border-gray-300 hover:border-blue-500 focus:border-blue-600 focus:bg-blue-50/50 outline-none w-full px-1.5 py-0.5 transition-all print:hidden ${sizeClass} ${weightClass} ${alignClass} ${isUpper ? 'uppercase tracking-wide' : ''}`}
-                     value={subject !== undefined ? subject : ''}
-                     placeholder={defaultSubject}
-                     onChange={(e) => onChangeSubject(e.target.value)}
-                     title="Clique para editar o assunto da candidatura"
-                   />
-                 ) : null}
-                 <span className={`${sizeClass} ${weightClass} ${alignClass} ${isUpper ? 'uppercase tracking-wide' : ''} text-gray-800 ${onChangeSubject ? 'hidden print:inline-block' : 'inline-block'}`}>
-                   {subject || defaultSubject}
-                 </span>
-               </div>
-             </div>
-             <span className="text-gray-400 uppercase tracking-widest text-[11px] shrink-0 text-right">
+           <div className="flex justify-between items-center mb-10 pb-3 border-b border-gray-100 text-[12px] text-gray-400">
+             <span className="font-extrabold uppercase text-gray-400 text-[11px]">{isEn ? 'COVER LETTER' : 'CARTA DE APRESENTAÇÃO'}</span>
+             <span className="uppercase tracking-widest text-[11px]">
                {(info.location ? info.location.split(',')[0] + ', ' : '') + new Date().toLocaleDateString(isEn ? 'en-US' : 'pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })}
              </span>
            </div>
@@ -9063,21 +9091,43 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
           </div>
           <div className="flex items-center gap-2">
             <div className="px-3 py-1 bg-soft-blue text-primary-blue text-[9px] font-black rounded-full hidden md:block">PASSO {activeStep + 1}/6</div>
-            <Button 
-              variant="outline" 
-              className="h-9 px-4 text-xs font-bold flex bg-white text-primary-blue border-primary-blue/30 hover:bg-soft-blue" 
-              onClick={() => { 
-                setIsCoverLetterMode(false); 
-                setShowPreviewModal(true); 
-                setShowFullscreenModal(true); 
-                window.scrollTo({ top: 0, left: 0, behavior: 'instant' }); 
-                const m = document.querySelector('main'); 
-                if (m) m.scrollTop = 0; 
-              }} 
-              icon={ExternalLink}
-            >
-              Ver currículo
-            </Button>
+            
+            {/* Direct Dual View Switcher */}
+            <div className="flex items-center bg-gray-100 p-1 rounded-xl border border-gray-200 gap-1">
+              <button
+                type="button"
+                onClick={() => { 
+                  setIsCoverLetterMode(false); 
+                  setShowPreviewModal(true); 
+                  setShowFullscreenModal(true); 
+                  window.scrollTo({ top: 0, left: 0, behavior: 'instant' }); 
+                  const m = document.querySelector('main'); 
+                  if (m) m.scrollTop = 0; 
+                }} 
+                className={`px-2.5 py-1 text-[11px] font-black rounded-lg transition-all flex items-center gap-1.5 ${!isCoverLetterMode ? 'bg-primary-blue text-white shadow-sm' : 'text-gray-600 hover:text-gray-900'}`}
+                title="Pré-visualizar Currículo"
+              >
+                <FileText size={13} />
+                <span className="hidden sm:inline">Currículo</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => { 
+                  setIsCoverLetterMode(true); 
+                  setShowPreviewModal(true); 
+                  setShowFullscreenModal(true); 
+                  window.scrollTo({ top: 0, left: 0, behavior: 'instant' }); 
+                  const m = document.querySelector('main'); 
+                  if (m) m.scrollTop = 0; 
+                }} 
+                className={`px-2.5 py-1 text-[11px] font-black rounded-lg transition-all flex items-center gap-1.5 ${isCoverLetterMode ? 'bg-primary-blue text-white shadow-sm' : 'text-gray-600 hover:text-gray-900'}`}
+                title="Pré-visualizar Carta de Apresentação"
+              >
+                <Mail size={13} />
+                <span className="hidden sm:inline">Carta</span>
+              </button>
+            </div>
+
             <Button className="h-9 px-4 text-xs font-bold flex bg-primary-blue text-white hover:bg-[#0052cc] rounded-full shadow-md" onClick={handlePrint} icon={Printer}>Imprimir</Button>
           </div>
         </header>
@@ -10638,133 +10688,176 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
                    </div>
 
                    <div className="p-6 bg-white border border-gray-200 rounded-3xl space-y-5 shadow-sm text-left relative overflow-hidden">
-                      <div className="space-y-2">
-                         <label className="text-xs font-black text-deep-blue uppercase tracking-wider block flex items-center gap-2">
-                           <FileText size={16} className="text-primary-blue" />
-                           Assunto da Candidatura / Vaga Pretendida
-                         </label>
-                         <Input 
-                           value={letterSubject}
-                           onChange={(v: string) => setLetterSubject(v)}
-                           placeholder="Ex: Candidatura para a vaga de Gestor de Projectos"
-                         />
-                         <p className="text-[11px] text-text-muted font-medium leading-relaxed">
-                           Insira o assunto ou vaga (ex: Candidatura à vaga de Engenheiro - Ref. #2026). O assunto é exibido no cabeçalho da carta e direciona a geração de texto por IA.
-                         </p>
-                      </div>
-
-                      {/* Formatting & Layout Controls for Cover Letter Subject */}
-                      <div className="pt-3 border-t border-gray-100 space-y-3 bg-gray-50/80 p-3.5 rounded-2xl">
-                        <div className="flex items-center justify-between">
-                          <span className="text-[11px] font-black uppercase tracking-wider text-gray-700 flex items-center gap-1.5">
-                            <Type size={14} className="text-primary-blue" />
-                            Tamanho e Formatação do Assunto
-                          </span>
-                        </div>
-
-                        {/* Font Size Selection */}
-                        <div className="space-y-1">
-                          <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider block">Tamanho do Texto</span>
-                          <div className="grid grid-cols-5 gap-1">
-                            {[
-                              { id: 'sm', label: '12px' },
-                              { id: 'md', label: '14px' },
-                              { id: 'lg', label: '16px' },
-                              { id: 'xl', label: '18px' },
-                              { id: '2xl', label: '21px' },
-                            ].map((sz) => (
-                              <button
-                                key={sz.id}
-                                type="button"
-                                onClick={() => setLetterSubjectStyle(prev => ({ ...prev, fontSize: sz.id as any }))}
-                                className={`py-1 text-[10px] font-bold rounded-lg border transition-all ${letterSubjectStyle.fontSize === sz.id ? 'bg-primary-blue text-white border-primary-blue shadow-sm' : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-100'}`}
-                              >
-                                {sz.label}
-                              </button>
-                            ))}
+                      {/* Subject Visibility Toggle Switch */}
+                      <div className="flex items-center justify-between p-3.5 bg-slate-50 border border-slate-200/80 rounded-2xl">
+                        <div className="flex items-center gap-2.5">
+                          <div className={`w-8 h-8 rounded-xl flex items-center justify-center font-bold text-xs ${letterSubjectStyle.showSubject !== false ? 'bg-primary-blue text-white' : 'bg-gray-200 text-gray-500'}`}>
+                            <FileText size={16} />
+                          </div>
+                          <div>
+                            <span className="block text-xs font-black text-deep-blue uppercase tracking-wider">Assunto da Carta</span>
+                            <span className="block text-[10px] text-text-muted">
+                              {letterSubjectStyle.showSubject !== false ? 'O assunto está visível no cabeçalho da carta' : 'A carta será emitida sem linha de assunto'}
+                            </span>
                           </div>
                         </div>
+                        <button
+                          type="button"
+                          onClick={() => setLetterSubjectStyle(prev => ({ ...prev, showSubject: prev.showSubject === false ? true : false }))}
+                          className={`px-3 py-1.5 text-xs font-black rounded-xl transition-all flex items-center gap-1.5 shadow-sm ${
+                            letterSubjectStyle.showSubject !== false 
+                              ? 'bg-emerald-600 text-white hover:bg-emerald-700' 
+                              : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                          }`}
+                        >
+                          {letterSubjectStyle.showSubject !== false ? '✓ Assunto Ativo' : '✕ Sem Assunto'}
+                        </button>
+                      </div>
 
-                        {/* Layout & Alignment */}
-                        <div className="grid grid-cols-2 gap-2 pt-1">
-                          <div className="space-y-1">
-                            <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider block">Disposição</span>
-                            <div className="flex bg-white p-1 rounded-xl border border-gray-200 gap-1">
+                      {letterSubjectStyle.showSubject !== false ? (
+                        <>
+                          <div className="space-y-2">
+                             <label className="text-xs font-black text-deep-blue uppercase tracking-wider block flex items-center gap-2">
+                               <FileText size={16} className="text-primary-blue" />
+                               Assunto da Candidatura / Vaga Pretendida
+                             </label>
+                             <Input 
+                               value={letterSubject}
+                               onChange={(v: string) => setLetterSubject(v)}
+                               placeholder="Ex: Candidatura para a vaga de Gestor de Projectos"
+                             />
+                             <p className="text-[11px] text-text-muted font-medium leading-relaxed">
+                               Insira o assunto ou vaga (ex: Candidatura à vaga de Engenheiro - Ref. #2026). O assunto é exibido no cabeçalho da carta e direciona a geração de texto por IA.
+                             </p>
+                          </div>
+
+                          {/* Formatting & Layout Controls for Cover Letter Subject */}
+                          <div className="pt-3 border-t border-gray-100 space-y-3 bg-gray-50/80 p-3.5 rounded-2xl">
+                            <div className="flex items-center justify-between">
+                              <span className="text-[11px] font-black uppercase tracking-wider text-gray-700 flex items-center gap-1.5">
+                                <Type size={14} className="text-primary-blue" />
+                                Tamanho e Formatação do Assunto
+                              </span>
+                            </div>
+
+                            {/* Font Size Selection */}
+                            <div className="space-y-1">
+                              <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider block">Tamanho do Texto</span>
+                              <div className="grid grid-cols-5 gap-1">
+                                {[
+                                  { id: 'sm', label: '12px' },
+                                  { id: 'md', label: '14px' },
+                                  { id: 'lg', label: '16px' },
+                                  { id: 'xl', label: '18px' },
+                                  { id: '2xl', label: '21px' },
+                                ].map((sz) => (
+                                  <button
+                                    key={sz.id}
+                                    type="button"
+                                    onClick={() => setLetterSubjectStyle(prev => ({ ...prev, fontSize: sz.id as any }))}
+                                    className={`py-1 text-[10px] font-bold rounded-lg border transition-all ${letterSubjectStyle.fontSize === sz.id ? 'bg-primary-blue text-white border-primary-blue shadow-sm' : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-100'}`}
+                                  >
+                                    {sz.label}
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+
+                            {/* Layout & Alignment */}
+                            <div className="grid grid-cols-2 gap-2 pt-1">
+                              <div className="space-y-1">
+                                <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider block">Disposição</span>
+                                <div className="flex bg-white p-1 rounded-xl border border-gray-200 gap-1">
+                                  <button
+                                    type="button"
+                                    onClick={() => setLetterSubjectStyle(prev => ({ ...prev, layout: 'inline' }))}
+                                    className={`flex-1 py-1 text-[10px] font-bold rounded-lg transition-all ${letterSubjectStyle.layout === 'inline' ? 'bg-primary-blue text-white shadow-sm' : 'text-gray-600 hover:bg-gray-100'}`}
+                                  >
+                                    Em Linha
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => setLetterSubjectStyle(prev => ({ ...prev, layout: 'block' }))}
+                                    className={`flex-1 py-1 text-[10px] font-bold rounded-lg transition-all ${letterSubjectStyle.layout === 'block' ? 'bg-primary-blue text-white shadow-sm' : 'text-gray-600 hover:bg-gray-100'}`}
+                                  >
+                                    Bloco
+                                  </button>
+                                </div>
+                              </div>
+
+                              <div className="space-y-1">
+                                <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider block">Alinhamento</span>
+                                <div className="flex bg-white p-1 rounded-xl border border-gray-200 gap-1 justify-around">
+                                  <button
+                                    type="button"
+                                    onClick={() => setLetterSubjectStyle(prev => ({ ...prev, align: 'left' }))}
+                                    className={`p-1 rounded-lg transition-all ${letterSubjectStyle.align === 'left' ? 'bg-primary-blue text-white' : 'text-gray-600 hover:bg-gray-100'}`}
+                                    title="Alinhar à Esquerda"
+                                  >
+                                    <AlignLeft size={14} />
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => setLetterSubjectStyle(prev => ({ ...prev, align: 'center' }))}
+                                    className={`p-1 rounded-lg transition-all ${letterSubjectStyle.align === 'center' ? 'bg-primary-blue text-white' : 'text-gray-600 hover:bg-gray-100'}`}
+                                    title="Alinhar ao Centro"
+                                  >
+                                    <AlignCenter size={14} />
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => setLetterSubjectStyle(prev => ({ ...prev, align: 'right' }))}
+                                    className={`p-1 rounded-lg transition-all ${letterSubjectStyle.align === 'right' ? 'bg-primary-blue text-white' : 'text-gray-600 hover:bg-gray-100'}`}
+                                    title="Alinhar à Direita"
+                                  >
+                                    <AlignRight size={14} />
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Style options & prefix */}
+                            <div className="flex flex-wrap items-center justify-between gap-1.5 pt-1 border-t border-gray-200/60 text-xs">
                               <button
                                 type="button"
-                                onClick={() => setLetterSubjectStyle(prev => ({ ...prev, layout: 'inline' }))}
-                                className={`flex-1 py-1 text-[10px] font-bold rounded-lg transition-all ${letterSubjectStyle.layout === 'inline' ? 'bg-primary-blue text-white shadow-sm' : 'text-gray-600 hover:bg-gray-100'}`}
+                                onClick={() => setLetterSubjectStyle(prev => ({ ...prev, fontWeight: prev.fontWeight === 'black' ? 'bold' : prev.fontWeight === 'bold' ? 'semibold' : 'black' }))}
+                                className={`px-2 py-1 text-[10px] font-extrabold rounded-lg border transition-all ${letterSubjectStyle.fontWeight === 'black' || letterSubjectStyle.fontWeight === 'bold' ? 'bg-primary-blue text-white border-primary-blue' : 'bg-white text-gray-600 border-gray-200'}`}
                               >
-                                Em Linha
+                                {letterSubjectStyle.fontWeight === 'black' ? 'Black' : 'Negrito'}
                               </button>
+
                               <button
                                 type="button"
-                                onClick={() => setLetterSubjectStyle(prev => ({ ...prev, layout: 'block' }))}
-                                className={`flex-1 py-1 text-[10px] font-bold rounded-lg transition-all ${letterSubjectStyle.layout === 'block' ? 'bg-primary-blue text-white shadow-sm' : 'text-gray-600 hover:bg-gray-100'}`}
+                                onClick={() => setLetterSubjectStyle(prev => ({ ...prev, uppercase: !prev.uppercase }))}
+                                className={`px-2 py-1 text-[10px] font-bold rounded-lg border transition-all ${letterSubjectStyle.uppercase ? 'bg-primary-blue text-white border-primary-blue' : 'bg-white text-gray-600 border-gray-200'}`}
                               >
-                                Bloco
+                                MAIÚSCULAS
+                              </button>
+
+                              <button
+                                type="button"
+                                onClick={() => setLetterSubjectStyle(prev => ({ ...prev, showPrefix: !prev.showPrefix }))}
+                                className={`px-2 py-1 text-[10px] font-bold rounded-lg border transition-all ${letterSubjectStyle.showPrefix ? 'bg-primary-blue text-white border-primary-blue' : 'bg-white text-gray-600 border-gray-200'}`}
+                              >
+                                {letterSubjectStyle.showPrefix ? 'Com "Assunto:"' : 'Sem Rótulo'}
                               </button>
                             </div>
                           </div>
-
-                          <div className="space-y-1">
-                            <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider block">Alinhamento</span>
-                            <div className="flex bg-white p-1 rounded-xl border border-gray-200 gap-1 justify-around">
-                              <button
-                                type="button"
-                                onClick={() => setLetterSubjectStyle(prev => ({ ...prev, align: 'left' }))}
-                                className={`p-1 rounded-lg transition-all ${letterSubjectStyle.align === 'left' ? 'bg-primary-blue text-white' : 'text-gray-600 hover:bg-gray-100'}`}
-                                title="Alinhar à Esquerda"
-                              >
-                                <AlignLeft size={14} />
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => setLetterSubjectStyle(prev => ({ ...prev, align: 'center' }))}
-                                className={`p-1 rounded-lg transition-all ${letterSubjectStyle.align === 'center' ? 'bg-primary-blue text-white' : 'text-gray-600 hover:bg-gray-100'}`}
-                                title="Alinhar ao Centro"
-                              >
-                                <AlignCenter size={14} />
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => setLetterSubjectStyle(prev => ({ ...prev, align: 'right' }))}
-                                className={`p-1 rounded-lg transition-all ${letterSubjectStyle.align === 'right' ? 'bg-primary-blue text-white' : 'text-gray-600 hover:bg-gray-100'}`}
-                                title="Alinhar à Direita"
-                              >
-                                <AlignRight size={14} />
-                              </button>
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Style options & prefix */}
-                        <div className="flex flex-wrap items-center justify-between gap-1.5 pt-1 border-t border-gray-200/60 text-xs">
+                        </>
+                      ) : (
+                        <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl text-center space-y-2">
+                          <p className="text-xs text-text-muted font-medium">
+                            O assunto foi removido do cabeçalho. A carta de apresentação será estruturada diretamente com a saudação e o corpo do texto.
+                          </p>
                           <button
                             type="button"
-                            onClick={() => setLetterSubjectStyle(prev => ({ ...prev, fontWeight: prev.fontWeight === 'black' ? 'bold' : prev.fontWeight === 'bold' ? 'semibold' : 'black' }))}
-                            className={`px-2 py-1 text-[10px] font-extrabold rounded-lg border transition-all ${letterSubjectStyle.fontWeight === 'black' || letterSubjectStyle.fontWeight === 'bold' ? 'bg-primary-blue text-white border-primary-blue' : 'bg-white text-gray-600 border-gray-200'}`}
+                            onClick={() => setLetterSubjectStyle(prev => ({ ...prev, showSubject: true }))}
+                            className="px-3 py-1.5 bg-primary-blue text-white text-xs font-bold rounded-xl shadow-sm hover:bg-blue-600 transition-all"
                           >
-                            {letterSubjectStyle.fontWeight === 'black' ? 'Black' : 'Negrito'}
-                          </button>
-
-                          <button
-                            type="button"
-                            onClick={() => setLetterSubjectStyle(prev => ({ ...prev, uppercase: !prev.uppercase }))}
-                            className={`px-2 py-1 text-[10px] font-bold rounded-lg border transition-all ${letterSubjectStyle.uppercase ? 'bg-primary-blue text-white border-primary-blue' : 'bg-white text-gray-600 border-gray-200'}`}
-                          >
-                            MAIÚSCULAS
-                          </button>
-
-                          <button
-                            type="button"
-                            onClick={() => setLetterSubjectStyle(prev => ({ ...prev, showPrefix: !prev.showPrefix }))}
-                            className={`px-2 py-1 text-[10px] font-bold rounded-lg border transition-all ${letterSubjectStyle.showPrefix ? 'bg-primary-blue text-white border-primary-blue' : 'bg-white text-gray-600 border-gray-200'}`}
-                          >
-                            {letterSubjectStyle.showPrefix ? 'Com "Assunto:"' : 'Sem Rótulo'}
+                            + Adicionar Assunto Novamente
                           </button>
                         </div>
-                      </div>
+                      )}
 
                       <AnimatePresence mode="wait">
                         {generatedLetter ? (
@@ -10783,7 +10876,17 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
                              </div>
                              
                              <div className="grid grid-cols-2 gap-2">
-                               <Button className="w-full bg-white text-primary-blue border border-primary-blue hover:bg-primary-blue/5 text-xs font-bold" onClick={() => { setIsCoverLetterMode(true); setShowPreviewModal(true); }}>
+                               <Button 
+                                 className="w-full bg-white text-primary-blue border border-primary-blue hover:bg-primary-blue/5 text-xs font-bold" 
+                                 onClick={() => { 
+                                   setIsCoverLetterMode(true); 
+                                   setShowPreviewModal(true); 
+                                   setShowFullscreenModal(true);
+                                   window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+                                   const m = document.querySelector('main');
+                                   if (m) m.scrollTop = 0;
+                                 }}
+                               >
                                  Visualizar Carta
                                </Button>
                                <Button className="w-full bg-primary-blue text-white hover:bg-[#0052cc] text-xs font-black rounded-xl" onClick={() => { setIsCoverLetterMode(true); setTimeout(handlePrint, 100); }} icon={Printer}>
@@ -10878,6 +10981,34 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
                    <span>Voltar ao Editor</span>
                  </button>
                )}
+
+               {/* Document Mode Toggle: CV vs Cover Letter */}
+               <div className="flex items-center bg-white/15 p-1 rounded-xl border border-white/20 gap-1 shrink-0">
+                 <button
+                   type="button"
+                   onClick={() => setIsCoverLetterMode(false)}
+                   className={`px-2.5 py-1 text-xs font-black rounded-lg transition-all flex items-center gap-1.5 ${
+                     !isCoverLetterMode ? 'bg-primary-blue text-white shadow-md' : 'text-slate-200 hover:bg-white/10'
+                   }`}
+                   title="Exibir Currículo Vitae"
+                 >
+                   <FileText size={13} />
+                   <span>Currículo</span>
+                 </button>
+                 <button
+                   type="button"
+                   onClick={() => setIsCoverLetterMode(true)}
+                   className={`px-2.5 py-1 text-xs font-black rounded-lg transition-all flex items-center gap-1.5 ${
+                     isCoverLetterMode ? 'bg-primary-blue text-white shadow-md' : 'text-slate-200 hover:bg-white/10'
+                   }`}
+                   title="Exibir Carta de Apresentação"
+                 >
+                   <Mail size={13} />
+                   <span>Carta</span>
+                 </button>
+               </div>
+
+               <div className="h-4 w-px bg-white/20 hidden sm:block"></div>
 
                {/* Auto-Fit A4 Page Content Button */}
                <button 
@@ -11205,60 +11336,80 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
                   {/* Cover Letter Formatting Options */}
                   {isCoverLetterMode && (
                     <div className="space-y-3 pt-2 border-t border-white/10">
-                      <div className="space-y-1.5">
-                        <label className="text-[10px] font-bold text-slate-300 uppercase tracking-wider block">Assunto da Carta</label>
-                        <input 
-                          type="text" 
-                          value={letterSubject} 
-                          onChange={(e) => setLetterSubject(e.target.value)} 
-                          className="w-full px-3 py-2 bg-slate-800 border border-white/15 rounded-xl text-xs text-white placeholder-slate-400 focus:outline-none focus:border-amber-400" 
-                          placeholder="Ex: Candidatura para a vaga de Engenheiro..." 
-                        />
+                      {/* Subject Visibility Toggle */}
+                      <div className="flex items-center justify-between p-2 bg-slate-800 rounded-xl border border-white/10">
+                        <span className="text-[10px] font-bold text-slate-300 uppercase">Linha de Assunto:</span>
+                        <button
+                          type="button"
+                          onClick={() => setLetterSubjectStyle(prev => ({ ...prev, showSubject: prev.showSubject === false ? true : false }))}
+                          className={`px-2.5 py-1 text-[10px] font-black rounded-lg transition-all ${
+                            letterSubjectStyle.showSubject !== false 
+                              ? 'bg-emerald-500 text-slate-950 font-black' 
+                              : 'bg-white/10 text-slate-400 hover:bg-white/20'
+                          }`}
+                        >
+                          {letterSubjectStyle.showSubject !== false ? '✓ Ativado' : '✕ Oculto'}
+                        </button>
                       </div>
 
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <div className="space-y-1">
-                          <span className="text-[10px] font-bold text-slate-300 uppercase block">Tamanho do Assunto</span>
-                          <div className="flex bg-slate-800 p-1 rounded-xl border border-white/10 gap-1">
-                            {[
-                              { id: 'sm', label: '12' },
-                              { id: 'md', label: '14' },
-                              { id: 'lg', label: '16' },
-                              { id: 'xl', label: '18' },
-                              { id: '2xl', label: '21' },
-                            ].map((sz) => (
-                              <button
-                                key={sz.id}
-                                type="button"
-                                onClick={() => setLetterSubjectStyle(prev => ({ ...prev, fontSize: sz.id as any }))}
-                                className={`flex-1 py-1 text-[10px] font-bold rounded-lg transition-all ${letterSubjectStyle.fontSize === sz.id ? 'bg-amber-500 text-slate-950 font-black' : 'text-slate-300 hover:bg-white/10'}`}
-                              >
-                                {sz.label}
-                              </button>
-                            ))}
+                      {letterSubjectStyle.showSubject !== false && (
+                        <>
+                          <div className="space-y-1.5">
+                            <label className="text-[10px] font-bold text-slate-300 uppercase tracking-wider block">Assunto da Carta</label>
+                            <input 
+                              type="text" 
+                              value={letterSubject} 
+                              onChange={(e) => setLetterSubject(e.target.value)} 
+                              className="w-full px-3 py-2 bg-slate-800 border border-white/15 rounded-xl text-xs text-white placeholder-slate-400 focus:outline-none focus:border-amber-400" 
+                              placeholder="Ex: Candidatura para a vaga de Engenheiro..." 
+                            />
                           </div>
-                        </div>
 
-                        <div className="space-y-1">
-                          <span className="text-[10px] font-bold text-slate-300 uppercase block">Disposição</span>
-                          <div className="flex bg-slate-800 p-1 rounded-xl border border-white/10 gap-1">
-                            <button
-                              type="button"
-                              onClick={() => setLetterSubjectStyle(prev => ({ ...prev, layout: 'inline' }))}
-                              className={`flex-1 py-1 text-[10px] font-bold rounded-lg transition-all ${letterSubjectStyle.layout === 'inline' ? 'bg-amber-500 text-slate-950 font-black' : 'text-slate-300 hover:bg-white/10'}`}
-                            >
-                              Linha
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => setLetterSubjectStyle(prev => ({ ...prev, layout: 'block' }))}
-                              className={`flex-1 py-1 text-[10px] font-bold rounded-lg transition-all ${letterSubjectStyle.layout === 'block' ? 'bg-amber-500 text-slate-950 font-black' : 'text-slate-300 hover:bg-white/10'}`}
-                            >
-                              Bloco Destaque
-                            </button>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div className="space-y-1">
+                              <span className="text-[10px] font-bold text-slate-300 uppercase block">Tamanho do Assunto</span>
+                              <div className="flex bg-slate-800 p-1 rounded-xl border border-white/10 gap-1">
+                                {[
+                                  { id: 'sm', label: '12' },
+                                  { id: 'md', label: '14' },
+                                  { id: 'lg', label: '16' },
+                                  { id: 'xl', label: '18' },
+                                  { id: '2xl', label: '21' },
+                                ].map((sz) => (
+                                  <button
+                                    key={sz.id}
+                                    type="button"
+                                    onClick={() => setLetterSubjectStyle(prev => ({ ...prev, fontSize: sz.id as any }))}
+                                    className={`flex-1 py-1 text-[10px] font-bold rounded-lg transition-all ${letterSubjectStyle.fontSize === sz.id ? 'bg-amber-500 text-slate-950 font-black' : 'text-slate-300 hover:bg-white/10'}`}
+                                  >
+                                    {sz.label}
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+
+                            <div className="space-y-1">
+                              <span className="text-[10px] font-bold text-slate-300 uppercase block">Disposição</span>
+                              <div className="flex bg-slate-800 p-1 rounded-xl border border-white/10 gap-1">
+                                <button
+                                  type="button"
+                                  onClick={() => setLetterSubjectStyle(prev => ({ ...prev, layout: 'inline' }))}
+                                  className={`flex-1 py-1 text-[10px] font-bold rounded-lg transition-all ${letterSubjectStyle.layout === 'inline' ? 'bg-amber-500 text-slate-950 font-black' : 'text-slate-300 hover:bg-white/10'}`}
+                                >
+                                  Linha
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => setLetterSubjectStyle(prev => ({ ...prev, layout: 'block' }))}
+                                  className={`flex-1 py-1 text-[10px] font-bold rounded-lg transition-all ${letterSubjectStyle.layout === 'block' ? 'bg-amber-500 text-slate-950 font-black' : 'text-slate-300 hover:bg-white/10'}`}
+                                >
+                                  Bloco Destaque
+                                </button>
+                              </div>
+                            </div>
                           </div>
-                        </div>
-                      </div>
+                        </>
+                      )}
                     </div>
                   )}
 
@@ -11353,6 +11504,30 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
                     {resumeData.personalInfo.fullName || 'Sem nome'} • {template}
                   </p>
                 </div>
+              </div>
+
+              {/* Dual Switcher: CV vs Letter in Modal Header */}
+              <div className="flex items-center bg-white/10 p-1 rounded-2xl border border-white/15 gap-1 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setIsCoverLetterMode(false)}
+                  className={`px-3 py-1.5 text-xs font-black rounded-xl transition-all flex items-center gap-1.5 ${
+                    !isCoverLetterMode ? 'bg-primary-blue text-white shadow-md' : 'text-slate-300 hover:bg-white/10'
+                  }`}
+                >
+                  <FileText size={14} />
+                  <span>Currículo</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIsCoverLetterMode(true)}
+                  className={`px-3 py-1.5 text-xs font-black rounded-xl transition-all flex items-center gap-1.5 ${
+                    isCoverLetterMode ? 'bg-primary-blue text-white shadow-md' : 'text-slate-300 hover:bg-white/10'
+                  }`}
+                >
+                  <Mail size={14} />
+                  <span>Carta</span>
+                </button>
               </div>
 
               {/* Fullscreen Zoom Controls Bar inside Header */}

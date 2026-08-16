@@ -622,21 +622,41 @@ const Template5 = ({ data }: { data: ResumeData }) => {
 const CoverLetter = ({ data }: { data: any }) => {
   const cTheme = data.themeColor || '#1B2A4A';
   const isEn = data.language === 'en';
+  const subjectStyle = data.subjectStyle || {};
+  const showSubject = data.showSubject !== false && subjectStyle.showSubject !== false;
+  const defaultSubject = isEn ? 'Spontaneous Application' : 'Candidatura Espontânea';
+  const subjectText = (data.subject !== undefined ? data.subject : defaultSubject) || defaultSubject;
+  const showPrefix = subjectStyle.showPrefix !== false;
+  const isBlock = subjectStyle.layout === 'block';
+  const isUpper = !!subjectStyle.uppercase;
+  const textAlign = subjectStyle.align || 'left';
+  const isBold = subjectStyle.fontWeight === 'bold' || subjectStyle.fontWeight === 'black';
+
   const styles = StyleSheet.create({
     container: { padding: 50, flex: 1 },
-    header: { marginBottom: 30, borderBottom: `1.5pt solid ${cTheme}40`, paddingBottom: 20 },
+    header: { marginBottom: 25, borderBottom: `1.5pt solid ${cTheme}40`, paddingBottom: 20 },
     name: { fontSize: 24, fontWeight: 900, color: cTheme, marginBottom: 6, lineHeight: 1.1 },
     title: { fontSize: 10, fontWeight: 700, color: '#6B7280', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 12 },
     contactRow: { flexDirection: 'row', gap: 15, alignItems: 'center' },
     contactItem: { flexDirection: 'row', alignItems: 'center' },
     contactText: { fontSize: 9, color: '#4B5563', marginLeft: 4 },
-    dateRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 30, marginTop: 30, fontSize: 10, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase' },
+    dateRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 25, marginTop: 15, fontSize: 10, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase' },
+    subjectBox: { marginBottom: 25, padding: isBlock ? 8 : 0, backgroundColor: isBlock ? '#F8FAFC' : 'transparent', borderBottom: isBlock ? '1pt solid #E2E8F0' : 'none' },
+    subjectPrefix: { fontSize: 9, color: '#64748B', fontWeight: 700, textTransform: 'uppercase', marginBottom: 2 },
+    subjectText: { 
+      fontSize: subjectStyle.fontSize === 'sm' ? 10 : subjectStyle.fontSize === 'lg' ? 14 : subjectStyle.fontSize === 'xl' ? 16 : subjectStyle.fontSize === '2xl' ? 18 : 12, 
+      fontWeight: isBold ? 900 : 400, 
+      color: '#1E293B', 
+      textTransform: isUpper ? 'uppercase' : 'none',
+      textAlign: textAlign as any 
+    },
     content: { fontSize: 12, lineHeight: 1.8, color: '#374151', textAlign: 'justify' },
-    footer: { marginTop: 60, alignItems: 'flex-end' },
+    footer: { marginTop: 50, alignItems: 'flex-end' },
     signature: { fontSize: 14, fontWeight: 900, color: cTheme, marginTop: 10, fontStyle: 'italic' }
   });
 
   const info = data.personalInfo || {};
+  const formattedDate = (info.location ? info.location.split(',')[0] + ', ' : '') + new Date().toLocaleDateString(isEn ? 'en-US' : 'pt-BR', { day: '2-digit', month: 'long', year: 'numeric' });
 
   return (
     <View style={styles.container}>
@@ -665,10 +685,31 @@ const CoverLetter = ({ data }: { data: any }) => {
         </View>
       </View>
 
-      <View style={styles.dateRow}>
-        <Text>Ref: {isEn ? 'Spontaneous Application' : 'Candidatura Espontânea'}</Text>
-        <Text>{isEn ? '' : 'Luanda, '}{new Date().toLocaleDateString(isEn ? 'en-US' : 'pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })}</Text>
-      </View>
+      {showSubject ? (
+        isBlock ? (
+          <View style={{ marginBottom: 20 }}>
+            <View style={styles.dateRow}>
+              <Text>{isEn ? 'COVER LETTER' : 'CARTA DE APRESENTAÇÃO'}</Text>
+              <Text>{formattedDate}</Text>
+            </View>
+            <View style={styles.subjectBox}>
+              {showPrefix && <Text style={styles.subjectPrefix}>{isEn ? 'Subject:' : 'Assunto:'}</Text>}
+              <Text style={styles.subjectText}>{subjectText}</Text>
+            </View>
+          </View>
+        ) : (
+          <View style={styles.dateRow}>
+            <Text style={[styles.subjectText, { fontSize: 10, maxWidth: '70%' }]}>
+              {showPrefix ? `${isEn ? 'Assunto: ' : 'Assunto: '}` : ''}{subjectText}
+            </Text>
+            <Text>{formattedDate}</Text>
+          </View>
+        )
+      ) : (
+        <View style={[styles.dateRow, { justifyContent: 'flex-end' }]}>
+          <Text>{formattedDate}</Text>
+        </View>
+      )}
 
       <Text style={styles.content}>
         {data.content ? data.content.replace(/\*/g, '') : ''}
