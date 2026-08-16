@@ -49,6 +49,9 @@ import {
   Maximize2,
   Check,
   ChevronDown,
+  ChevronUp,
+  ArrowUpDown,
+  Calendar,
   Eye,
   AlignLeft,
   AlignCenter,
@@ -2396,7 +2399,7 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
         }));
       }
     } else if (dragState.type === 'sectionSpacing') {
-      currentVal = Math.max(5, Math.min(60, dragState.startVal + dy / 2));
+      currentVal = Math.max(0, Math.min(60, dragState.startVal + dy / 2));
       updatedStyle.sectionSpacing = Math.round(currentVal);
       
       secondaryCurrentVal = Math.max(10, Math.min(30, (dragState.secondaryStartVal || 13) + dx / 10));
@@ -2411,7 +2414,7 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
         }));
       }
     } else if (dragState.type === 'experience' || dragState.type === 'education') {
-      const spaceVal = Math.max(2, Math.min(40, dragState.secondaryStartVal + dx / 5));
+      const spaceVal = Math.max(0, Math.min(40, dragState.secondaryStartVal + dx / 5));
       updatedStyle.itemSpacing = Math.round(spaceVal);
       
       const thresh = 65;
@@ -3193,11 +3196,38 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
         #resume-content .t1-section-title,
         #resume-content .t1-right-title,
         #resume-content .t2-section-title,
+        #resume-content .t3-section-title,
+        #resume-content [class*="-section-title"],
         #resume-content h3,
         #resume-content h2 {
           font-size: ${Math.min(22, (style.fontSize || 13) + 3)}px !important;
-          margin-bottom: ${style.sectionSpacing}px !important;
-          margin-top: ${Math.max(10, (style.sectionSpacing || 25) - 5)}px !important;
+          margin-bottom: ${Math.max(0, Math.round((style.sectionSpacing !== undefined ? style.sectionSpacing : 25) * 0.35))}px !important;
+          margin-top: ${Math.max(0, Math.round((style.sectionSpacing !== undefined ? style.sectionSpacing : 25) * 0.35))}px !important;
+        }
+
+        /* Section Outer Containers & Gaps Overrides */
+        #resume-content section,
+        #resume-content [class*="-section"],
+        #resume-content .cv-section,
+        #resume-content [data-section],
+        #resume-content .grid.grid-cols-\[170px_1fr\],
+        #resume-content [class*="mb-8"],
+        #resume-content [class*="mb-6"],
+        #resume-content [class*="mb-5"],
+        #resume-content [class*="mb-4"],
+        #resume-content [class*="mb-3.5"],
+        #resume-content [class*="mb-3"] {
+          margin-bottom: ${Math.max(0, style.sectionSpacing !== undefined ? style.sectionSpacing : 25)}px !important;
+        }
+
+        /* Tailwind space-y-* Gap Overrides for Section Layouts */
+        #resume-content .space-y-8 > :not([hidden]) ~ :not([hidden]),
+        #resume-content .space-y-6 > :not([hidden]) ~ :not([hidden]),
+        #resume-content .space-y-5 > :not([hidden]) ~ :not([hidden]),
+        #resume-content .space-y-4 > :not([hidden]) ~ :not([hidden]),
+        #resume-content .space-y-3.5 > :not([hidden]) ~ :not([hidden]),
+        #resume-content .space-y-3 > :not([hidden]) ~ :not([hidden]) {
+          margin-top: ${Math.max(0, Math.round((style.sectionSpacing !== undefined ? style.sectionSpacing : 25) * 0.5))}px !important;
         }
 
         /* Overrides de tamanho de letra individuais por secção */
@@ -3422,8 +3452,13 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
         #resume-content .t2-edu-item,
         #resume-content .t1-edu-item,
         #resume-content .t1-contact-item,
-        #resume-content .t2-contact-row {
-          margin-bottom: ${style.itemSpacing}px !important;
+        #resume-content .t2-contact-row,
+        #resume-content [class*="-exp-item"],
+        #resume-content [class*="-edu-item"],
+        #resume-content [class*="-item"],
+        #resume-content [class*="-experience"] > div,
+        #resume-content [class*="-education"] > div {
+          margin-bottom: ${Math.max(0, style.itemSpacing !== undefined ? style.itemSpacing : 10)}px !important;
         }
 
         /* Custom Icon Colors */
@@ -6659,6 +6694,109 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
     setResumeData(prev => ({ ...prev, skills: newSkills }));
   };
 
+  // --- Chronological Sorting Helpers (Organizar por Data / Presente) ---
+  const parseDateWeight = (dateStr?: string, isCurrentFlag?: boolean): number => {
+    if (isCurrentFlag) return 999912; // Ongoing/Current position = highest priority (most recent)
+
+    if (!dateStr || typeof dateStr !== 'string') return -1;
+
+    const clean = dateStr.trim().toLowerCase();
+    if (!clean) return -1;
+
+    const presentKeywords = ['presente', 'present', 'atual', 'atualidade', 'hoje', 'now', 'current', 'em curso', 'cursando'];
+    if (presentKeywords.some(kw => clean.includes(kw))) {
+      return 999912;
+    }
+
+    const yearMatch = clean.match(/\b(19\d\d|20\d\d)\b/);
+    const year = yearMatch ? parseInt(yearMatch[1], 10) : 0;
+
+    if (year === 0) {
+      const numMatch = clean.match(/\b\d{2,4}\b/);
+      if (numMatch) {
+        const num = parseInt(numMatch[0], 10);
+        if (num < 100) {
+          const fullYear = num > 50 ? 1900 + num : 2000 + num;
+          return fullYear * 100;
+        }
+        return num * 100;
+      }
+      return -1;
+    }
+
+    let month = 6;
+    const monthMap: Record<string, number> = {
+      jan: 1, janeiro: 1, 'jan.': 1, january: 1,
+      fev: 2, fevereiro: 2, 'fev.': 2, february: 2, feb: 2,
+      mar: 3, março: 3, marco: 3, 'mar.': 3, march: 3,
+      abr: 4, abril: 4, 'abr.': 4, april: 4, apr: 4,
+      mai: 5, maio: 5, 'mai.': 5, may: 5,
+      jun: 6, junho: 6, 'jun.': 6, june: 6,
+      jul: 7, julho: 7, 'jul.': 7, july: 7,
+      ago: 8, agosto: 8, 'ago.': 8, august: 8, aug: 8,
+      set: 9, setembro: 9, 'set.': 9, september: 9, sep: 9,
+      out: 10, outubro: 10, 'out.': 10, october: 10, oct: 10,
+      nov: 11, novembro: 11, 'nov.': 11, november: 11,
+      dez: 12, dezembro: 12, 'dez.': 12, december: 12, dec: 12
+    };
+
+    for (const [key, val] of Object.entries(monthMap)) {
+      if (clean.includes(key)) {
+        month = val;
+        break;
+      }
+    }
+
+    const slashMatch = clean.match(/\b(0?[1-9]|1[0-2])[\/\-\.](19\d\d|20\d\d)\b/);
+    if (slashMatch) {
+      month = parseInt(slashMatch[1], 10);
+    } else {
+      const revMatch = clean.match(/\b(19\d\d|20\d\d)[\/\-\.](0?[1-9]|1[0-2])\b/);
+      if (revMatch) {
+        month = parseInt(revMatch[2], 10);
+      }
+    }
+
+    return year * 100 + month;
+  };
+
+  const handleSortExperienceChronologically = () => {
+    setResumeData(prev => {
+      const sorted = [...(prev.experience || [])].sort((a, b) => {
+        const endA = parseDateWeight(a.endDate, a.current);
+        const endB = parseDateWeight(b.endDate, b.current);
+        if (endA !== endB) {
+          return endB - endA; // Most recent first
+        }
+        const startA = parseDateWeight(a.startDate);
+        const startB = parseDateWeight(b.startDate);
+        return startB - startA;
+      });
+      return { ...prev, experience: sorted };
+    });
+  };
+
+  const handleSortEducationChronologically = () => {
+    setResumeData(prev => {
+      const sorted = [...(prev.education || [])].sort((a, b) => {
+        const endA = parseDateWeight(a.endDate);
+        const endB = parseDateWeight(b.endDate);
+        if (endA !== endB) {
+          return endB - endA; // Most recent first
+        }
+        const startA = parseDateWeight(a.startDate);
+        const startB = parseDateWeight(b.startDate);
+        return startB - startA;
+      });
+      return { ...prev, education: sorted };
+    });
+  };
+
+  const handleSortAllChronologically = () => {
+    handleSortExperienceChronologically();
+    handleSortEducationChronologically();
+  };
+
   const handleAutoAlign = () => {
     const element = document.getElementById(isCoverLetterMode ? 'cover-letter-content' : 'resume-content');
     if (!element) return;
@@ -6701,9 +6839,9 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
     
     const newFontSize = Number(Math.max(10, Math.min(15, (currentStyles.fontSize || 13) * ratio)).toFixed(1));
     const newTitleSize = Math.round(Math.max(18, Math.min(36, (currentStyles.titleSize || 26) * ratio)));
-    const newSectionSpacing = Math.round(Math.max(8, Math.min(30, (currentStyles.sectionSpacing || 25) * ratio)));
-    const newItemSpacing = Math.round(Math.max(3, Math.min(18, (currentStyles.itemSpacing || 10) * ratio)));
-    const newMargins = Math.round(Math.max(12, Math.min(45, (currentStyles.margins || 30) * ratio)));
+    const newSectionSpacing = Math.round(Math.max(0, Math.min(30, (currentStyles.sectionSpacing || 25) * ratio)));
+    const newItemSpacing = Math.round(Math.max(0, Math.min(18, (currentStyles.itemSpacing || 10) * ratio)));
+    const newMargins = Math.round(Math.max(0, Math.min(45, (currentStyles.margins || 30) * ratio)));
     const newLineHeight = Number(Math.max(1.15, Math.min(1.5, (currentStyles.lineHeight || 1.4) * ratio)).toFixed(2));
 
     setResumeData(prev => ({
@@ -6755,9 +6893,9 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
 
       const newFS = clamp(curFS * ratio, 9.5, 16);
       const newTitle = clamp(curTitle * ratio, 18, 38);
-      const newSec = clamp(curSec * ratio, 10, 35);
-      const newItem = clamp(curItem * ratio, 4, 18);
-      const newMargins = clamp(curMargins * ratio, 12, 45);
+      const newSec = clamp(curSec * ratio, 0, 35);
+      const newItem = clamp(curItem * ratio, 0, 18);
+      const newMargins = clamp(curMargins * ratio, 0, 45);
 
       const scaleIndiv = (val?: number) => clamp((val || curFS) * ratio, 9, 18);
 
@@ -9264,26 +9402,107 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
 
               {activeStep === 1 && ( /* Experience */
                 <div className="space-y-6">
+                  {/* Step Header with Chronological Sort Button */}
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white/70 backdrop-blur-md p-4 rounded-2xl border border-border-main shadow-sm">
+                    <div>
+                      <h3 className="text-xs font-black uppercase tracking-[0.15em] text-primary-blue flex items-center gap-2">
+                        <Briefcase size={16} />
+                        <span>{resumeData.language === 'en' ? 'Work Experience' : 'Experiência Profissional'}</span>
+                      </h3>
+                      <p className="text-[11px] text-gray-500 font-medium">
+                        Ordene os cargos do mais recente ("Presente") ao mais antigo.
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleSortExperienceChronologically}
+                      className="px-3.5 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-xl text-[11px] font-bold uppercase tracking-wider flex items-center justify-center gap-2 shadow-md hover:shadow-lg transition-all active:scale-95 cursor-pointer shrink-0"
+                      title="Organizar todas as experiências por data (mais recente e 'Presente' no topo)"
+                    >
+                      <ArrowUpDown size={14} />
+                      <span>Organizar Cronologicamente</span>
+                    </button>
+                  </div>
+
                   {(resumeData.experience || []).map((ex, i) => (
                     <div key={ex.id || `exp-${i}`} className="p-5 bg-bg-main rounded-2xl border border-border-main space-y-5 relative group">
-                      <button onClick={() => removeExperience(ex.id)} className="absolute top-4 right-4 text-red-500 opacity-0 group-hover:opacity-100 transition-opacity">
-                         <Trash2 size={16} />
-                      </button>
+                      <div className="flex items-center justify-between pb-2 border-b border-gray-100">
+                        <span className="text-xs font-bold text-gray-600 uppercase tracking-wider flex items-center gap-1.5">
+                          <Briefcase size={14} className="text-primary-blue" />
+                          <span>Cargo #{i + 1}</span>
+                          {ex.current && (
+                            <span className="ml-2 px-2 py-0.5 bg-emerald-100 text-emerald-800 rounded-full text-[9px] font-extrabold uppercase tracking-widest">
+                              Presente / Atual
+                            </span>
+                          )}
+                        </span>
+                        <div className="flex items-center gap-1.5">
+                          <button 
+                            type="button"
+                            onClick={() => moveExperience(i, 'up')} 
+                            disabled={i === 0}
+                            className="p-1.5 text-gray-500 hover:text-gray-800 disabled:opacity-30 disabled:pointer-events-none rounded-lg hover:bg-gray-100 transition-colors"
+                            title="Mover para cima"
+                          >
+                             <ChevronUp size={16} />
+                          </button>
+                          <button 
+                            type="button"
+                            onClick={() => moveExperience(i, 'down')} 
+                            disabled={i === (resumeData.experience || []).length - 1}
+                            className="p-1.5 text-gray-500 hover:text-gray-800 disabled:opacity-30 disabled:pointer-events-none rounded-lg hover:bg-gray-100 transition-colors"
+                            title="Mover para baixo"
+                          >
+                             <ChevronDown size={16} />
+                          </button>
+                          <button 
+                            type="button"
+                            onClick={() => removeExperience(ex.id)} 
+                            className="p-1.5 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors flex items-center gap-1 text-xs font-semibold cursor-pointer ml-1"
+                            title="Eliminar cargo"
+                          >
+                             <Trash2 size={15} />
+                             <span className="hidden sm:inline">Eliminar</span>
+                          </button>
+                        </div>
+                      </div>
+
                       <Input label="Empresa" value={ex.company} onChange={(v: string) => {
                          const n = [...resumeData.experience]; n[i].company = v; setResumeData(p => ({...p, experience: n}));
-                      }} />
+                      }} placeholder="Ex: Google, Banco BIC, Sonangol..." />
                       <Input label="Cargo" value={ex.position} onChange={(v: string) => {
                          const n = [...resumeData.experience]; n[i].position = v; setResumeData(p => ({...p, experience: n}));
-                      }} />
-                      <div className="grid grid-cols-2 gap-4">
-                        <Input label="Início" value={ex.startDate} onChange={(v: string) => {
-                           const n = [...resumeData.experience]; n[i].startDate = v; setResumeData(p => ({...p, experience: n}));
-                        }} placeholder="Ex: 2022" />
-                        <Input label="Fim" value={ex.endDate} onChange={(v: string) => {
-                           const n = [...resumeData.experience]; n[i].endDate = v; setResumeData(p => ({...p, experience: n}));
-                        }} placeholder="Ex: Presente" disabled={ex.current} />
+                      }} placeholder="Ex: Gestor de Projetos, Engenheiro..." />
+
+                      <div className="space-y-3">
+                        <div className="grid grid-cols-2 gap-4">
+                          <Input label="Data de Início" value={ex.startDate} onChange={(v: string) => {
+                             const n = [...resumeData.experience]; n[i].startDate = v; setResumeData(p => ({...p, experience: n}));
+                          }} placeholder="Ex: 2022 ou Jan 2022" />
+                          <Input label="Data de Fim" value={ex.current ? "Presente" : ex.endDate} onChange={(v: string) => {
+                             const n = [...resumeData.experience]; n[i].endDate = v; setResumeData(p => ({...p, experience: n}));
+                          }} placeholder="Ex: 2024 ou Presente" disabled={ex.current} />
+                        </div>
+
+                        <label className="flex items-center gap-2 cursor-pointer text-xs font-bold text-gray-700 pt-1 select-none">
+                          <input
+                            type="checkbox"
+                            checked={ex.current || false}
+                            onChange={(e) => {
+                              const n = [...resumeData.experience];
+                              n[i].current = e.target.checked;
+                              if (e.target.checked) {
+                                n[i].endDate = 'Presente';
+                              }
+                              setResumeData(p => ({ ...p, experience: n }));
+                            }}
+                            className="w-4 h-4 rounded border-gray-300 text-primary-blue focus:ring-primary-blue accent-primary-blue cursor-pointer"
+                          />
+                          <span>Este é o meu cargo atual / trabalho presente</span>
+                        </label>
                       </div>
-                      <TextArea label="Atribuições" value={ex.description} onChange={(v: string) => {
+
+                      <TextArea label="Atribuições e Conquistas" value={ex.description} onChange={(v: string) => {
                          const n = [...resumeData.experience]; n[i].description = v; setResumeData(p => ({...p, experience: n}));
                       }} onOptimize={() => handleOptimize('experience', i)} isOptimizing={optimizingId === `exp-${i}`} />
                     </div>
@@ -9294,33 +9513,78 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
 
               {activeStep === 2 && ( /* Education */
                 <div className="space-y-6">
+                  {/* Step Header with Chronological Sort Button */}
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white/70 backdrop-blur-md p-4 rounded-2xl border border-border-main shadow-sm">
+                    <div>
+                      <h3 className="text-xs font-black uppercase tracking-[0.15em] text-primary-blue flex items-center gap-2">
+                        <GraduationCap size={16} />
+                        <span>{resumeData.language === 'en' ? 'Education' : 'Formação Académica'}</span>
+                      </h3>
+                      <p className="text-[11px] text-gray-500 font-medium">
+                        Ordene os estudos dos mais recentes aos mais antigos.
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleSortEducationChronologically}
+                      className="px-3.5 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-xl text-[11px] font-bold uppercase tracking-wider flex items-center justify-center gap-2 shadow-md hover:shadow-lg transition-all active:scale-95 cursor-pointer shrink-0"
+                      title="Organizar todas as formações por data (mais recente no topo)"
+                    >
+                      <ArrowUpDown size={14} />
+                      <span>Organizar Cronologicamente</span>
+                    </button>
+                  </div>
+
                   {(resumeData.education || []).map((ed, i) => (
                     <div key={ed.id || `edu-${i}`} className="p-5 bg-bg-main rounded-2xl border border-border-main space-y-5 relative group">
                        <div className="flex items-center justify-between pb-2 border-b border-gray-100">
-                          <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Formação #{i + 1}</span>
-                          <button 
-                            type="button"
-                            onClick={() => removeEducation(ed.id, i)} 
-                            className="p-1.5 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors flex items-center gap-1.5 text-xs font-semibold cursor-pointer"
-                            title="Eliminar esta formação"
-                          >
-                             <Trash2 size={15} />
-                             <span>Eliminar</span>
-                          </button>
+                          <span className="text-xs font-bold text-gray-600 uppercase tracking-wider flex items-center gap-1.5">
+                            <GraduationCap size={14} className="text-primary-blue" />
+                            <span>Formação #{i + 1}</span>
+                          </span>
+                          <div className="flex items-center gap-1.5">
+                            <button 
+                              type="button"
+                              onClick={() => moveEducation(i, 'up')} 
+                              disabled={i === 0}
+                              className="p-1.5 text-gray-500 hover:text-gray-800 disabled:opacity-30 disabled:pointer-events-none rounded-lg hover:bg-gray-100 transition-colors"
+                              title="Mover para cima"
+                            >
+                               <ChevronUp size={16} />
+                            </button>
+                            <button 
+                              type="button"
+                              onClick={() => moveEducation(i, 'down')} 
+                              disabled={i === (resumeData.education || []).length - 1}
+                              className="p-1.5 text-gray-500 hover:text-gray-800 disabled:opacity-30 disabled:pointer-events-none rounded-lg hover:bg-gray-100 transition-colors"
+                              title="Mover para baixo"
+                            >
+                               <ChevronDown size={16} />
+                            </button>
+                            <button 
+                              type="button"
+                              onClick={() => removeEducation(ed.id, i)} 
+                              className="p-1.5 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors flex items-center gap-1 text-xs font-semibold cursor-pointer ml-1"
+                              title="Eliminar esta formação"
+                            >
+                               <Trash2 size={15} />
+                               <span className="hidden sm:inline">Eliminar</span>
+                            </button>
+                          </div>
                        </div>
                        <Input label="Instituição" value={ed.institution} onChange={(v: string) => {
                          const n = [...resumeData.education]; n[i].institution = v; setResumeData(p => ({...p, education: n}));
-                       }} />
+                       }} placeholder="Ex: Universidade Agostinho Neto" />
                        <Input label="Curso/Grau" value={ed.degree} onChange={(v: string) => {
                          const n = [...resumeData.education]; n[i].degree = v; setResumeData(p => ({...p, education: n}));
-                       }} />
+                       }} placeholder="Ex: Licenciatura em Gestão de Empresas" />
                        <div className="grid grid-cols-2 gap-4">
                           <Input label="Início" value={ed.startDate} onChange={(v: string) => {
                             const n = [...resumeData.education]; n[i].startDate = v; setResumeData(p => ({...p, education: n}));
                           }} placeholder="Ex: 2018" />
-                          <Input label="Fim" value={ed.endDate} onChange={(v: string) => {
+                          <Input label="Fim / Conclusão" value={ed.endDate} onChange={(v: string) => {
                             const n = [...resumeData.education]; n[i].endDate = v; setResumeData(p => ({...p, education: n}));
-                          }} placeholder="Ex: 2022" />
+                          }} placeholder="Ex: 2022 ou Presente" />
                        </div>
                     </div>
                   ))}
@@ -9765,24 +10029,110 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
                   </div>
 
                   <div className="p-6 bg-white border border-border-main rounded-3xl space-y-6">
-                     <h4 className="text-[10px] font-black uppercase tracking-widest text-text-muted">Ajustes Avançados (Afeta alguns templates)</h4>
-                     <div className="space-y-4">
+                     <h4 className="text-[10px] font-black uppercase tracking-widest text-text-muted">Ajustes Avançados de Espaçamento</h4>
+                     <div className="space-y-5">
+                        {/* Espaçamento de Seções */}
                         <div className="space-y-2">
-                           <div className="flex justify-between text-[11px] font-bold text-gray-700 uppercase tracking-widest"><span>Espaçamento de Seções</span> <span>{resumeData.styleConfig?.sectionSpacing || 25}px</span></div>
-                           <input type="range" min="10" max="40" step="1" value={resumeData.styleConfig?.sectionSpacing || 25} onChange={(e) => setResumeData(p => ({...p, styleConfig: {...(p.styleConfig||{}), sectionSpacing: Number(e.target.value)}}))} className="w-full h-1 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-primary-blue" />
+                           <div className="flex justify-between text-[11px] font-bold text-gray-700 uppercase tracking-widest">
+                             <span>Espaçamento entre Secções</span> 
+                             <span className="font-mono text-primary-blue font-bold">{resumeData.styleConfig?.sectionSpacing ?? 25}px</span>
+                           </div>
+                           <input type="range" min="0" max="50" step="1" value={resumeData.styleConfig?.sectionSpacing ?? 25} onChange={(e) => setResumeData(p => ({...p, styleConfig: {...(p.styleConfig||{}), sectionSpacing: Number(e.target.value)}}))} className="w-full h-1 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-primary-blue" />
+                           <div className="flex flex-wrap gap-1.5 pt-0.5">
+                              {[
+                                { label: 'Zero (0px)', val: 0 },
+                                { label: 'Mínimo (6px)', val: 6 },
+                                { label: 'Compacto (12px)', val: 12 },
+                                { label: 'Normal (22px)', val: 22 },
+                                { label: 'Amplo (32px)', val: 32 }
+                              ].map(preset => (
+                                <button
+                                  key={preset.val}
+                                  type="button"
+                                  onClick={() => setResumeData(p => ({ ...p, styleConfig: { ...(p.styleConfig || {}), sectionSpacing: preset.val } }))}
+                                  className={`px-2 py-1 text-[9px] font-bold rounded-lg border transition-all cursor-pointer ${
+                                    (resumeData.styleConfig?.sectionSpacing ?? 25) === preset.val
+                                      ? 'bg-primary-blue text-white border-primary-blue shadow-sm scale-105'
+                                      : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
+                                  }`}
+                                >
+                                  {preset.label}
+                                </button>
+                              ))}
+                           </div>
                         </div>
+
+                        {/* Espaçamento Interno */}
                         <div className="space-y-2">
-                           <div className="flex justify-between text-[11px] font-bold text-gray-700 uppercase tracking-widest"><span>Espaçamento Interno</span> <span>{resumeData.styleConfig?.itemSpacing || 10}px</span></div>
-                           <input type="range" min="4" max="24" step="1" value={resumeData.styleConfig?.itemSpacing || 10} onChange={(e) => setResumeData(p => ({...p, styleConfig: {...(p.styleConfig||{}), itemSpacing: Number(e.target.value)}}))} className="w-full h-1 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-primary-blue" />
+                           <div className="flex justify-between text-[11px] font-bold text-gray-700 uppercase tracking-widest">
+                             <span>Espaçamento Interno (Itens)</span> 
+                             <span className="font-mono text-primary-blue font-bold">{resumeData.styleConfig?.itemSpacing ?? 10}px</span>
+                           </div>
+                           <input type="range" min="0" max="30" step="1" value={resumeData.styleConfig?.itemSpacing ?? 10} onChange={(e) => setResumeData(p => ({...p, styleConfig: {...(p.styleConfig||{}), itemSpacing: Number(e.target.value)}}))} className="w-full h-1 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-primary-blue" />
+                           <div className="flex flex-wrap gap-1.5 pt-0.5">
+                              {[
+                                { label: '0px', val: 0 },
+                                { label: '4px', val: 4 },
+                                { label: '8px', val: 8 },
+                                { label: '12px', val: 12 },
+                                { label: '18px', val: 18 }
+                              ].map(preset => (
+                                <button
+                                  key={preset.val}
+                                  type="button"
+                                  onClick={() => setResumeData(p => ({ ...p, styleConfig: { ...(p.styleConfig || {}), itemSpacing: preset.val } }))}
+                                  className={`px-2 py-1 text-[9px] font-bold rounded-lg border transition-all cursor-pointer ${
+                                    (resumeData.styleConfig?.itemSpacing ?? 10) === preset.val
+                                      ? 'bg-primary-blue text-white border-primary-blue shadow-sm scale-105'
+                                      : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
+                                  }`}
+                                >
+                                  {preset.label}
+                                </button>
+                              ))}
+                           </div>
                         </div>
+
+                        {/* Margens da Folha */}
                         <div className="space-y-2">
-                           <div className="flex justify-between text-[11px] font-bold text-gray-700 uppercase tracking-widest"><span>Margens da Folha</span> <span>{resumeData.styleConfig?.margins || 30}px</span></div>
-                           <input type="range" min="10" max="60" step="1" value={resumeData.styleConfig?.margins || 30} onChange={(e) => setResumeData(p => ({...p, styleConfig: {...(p.styleConfig||{}), margins: Number(e.target.value)}}))} className="w-full h-1 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-primary-blue" />
+                           <div className="flex justify-between text-[11px] font-bold text-gray-700 uppercase tracking-widest">
+                             <span>Margens da Folha</span> 
+                             <span className="font-mono text-primary-blue font-bold">{resumeData.styleConfig?.margins ?? 30}px</span>
+                           </div>
+                           <input type="range" min="0" max="60" step="1" value={resumeData.styleConfig?.margins ?? 30} onChange={(e) => setResumeData(p => ({...p, styleConfig: {...(p.styleConfig||{}), margins: Number(e.target.value)}}))} className="w-full h-1 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-primary-blue" />
+                           <div className="flex flex-wrap gap-1.5 pt-0.5">
+                              {[
+                                { label: '0px', val: 0 },
+                                { label: '10px', val: 10 },
+                                { label: '20px', val: 20 },
+                                { label: '30px', val: 30 },
+                                { label: '45px', val: 45 }
+                              ].map(preset => (
+                                <button
+                                  key={preset.val}
+                                  type="button"
+                                  onClick={() => setResumeData(p => ({ ...p, styleConfig: { ...(p.styleConfig || {}), margins: preset.val } }))}
+                                  className={`px-2 py-1 text-[9px] font-bold rounded-lg border transition-all cursor-pointer ${
+                                    (resumeData.styleConfig?.margins ?? 30) === preset.val
+                                      ? 'bg-primary-blue text-white border-primary-blue shadow-sm scale-105'
+                                      : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
+                                  }`}
+                                >
+                                  {preset.label}
+                                </button>
+                              ))}
+                           </div>
                         </div>
+
+                        {/* Espaçamento de Linha */}
                         <div className="space-y-2">
-                           <div className="flex justify-between text-[11px] font-bold text-gray-700 uppercase tracking-widest"><span>Espaçamento de Linha (Textos)</span> <span>{resumeData.styleConfig?.lineHeight || 1.4}</span></div>
-                           <input type="range" min="1.0" max="2.5" step="0.05" value={resumeData.styleConfig?.lineHeight || 1.4} onChange={(e) => setResumeData(p => ({...p, styleConfig: {...(p.styleConfig||{}), lineHeight: Number(e.target.value)}}))} className="w-full h-1 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-primary-blue" />
+                           <div className="flex justify-between text-[11px] font-bold text-gray-700 uppercase tracking-widest">
+                             <span>Espaçamento de Linha (Textos)</span> 
+                             <span className="font-mono text-primary-blue font-bold">{resumeData.styleConfig?.lineHeight || 1.4}</span>
+                           </div>
+                           <input type="range" min="0.8" max="2.5" step="0.05" value={resumeData.styleConfig?.lineHeight || 1.4} onChange={(e) => setResumeData(p => ({...p, styleConfig: {...(p.styleConfig||{}), lineHeight: Number(e.target.value)}}))} className="w-full h-1 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-primary-blue" />
                         </div>
+
                         <div className="space-y-2">
                            <div className="flex justify-between text-[11px] font-bold text-gray-700 uppercase tracking-widest"><span>Tamanho do Nome</span> <span>{resumeData.styleConfig?.titleSize || 26}px</span></div>
                            <input type="range" min="16" max="48" step="1" value={resumeData.styleConfig?.titleSize || 26} onChange={(e) => setResumeData(p => ({...p, styleConfig: {...(p.styleConfig||{}), titleSize: Number(e.target.value)}}))} className="w-full h-1 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-primary-blue" />
@@ -10716,21 +11066,31 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
                   </div>
 
                   {/* Quick Action Buttons */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                     <button
                       type="button"
                       onClick={handleAutoFitA4Content}
-                      className="flex items-center justify-center gap-2 p-3 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white rounded-2xl font-black text-xs shadow-lg transition-all active:scale-95"
+                      className="flex items-center justify-center gap-2 p-3 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white rounded-2xl font-black text-xs shadow-lg transition-all active:scale-95 cursor-pointer"
                     >
                       <Sparkles size={16} />
-                      <span>⚡ Encaixar Conteúdo em 1 Página A4</span>
+                      <span>⚡ Encaixar em 1 Página</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={handleSortAllChronologically}
+                      className="flex items-center justify-center gap-2 p-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-2xl font-black text-xs shadow-lg transition-all active:scale-95 cursor-pointer"
+                      title="Organizar todas as experiências e formações por data (mais recente no topo)"
+                    >
+                      <ArrowUpDown size={16} />
+                      <span>📅 Organizar Cronologicamente</span>
                     </button>
 
                     <div className="flex items-center justify-between p-2.5 bg-white/10 rounded-2xl border border-white/10">
-                      <span className="text-[11px] font-bold text-slate-200 uppercase tracking-wider pl-1">Escala Global de Texto:</span>
-                      <div className="flex items-center gap-1.5 bg-slate-900/80 px-2 py-1 rounded-xl border border-white/15">
+                      <span className="text-[10px] font-bold text-slate-200 uppercase tracking-wider pl-1">Escala Texto:</span>
+                      <div className="flex items-center gap-1 bg-slate-900/80 px-1.5 py-1 rounded-xl border border-white/15">
                         <button type="button" onClick={() => handleGlobalSizeChange(-0.5)} className="p-1 hover:bg-white/20 rounded-lg text-white"><Minus size={12} /></button>
-                        <span className="text-xs font-mono font-black text-amber-400 min-w-[40px] text-center">{(resumeData.styleConfig?.fontSize || 13).toFixed(1)}px</span>
+                        <span className="text-xs font-mono font-black text-amber-400 min-w-[36px] text-center">{(resumeData.styleConfig?.fontSize || 13).toFixed(1)}px</span>
                         <button type="button" onClick={() => handleGlobalSizeChange(0.5)} className="p-1 hover:bg-white/20 rounded-lg text-white"><Plus size={12} /></button>
                       </div>
                     </div>
@@ -10739,43 +11099,91 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
                   {/* Sliders for Spacings & Margins */}
                   {!isCoverLetterMode && (
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-white/10 text-xs">
-                      <div className="space-y-1">
+                      <div className="space-y-1.5">
                         <div className="flex justify-between font-bold text-slate-300 text-[10px] uppercase">
                           <span>Espaçamento de Secções</span>
-                          <span className="text-amber-400 font-mono">{resumeData.styleConfig?.sectionSpacing || 25}px</span>
+                          <span className="text-amber-400 font-mono">{resumeData.styleConfig?.sectionSpacing ?? 25}px</span>
                         </div>
                         <input 
-                          type="range" min="8" max="40" step="1" 
-                          value={resumeData.styleConfig?.sectionSpacing || 25} 
+                          type="range" min="0" max="50" step="1" 
+                          value={resumeData.styleConfig?.sectionSpacing ?? 25} 
                           onChange={(e) => setResumeData(p => ({...p, styleConfig: {...(p.styleConfig||{}), sectionSpacing: Number(e.target.value)}}))} 
                           className="w-full h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-amber-400" 
                         />
+                        <div className="flex gap-1">
+                          {[0, 6, 12, 22, 32].map(val => (
+                            <button
+                              key={val}
+                              type="button"
+                              onClick={() => setResumeData(p => ({...p, styleConfig: {...(p.styleConfig||{}), sectionSpacing: val}}))}
+                              className={`px-1.5 py-0.5 text-[9px] font-mono font-bold rounded border transition-all ${
+                                (resumeData.styleConfig?.sectionSpacing ?? 25) === val 
+                                  ? 'bg-amber-500 text-slate-950 border-amber-400 font-black' 
+                                  : 'bg-white/10 text-slate-300 border-white/10 hover:bg-white/20'
+                              }`}
+                            >
+                              {val}px
+                            </button>
+                          ))}
+                        </div>
                       </div>
 
-                      <div className="space-y-1">
+                      <div className="space-y-1.5">
                         <div className="flex justify-between font-bold text-slate-300 text-[10px] uppercase">
                           <span>Espaçamento Interno</span>
-                          <span className="text-amber-400 font-mono">{resumeData.styleConfig?.itemSpacing || 10}px</span>
+                          <span className="text-amber-400 font-mono">{resumeData.styleConfig?.itemSpacing ?? 10}px</span>
                         </div>
                         <input 
-                          type="range" min="4" max="24" step="1" 
-                          value={resumeData.styleConfig?.itemSpacing || 10} 
+                          type="range" min="0" max="30" step="1" 
+                          value={resumeData.styleConfig?.itemSpacing ?? 10} 
                           onChange={(e) => setResumeData(p => ({...p, styleConfig: {...(p.styleConfig||{}), itemSpacing: Number(e.target.value)}}))} 
                           className="w-full h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-amber-400" 
                         />
+                        <div className="flex gap-1">
+                          {[0, 4, 8, 12, 18].map(val => (
+                            <button
+                              key={val}
+                              type="button"
+                              onClick={() => setResumeData(p => ({...p, styleConfig: {...(p.styleConfig||{}), itemSpacing: val}}))}
+                              className={`px-1.5 py-0.5 text-[9px] font-mono font-bold rounded border transition-all ${
+                                (resumeData.styleConfig?.itemSpacing ?? 10) === val 
+                                  ? 'bg-amber-500 text-slate-950 border-amber-400 font-black' 
+                                  : 'bg-white/10 text-slate-300 border-white/10 hover:bg-white/20'
+                              }`}
+                            >
+                              {val}px
+                            </button>
+                          ))}
+                        </div>
                       </div>
 
-                      <div className="space-y-1">
+                      <div className="space-y-1.5">
                         <div className="flex justify-between font-bold text-slate-300 text-[10px] uppercase">
                           <span>Margens da Folha</span>
-                          <span className="text-amber-400 font-mono">{resumeData.styleConfig?.margins || 30}px</span>
+                          <span className="text-amber-400 font-mono">{resumeData.styleConfig?.margins ?? 30}px</span>
                         </div>
                         <input 
-                          type="range" min="10" max="60" step="1" 
-                          value={resumeData.styleConfig?.margins || 30} 
+                          type="range" min="0" max="60" step="1" 
+                          value={resumeData.styleConfig?.margins ?? 30} 
                           onChange={(e) => setResumeData(p => ({...p, styleConfig: {...(p.styleConfig||{}), margins: Number(e.target.value)}}))} 
                           className="w-full h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-amber-400" 
                         />
+                        <div className="flex gap-1">
+                          {[0, 10, 20, 30, 45].map(val => (
+                            <button
+                              key={val}
+                              type="button"
+                              onClick={() => setResumeData(p => ({...p, styleConfig: {...(p.styleConfig||{}), margins: val}}))}
+                              className={`px-1.5 py-0.5 text-[9px] font-mono font-bold rounded border transition-all ${
+                                (resumeData.styleConfig?.margins ?? 30) === val 
+                                  ? 'bg-amber-500 text-slate-950 border-amber-400 font-black' 
+                                  : 'bg-white/10 text-slate-300 border-white/10 hover:bg-white/20'
+                              }`}
+                            >
+                              {val}px
+                            </button>
+                          ))}
+                        </div>
                       </div>
 
                       <div className="space-y-1">
