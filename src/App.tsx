@@ -7435,7 +7435,8 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
         skills: parsedData.skills?.length ? parsedData.skills : prev.skills,
         languages: parsedData.languages?.length ? parsedData.languages : prev.languages,
         interests: parsedData.interests?.length ? parsedData.interests : prev.interests,
-        certifications: parsedData.certifications?.length ? parsedData.certifications : prev.certifications
+        certifications: parsedData.certifications?.length ? parsedData.certifications : prev.certifications,
+        customSections: parsedData.customSections?.length ? parsedData.customSections : prev.customSections
       }));
       
       setActiveStep(1); // Jump to first data step after import

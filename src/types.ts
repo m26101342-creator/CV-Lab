@@ -74,7 +74,13 @@ export interface ResumeData {
     level: string;
   }[];
   interests?: string[];
-  certifications?: { id: string; name: string; date: string }[];
+  certifications?: { 
+    id: string; 
+    name: string; 
+    date?: string; 
+    issuer?: string; 
+    description?: string; 
+  }[];
   customSections?: CustomSection[];
   sectionTitles?: Partial<Record<'experience' | 'education' | 'skills' | 'languages' | 'certifications' | 'interests' | 'summary', string>>;
   themeColor?: string;

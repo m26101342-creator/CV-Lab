@@ -189,19 +189,50 @@ function cleanAndNormalizeParsedData(parsedData: any): any {
     });
   }
 
+  // Helper to test if something is a short course/training rather than formal academic degree
+  const isCourseOrTraining = (degree: string, institution: string) => {
+    const combined = `${degree} ${institution}`.toLowerCase();
+    const courseKeywords = ['curso', 'workshop', 'treinamento', 'capacitação', 'capacitacao', 'certificação', 'certificacao', 'bootcamp', 'intensivo', 'formação profissional', 'formacao profissional', 'seminário', 'seminario'];
+    const academicKeywords = ['licenciatura', 'bacharel', 'mestrado', 'doutorado', 'doutoramento', 'pós-graduação', 'pos-graduacao', 'ensino secundário', 'ensino secundario', 'ensino médio', 'ensino medio', 'ensino básico', 'ensino basico', 'ensino fundamental', 'instituto médio', 'instituto medio', 'instituto superior', 'universidade', 'faculdade', 'colégio', 'colegio', '12ª classe', '13ª classe', '9ª classe'];
+    
+    const hasAcademic = academicKeywords.some(k => combined.includes(k));
+    const hasCourse = courseKeywords.some(k => combined.includes(k));
+
+    return hasCourse && !hasAcademic;
+  };
+
   const education: any[] = [];
+  const extractedCoursesFromEdu: any[] = [];
+
   if (Array.isArray(parsedData.education)) {
     parsedData.education.forEach((edu: any) => {
-      if (edu && (edu.institution || edu.degree)) {
-        education.push({
-          id: edu.id || cleanId(),
-          institution: String(edu.institution || '').trim(),
-          degree: String(edu.degree || '').trim(),
-          field: String(edu.field || '').trim(),
-          startDate: String(edu.startDate || '').trim(),
-          endDate: String(edu.endDate || '').trim(),
-          description: String(edu.description || '').trim()
-        });
+      if (edu && (edu.institution || edu.degree || edu.field)) {
+        const inst = String(edu.institution || '').trim();
+        const deg = String(edu.degree || edu.field || '').trim();
+        const start = String(edu.startDate || '').trim();
+        const end = String(edu.endDate || '').trim();
+        const desc = String(edu.description || '').trim();
+
+        // Check if this item is actually a short course / training rather than formal schooling
+        if (isCourseOrTraining(deg, inst)) {
+          extractedCoursesFromEdu.push({
+            id: edu.id || cleanId(),
+            name: deg || inst,
+            issuer: inst !== deg ? inst : '',
+            date: end || start,
+            description: desc
+          });
+        } else {
+          education.push({
+            id: edu.id || cleanId(),
+            institution: inst,
+            degree: deg,
+            field: String(edu.field || '').trim(),
+            startDate: start,
+            endDate: end,
+            description: desc
+          });
+        }
       }
     });
   }
@@ -245,49 +276,136 @@ function cleanAndNormalizeParsedData(parsedData: any): any {
     });
   }
 
-  const certifications: any[] = [];
-  if (Array.isArray(parsedData.certifications)) {
-    parsedData.certifications.forEach((cert: any) => {
-       if (!cert) return;
-       if (typeof cert === 'string') {
-          certifications.push({ id: cleanId(), name: cert.trim(), date: '' });
-       } else if (typeof cert === 'object') {
-          if (cert.name || cert.title) {
-            certifications.push({ id: cert.id || cleanId(), name: String(cert.name || cert.title).trim(), date: String(cert.date || cert.year || '').trim() });
-          }
-       }
-    });
-  }
+  // Certifications / Courses / Formações
+  const certifications: any[] = [...extractedCoursesFromEdu];
+  const possibleCourseArrays = [
+    parsedData.certifications,
+    parsedData.courses,
+    parsedData.formacoes,
+    parsedData.cursos,
+    parsedData.certificados,
+    parsedData.formacao,
+    parsedData.training,
+    parsedData.trainings
+  ];
 
+  possibleCourseArrays.forEach(arr => {
+    if (Array.isArray(arr)) {
+      arr.forEach((cert: any) => {
+        if (!cert) return;
+        if (typeof cert === 'string') {
+          if (!certifications.some(c => c.name.toLowerCase() === cert.trim().toLowerCase())) {
+            certifications.push({ id: cleanId(), name: cert.trim(), date: '', issuer: '', description: '' });
+          }
+        } else if (typeof cert === 'object') {
+          const nameStr = String(cert.name || cert.title || cert.course || '').trim();
+          if (nameStr && !certifications.some(c => c.name.toLowerCase() === nameStr.toLowerCase())) {
+            certifications.push({
+              id: cert.id || cleanId(),
+              name: nameStr,
+              date: String(cert.date || cert.year || cert.period || '').trim(),
+              issuer: String(cert.issuer || cert.institution || cert.school || cert.entidade || '').trim(),
+              description: String(cert.description || cert.details || cert.hours || '').trim()
+            });
+          }
+        }
+      });
+    }
+  });
+
+  // Dynamic Custom Sections - Ensuring NO DATA is ever left behind or lost
   const customSections: any[] = [];
+  const processedTitles = new Set<string>();
+
   if (Array.isArray(parsedData.customSections)) {
     parsedData.customSections.forEach((cs: any) => {
       if (cs && cs.title) {
+        const titleStr = String(cs.title).trim();
         const items: any[] = [];
         if (Array.isArray(cs.items)) {
           cs.items.forEach((item: any) => {
             if (item) {
-              const nameVal = typeof item === 'string' ? item : (item.name || item.text || '');
+              const nameVal = typeof item === 'string' ? item : (item.name || item.text || item.title || '');
               if (nameVal) {
                 items.push({
                   id: item.id || cleanId(),
                   name: String(nameVal).trim(),
-                  description: String(item.description || '').trim()
+                  description: String(item.description || item.details || '').trim()
                 });
               }
             }
           });
         }
-        customSections.push({
-          id: cs.id || cleanId(),
-          title: String(cs.title).trim(),
-          items
-        });
+        if (items.length > 0 || titleStr) {
+          processedTitles.add(titleStr.toLowerCase());
+          customSections.push({
+            id: cs.id || cleanId(),
+            title: titleStr,
+            items
+          });
+        }
       }
     });
   }
 
-  return { personalInfo, experience, education, skills, languages, certifications, customSections, interests: [] };
+  // Scan root object for any unhandled categories or custom fields to avoid losing any data
+  const standardKeys = new Set([
+    'personalInfo', 'experience', 'education', 'skills', 'languages', 
+    'certifications', 'customSections', 'interests', 'courses', 'cursos', 
+    'formacoes', 'formacao', 'certificados', 'training', 'trainings',
+    'sectionTitles', 'themeColor', 'styleConfig', 'language'
+  ]);
+
+  Object.keys(parsedData).forEach(key => {
+    if (!standardKeys.has(key) && !processedTitles.has(key.toLowerCase())) {
+      const val = parsedData[key];
+      if (Array.isArray(val) && val.length > 0) {
+        // Format key to a neat Title
+        const formattedTitle = key
+          .replace(/([A-Z])/g, ' $1')
+          .replace(/_/g, ' ')
+          .replace(/^\w/, c => c.toUpperCase())
+          .trim();
+
+        const items: any[] = [];
+        val.forEach((item: any) => {
+          if (typeof item === 'string' && item.trim()) {
+            items.push({ id: cleanId(), name: item.trim(), description: '' });
+          } else if (typeof item === 'object' && item) {
+            const nameVal = item.name || item.title || item.label || item.text || Object.values(item)[0] || '';
+            const descVal = item.description || item.detail || item.value || '';
+            if (nameVal) {
+              items.push({
+                id: item.id || cleanId(),
+                name: String(nameVal).trim(),
+                description: String(descVal !== nameVal ? descVal : '').trim()
+              });
+            }
+          }
+        });
+
+        if (items.length > 0) {
+          processedTitles.add(key.toLowerCase());
+          customSections.push({
+            id: cleanId(),
+            title: formattedTitle,
+            items
+          });
+        }
+      }
+    }
+  });
+
+  return { 
+    personalInfo, 
+    experience, 
+    education, 
+    skills, 
+    languages, 
+    certifications, 
+    customSections, 
+    interests: Array.isArray(parsedData.interests) ? parsedData.interests : [] 
+  };
 }
 
 
@@ -403,21 +521,37 @@ export async function generateFullResume(personalInfo: any): Promise<any> {
 export async function parseResumeFromText(rawText: string, imageData?: string): Promise<any> {
   const textPrompt = `
       Você é o principal algoritmo de Inteligência Artificial para extração, classificação e polimento de currículos profissionais na Língua Portuguesa.
-      Sua missão é ler, analisar minuciosamente e ENRIQUECER o currículo obtido a partir de texto cru ou OCR de imagem. Reconheça e classifique com precisão as informações estruturadas.
+      Sua missão é ler, analisar minuciosamente e ENRIQUECER o currículo obtido a partir de texto cru ou OCR de imagem. Reconheça e classifique com precisão cirúrgica as informações estruturadas.
 
-      INSTRUÇÕES DE CLASSIFICAÇÃO E ENRIQUECIMENTO INTELIGENTE:
+      REGRAS CRÍTICAS DE CLASSIFICAÇÃO (SIGA COM RIGOR ABSOLUTO):
+
       1. "personalInfo": Extraia o nome completo do candidato, cargo desejado, e-mail, telefone, localização e um Resumo.
-         - Se o resumo profissional for curto ou ausente, fabrique um resumo fantástico (2 a 4 linhas) baseado nas competências e foco no cargo.
-      2. "experience": Mapeie cada de forma detalhada com verbos de ação poderosos.
-      3. "education": Identifique instituição, grau, curso/campo, ano de início e fim.
-         - IMPORTANTE: Se o indivíduo tiver bullet points, listas de tópicos de destaque ao longo do curso (ex: distinções, participação associativa, lideranças ou monitorias), salve-os fielmente no campo "description": "• Item 1\n• Item 2".
-      4. "skills": Extraia competências profissionais gerais ou curtas (Ex: HTML, Excel, Vendas) na forma de uma array de strings no campo 'skills'. 
-         - ATENÇÃO CRÍTICA: Se o candidato listar competências em grupos estruturados ou categorias diferenciadas no texto original (por exemplo: "Competências de comunicação", "Competências organizacionais", "Competências técnicas", "Carta de condução", "Disponibilidade e Outros"), NÃO os junte todos em "skills". Pelo contrário, crie secções e categorias independentes dedicadas na propriedade "customSections" para que fiquem devidamente segregados e não compactados como simples palavras-chave.
-      5. "languages": Identifique idiomas. Se sem nível, assuma "Intermédio" ou "Fluente".
-      6. "certifications": Extraia ano.
-      7. "customSections": Crie categorias e secções flexíveis para estruturar e diferenciar blocos informativos ricos e evitar que tudo seja empilhado na aba de habilidades.
-         - Por exemplo, se houver títulos de seções como "Competências de Comunicação", "Competências Organizacionais", "Competências Técnicas", "Carta de Condução" ou "Outras Informações" (como no CV do utilizador focado na Toyota Angola), crie um objeto para cada uma destas categorias em "customSections", preservando o título detalhado e os seus itens correspondentes dentro do array "items".
-         - Cada item deve conter obrigatoriamente a propriedade "name" (título/rótulo do item) e opcionalmente "description" (detalhe, explicação ou valor associado).
+         - Se o resumo profissional for curto ou ausente, elabore um resumo de alto impacto (2 a 4 linhas) baseado nas competências e foco no cargo.
+
+      2. "experience": Mapeie cada experiência profissional detalhadamente com verbos de ação poderosos.
+
+      3. "education" (EXCLUSIVAMENTE EDUCAÇÃO / ESCOLARIDADE FORMAL):
+         - ATENÇÃO: "Educação" refere-se APENAS à escolaridade formal e percurso académico (Ensino Primário/Básico, Ensino Secundário/Médio, Instituto Médio Técnico, Bacharelato, Licenciatura, Pós-Graduação, Mestrado, Doutoramento, Universidade, Faculdade, Colégio).
+         - NUNCA coloque cursos livres, workshops ou treinamentos em "education".
+         - Identifique instituição, grau (ex: Ensino Médio, Licenciatura), curso/campo, ano de início e fim.
+         - Se houver tópicos de destaque (ex: distinções, monitorias, comissões), salve-os no campo "description".
+
+      4. "certifications" (FORMAÇÕES PROFISSIONAIS, CURSOS E TREINAMENTOS):
+         - ATENÇÃO: "Formação" e "Cursos" são a mesma coisa! Qualquer formação profissional, curso livre, workshop, treinamento técnico ou certificado (ex: "Curso de Manobrador de Empilhador", "Formação de Atendimento ao Cliente", "Curso de Informática na Óptica do Utilizador", "Gestão de Stock", "Primeiros Socorros", etc.) DEVE ser extraído para o array "certifications".
+         - Para cada curso/formação, extraia:
+           * "name": Nome do curso ou formação profissional
+           * "issuer": Entidade formadora ou instituição onde realizou o curso (ex: INEFOP, Toyota Angola, etc.)
+           * "date": Ano ou período de realização
+           * "description": Carga horária, detalhes ou competências desenvolvidas no curso.
+
+      5. "skills": Extraia competências profissionais gerais ou palavras-chave (Ex: Excel, Vendas, Resolução de Problemas) na forma de array de strings simples.
+
+      6. "languages": Identifique idiomas e níveis de proficiência (Básico, Intermédio, Avançado, Fluente, Nativo).
+
+      7. "customSections" (CATEGORIAS PERSONALIZADAS DINÂMICAS - NENHUM DADO PODE FICAR DE FORA):
+         - ATENÇÃO CRÍTICA: Você DEVE ser inteligente para não deixar nenhum dado de fora nem confundi-los. Crie categorias personalizadas com base em tudo o que está no currículo!
+         - Se o candidato listar blocos ou categorias como "Competências de Comunicação", "Competências Organizacionais", "Competências Técnicas", "Carta de Condução / Habilitações", "Projetos Relevantes", "Publicações", "Referências Pessoais / Profissionais", "Atividades Extracurriculares", "Disponibilidade e Outros", crie um objeto dedicado para cada categoria em "customSections", preservando o título fiel e os itens detalhados com "name" e "description".
+         - Cada item deve conter obrigatoriamente "name" (título do item) e opcionalmente "description" (detalhe, explicação ou valor associado).
 
       SINTAXE DO RETORNO JSON ESPERADO (Formato Extremamente Restrito):
       {
@@ -431,27 +565,34 @@ export async function parseResumeFromText(rawText: string, imageData?: string): 
         },
         "experience": [
           {
-            "company": "Nome", "position": "Cargo", "startDate": "Ano", "endDate": "Ano ou Presente", "description": "Explicação robusta enriquecida"
+            "company": "Empresa", "position": "Cargo", "startDate": "Ano", "endDate": "Ano ou Presente", "description": "Descrição robusta das realizações"
           }
         ],
         "education": [
           { 
-            "institution": "Escola", 
-            "degree": "Grau/Nível", 
-            "field": "Curso", 
+            "institution": "Universidade ou Instituto Médio", 
+            "degree": "Licenciatura / Ensino Médio", 
+            "field": "Área de Estudo", 
             "startDate": "Ano", 
             "endDate": "Ano",
-            "description": "• Vice-Lider da associação dos Estudantes\n• Monitora nas Aulas" 
+            "description": "• Distinção académica ou atividades" 
+          }
+        ],
+        "certifications": [
+          {
+            "name": "Curso de Manobrador de Empilhador",
+            "issuer": "INEFOP / Toyota",
+            "date": "2021",
+            "description": "Carga horária de 120 horas com prática de movimentação de cargas"
           }
         ],
         "skills": ["Competência Geral 1", "Competência Geral 2"],
-        "languages": [ { "name": "Inglês", "level": "Avançado" } ],
-        "certifications": [],
+        "languages": [ { "name": "Inglês", "level": "Intermédio" } ],
         "customSections": [
           {
             "title": "Competências de Comunicação",
             "items": [
-              { "name": "Comunicação em equipe multinacional", "description": "11 anos trabalhando na equipe da Toyota" }
+              { "name": "Comunicação em equipe multicultural", "description": "Experiência em ambiente corporativo dinâmico" }
             ]
           },
           {
@@ -464,8 +605,13 @@ export async function parseResumeFromText(rawText: string, imageData?: string): 
           {
             "title": "Competências Técnicas",
             "items": [
-              { "name": "Manobrador de Empilhadores", "description": "11 anos de experiência prática real" },
-              { "name": "Gestão de Stock", "description": "Uso de sistemas WMS básicos" }
+              { "name": "Manuseamento de Empilhadores", "description": "Operação segura e manutenção básica" }
+            ]
+          },
+          {
+            "title": "Carta de Condução",
+            "items": [
+              { "name": "Carta de Condução Ligeiros e Pesados", "description": "Categoria B e C válida" }
             ]
           }
         ]
