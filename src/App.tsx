@@ -9,6 +9,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { 
   Plus, 
   Minus,
+  Pencil,
   Trash2, 
   Download, 
   ChevronRight, 
@@ -2072,6 +2073,473 @@ const EuropassSealOverlay = ({
   );
 };
 
+
+const QuickEditModal = ({ item, data, onSave, onClose }: {
+  item: any;
+  data: ResumeData;
+  onSave: (updatedFields: any) => void;
+  onClose: () => void;
+}) => {
+  const [formData, setFormData] = useState<any>(item.data || {});
+  const [isOptimizing, setIsOptimizing] = useState(false);
+
+  const handleOptimizeField = async (fieldKey: string, fieldType: string) => {
+    const val = formData[fieldKey] || "";
+    if (!val) return;
+    setIsOptimizing(true);
+    try {
+      const optimized = await alterResumeInformation(val, "expand", fieldType as any);
+      setFormData((prev: any) => ({ ...prev, [fieldKey]: optimized }));
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsOptimizing(false);
+    }
+  };
+
+  return createPortal(
+    <div 
+      data-html2canvas-ignore="true" 
+      className="fixed inset-0 z-[100000] flex items-center justify-center bg-slate-950/70 backdrop-blur-md p-4 animate-in fade-in duration-200"
+      onClick={onClose}
+    >
+      <div 
+        className="bg-white text-slate-900 w-full max-w-lg rounded-2xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[90vh]"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className="px-6 py-4 bg-slate-900 text-white flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-xl bg-blue-500/20 text-blue-400 flex items-center justify-center font-black">
+              <Pencil size={15} />
+            </div>
+            <div>
+              <h3 className="text-sm font-black tracking-tight">{item.title || "Editar Informações"}</h3>
+              <p className="text-[11px] text-slate-400">Edição direta na pré-visualização</p>
+            </div>
+          </div>
+          <button 
+            type="button"
+            onClick={onClose} 
+            className="p-1.5 hover:bg-white/10 rounded-xl text-slate-400 hover:text-white transition-colors"
+          >
+            <X size={18} />
+          </button>
+        </div>
+
+        {/* Form Body */}
+        <div className="p-6 overflow-y-auto space-y-4 flex-1">
+          {item.type === "personalInfo" && (
+            <>
+              <div>
+                <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-600 mb-1">Nome Completo</label>
+                <input 
+                  type="text" 
+                  value={formData.fullName || ""} 
+                  onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                  placeholder="Seu nome completo"
+                  autoFocus
+                />
+              </div>
+              <div>
+                <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-600 mb-1">Título / Cargo Pretendido</label>
+                <input 
+                  type="text" 
+                  value={formData.title || ""} 
+                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                  placeholder="Ex: Engenheiro de Software Sênior"
+                />
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-600 mb-1">Email</label>
+                  <input 
+                    type="email" 
+                    value={formData.email || ""} 
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                    placeholder="exemplo@email.com"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-600 mb-1">Telefone</label>
+                  <input 
+                    type="tel" 
+                    value={formData.phone || ""} 
+                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                    placeholder="+351 912 345 678"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-600 mb-1">Localização / Cidade</label>
+                <input 
+                  type="text" 
+                  value={formData.location || ""} 
+                  onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                  placeholder="Lisboa, Portugal"
+                />
+              </div>
+            </>
+          )}
+
+          {item.type === "contact" && (
+            <>
+              <div>
+                <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-600 mb-1">Email</label>
+                <input 
+                  type="email" 
+                  value={formData.email || ""} 
+                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                  placeholder="exemplo@email.com"
+                  autoFocus
+                />
+              </div>
+              <div>
+                <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-600 mb-1">Telefone</label>
+                <input 
+                  type="tel" 
+                  value={formData.phone || ""} 
+                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                  placeholder="+351 912 345 678"
+                />
+              </div>
+              <div>
+                <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-600 mb-1">Localização / Cidade</label>
+                <input 
+                  type="text" 
+                  value={formData.location || ""} 
+                  onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                  placeholder="Lisboa, Portugal"
+                />
+              </div>
+              <div>
+                <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-600 mb-1">LinkedIn / Website</label>
+                <input 
+                  type="text" 
+                  value={formData.linkedin || formData.website || ""} 
+                  onChange={(e) => setFormData({ ...formData, linkedin: e.target.value, website: e.target.value })}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                  placeholder="linkedin.com/in/perfil"
+                />
+              </div>
+            </>
+          )}
+
+          {item.type === "summary" && (
+            <div>
+              <div className="flex justify-between items-center mb-1">
+                <label className="text-[11px] font-bold uppercase tracking-wider text-slate-600">Resumo / Sobre Mim</label>
+                <button
+                  type="button"
+                  onClick={() => handleOptimizeField("summary", "summary")}
+                  disabled={isOptimizing || !formData.summary}
+                  className="text-[10px] font-bold text-blue-600 hover:text-blue-700 flex items-center gap-1 bg-blue-50 px-2 py-0.5 rounded-lg border border-blue-200 disabled:opacity-50"
+                >
+                  <Sparkles size={11} />
+                  <span>{isOptimizing ? "A Otimizar..." : "Melhorar com IA"}</span>
+                </button>
+              </div>
+              <textarea 
+                rows={6}
+                value={formData.summary || ""} 
+                onChange={(e) => setFormData({ ...formData, summary: e.target.value })}
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3.5 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none resize-y"
+                placeholder="Descreva brevemente a sua experiência e objetivos profissionais..."
+                autoFocus
+              />
+            </div>
+          )}
+
+          {item.type === "experience" && (
+            <>
+              <div>
+                <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-600 mb-1">Cargo / Posição</label>
+                <input 
+                  type="text" 
+                  value={formData.position || ""} 
+                  onChange={(e) => setFormData({ ...formData, position: e.target.value })}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                  placeholder="Ex: Gerente de Projetos"
+                  autoFocus
+                />
+              </div>
+              <div>
+                <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-600 mb-1">Empresa / Organização</label>
+                <input 
+                  type="text" 
+                  value={formData.company || ""} 
+                  onChange={(e) => setFormData({ ...formData, company: e.target.value })}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                  placeholder="Ex: Google"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-600 mb-1">Data de Início</label>
+                  <input 
+                    type="text" 
+                    value={formData.startDate || ""} 
+                    onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                    placeholder="Ex: 01/2021"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-600 mb-1">Data de Fim</label>
+                  <input 
+                    type="text" 
+                    value={formData.current ? "Presente" : (formData.endDate || "")} 
+                    disabled={formData.current}
+                    onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
+                    className={`w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none ${formData.current ? "opacity-50" : ""}`}
+                    placeholder="Ex: Presente"
+                  />
+                </div>
+              </div>
+              <label className="flex items-center gap-2 cursor-pointer text-xs font-semibold text-slate-700">
+                <input 
+                  type="checkbox" 
+                  checked={formData.current || false} 
+                  onChange={(e) => setFormData({ ...formData, current: e.target.checked, endDate: e.target.checked ? "Presente" : "" })}
+                  className="rounded text-blue-600"
+                />
+                <span>Trabalho atualmente nesta função</span>
+              </label>
+              <div>
+                <div className="flex justify-between items-center mb-1">
+                  <label className="text-[11px] font-bold uppercase tracking-wider text-slate-600">Descrição / Conquistas</label>
+                  <button
+                    type="button"
+                    onClick={() => handleOptimizeField("description", "experience")}
+                    disabled={isOptimizing || !formData.description}
+                    className="text-[10px] font-bold text-blue-600 hover:text-blue-700 flex items-center gap-1 bg-blue-50 px-2 py-0.5 rounded-lg border border-blue-200 disabled:opacity-50"
+                  >
+                    <Sparkles size={11} />
+                    <span>{isOptimizing ? "A Otimizar..." : "Melhorar com IA"}</span>
+                  </button>
+                </div>
+                <textarea 
+                  rows={4}
+                  value={formData.description || ""} 
+                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3.5 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none resize-y"
+                  placeholder="Principais responsabilidades, projetos e resultados obtidos..."
+                />
+              </div>
+            </>
+          )}
+
+          {item.type === "education" && (
+            <>
+              <div>
+                <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-600 mb-1">Grau / Curso</label>
+                <input 
+                  type="text" 
+                  value={formData.degree || ""} 
+                  onChange={(e) => setFormData({ ...formData, degree: e.target.value })}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                  placeholder="Ex: Licenciatura em Engenharia Informática"
+                  autoFocus
+                />
+              </div>
+              <div>
+                <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-600 mb-1">Instituição / Universidade</label>
+                <input 
+                  type="text" 
+                  value={formData.institution || ""} 
+                  onChange={(e) => setFormData({ ...formData, institution: e.target.value })}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                  placeholder="Ex: Universidade de Lisboa"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-600 mb-1">Data Início</label>
+                  <input 
+                    type="text" 
+                    value={formData.startDate || ""} 
+                    onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                    placeholder="2018"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-600 mb-1">Data Fim</label>
+                  <input 
+                    type="text" 
+                    value={formData.endDate || ""} 
+                    onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                    placeholder="2022"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-600 mb-1">Descrição / Notas (Opcional)</label>
+                <textarea 
+                  rows={3}
+                  value={formData.description || ""} 
+                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3.5 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none resize-y"
+                  placeholder="Atividades complementares, média final ou projetos..."
+                />
+              </div>
+            </>
+          )}
+
+          {item.type === "skills" && (
+            <>
+              <div>
+                <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-600 mb-1">Habilidade / Competência</label>
+                <input 
+                  type="text" 
+                  value={formData.name || ""} 
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                  placeholder="Ex: Gestão de Projetos, Python, React..."
+                  autoFocus
+                />
+              </div>
+              <div>
+                <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-600 mb-1">Nível de Domínio</label>
+                <select 
+                  value={formData.level || "Intermediário"} 
+                  onChange={(e) => setFormData({ ...formData, level: e.target.value })}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                >
+                  <option value="Iniciante">Iniciante</option>
+                  <option value="Intermediário">Intermediário</option>
+                  <option value="Avançado">Avançado</option>
+                  <option value="Especialista">Especialista</option>
+                </select>
+              </div>
+            </>
+          )}
+
+          {item.type === "languages" && (
+            <>
+              <div>
+                <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-600 mb-1">Idioma</label>
+                <input 
+                  type="text" 
+                  value={formData.name || ""} 
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                  placeholder="Ex: Inglês, Espanhol..."
+                  autoFocus
+                />
+              </div>
+              <div>
+                <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-600 mb-1">Nível de Fluência</label>
+                <select 
+                  value={formData.level || "Intermediário"} 
+                  onChange={(e) => setFormData({ ...formData, level: e.target.value })}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                >
+                  <option value="Básico (A1/A2)">Básico (A1/A2)</option>
+                  <option value="Intermediário (B1/B2)">Intermediário (B1/B2)</option>
+                  <option value="Avançado (C1)">Avançado (C1)</option>
+                  <option value="Fluente / Nativo (C2)">Fluente / Nativo (C2)</option>
+                </select>
+              </div>
+            </>
+          )}
+
+          {item.type === "certifications" && (
+            <>
+              <div>
+                <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-600 mb-1">Nome do Certificado</label>
+                <input 
+                  type="text" 
+                  value={formData.name || ""} 
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                  placeholder="Ex: AWS Certified Solutions Architect"
+                  autoFocus
+                />
+              </div>
+              <div>
+                <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-600 mb-1">Entidade Emissora</label>
+                <input 
+                  type="text" 
+                  value={formData.issuer || ""} 
+                  onChange={(e) => setFormData({ ...formData, issuer: e.target.value })}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                  placeholder="Ex: Amazon Web Services"
+                />
+              </div>
+              <div>
+                <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-600 mb-1">Data / Ano</label>
+                <input 
+                  type="text" 
+                  value={formData.date || ""} 
+                  onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                  placeholder="Ex: 2023"
+                />
+              </div>
+            </>
+          )}
+
+          {item.type === "custom" && (
+            <>
+              <div>
+                <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-600 mb-1">Título do Item</label>
+                <input 
+                  type="text" 
+                  value={formData.name || ""} 
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                  placeholder="Título ou nome"
+                  autoFocus
+                />
+              </div>
+              <div>
+                <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-600 mb-1">Descrição</label>
+                <textarea 
+                  rows={4}
+                  value={formData.description || ""} 
+                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3.5 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none resize-y"
+                  placeholder="Detalhes ou descrição..."
+                />
+              </div>
+            </>
+          )}
+        </div>
+
+        {/* Footer */}
+        <div className="px-6 py-4 bg-slate-50 border-t border-slate-200 flex items-center justify-end gap-2.5">
+          <button 
+            type="button" 
+            onClick={onClose}
+            className="px-4 py-2 text-xs font-bold text-slate-600 hover:text-slate-900 hover:bg-slate-200 rounded-xl transition-all"
+          >
+            Cancelar
+          </button>
+          <button 
+            type="button" 
+            onClick={() => onSave(formData)}
+            className="px-5 py-2 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-xl shadow-md transition-all active:scale-95 flex items-center gap-1.5"
+          >
+            <Check size={14} />
+            <span>Salvar Alterações</span>
+          </button>
+        </div>
+      </div>
+    </div>,
+    document.body
+  );
+};
+
 const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: { data: ResumeData; templateId: TemplateType; showGuides?: boolean; onChange?: React.Dispatch<React.SetStateAction<ResumeData>> }) => {
   const theme = TEMPLATES[templateId] || TEMPLATES.t1_executive;
   const c = { ...theme.colors, primary: data.themeColor || theme.colors.primary };
@@ -2581,7 +3049,165 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
 
   const [selectedElement, setSelectedElement] = React.useState<any>(null);
   const [hoveredElement, setHoveredElement] = React.useState<any>(null);
+  const [editingItem, setEditingItem] = React.useState<any>(null);
   const [isProcessingAI, setIsProcessingAI] = React.useState<boolean>(false);
+
+  const handleOpenEditModal = (elem: any) => {
+    if (!elem) return;
+    if (elem.type === "personalInfo" || elem.type === "name") {
+      setEditingItem({
+        type: "personalInfo",
+        title: "Editar Informações Pessoais",
+        data: { ...data.personalInfo }
+      });
+    } else if (elem.type === "contact") {
+      setEditingItem({
+        type: "contact",
+        title: "Editar Dados de Contacto",
+        data: { ...data.personalInfo }
+      });
+    } else if (elem.type === "summary") {
+      setEditingItem({
+        type: "summary",
+        title: "Editar Resumo Profissional",
+        data: { summary: data.personalInfo.summary || "" }
+      });
+    } else if (elem.type === "experience") {
+      const item = data.experience?.find((e: any) => e.id === elem.id) || data.experience?.[0];
+      if (item) {
+        setEditingItem({
+          type: "experience",
+          id: item.id,
+          title: `Editar Experiência: ${item.position || "Item"}`,
+          data: { ...item }
+        });
+      }
+    } else if (elem.type === "education") {
+      const item = data.education?.find((e: any) => e.id === elem.id) || data.education?.[0];
+      if (item) {
+        setEditingItem({
+          type: "education",
+          id: item.id,
+          title: `Editar Formação: ${item.degree || "Item"}`,
+          data: { ...item }
+        });
+      }
+    } else if (elem.type === "skills") {
+      const item = data.skills?.find((s: any) => s.id === elem.id) || data.skills?.[0];
+      if (item) {
+        setEditingItem({
+          type: "skills",
+          id: item.id,
+          title: `Editar Habilidade: ${item.name || "Item"}`,
+          data: { ...item }
+        });
+      }
+    } else if (elem.type === "languages") {
+      const item = data.languages?.find((l: any) => l.id === elem.id) || data.languages?.[0];
+      if (item) {
+        setEditingItem({
+          type: "languages",
+          id: item.id,
+          title: `Editar Idioma: ${item.name || "Item"}`,
+          data: { ...item }
+        });
+      }
+    } else if (elem.type === "certifications") {
+      const item = data.certifications?.find((c: any) => c.id === elem.id) || data.certifications?.[0];
+      if (item) {
+        setEditingItem({
+          type: "certifications",
+          id: item.id,
+          title: `Editar Certificação: ${item.name || "Item"}`,
+          data: { ...item }
+        });
+      }
+    } else if (elem.type === "custom") {
+      const cs = data.customSections?.find((s: any) => s.id === elem.sectionId);
+      const item = cs?.items.find((it: any) => it.id === elem.id);
+      if (item && cs) {
+        setEditingItem({
+          type: "custom",
+          sectionId: cs.id,
+          id: item.id,
+          title: `Editar: ${cs.title}`,
+          data: { ...item }
+        });
+      }
+    }
+  };
+
+  const handleSaveEditingItem = (updatedFields: any) => {
+    if (!onChange || !editingItem) return;
+    
+    if (editingItem.type === "personalInfo" || editingItem.type === "contact") {
+      onChange((prev: any) => ({
+        ...prev,
+        personalInfo: {
+          ...prev.personalInfo,
+          ...updatedFields
+        }
+      }));
+    } else if (editingItem.type === "summary") {
+      onChange((prev: any) => ({
+        ...prev,
+        personalInfo: {
+          ...prev.personalInfo,
+          summary: updatedFields.summary
+        }
+      }));
+    } else if (editingItem.type === "experience") {
+      onChange((prev: any) => ({
+        ...prev,
+        experience: (prev.experience || []).map((exp: any) => 
+          exp.id === editingItem.id ? { ...exp, ...updatedFields } : exp
+        )
+      }));
+    } else if (editingItem.type === "education") {
+      onChange((prev: any) => ({
+        ...prev,
+        education: (prev.education || []).map((edu: any) => 
+          edu.id === editingItem.id ? { ...edu, ...updatedFields } : edu
+        )
+      }));
+    } else if (editingItem.type === "skills") {
+      onChange((prev: any) => ({
+        ...prev,
+        skills: (prev.skills || []).map((sk: any) => 
+          sk.id === editingItem.id ? { ...sk, ...updatedFields } : sk
+        )
+      }));
+    } else if (editingItem.type === "languages") {
+      onChange((prev: any) => ({
+        ...prev,
+        languages: (prev.languages || []).map((lang: any) => 
+          lang.id === editingItem.id ? { ...lang, ...updatedFields } : lang
+        )
+      }));
+    } else if (editingItem.type === "certifications") {
+      onChange((prev: any) => ({
+        ...prev,
+        certifications: (prev.certifications || []).map((cert: any) => 
+          cert.id === editingItem.id ? { ...cert, ...updatedFields } : cert
+        )
+      }));
+    } else if (editingItem.type === "custom") {
+      onChange((prev: any) => ({
+        ...prev,
+        customSections: (prev.customSections || []).map((cs: any) => {
+          if (cs.id === editingItem.sectionId) {
+            return {
+              ...cs,
+              items: cs.items.map((it: any) => it.id === editingItem.id ? { ...it, ...updatedFields } : it)
+            };
+          }
+          return cs;
+        })
+      }));
+    }
+    
+    setEditingItem(null);
+  };
 
   const findSelectableElement = (target: HTMLElement, container: HTMLElement): any => {
     let current: HTMLElement | null = target;
@@ -2753,12 +3379,49 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
         }
       }
 
+      // Contact checks
+      const isContact = current.classList.contains('t1-contact-item') || 
+                        current.classList.contains('t2-contact-row') || 
+                        current.getAttribute('class')?.includes('contact') ||
+                        (data.personalInfo.email && text.includes(data.personalInfo.email)) ||
+                        (data.personalInfo.phone && text.includes(data.personalInfo.phone));
+
+      if (isContact) {
+        return {
+          type: 'contact',
+          label: 'Dados de Contacto',
+          currentText: `${data.personalInfo.email || ""} ${data.personalInfo.phone || ""}`,
+          title: 'Contactos',
+          rect: relativeRect,
+          domElement: current
+        };
+      }
+
+      // Certifications checks
+      const isCert = current.getAttribute('class')?.includes('cert') ||
+                     current.getAttribute('class')?.includes('award');
+      if (isCert && data.certifications && data.certifications.length > 0) {
+        const match = data.certifications.find((c: any) => text.includes(c.name) || (c.issuer && text.includes(c.issuer)));
+        if (match) {
+          return {
+            type: 'certifications',
+            id: match.id,
+            label: `Certificação: ${match.name}`,
+            currentText: `${match.name} - ${match.issuer}`,
+            title: match.name,
+            rect: relativeRect,
+            domElement: current
+          };
+        }
+      }
+
       // Generic title/h1 checks
       const isNameOrTitle = current.classList.contains('t1-name') || 
                             current.classList.contains('t1-title') || 
                             current.getAttribute('class')?.includes('-name') || 
                             current.getAttribute('class')?.includes('-title') ||
-                            current.tagName.toLowerCase() === 'h1';
+                            current.tagName.toLowerCase() === 'h1' ||
+                            current.tagName.toLowerCase() === 'h2';
 
       if (isNameOrTitle) {
         return {
@@ -2781,6 +3444,11 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
     if (wasDraggingRef.current) return;
     const target = e.target as HTMLElement;
     
+    // Do not interfere if user is typing or clicking an input or textarea directly
+    if (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable) {
+      return;
+    }
+
     if (target.closest('[data-html2canvas-ignore="true"]')) {
       return;
     }
@@ -2796,6 +3464,25 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
     }
   };
 
+  const handlePreviewDoubleClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!onChange) return;
+    const target = e.target as HTMLElement;
+    if (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable) {
+      return;
+    }
+    if (target.closest('[data-html2canvas-ignore="true"]')) {
+      return;
+    }
+    const container = document.getElementById('resume-content');
+    if (container) {
+      const selectable = findSelectableElement(target, container);
+      if (selectable) {
+        setSelectedElement(selectable);
+        handleOpenEditModal(selectable);
+      }
+    }
+  };
+
   const handlePreviewMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     if (!onChange) return;
     if (dragState.active || wasDraggingRef.current) {
@@ -2804,6 +3491,11 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
     }
     const target = e.target as HTMLElement;
     
+    if (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable) {
+      setHoveredElement(null);
+      return;
+    }
+
     if (target.closest('[data-html2canvas-ignore="true"]')) {
       setHoveredElement(null);
       return;
@@ -2921,6 +3613,7 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
         color: '#1f2937'
       }}
       onClick={handlePreviewClick}
+      onDoubleClick={handlePreviewDoubleClick}
       onMouseMove={handlePreviewMouseMove}
       onMouseLeave={() => setHoveredElement(null)}
       onTouchStart={handleTouchStart}
@@ -3073,8 +3766,25 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
           >
             {/* Element type identifier tag */}
             <div className="text-[9px] font-black uppercase tracking-wider text-indigo-400 bg-indigo-950/60 border border-indigo-900/60 px-2 py-0.5 rounded-full whitespace-nowrap">
-              {selectedElement.type === 'summary' ? 'Resumo' : selectedElement.type === 'experience' ? 'Experiência' : selectedElement.type === 'education' ? 'Estudos' : selectedElement.type === 'custom' ? 'Secção' : selectedElement.type === 'avatar' ? 'Círculo de Foto' : 'Texto'}
+              {selectedElement.type === 'summary' ? 'Resumo' : selectedElement.type === 'experience' ? 'Experiência' : selectedElement.type === 'education' ? 'Estudos' : selectedElement.type === 'custom' ? 'Secção' : selectedElement.type === 'skills' ? 'Competência' : selectedElement.type === 'languages' ? 'Idioma' : selectedElement.type === 'contact' ? 'Contacto' : selectedElement.type === 'avatar' ? 'Foto' : 'Texto'}
             </div>
+
+            {selectedElement.type !== 'avatar' && (
+              <>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleOpenEditModal(selectedElement);
+                  }}
+                  className="flex items-center gap-1.5 px-3 py-1 text-[10px] font-bold text-white bg-blue-600 hover:bg-blue-500 rounded-full cursor-pointer shadow transition-all active:scale-95"
+                  title="Editar o texto deste elemento diretamente"
+                >
+                  <Pencil size={11} />
+                  <span>Editar</span>
+                </button>
+                <div className="w-[1px] h-3.5 bg-slate-800" />
+              </>
+            )}
 
             {selectedElement.type === 'avatar' ? (
               <button
@@ -3187,6 +3897,16 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
           </div>
         </>
       )}
+      {/* Quick Edit Direct Modal */}
+      {editingItem && (
+        <QuickEditModal
+          item={editingItem}
+          data={data}
+          onSave={handleSaveEditingItem}
+          onClose={() => setEditingItem(null)}
+        />
+      )}
+
       <style>{`
         /* Overrides customizadas do painel de design */
         #resume-content {
@@ -11686,7 +12406,7 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
                       onChangeSubjectStyle={setLetterSubjectStyle}
                     />
                   ) : (
-                    <ResumeRenderer data={resumeData} templateId={template} showGuides={false} />
+                    <ResumeRenderer data={resumeData} templateId={template} showGuides={false} onChange={setResumeData} />
                   )}
                 </div>
               </div>
