@@ -14,6 +14,7 @@ import {
     getDocFromServer
 } from 'firebase/firestore';
 import { useState, useEffect } from 'react';
+import { OFFICIAL_HISTORICAL_DOCUMENTS } from '../data/historicalDocuments';
 
 // Recommended: Use environment variables for production/GitHub deployments
 const configs = (import.meta as any).glob('../../firebase-applet-config.json', { eager: true });
@@ -62,6 +63,12 @@ try {
 // LOCAL STORAGE MOCK SYSTEM FOR OFFLINE DEVELOPMENT
 // -------------------------------------------------------------------------
 
+export const DEFAULT_AUTHORIZED_EMAILS = [
+    'ronalmaferreira04@icloud.com',
+    'sumodemanga50@gmail.com',
+    'm26101342@gmail.com'
+];
+
 const listeners: Set<() => void> = new Set();
 const notifyListeners = () => {
     listeners.forEach(cb => cb());
@@ -90,24 +97,54 @@ const initMockDB = () => {
     const dbState = getLocalDb();
     let updated = false;
     if (!dbState.admin_settings) {
-        dbState.admin_settings = {
-            metrics: {
-                realCVsCount: 9,
-                realRevenue: 18000,
-                meetingLink: 'https://meet.google.com/abc-defg-hij',
-                cvPrice: 2000
-            }
+        dbState.admin_settings = {};
+    }
+    if (!dbState.admin_settings.metrics) {
+        dbState.admin_settings.metrics = {
+            realCVsCount: 9,
+            totalCVsGenerated: 9,
+            totalLettersGenerated: 3,
+            totalDocumentsGenerated: 12,
+            realRevenue: 18000,
+            meetingLink: 'https://meet.google.com/abc-defg-hij',
+            cvPrice: 2000,
+            lastGeneratedAt: new Date().toISOString()
+        };
+        updated = true;
+    }
+    if (!dbState.admin_settings.access_control) {
+        dbState.admin_settings.access_control = {
+            authorizedEmails: DEFAULT_AUTHORIZED_EMAILS,
+            updatedAt: new Date().toISOString()
         };
         updated = true;
     }
     if (!dbState.admin_notes) {
         dbState.admin_notes = {
             'note_1': {
-                text: "Bem-vindo ao painel de administração da CV LAB!",
+                id: 'note_1',
+                text: "Bem-vindo ao novo painel de administração da CV LAB! O arquivo de todos os CVs gerados e métricas automáticas estão em tempo real.",
+                category: 'Aviso',
+                author: 'Administrador',
                 createdAt: new Date().toISOString()
             }
         };
         updated = true;
+    }
+    if (!dbState.generated_documents) {
+        dbState.generated_documents = {};
+        OFFICIAL_HISTORICAL_DOCUMENTS.forEach(docItem => {
+            dbState.generated_documents[docItem.id] = { ...docItem };
+        });
+        updated = true;
+    } else {
+        // Guarantee all official historical records exist in database
+        OFFICIAL_HISTORICAL_DOCUMENTS.forEach(docItem => {
+            if (!dbState.generated_documents[docItem.id]) {
+                dbState.generated_documents[docItem.id] = { ...docItem };
+                updated = true;
+            }
+        });
     }
     if (updated) {
         saveLocalDb(dbState);
@@ -253,71 +290,180 @@ export const updateProfile = async (userObj: any, profile: { displayName?: strin
 };
 
 export const useAuth = () => {
-    const [user, setUser] = useState<User | null>(null);
+    const [user, setUser] = useState<any>(null);
     const [isAdmin, setIsAdmin] = useState(false);
+    const [isAuthorized, setIsAuthorized] = useState(false);
+    const [authorizedEmails, setAuthorizedEmails] = useState<string[]>(DEFAULT_AUTHORIZED_EMAILS);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
+        let currentAuthEmails: string[] = DEFAULT_AUTHORIZED_EMAILS;
+        let currentUserObj: any = null;
+
+        const updateAuthStatus = (u: any, emailsList: string[]) => {
+            if (!u || u.isAnonymous || !u.email) {
+                setIsAdmin(false);
+                setIsAuthorized(false);
+                return;
+            }
+            const adminEmails = [
+                'ronalmaferreira04@icloud.com',
+                'sumodemanga50@gmail.com',
+                'm26101342@gmail.com'
+            ];
+            const emailLower = u.email.toLowerCase();
+            const isHardcodedAdmin = adminEmails.includes(emailLower);
+            const isAuthEmail = emailsList.some(e => e.toLowerCase() === emailLower);
+
+            setIsAdmin(isHardcodedAdmin);
+            setIsAuthorized(isHardcodedAdmin || isAuthEmail);
+        };
+
+        // Load authorized emails in real-time
+        const accessRef = doc(db, 'admin_settings', 'access_control');
+        const unsubAccess = onSnapshot(accessRef, (snap: any) => {
+            if (snap && snap.exists()) {
+                const data = snap.data();
+                if (data.authorizedEmails && Array.isArray(data.authorizedEmails)) {
+                    currentAuthEmails = data.authorizedEmails;
+                    setAuthorizedEmails(data.authorizedEmails);
+                    updateAuthStatus(currentUserObj, data.authorizedEmails);
+                }
+            }
+        }, (err: any) => {
+            console.warn("access_control snapshot warning:", err);
+        });
+
         if (isWebFirebaseConfigured && auth) {
             const unsubscribe = fbOnAuthStateChanged(auth, async (currentUser) => {
-                if (currentUser) {
+                currentUserObj = currentUser;
+                if (currentUser && !currentUser.isAnonymous) {
                     setUser(currentUser);
-                    const adminEmails = [
-                        'ronalmaferreira04@icloud.com',
-                        'sumodemanga50@gmail.com',
-                        'm26101342@gmail.com'
-                    ];
-                    const isHardcodedAdmin = currentUser.email ? adminEmails.includes(currentUser.email.toLowerCase()) : false;
-                    setIsAdmin(isHardcodedAdmin);
+                    updateAuthStatus(currentUser, currentAuthEmails);
 
                     try {
                         const userDocRef = fbDoc(db, 'users', currentUser.uid);
                         const userDoc = await fbGetDoc(userDocRef);
                         if (userDoc.exists()) {
                             if (userDoc.data().role === 'admin') setIsAdmin(true);
+                            if (userDoc.data().isAuthorized === true) setIsAuthorized(true);
                         } else {
+                            const adminEmails = [
+                                'ronalmaferreira04@icloud.com',
+                                'sumodemanga50@gmail.com',
+                                'm26101342@gmail.com'
+                            ];
+                            const emailLower = (currentUser.email || '').toLowerCase();
+                            const isHardcodedAdmin = adminEmails.includes(emailLower);
+                            const isAuthEmail = currentAuthEmails.some(e => e.toLowerCase() === emailLower);
+
                             await fbSetDoc(userDocRef, {
                                 email: currentUser.email || 'anonymous',
                                 role: isHardcodedAdmin ? 'admin' : 'user',
+                                isAuthorized: isHardcodedAdmin || isAuthEmail,
                                 createdAt: new Date().toISOString()
                             }, { merge: true });
                         }
                     } catch (error: any) {
-                        if (!isHardcodedAdmin) setIsAdmin(false);
+                        console.warn("User doc verification warning:", error);
                     }
                 } else {
-                    try {
-                        await signInAnonymously(auth);
-                    } catch (err: any) {
-                        console.error("Anonymous error:", err);
-                    }
                     setUser(null);
                     setIsAdmin(false);
+                    setIsAuthorized(false);
                 }
                 setLoading(false);
             });
-            return () => unsubscribe();
+
+            return () => {
+                unsubscribe();
+                unsubAccess();
+            };
         } else {
             // Local Mock Auth Triggering
             const handleMockChanged = (u: any) => {
+                currentUserObj = u;
                 setUser(u);
-                if (u && u.email) {
-                    const admins = ['ronalmaferreira04@icloud.com', 'sumodemanga50@gmail.com', 'm26101342@gmail.com'];
-                    setIsAdmin(admins.includes(u.email.toLowerCase()));
-                } else {
-                    setIsAdmin(false);
-                }
+                updateAuthStatus(u, currentAuthEmails);
                 setLoading(false);
             };
             handleMockChanged(mockUser);
             authListeners.add(handleMockChanged);
             return () => {
                 authListeners.delete(handleMockChanged);
+                unsubAccess();
             };
         }
     }, []);
 
-    return { user, isAdmin, loading };
+    return { user, isAdmin, isAuthorized, authorizedEmails, loading };
+};
+
+// Automatic Archiver and Counter
+export const recordGeneratedDocument = async (docData: {
+    type: 'cv' | 'cover_letter' | 'combo';
+    candidateName: string;
+    candidateTitle?: string;
+    candidateEmail?: string;
+    candidatePhone?: string;
+    template?: string;
+    themeColor?: string;
+    resumeData?: any;
+    coverLetterText?: string;
+    letterSubject?: string;
+    generatedBy?: string;
+    action?: string;
+    price?: number;
+}) => {
+    const fullDoc = {
+        ...docData,
+        candidateName: docData.candidateName || 'Sem Nome',
+        candidateEmail: docData.candidateEmail || 'sem-email@cvlab.ao',
+        createdAt: new Date().toISOString(),
+        id: `doc_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`
+    };
+
+    try {
+        if (db) {
+            await addDoc(collection(db, 'generated_documents'), fullDoc);
+            
+            // Auto update metrics in real-time
+            const metricsRef = doc(db, 'admin_settings', 'metrics');
+            const metricsSnap = await getDoc(metricsRef);
+            const currentPrice = docData.price || 2000;
+            if (metricsSnap && metricsSnap.exists()) {
+                const cur = metricsSnap.data();
+                const isCV = docData.type === 'cv' || docData.type === 'combo';
+                const isLetter = docData.type === 'cover_letter' || docData.type === 'combo';
+                const newCVsCount = (cur.realCVsCount || cur.totalCVsGenerated || 0) + (isCV ? 1 : 0);
+                const newLettersCount = (cur.totalLettersGenerated || 0) + (isLetter ? 1 : 0);
+                const newRevenue = (cur.realRevenue || 0) + (isCV ? currentPrice : 1000);
+                
+                await updateDoc(metricsRef, {
+                    realCVsCount: newCVsCount,
+                    totalCVsGenerated: newCVsCount,
+                    totalLettersGenerated: newLettersCount,
+                    totalDocumentsGenerated: (cur.totalDocumentsGenerated || (newCVsCount + newLettersCount)) + 1,
+                    realRevenue: newRevenue,
+                    lastGeneratedAt: new Date().toISOString()
+                });
+            } else {
+                await setDoc(metricsRef, {
+                    realCVsCount: 10,
+                    totalCVsGenerated: 10,
+                    totalLettersGenerated: 4,
+                    totalDocumentsGenerated: 14,
+                    realRevenue: 20000,
+                    meetingLink: 'https://meet.google.com/abc-defg-hij',
+                    cvPrice: 2000,
+                    lastGeneratedAt: new Date().toISOString()
+                });
+            }
+        }
+    } catch (err) {
+        console.error("Erro ao arquivar documento gerado automaticamente:", err);
+    }
+    return fullDoc;
 };
 
 // Firestore wrappers & Mock SDK implementation

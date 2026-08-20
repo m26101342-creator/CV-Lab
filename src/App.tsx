@@ -71,7 +71,7 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@5.6.205/b
 import { 
     auth, db, useAuth, loginWithGoogle, logOut,
     collection, addDoc, onSnapshot, doc, query, where, getDocs, updateDoc, setDoc, serverTimestamp, getDoc, deleteDoc,
-    createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile
+    createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile, recordGeneratedDocument
 } from './lib/firebase';
 import { 
   BarChart, 
@@ -84,6 +84,7 @@ import {
   AreaChart, 
   Area 
 } from 'recharts';
+import { AdminPanel } from './components/AdminPanel';
 
 // --- Helper Functions ---
 
@@ -1072,739 +1073,6 @@ const MyResumesPage = ({ user, setView, onRequestDownload }: {
     );
 };
 
-const AdminPanel = ({ setView }: { setView?: any }) => {
-    const { isAdmin, user } = useAuth();
-    const [orders, setOrders] = useState<any[]>([]);
-    const [onlineUsers, setOnlineUsers] = useState<any[]>([]);
-    const [searchQuery, setSearchQuery] = useState('');
-    const [activeTab, setActiveTab] = useState<'overview' | 'orders' | 'visitors' | 'meetings'>('overview');
-    
-    // Live authorized editable variables
-    const [realCVsCount, setRealCVsCount] = useState(9);
-    const [realRevenue, setRealRevenue] = useState(18000);
-    const [meetingLink, setMeetingLink] = useState('https://meet.google.com/abc-defg-hij');
-    const [cvPrice, setCvPrice] = useState(2000);
-
-    // Notes and team chats
-    const [adminNotes, setAdminNotes] = useState<any[]>([]);
-    const [newNoteText, setNewNoteText] = useState('');
-    const [newNoteCategory, setNewNoteCategory] = useState<'Aviso' | 'Urgente' | 'Anotação' | 'Reunião'>('Anotação');
-
-    // Editing mode toggles
-    const [isEditingRealStats, setIsEditingRealStats] = useState(false);
-    const [editCVsCount, setEditCVsCount] = useState('9');
-    const [editRevenue, setEditRevenue] = useState('18000');
-    const [editMeetingLink, setEditMeetingLink] = useState('https://meet.google.com/abc-defg-hij');
-    const [editCvPrice, setEditCvPrice] = useState('2000');
-
-    const [stats, setStats] = useState({ 
-        users: 0, 
-        pending: 0, 
-        approved: 0, 
-        online: 0, 
-        totalVisitors: 0,
-        revenue: 0,
-        conversion: 0
-    });
-    const [chartData, setChartData] = useState<any[]>([]);
-    const [page, setPage] = useState(1);
-    const itemsPerPage = 8;
-    
-    useEffect(() => {
-        console.log("Admin Status:", isAdmin, "User Email:", auth?.currentUser?.email);
-        if (!isAdmin || !db) return;
-        
-        // Fetch all orders to keep stats and search accurate
-        const q = query(collection(db, 'orders'));
-        const unsubscribe = onSnapshot(q, (snapshot) => {
-            let pendingCount = 0;
-            let approvedCount = 0;
-            const dailyData: { [key: string]: number } = {};
-
-            const fetchedOrders = snapshot.docs.map(doc => {
-                const data: any = {id: doc.id, ...doc.data()};
-                if (data.status === 'pending') pendingCount++;
-                if (data.status === 'approved') approvedCount++;
-                
-                try {
-                   const date = new Date(data.createdAt).toLocaleDateString('pt-PT', { day: '2-digit', month: '2-digit' });
-                   dailyData[date] = (dailyData[date] || 0) + 1;
-                } catch(e) {}
-
-                return data;
-            });
-            
-            const formattedChartData = Object.keys(dailyData)
-                .map(date => ({ date, pedidos: dailyData[date] }))
-                .sort((a, b) => {
-                    const [d1, m1] = a.date.split('/');
-                    const [d2, m2] = b.date.split('/');
-                    return new Date(2026, parseInt(m1)-1, parseInt(d1)).getTime() - new Date(2026, parseInt(m2)-1, parseInt(d2)).getTime();
-                })
-                .slice(-7);
-
-            setChartData(formattedChartData);
-            
-            setStats(s => {
-                const visitors = s.totalVisitors || 1;
-                return { 
-                    ...s, 
-                    pending: pendingCount, 
-                    approved: approvedCount,
-                    revenue: approvedCount * cvPrice,
-                    conversion: fetchedOrders.length > 0 ? (fetchedOrders.length / visitors) * 100 : 0
-                };
-            });
-            setOrders(fetchedOrders.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
-        }, (error) => {
-            console.error("Firestore listener error:", error);
-            if (error.code === 'permission-denied') {
-                alert("Acesso negado ao banco de dados.");
-            }
-        });
-
-        // Fast simple snapshots for counts
-        const fetchGlobalStats = async () => {
-            const usersSnap = await getDocs(collection(db, 'users'));
-            const visitorsSnap = await getDocs(collection(db, 'visitors'));
-            setStats(s => ({ 
-                ...s, 
-                users: usersSnap.size,
-                totalVisitors: visitorsSnap.size
-            }));
-        };
-        fetchGlobalStats();
-
-        // Online Presence Listener
-        const presenceRef = collection(db, 'presence');
-        const unsubPresence = onSnapshot(presenceRef, (snapshot) => {
-            const now = new Date();
-            const fiveMinutesAgo = new Date(now.getTime() - 5 * 60000);
-            
-            const active = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
-                .filter((p: any) => new Date(p.lastSeen) > fiveMinutesAgo);
-            
-            setOnlineUsers(active.sort((a: any, b: any) => new Date(b.lastSeen).getTime() - new Date(a.lastSeen).getTime()));
-            setStats(s => ({ ...s, online: active.length }));
-        });
-
-        // Live Admin Metrics Listener
-        const metricsRef = doc(db, 'admin_settings', 'metrics');
-        const unsubMetrics = onSnapshot(metricsRef, (docSnap) => {
-            if (docSnap.exists()) {
-                const data = docSnap.data();
-                setRealCVsCount(data.realCVsCount ?? 9);
-                setRealRevenue(data.realRevenue ?? 18000);
-                setMeetingLink(data.meetingLink ?? 'https://meet.google.com/abc-defg-hij');
-                setCvPrice(data.cvPrice ?? 2000);
-                setEditCVsCount(String(data.realCVsCount ?? 9));
-                setEditRevenue(String(data.realRevenue ?? 18000));
-                setEditMeetingLink(data.meetingLink ?? 'https://meet.google.com/abc-defg-hij');
-                setEditCvPrice(String(data.cvPrice ?? 2000));
-            } else {
-                setDoc(metricsRef, {
-                    realCVsCount: 9,
-                    realRevenue: 18000,
-                    meetingLink: 'https://meet.google.com/abc-defg-hij',
-                    cvPrice: 2000
-                });
-            }
-        });
-
-        // Live Notes Board Listener
-        const notesQuery = query(collection(db, 'admin_notes'));
-        const unsubNotes = onSnapshot(notesQuery, (snapshot) => {
-            const fetched = snapshot.docs.map(dsc => ({ id: dsc.id, ...dsc.data() }));
-            setAdminNotes(fetched.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
-        });
-
-        return () => {
-            unsubscribe();
-            unsubPresence();
-            unsubMetrics();
-            unsubNotes();
-        };
-    }, [isAdmin]);
-
-    const handleSendNote = async (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!newNoteText.trim()) return;
-        if (!db) {
-            alert("A base de dados não está disponível no momento.");
-            return;
-        }
-        try {
-            await addDoc(collection(db, 'admin_notes'), {
-                text: newNoteText.trim(),
-                category: newNoteCategory,
-                author: user?.displayName || user?.email || 'Membro da Equipa',
-                authorEmail: user?.email || '',
-                createdAt: new Date().toISOString()
-            });
-            setNewNoteText('');
-        } catch (err) {
-            console.error("Erro ao publicar nota:", err);
-        }
-    };
-
-    const handleDeleteNote = async (id: string) => {
-        if (!db) return;
-        try {
-            await deleteDoc(doc(db, 'admin_notes', id));
-        } catch (err) {
-            console.error("Erro ao apagar nota:", err);
-        }
-    };
-
-    const handleSaveRealMetrics = async () => {
-        if (!db) {
-            alert("A base de dados não está disponível no momento.");
-            return;
-        }
-        try {
-            const metricsRef = doc(db, 'admin_settings', 'metrics');
-            await setDoc(metricsRef, {
-                realCVsCount: Math.max(0, parseInt(editCVsCount) || 0),
-                realRevenue: Math.max(0, parseInt(editRevenue) || 0),
-                meetingLink: editMeetingLink.trim() || 'https://meet.google.com/abc-defg-hij',
-                cvPrice: Math.max(0, parseInt(editCvPrice) || 2000)
-            });
-            setIsEditingRealStats(false);
-            alert("Métricas da equipa e preço do CV atualizados com sucesso!");
-        } catch (err) {
-            console.error("Erro ao salvar métricas:", err);
-            alert("Falha ao atualizar parâmetros.");
-        }
-    };
-
-    const approveOrder = async (order: any) => {
-        console.log("Tentando aprovar pedido:", order.id, "Usuário Logado:", auth?.currentUser?.email);
-        const startTime = Date.now();
-        try {
-            if (!db) throw new Error("Database not initialized");
-            if (!order?.id) throw new Error("Order ID is missing");
-
-            // Update order status using setDoc with merge for robustness
-            const orderRef = doc(db, 'orders', order.id);
-            await setDoc(orderRef, { 
-                status: 'approved', 
-                updatedAt: new Date().toISOString() 
-            }, { merge: true });
-            
-            console.log(`Status do pedido ${order.id} atualizado para approved em ${Date.now() - startTime}ms`);
-            
-            // Try to send email but don't block if it fails
-            try {
-                if (order.contactEmail) {
-                    await addDoc(collection(db, 'mail'), {
-                        to: [order.contactEmail],
-                        message: {
-                            subject: 'CV LAB - Documento Liberado',
-                            html: `<p>Seu documento foi aprovado. Acesse o site para baixar.</p>`
-                        }
-                    });
-                    console.log("E-mail de notificação enfileirado");
-                }
-            } catch (mailError) {
-                console.warn("Falha ao enfileirar e-mail:", mailError);
-            }
-            
-            alert("Pedido aprovado com sucesso!");
-        } catch (e: any) { 
-            console.error("ERRO NA APROVAÇÃO:", e);
-            const errorMsg = e.code ? `[${e.code}] ${e.message}` : e.message;
-            alert("Erro ao aprovar: " + (errorMsg || 'Erro desconhecido. Verifique o console.')); 
-        }
-    };
-
-    if (!isAdmin) return <div className="p-20 text-center font-bold text-red-500 font-sans uppercase tracking-widest text-xs">Acesso Restrito.</div>;
-
-    const filteredOrders = orders.filter(o => 
-        (searchQuery ? o.id.toLowerCase().includes(searchQuery.toLowerCase()) || (o.contactEmail && o.contactEmail.toLowerCase().includes(searchQuery.toLowerCase())) : true)
-    );
-    const displayOrders = searchQuery ? filteredOrders : filteredOrders.filter(o => o.status === 'pending');
-    const paginatedOrders = displayOrders.slice((page - 1) * itemsPerPage, page * itemsPerPage);
-    const totalPages = Math.ceil(displayOrders.length / itemsPerPage);
-
-    return (
-        <div className="flex flex-col md:flex-row min-h-screen bg-[#F8FAFC] font-sans">
-            {/* Sidebar Premium */}
-            <aside className="w-full md:w-80 bg-gradient-to-b from-[#0F172A] via-[#1E293B] to-[#0F172A] p-8 flex flex-col relative overflow-hidden shadow-2xl z-20 shrink-0">
-                <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-5"></div>
-                <div className="absolute -top-32 -left-32 w-64 h-64 bg-blue-500/20 rounded-full blur-[80px]"></div>
-                
-                <div className="flex items-center gap-4 mb-12 relative z-10">
-                    <div className="w-12 h-12 bg-gradient-to-tr from-blue-500 to-indigo-500 rounded-2xl flex items-center justify-center text-white font-black text-2xl shadow-xl shadow-blue-500/30">L</div>
-                    <div>
-                        <h2 className="text-lg font-black text-white leading-none tracking-tight">CV LAB</h2>
-                        <span className="text-[10px] text-blue-200/60 font-bold uppercase tracking-widest">Painel Admin</span>
-                    </div>
-                </div>
-
-                <nav className="space-y-2 flex-1 relative z-10">
-                    {[
-                        { id: 'overview', label: 'Dashboard', icon: Globe },
-                        { id: 'orders', label: 'Pagamentos', icon: CreditCard },
-                        { id: 'visitors', label: 'Membros Conetados', icon: User },
-                        { id: 'meetings', label: 'Sala de Reuniões', icon: Video },
-                    ].map(tab => (
-                        <button
-                            key={tab.id}
-                            onClick={() => { setActiveTab(tab.id as any); setPage(1); }}
-                            className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl text-sm font-bold transition-all duration-300 ${
-                                activeTab === tab.id 
-                                ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg shadow-blue-500/20 scale-[1.02]' 
-                                : 'text-slate-400 hover:bg-white/5 hover:text-white'
-                            }`}
-                        >
-                            <div className={`${activeTab === tab.id ? 'text-white' : 'text-slate-500'}`}>
-                                <tab.icon size={20} strokeWidth={2.5} />
-                            </div>
-                            {tab.label}
-                        </button>
-                    ))}
-                </nav>
-
-                <div className="pt-4 relative z-10 space-y-4">
-                    <div className="bg-slate-800/50 backdrop-blur-sm p-6 rounded-[2rem] border border-white/5 relative overflow-hidden">
-                        <div className="absolute top-0 right-0 w-24 h-24 bg-green-500/10 rounded-bl-full -mr-4 -mt-4"></div>
-                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Fatura Real</p>
-                        <p className="text-2xl font-black text-white tracking-tight">{realRevenue.toLocaleString()} Kzs</p>
-                    </div>
-
-                    {setView && (
-                        <button 
-                            onClick={() => setView('landing')} 
-                            className="w-full flex items-center justify-center gap-2 py-4 bg-slate-800 hover:bg-slate-700 text-white text-xs font-black uppercase tracking-widest rounded-2xl transition-all border border-white/5"
-                        >
-                            <ChevronLeft size={16} /> Voltar ao Início
-                        </button>
-                    )}
-                </div>
-            </aside>
-
-            {/* Main Area */}
-            <main className="flex-1 p-6 md:p-12 space-y-10 overflow-y-auto max-h-screen relative">
-                <div className="absolute top-0 left-0 w-full h-64 bg-slate-100/50 -z-10"></div>
-                
-                <header className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-6 mt-4 border-b border-slate-200/50">
-                    <div className="space-y-2">
-                        <h1 className="text-3xl font-black text-slate-900 tracking-tight">
-                            {activeTab === 'overview' ? 'Monitoramento em Tempo Real' : activeTab === 'orders' ? 'Gestão de Liberações' : 'Métricas de Usuários'}
-                        </h1>
-                        <p className="text-[11px] text-slate-500 font-bold uppercase tracking-widest flex items-center gap-2">
-                            <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
-                            Sistema de Inteligência Operacional
-                        </p>
-                    </div>
-                    
-                    {activeTab === 'orders' && (
-                        <div className="relative w-full md:w-80">
-                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                            <input 
-                                type="text" 
-                                value={searchQuery ?? ''}
-                                onChange={e => {setSearchQuery(e.target.value); setPage(1);}}
-                                placeholder="Buscar por email..." 
-                                className="w-full pl-12 pr-5 py-4 text-sm font-bold bg-white rounded-[1.5rem] shadow-[0_8px_30px_rgb(0,0,0,0.04)] outline-none border border-slate-100 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all"
-                            />
-                        </div>
-                    )}
-                </header>
-
-                {activeTab === 'overview' && (
-                    <div className="space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-500 relative z-10">
-                        {/* Gestão de Métricas de Vendas (Dono/ADM) */}
-                        <div className="bg-gradient-to-r from-slate-900 to-indigo-950 p-8 rounded-[2.5rem] text-white shadow-xl relative overflow-hidden group border border-indigo-900/40">
-                            <div className="absolute top-0 right-0 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl -mr-20 -mt-20"></div>
-                            
-                            <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 relative z-10">
-                                <div className="space-y-2">
-                                    <h3 className="text-2xl font-black tracking-tight">Métricas Oficializadas CV LAB</h3>
-                                    <p className="text-xs text-blue-200/80 font-medium">Parâmetros oficiais de faturamento real de vendas e currículos validados.</p>
-                                    
-                                    <div className="flex flex-wrap gap-4 pt-4">
-                                        <div className="bg-white/5 backdrop-blur px-5 py-3 rounded-2xl border border-white/10 min-w-[120px]">
-                                            <span className="block text-[9px] uppercase tracking-wider font-bold text-blue-200">Currículos Validados</span>
-                                            <span className="text-2xl font-black">{realCVsCount} CVs</span>
-                                        </div>
-                                        <div className="bg-white/5 backdrop-blur px-5 py-3 rounded-2xl border border-white/10 min-w-[125px]">
-                                            <span className="block text-[9px] uppercase tracking-wider font-bold text-blue-200">Faturamento Oficial</span>
-                                            <span className="text-2xl font-black text-emerald-400">{realRevenue.toLocaleString()} Kzs</span>
-                                        </div>
-                                        <div className="bg-white/5 backdrop-blur px-5 py-3 rounded-2xl border border-white/10 min-w-[110px]">
-                                            <span className="block text-[9px] uppercase tracking-wider font-bold text-blue-200">Preço do CV</span>
-                                            <span className="text-2xl font-black text-amber-300">{cvPrice.toLocaleString()} Kz</span>
-                                        </div>
-                                    </div>
-                                </div>
-                                
-                                <div className="w-full lg:w-auto bg-white/5 backdrop-blur p-5 rounded-3xl border border-white/10 space-y-4">
-                                    <h4 className="text-xs font-black uppercase tracking-wider text-blue-100">Atualização Prática de Faturação</h4>
-                                    
-                                    <div className="grid grid-cols-3 gap-2">
-                                        <div>
-                                            <label className="block text-[10px] font-bold text-blue-200 mb-1">Total de CVs</label>
-                                            <input 
-                                                type="number" 
-                                                value={editCVsCount} 
-                                                onChange={e => setEditCVsCount(e.target.value)} 
-                                                className="w-full bg-slate-950/80 border border-white/10 rounded-xl px-2.5 py-2 text-xs font-bold font-mono text-white outline-none focus:border-blue-400" 
-                                            />
-                                        </div>
-                                        <div>
-                                            <label className="block text-[10px] font-bold text-blue-100 mb-1">Faturação (Kz)</label>
-                                            <input 
-                                                type="number" 
-                                                value={editRevenue} 
-                                                onChange={e => setEditRevenue(e.target.value)} 
-                                                className="w-full bg-slate-950/80 border border-white/10 rounded-xl px-2.5 py-2 text-xs font-bold font-mono text-white outline-none focus:border-blue-400" 
-                                            />
-                                        </div>
-                                        <div>
-                                            <label className="block text-[10px] font-bold text-amber-200 mb-1">Preço CV (Kz)</label>
-                                            <input 
-                                                type="number" 
-                                                value={editCvPrice} 
-                                                onChange={e => setEditCvPrice(e.target.value)} 
-                                                className="w-full bg-slate-950/80 border border-white/10 rounded-xl px-2.5 py-2 text-xs font-bold font-mono text-white outline-none focus:border-blue-400" 
-                                            />
-                                        </div>
-                                    </div>
-                                    
-                                    <button 
-                                        onClick={handleSaveRealMetrics}
-                                        className="w-full py-2.5 bg-blue-600 hover:bg-blue-500 active:scale-[0.98] text-white text-xs font-black uppercase tracking-widest rounded-xl transition-all shadow-md border-0"
-                                    >
-                                        Gravar Alterações
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                            {[
-                                { label: 'Online Atualmente', val: stats.online, color: 'text-green-500', icon: Globe, highlight: true },
-                                { label: 'Trafégo Único (Vida)', val: stats.totalVisitors, color: 'text-slate-800', icon: User },
-                                { label: 'Taxa de Conversão', val: `${stats.conversion.toFixed(1)}%`, color: 'text-amber-500', icon: BarChart },
-                                { label: 'Aguardando Pagamento', val: stats.pending, color: 'text-blue-600', icon: CreditCard },
-                            ].map((s, i) => (
-                                <div key={i} className="bg-white p-7 rounded-[2rem] shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 flex flex-col items-center text-center hover:shadow-[0_20px_40px_rgb(0,0,0,0.08)] hover:-translate-y-1 transition-all duration-300 relative overflow-hidden group">
-                                    <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-bl from-slate-50 to-transparent -mr-8 -mt-8 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                                    <div className="w-14 h-14 bg-slate-50 rounded-2xl flex items-center justify-center mb-5 group-hover:scale-110 transition-transform duration-500">
-                                        <s.icon size={24} className={s.highlight ? 'text-green-500' : 'text-slate-400'} strokeWidth={2} />
-                                    </div>
-                                    <span className="text-[10px] uppercase font-black tracking-widest text-slate-400 mb-2">{s.label}</span>
-                                    <div className="flex items-center gap-2">
-                                        {s.highlight && <div className="w-2.5 h-2.5 bg-green-500 rounded-full animate-pulse shadow-[0_0_10px_rgba(34,197,94,0.5)]"></div>}
-                                        <span className={`text-4xl font-black tracking-tighter ${s.color}`}>{s.val}</span>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-
-                        <div className="bg-white p-10 rounded-[2.5rem] shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 relative overflow-hidden">
-                            <div className="absolute top-0 right-0 w-96 h-96 bg-blue-50/50 rounded-full blur-[100px] -mr-20 -mt-20"></div>
-                            
-                            <div className="flex flex-col md:flex-row md:items-center justify-between mb-12 relative z-10 gap-4">
-                                <div>
-                                    <h3 className="font-black text-slate-900 text-2xl tracking-tight">Atividade de Pedidos</h3>
-                                    <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mt-1">Últimos 7 dias de operação</p>
-                                </div>
-                                <div className="flex items-center gap-2 bg-slate-50 px-4 py-2 rounded-xl">
-                                    <div className="w-3 h-3 bg-blue-600 rounded-full shadow-[0_0_10px_rgba(37,99,235,0.4)]"></div>
-                                    <span className="text-[10px] font-black text-slate-600 uppercase tracking-widest">Volume Registado</span>
-                                </div>
-                            </div>
-                            <div className="w-full h-[360px] relative z-10">
-                                <ResponsiveContainer width="100%" height="100%">
-                                    <AreaChart data={chartData}>
-                                        <defs>
-                                            <linearGradient id="colorPed" x1="0" y1="0" x2="0" y2="1">
-                                                <stop offset="5%" stopColor="#2563EB" stopOpacity={0.2}/>
-                                                <stop offset="95%" stopColor="#2563EB" stopOpacity={0}/>
-                                            </linearGradient>
-                                        </defs>
-                                        <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{fontSize: 11, fontWeight: 700, fill: '#94A3B8'}} dy={15} />
-                                        <YAxis axisLine={false} tickLine={false} tick={{fontSize: 11, fontWeight: 700, fill: '#94A3B8'}} dx={-15} />
-                                        <Tooltip 
-                                            contentStyle={{borderRadius: '1.5rem', border: '1px solid #F1F5F9', padding: '16px 20px', boxShadow: '0 20px 40px -10px rgba(0,0,0,0.1)'}} 
-                                            itemStyle={{color: '#2563EB', fontWeight: '900', fontSize: '14px', textTransform: 'uppercase', letterSpacing: '0.05em'}}
-                                        />
-                                        <Area type="monotone" dataKey="pedidos" stroke="#2563EB" strokeWidth={5} fillOpacity={1} fill="url(#colorPed)" animationDuration={2000} />
-                                    </AreaChart>
-                                </ResponsiveContainer>
-                            </div>
-                        </div>
-                    </div>
-                )}
-
-                {activeTab === 'orders' && (
-                    <div className="bg-white rounded-[2rem] border border-slate-100 overflow-hidden shadow-[0_8px_30px_rgb(0,0,0,0.04)] animate-in slide-in-from-right-4 duration-500 relative z-10">
-                        <div className="overflow-x-auto">
-                            <table className="w-full text-left text-sm whitespace-nowrap">
-                                <thead className="bg-slate-50 border-b border-slate-100 text-[10px] font-black uppercase tracking-widest text-slate-400">
-                                    <tr>
-                                        <th className="px-8 py-5">Data de Criação</th>
-                                        <th className="px-8 py-5">E-mail do Cliente</th>
-                                        <th className="px-8 py-5">Documento</th>
-                                        <th className="px-8 py-5 text-center">Estado</th>
-                                        <th className="px-8 py-5 text-right">Controle</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y divide-slate-50">
-                                    {paginatedOrders.map(o => (
-                                        <tr key={o.id} className="group hover:bg-blue-50/30 transition-colors duration-300">
-                                            <td className="px-8 py-6 text-slate-500 font-bold">{new Date(o.createdAt).toLocaleDateString()}</td>
-                                            <td className="px-8 py-6 font-black text-slate-900">{o.contactEmail}</td>
-                                            <td className="px-8 py-6">
-                                                <span className="text-[10px] font-black uppercase tracking-tighter bg-slate-100 text-slate-500 px-3 py-1.5 rounded-lg border border-slate-200">
-                                                    {o.documentType === 'combo' ? 'Combo Premium' : (o.documentType === 'resume' ? 'Currículo' : 'Carta Ref.')}
-                                                </span>
-                                            </td>
-                                            <td className="px-8 py-6 text-center">
-                                                <span className={`text-[10px] font-black uppercase tracking-widest px-4 py-1.5 rounded-full ${
-                                                    o.status === 'pending' ? 'bg-amber-100 text-amber-700' : 'bg-green-100 text-green-700'
-                                                }`}>
-                                                    {o.status === 'pending' ? 'Aguardando' : 'Liberado'}
-                                                </span>
-                                            </td>
-                                            <td className="px-8 py-6 text-right">
-                                                {o.status === 'pending' ? (
-                                                    <button onClick={() => approveOrder(o)} className="bg-blue-600 hover:bg-blue-700 text-white h-10 px-6 rounded-xl text-[11px] font-black uppercase tracking-widest shadow-lg shadow-blue-500/20 active:scale-95 transition-all">Validar</button>
-                                                ) : (
-                                                    <div className="flex items-center justify-end gap-2 text-green-600 font-black text-[11px] uppercase">
-                                                        <CheckCircle size={16} /> Finalizado
-                                                    </div>
-                                                )}
-                                            </td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </div>
-                        {totalPages > 1 && (
-                            <div className="p-8 border-t border-slate-100 flex items-center justify-between bg-slate-50/50">
-                                <span className="text-[11px] font-black text-slate-400 uppercase tracking-widest bg-white px-3 py-1.5 rounded-lg border border-slate-200 shadow-sm">Página {page} de {totalPages}</span>
-                                <div className="flex gap-2">
-                                    <button disabled={page === 1} onClick={() => setPage(page - 1)} className="w-10 h-10 rounded-xl border border-slate-200 bg-white flex items-center justify-center hover:bg-slate-50 disabled:opacity-30 hover:border-blue-300 hover:text-blue-600 transition-all shadow-sm"><ChevronLeft size={18}/></button>
-                                    <button disabled={page === totalPages} onClick={() => setPage(page + 1)} className="w-10 h-10 rounded-xl border border-slate-200 bg-white flex items-center justify-center hover:bg-slate-50 disabled:opacity-30 hover:border-blue-300 hover:text-blue-600 transition-all shadow-sm"><ChevronRight size={18}/></button>
-                                </div>
-                            </div>
-                        )}
-                    </div>
-                )}
-
-                {activeTab === 'visitors' && (
-                    <div className="bg-white rounded-[2rem] border border-slate-100 overflow-hidden shadow-[0_8px_30px_rgb(0,0,0,0.04)] animate-in slide-in-from-left-4 duration-500 relative z-10">
-                        <div className="overflow-x-auto">
-                            <table className="w-full text-left text-sm whitespace-nowrap">
-                                <thead className="bg-slate-50 border-b border-slate-100 text-[10px] font-black uppercase tracking-widest text-slate-400">
-                                    <tr>
-                                        <th className="px-8 py-5">Utilizador</th>
-                                        <th className="px-8 py-5">Página Atual</th>
-                                        <th className="px-8 py-5 text-right">Sinal</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y divide-slate-50">
-                                    {onlineUsers.map(u => (
-                                        <tr key={u.id} className="hover:bg-blue-50/30 transition-colors duration-300">
-                                            <td className="px-8 py-6">
-                                                <div className="flex items-center gap-4">
-                                                    <div className={`w-10 h-10 rounded-2xl flex items-center justify-center text-[11px] font-black shadow-sm ${u.isAnonymous ? 'bg-slate-100 text-slate-500 border border-slate-200' : 'bg-gradient-to-tr from-blue-500 to-blue-600 text-white'}`}>
-                                                        {u.isAnonymous ? 'VIS' : (u.email?.[0]?.toUpperCase() || 'USR')}
-                                                    </div>
-                                                    <div className="flex flex-col">
-                                                        <span className="font-black text-slate-900 text-sm tracking-tight">{u.email || 'Explorando Anónimo'}</span>
-                                                        <span className="text-[10px] text-slate-400 font-mono font-bold">{new Date(u.lastSeen).toLocaleTimeString()}</span>
-                                                    </div>
-                                                </div>
-                                            </td>
-                                            <td className="px-8 py-6 lowercase italic text-slate-500 font-bold">#{u.view || 'navegando...'}</td>
-                                            <td className="px-8 py-6 text-right">
-                                                <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-green-50 text-green-600 border border-green-100">
-                                                    <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(34,197,94,0.6)]"></div>
-                                                    <span className="text-[10px] font-black uppercase tracking-widest leading-none mt-0.5">Online</span>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    ))}
-                                    {onlineUsers.length === 0 && (
-                                        <tr>
-                                            <td colSpan={3} className="px-8 py-24 text-center text-slate-400 font-bold uppercase text-[11px] tracking-widest">Nenhum rastro de presença detetado recentemente.</td>
-                                        </tr>
-                                    )}
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                )}
-
-                {activeTab === 'meetings' && (
-                    <div className="space-y-10 animate-in fade-in slide-in-from-right-4 duration-500 relative z-10">
-                        {/* Sala de Reunião Link & Info Box */}
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                            <div className="md:col-span-2 bg-white p-8 rounded-[2rem] border border-slate-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)] space-y-6">
-                                <div className="flex items-center gap-4">
-                                    <div className="w-12 h-12 bg-blue-100 text-blue-600 rounded-2xl flex items-center justify-center">
-                                        <Video size={24} />
-                                    </div>
-                                    <div>
-                                        <h3 className="text-xl font-black text-slate-900 tracking-tight">Sala de Reuniões Virtual</h3>
-                                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Espaço oficial para o alinhamento da equipa</p>
-                                    </div>
-                                </div>
-
-                                <p className="text-sm text-slate-600 leading-relaxed">
-                                    Esta é a nossa sala oficial para reuniões rápidas de feedback, alinhamentos diários e desenho das novas atualizações do CV LAB. Use o link do Google Meet abaixo para aceder instantaneamente.
-                                </p>
-
-                                <div className="p-5 bg-slate-50 border border-slate-100 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                                    <div className="space-y-1">
-                                        <span className="block text-[10px] font-black text-slate-400 uppercase tracking-widest">Link de Acesso Ativo</span>
-                                        <a href={meetingLink} target="_blank" rel="noopener noreferrer" className="text-sm font-bold text-blue-600 hover:underline break-all">
-                                            {meetingLink}
-                                        </a>
-                                    </div>
-                                    <a 
-                                        href={meetingLink} 
-                                        target="_blank" 
-                                        rel="noopener noreferrer"
-                                        className="inline-flex items-center justify-center h-12 px-6 bg-blue-600 hover:bg-blue-700 font-black text-xs text-white uppercase tracking-widest rounded-xl transition-all shadow-md shrink-0 border-0"
-                                    >
-                                        Aceder à Sala
-                                    </a>
-                                </div>
-
-                                {/* Link Editor */}
-                                <div className="pt-4 border-t border-slate-100 space-y-4">
-                                    <h4 className="text-xs font-black uppercase tracking-wider text-slate-700">Alterar Link da Sala</h4>
-                                    <div className="flex gap-3">
-                                        <input 
-                                            type="text" 
-                                            value={editMeetingLink} 
-                                            onChange={e => setEditMeetingLink(e.target.value)} 
-                                            placeholder="Ex: https://meet.google.com/..."
-                                            className="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-xs font-bold font-mono outline-none focus:border-blue-500" 
-                                        />
-                                        <button 
-                                            onClick={handleSaveRealMetrics} 
-                                            className="h-12 px-5 bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold rounded-xl active:scale-[0.98] transition-all border-0 cursor-pointer"
-                                        >
-                                            Guardar Link
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Lateral Team Guidelines */}
-                            <div className="bg-gradient-to-b from-slate-900 to-slate-800 p-8 rounded-[2rem] text-white shadow-xl space-y-6 relative overflow-hidden">
-                                <div className="absolute top-0 right-0 w-48 h-48 bg-white/5 rounded-full blur-2xl"></div>
-                                <h3 className="text-lg font-black tracking-tight relative z-10">Pautas Fundamentais</h3>
-                                <ul className="space-y-4 text-xs font-black text-slate-300 relative z-10">
-                                    <li className="flex items-start gap-2.5">
-                                        <span className="w-1.5 h-1.5 rounded-full bg-blue-400 mt-1.5 shrink-0" />
-                                        <span>Confirmar cada venda de {cvPrice.toLocaleString()} Kzs no botão físico para o placar de faturamento real sincronizar na hora.</span>
-                                    </li>
-                                    <li className="flex items-start gap-2.5">
-                                        <span className="w-1.5 h-1.5 rounded-full bg-blue-400 mt-1.5 shrink-0" />
-                                        <span>Garantir que os clientes registados estão com o MULTICAIXA Express ativo ao gerar faturas.</span>
-                                    </li>
-                                    <li className="flex items-start gap-2.5">
-                                        <span className="w-1.5 h-1.5 rounded-full bg-blue-400 mt-1.5 shrink-0" />
-                                        <span>Esteja pronto para abrir o terminal contabilístico às 8:00 com credenciais de Supervisor.</span>
-                                    </li>
-                                </ul>
-                            </div>
-                        </div>
-
-                        {/* Quadro de Notas & Avisos Coletivos */}
-                        <div className="bg-white p-8 rounded-[2rem] border border-slate-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)] space-y-8">
-                            <div className="flex justify-between items-center border-b border-slate-100 pb-5">
-                                <div>
-                                    <h3 className="text-xl font-black text-slate-900 tracking-tight">Quadro Coletivo de Notas</h3>
-                                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Avisos e anotações internas da equipa</p>
-                                </div>
-                                <div className="px-4 py-1.5 rounded-full bg-slate-100 text-slate-600 text-[10px] font-black uppercase tracking-widest">
-                                    {adminNotes.length} Notas Ativas
-                                </div>
-                            </div>
-
-                            {/* Note Publisher Form */}
-                            <form onSubmit={handleSendNote} className="space-y-4">
-                                <div className="flex flex-col sm:flex-row gap-3">
-                                    <select 
-                                        value={newNoteCategory} 
-                                        onChange={e => setNewNoteCategory(e.target.value as any)}
-                                        className="h-12 px-4 rounded-xl text-xs font-bold border border-slate-200 bg-slate-50 outline-none focus:border-blue-500"
-                                    >
-                                        <option value="Anotação">📝 Anotação</option>
-                                        <option value="Aviso">📢 Aviso Geral</option>
-                                        <option value="Urgente">🚨 Urgente</option>
-                                        <option value="Reunião">👥 Reunião</option>
-                                    </select>
-                                    <input 
-                                        type="text" 
-                                        value={newNoteText} 
-                                        onChange={e => setNewNoteText(e.target.value)} 
-                                        placeholder="Escreva um aviso para a restante equipa..."
-                                        className="flex-1 h-12 px-5 rounded-xl text-xs font-bold border border-slate-200 bg-slate-50 outline-none focus:border-blue-500"
-                                    />
-                                    <button 
-                                        type="submit" 
-                                        className="h-12 px-8 bg-blue-600 hover:bg-blue-700 font-black text-xs text-white uppercase tracking-widest rounded-xl transition-all border-0 cursor-pointer"
-                                    >
-                                        Fixar Nota
-                                    </button>
-                                </div>
-                            </form>
-
-                            {/* Active Notes Display */}
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                                {adminNotes.map(note => (
-                                    <div key={note.id} className="p-6 bg-slate-50 hover:bg-slate-50/80 border border-slate-100 rounded-2xl relative overflow-hidden group">
-                                        {/* Corner Tag */}
-                                        <div className="flex justify-between items-start gap-4 mb-4">
-                                            <span className={`text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-md ${
-                                                note.category === 'Urgente' ? 'bg-red-100 text-red-700' :
-                                                note.category === 'Aviso' ? 'bg-amber-100 text-amber-700' :
-                                                note.category === 'Reunião' ? 'bg-blue-100 text-blue-700' :
-                                                'bg-slate-200 text-slate-700'
-                                            }`}>
-                                                {note.category || 'Nota'}
-                                            </span>
-                                            <button 
-                                                onClick={() => handleDeleteNote(note.id)}
-                                                className="text-slate-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity border-0 bg-transparent cursor-pointer p-1"
-                                                title="Apagar Nota"
-                                            >
-                                                <X size={14} />
-                                            </button>
-                                        </div>
-
-                                        <p className="text-xs text-slate-700 leading-relaxed font-semibold mb-4">{note.text}</p>
-                                        
-                                        <div className="pt-3 border-t border-slate-200/50 flex justify-between items-center text-[9px] font-bold text-slate-400">
-                                            <span>Por: {note.author}</span>
-                                            <span>{note.createdAt ? new Date(note.createdAt).toLocaleDateString() : ''}</span>
-                                        </div>
-                                    </div>
-                                ))}
-
-                                {adminNotes.length === 0 && (
-                                    <div className="col-span-full py-16 text-center text-slate-400 font-bold uppercase text-[10px] tracking-widest">
-                                        Nenhuma nota afixada por agora. Escreva uma no quadro acima!
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-                    </div>
-                )}
-            </main>
-        </div>
-    );
-};
-
 const EditableTitle = ({ 
   text, 
   defaultText, 
@@ -1831,26 +1099,42 @@ const EditableTitle = ({
     return <Component className={className} style={style}>{val}</Component>;
   }
 
+  const isPill = className?.includes('rounded-full') || className?.includes('inline-block');
+
   return (
     <Component 
       className={`relative group ${className || ''}`} 
       style={{ ...style, cursor: 'text' }}
+      onClick={(e: any) => e.stopPropagation()}
+      onMouseDown={(e: any) => e.stopPropagation()}
     >
       <input
         type="text"
         value={val}
-        onChange={e => setVal(e.target.value)}
-        onFocus={() => setIsFocused(true)}
+        size={isPill ? Math.max((val || defaultText).length, 4) : undefined}
+        onChange={e => {
+          const newVal = e.target.value;
+          setVal(newVal);
+          if (onSave) {
+            onSave(newVal);
+          }
+        }}
+        onFocus={(e) => {
+          setIsFocused(true);
+          e.stopPropagation();
+        }}
         onBlur={() => {
           setIsFocused(false);
-          onSave(val.trim() || defaultText);
+          const finalVal = val.trim() || defaultText;
+          setVal(finalVal);
+          if (onSave) onSave(finalVal);
         }}
         onKeyDown={e => { 
           if (e.key === 'Enter') { 
             e.currentTarget.blur(); 
           } 
         }}
-        className={`bg-transparent border-none outline-none w-full p-0 m-0 cursor-text transition-all ${
+        className={`bg-transparent border-none outline-none ${isPill ? 'w-auto text-center' : 'w-full'} p-0 m-0 cursor-text transition-all ${
           isFocused 
             ? 'border-b border-solid border-current bg-black/5 dark:bg-white/10 ring-1 ring-blue-500/40 rounded px-1' 
             : 'border-b border-dashed border-transparent hover:border-current/50'
@@ -1862,10 +1146,10 @@ const EditableTitle = ({
           letterSpacing: 'inherit', 
           textTransform: 'inherit',
           fontFamily: 'inherit',
-          textAlign: 'inherit',
+          textAlign: isPill ? 'center' : 'inherit',
           lineHeight: 'inherit'
         }}
-        title="Clique para editar este título de seção"
+        title="Clique para editar o nome desta secção/categoria"
       />
     </Component>
   );
@@ -5299,7 +4583,7 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
 
               {/* CONTACT Section (Always in Left Sidebar) */}
               <div className="mb-8">
-                <h3 className="text-sm font-black uppercase tracking-wider mb-4 text-center pb-1 border-b-2 border-sky-400/50" style={{ color: c.primary }}>{data.language === 'en' ? 'Contact' : 'Contacto'}</h3>
+                <EditableTitle as="h3" className="text-sm font-black uppercase tracking-wider mb-4 text-center pb-1 border-b-2 border-sky-400/50" style={{ color: c.primary }} defaultText="Contacto" text={getSectionTitle(data, 'contact', data.language === 'en' ? 'Contact' : 'Contacto')} onSave={onChange ? (v) => handleTitleChange('contact', v) : undefined} />
                 <div className="space-y-3">
                   {data.personalInfo.email && (
                     <div className="flex items-start gap-3 text-[10px] font-bold text-gray-700">
@@ -5451,7 +4735,7 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
                 if (getSectionCol('custom_' + cs.id, 'right') !== 'left') return null;
                 return (
                   <div key={cs.id || `cs-${idx}`} className="mb-8">
-                    <h3 className="text-sm font-black uppercase tracking-wider mb-4 text-center pb-1 border-b-2 border-sky-400/50" style={{ color: c.primary }}>{cs.title}</h3>
+                    <EditableTitle as="h3" className="text-sm font-black uppercase tracking-wider mb-4 text-center pb-1 border-b-2 border-sky-400/50" style={{ color: c.primary }} defaultText={cs.title} text={cs.title} onSave={onChange ? (v) => handleCustomSectionTitleChange(cs.id, v) : undefined} />
                     <div className="space-y-3">
                       {cs.items.map((item, idxx) => (
                         <div key={item.id || `csi-${idxx}`} className="text-[10px]">
@@ -5477,9 +4761,7 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
                 {/* ABOUT ME / SUMMARY (if right) */}
                 {getSectionCol('summary', 'right') === 'right' && data.personalInfo.summary && (
                   <div>
-                    <div className="inline-block py-1.5 px-5 rounded-full text-[10px] font-black uppercase tracking-wider text-white mb-3" style={{ backgroundColor: c.primary }}>
-                      Sobre Mim
-                    </div>
+                    <EditableTitle as="div" className="inline-block py-1.5 px-5 rounded-full text-[10px] font-black uppercase tracking-wider text-white mb-3" style={{ backgroundColor: c.primary }} defaultText="Sobre Mim" text={getSectionTitle(data, 'summary', 'Sobre Mim')} onSave={onChange ? (v) => handleTitleChange('summary', v) : undefined} />
                     <p className="text-xs leading-relaxed text-gray-600 font-medium text-justify">{renderText(data.personalInfo.summary)}</p>
                   </div>
                 )}
@@ -5601,9 +4883,7 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
                   if (getSectionCol('custom_' + cs.id, 'right') !== 'right') return null;
                   return (
                     <div key={cs.id || `cs-${idx}`}>
-                      <div className="inline-block py-1.5 px-5 rounded-full text-[10px] font-black uppercase tracking-wider text-white mb-4" style={{ backgroundColor: c.primary }}>
-                        {cs.title}
-                      </div>
+                      <EditableTitle as="div" className="inline-block py-1.5 px-5 rounded-full text-[10px] font-black uppercase tracking-wider text-white mb-4" style={{ backgroundColor: c.primary }} defaultText={cs.title} text={cs.title} onSave={onChange ? (v) => handleCustomSectionTitleChange(cs.id, v) : undefined} />
                       <div className="space-y-4">
                         {cs.items.map((item, idxx) => (
                           <div key={item.id || `csi-${idxx}`} className={`relative ${data.styleConfig?.showTimeline !== false ? 'pl-6 border-l-2 border-sky-400/30' : ''}`}>
@@ -7153,7 +6433,7 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
 // --- Main Application ---
 
 export default function App() {
-  const { user, isAdmin } = useAuth();
+  const { user, isAdmin, isAuthorized, authorizedEmails, loading: authLoading } = useAuth();
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [currentOrderId, setCurrentOrderId] = useState<string | null>(null);
@@ -7168,7 +6448,6 @@ export default function App() {
 
   const [view, _setView] = useState<'landing' | 'editor' | 'faq' | 'about' | 'terms' | 'tips' | 'showcase' | 'admin' | 'profile' | 'my-resumes'>('landing');
   const [showAuthModalAlert, setShowAuthModalAlert] = useState(false);
-  const [isCountedAsReal, setIsCountedAsReal] = useState(false);
   const [cvPrice, setCvPrice] = useState(2000);
 
   useEffect(() => {
@@ -7201,15 +6480,13 @@ export default function App() {
   }, []);
 
   const setView = (newView: 'landing' | 'editor' | 'faq' | 'about' | 'terms' | 'tips' | 'showcase' | 'admin' | 'profile' | 'my-resumes') => {
-    const restrictedViews = ['editor', 'admin', 'profile', 'my-resumes'];
-    if (restrictedViews.includes(newView)) {
-      const adminEmails = [
-        'ronalmaferreira04@icloud.com',
-        'sumodemanga50@gmail.com',
-        'm26101342@gmail.com'
-      ];
-      const hasAccess = user && user.email && adminEmails.includes(user.email.toLowerCase());
-      if (!hasAccess) {
+    if (newView === 'admin') {
+      if (!isAdmin) {
+        alert("Acesso restrito apenas a administradores da CV LAB.");
+        return;
+      }
+    } else if (newView === 'editor' || newView === 'profile' || newView === 'my-resumes') {
+      if (!isAuthorized) {
         setShowAuthModalAlert(true);
         return;
       }
@@ -7217,42 +6494,10 @@ export default function App() {
     _setView(newView);
   };
 
-  const handleToggleRealCVCount = async (checked: boolean) => {
-    setIsCountedAsReal(checked);
-    if (!db) return;
-    try {
-      const metricsRef = doc(db, 'admin_settings', 'metrics');
-      const metricsSnap = await getDoc(metricsRef);
-      if (metricsSnap.exists()) {
-        const curData = metricsSnap.data();
-        const currentPrice = curData.cvPrice !== undefined ? Number(curData.cvPrice) : 2000;
-        const diffCount = checked ? 1 : -1;
-        const diffRevenue = checked ? currentPrice : -currentPrice;
-        await updateDoc(metricsRef, {
-          realCVsCount: Math.max(0, (curData.realCVsCount || 0) + diffCount),
-          realRevenue: Math.max(0, (curData.realRevenue || 0) + diffRevenue)
-        });
-      } else {
-        await setDoc(metricsRef, {
-          realCVsCount: checked ? 10 : 9,
-          realRevenue: checked ? 20000 : 18000,
-          meetingLink: 'https://meet.google.com/abc-defg-hij',
-          cvPrice: 2000
-        });
-      }
-    } catch (e) {
-      console.error("Erro ao atualizar contagem de CVs reais:", e);
-    }
-  };
-
   const handleLogoClick = () => {
-    const adminEmails = [
-      'ronalmaferreira04@icloud.com',
-      'sumodemanga50@gmail.com',
-      'm26101342@gmail.com'
-    ];
-    const hasAccess = user && user.email && adminEmails.includes(user.email.toLowerCase());
-    if (hasAccess) {
+    if (isAdmin) {
+      setView('admin');
+    } else if (isAuthorized) {
       setView('editor');
     } else {
       setShowAuthModalAlert(true);
@@ -8030,6 +7275,26 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
       ? { content: generatedLetter, personalInfo: resumeData.personalInfo, themeColor: resumeData.themeColor, language: resumeData.language, subject: letterSubject, subjectStyle: letterSubjectStyle } 
       : resumeData;
 
+    try {
+      recordGeneratedDocument({
+        type: isCoverLetterMode ? 'cover_letter' : 'cv',
+        candidateName: resumeData?.personalInfo?.fullName || 'Candidato CV Lab',
+        candidateTitle: isCoverLetterMode ? letterSubject : (resumeData?.personalInfo?.title || 'Profissional'),
+        candidateEmail: resumeData?.personalInfo?.email || user?.email || '',
+        candidatePhone: resumeData?.personalInfo?.phone || '',
+        template: template,
+        themeColor: resumeData?.themeColor || '#1E40AF',
+        resumeData: resumeData,
+        coverLetterText: isCoverLetterMode ? generatedLetter : undefined,
+        letterSubject: isCoverLetterMode ? letterSubject : undefined,
+        generatedBy: user?.email || 'm26101342@gmail.com',
+        action: 'Descarregar PDF',
+        price: cvPrice || 2000
+      });
+    } catch (errRecord) {
+      console.warn("Auto-record generated document warning:", errRecord);
+    }
+
     await downloadHtmlDocumentAsPdf(data, isCoverLetterMode ? 'cover_letter' : 'resume', template, filename);
   };
 
@@ -8038,6 +7303,26 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
   };
 
   const handlePrint = () => {
+    try {
+      recordGeneratedDocument({
+        type: isCoverLetterMode ? 'cover_letter' : 'cv',
+        candidateName: resumeData?.personalInfo?.fullName || 'Candidato CV Lab',
+        candidateTitle: isCoverLetterMode ? letterSubject : (resumeData?.personalInfo?.title || 'Profissional'),
+        candidateEmail: resumeData?.personalInfo?.email || user?.email || '',
+        candidatePhone: resumeData?.personalInfo?.phone || '',
+        template: template,
+        themeColor: resumeData?.themeColor || '#1E40AF',
+        resumeData: resumeData,
+        coverLetterText: isCoverLetterMode ? generatedLetter : undefined,
+        letterSubject: isCoverLetterMode ? letterSubject : undefined,
+        generatedBy: user?.email || 'm26101342@gmail.com',
+        action: 'Imprimir',
+        price: cvPrice || 2000
+      });
+    } catch (errRecord) {
+      console.warn("Auto-record generated document warning:", errRecord);
+    }
+
     window.print();
   };
 
@@ -9001,7 +8286,20 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
     );
   }
 
-  if (view === 'faq' || view === 'about' || view === 'terms' || view === 'tips' || view === 'showcase' || view === 'admin' || view === 'profile' || view === 'my-resumes') {
+  if (view === 'admin') {
+    return (
+      <AdminPanel 
+        setView={setView} 
+        onLoadDocumentIntoEditor={(loadedData, loadedTpl) => {
+          setResumeData(loadedData);
+          if (loadedTpl) setTemplate(loadedTpl);
+          setView('editor');
+        }}
+      />
+    );
+  }
+
+  if (view === 'faq' || view === 'about' || view === 'terms' || view === 'tips' || view === 'showcase' || view === 'profile' || view === 'my-resumes') {
     return (
       <div className="min-h-screen hero-gradient flex flex-col">
         <nav className="h-24 px-6 md:px-12 flex items-center justify-between glass sticky top-0 z-50">
@@ -9032,6 +8330,16 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
           </div>
 
           <div className="flex-1 flex items-center justify-end gap-4">
+             {isAdmin && (
+               <button 
+                 onClick={() => setView('admin')}
+                 className="hidden sm:flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-900 text-white text-[10px] font-black uppercase tracking-wider hover:bg-black transition-all shadow-sm"
+               >
+                 <Shield size={14} className="text-blue-400" />
+                 <span>Admin</span>
+               </button>
+             )}
+
              {user && user.email !== 'anonymous' ? (
                 <button 
                   onClick={() => setView('profile')}
@@ -9055,7 +8363,7 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
         </nav>
         
         <main className="flex-1 max-w-4xl mx-auto w-full px-6 py-16">
-          {(view !== 'admin' && view !== 'profile' && view !== 'my-resumes') && (
+          {(view !== 'profile' && view !== 'my-resumes') && (
             <button onClick={() => setView('landing')} className="text-primary-blue text-xs font-bold uppercase tracking-widest flex items-center gap-2 mb-8 hover:opacity-80 transition-opacity">
               <ChevronLeft size={16} /> Voltar
             </button>
@@ -9064,8 +8372,6 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
           {view === 'my-resumes' && <MyResumesPage user={user} setView={setView} onRequestDownload={downloadHtmlDocumentAsPdf} />}
 
           {view === 'profile' && <ProfilePage user={user} isAdmin={isAdmin} setView={setView} onLogout={logOut} onRequestDownload={downloadHtmlDocumentAsPdf} />}
-
-          {view === 'admin' && <AdminPanel setView={setView} />}
 
           {view === 'tips' && (
             <div className="space-y-12">
@@ -11383,22 +10689,6 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
                       <Button className="w-full bg-white text-primary-blue hover:bg-white/90 h-12 text-sm font-black rounded-xl shadow-lg border-0" onClick={() => { setIsCoverLetterMode(false); setTimeout(handlePrint, 100); }} icon={Printer}>
                         Imprimir Currículo
                       </Button>
-
-                      {/* Real CV Counting Switch Box */}
-                      <div className="pt-2">
-                        <label className="flex items-center gap-3.5 p-4 rounded-2xl bg-white/10 border border-white/15 cursor-pointer hover:bg-white/20 transition-all">
-                          <input 
-                            type="checkbox" 
-                            checked={isCountedAsReal} 
-                            onChange={(e) => handleToggleRealCVCount(e.target.checked)} 
-                            className="w-5 h-5 accent-emerald-500 rounded border-gray-300 focus:ring-emerald-500 cursor-pointer text-emerald-500 bg-white"
-                          />
-                          <div className="text-left">
-                            <span className="block text-xs font-black text-white uppercase tracking-wider">Contabilizar CV Realizado</span>
-                            <span className="block text-[10px] text-white/70 leading-normal">Marque para registar esta venda de {cvPrice.toLocaleString()} Kzs e atualizar o painel de faturamento em tempo real.</span>
-                          </div>
-                        </label>
-                      </div>
                    </div>
 
                    <div className="p-6 bg-white border border-gray-200 rounded-3xl space-y-5 shadow-sm text-left relative overflow-hidden">
