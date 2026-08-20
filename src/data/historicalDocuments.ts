@@ -1,6 +1,9 @@
+import { ServiceType } from '../types';
+
 export interface HistoricalDocumentItem {
   id: string;
   type: 'cv' | 'cover_letter' | 'combo';
+  serviceType: ServiceType;
   candidateName: string;
   candidateTitle: string;
   candidateEmail: string;
@@ -9,6 +12,9 @@ export interface HistoricalDocumentItem {
   themeColor: string;
   action: string;
   price: number;
+  paymentMethod?: 'express' | 'transfer' | 'cash' | 'tpa' | 'other';
+  paymentStatus?: 'paid' | 'pending';
+  notes?: string;
   generatedBy: string;
   createdAt: string;
   letterSubject?: string;
@@ -20,6 +26,7 @@ export const OFFICIAL_HISTORICAL_DOCUMENTS: HistoricalDocumentItem[] = [
   {
     id: 'doc_hist_01',
     type: 'cv',
+    serviceType: 'cv_normal',
     candidateName: 'Manuel Domingos António',
     candidateTitle: 'Engenheiro de Redes & Infraestruturas TI',
     candidateEmail: 'manuel.domingos@exemplo.ao',
@@ -28,6 +35,9 @@ export const OFFICIAL_HISTORICAL_DOCUMENTS: HistoricalDocumentItem[] = [
     themeColor: '#1E40AF',
     action: 'Descarregar PDF',
     price: 2000,
+    paymentMethod: 'express',
+    paymentStatus: 'paid',
+    notes: 'CV Profissional Normal para processo seletivo telecom',
     generatedBy: 'm26101342@gmail.com',
     createdAt: new Date(Date.now() - 3600000 * 3).toISOString(),
     resumeData: {
@@ -86,6 +96,7 @@ export const OFFICIAL_HISTORICAL_DOCUMENTS: HistoricalDocumentItem[] = [
   {
     id: 'doc_hist_02',
     type: 'cover_letter',
+    serviceType: 'cover_letter',
     candidateName: 'Cláudia Sebastião Silva',
     candidateTitle: 'Candidatura a Gestora de Projetos',
     candidateEmail: 'claudia.silva@exemplo.ao',
@@ -93,7 +104,10 @@ export const OFFICIAL_HISTORICAL_DOCUMENTS: HistoricalDocumentItem[] = [
     template: 't1_executive',
     themeColor: '#1E40AF',
     action: 'Imprimir',
-    price: 1000,
+    price: 1500,
+    paymentMethod: 'express',
+    paymentStatus: 'paid',
+    notes: 'Carta de Apresentação Executiva para vaga de Gestão',
     generatedBy: 'sumodemanga50@gmail.com',
     createdAt: new Date(Date.now() - 3600000 * 18).toISOString(),
     letterSubject: 'Candidatura a Gestora de Projetos Sénior - Ref: 2026/GP',
@@ -111,24 +125,29 @@ Cláudia Sebastião Silva`
   {
     id: 'doc_hist_03',
     type: 'cv',
+    serviceType: 'cv_english',
     candidateName: 'Josiel Ferreira',
-    candidateTitle: 'Desenvolvedor Full Stack & Engenheiro Cloud',
+    candidateTitle: 'Lead Full Stack & Cloud Solutions Engineer',
     candidateEmail: 'josiel.ferreira@cvlab.ao',
     candidatePhone: '+244 928 889 900',
-    template: 'custom-t8',
+    template: 't1_executive',
     themeColor: '#1E40AF',
     action: 'Descarregar PDF',
-    price: 2000,
+    price: 3000,
+    paymentMethod: 'transfer',
+    paymentStatus: 'paid',
+    notes: 'CV Internacional em Inglês para empresas multinacionais',
     generatedBy: 'ronalmaferreira04@icloud.com',
     createdAt: new Date(Date.now() - 3600000 * 28).toISOString(),
     resumeData: {
+      language: 'en',
       personalInfo: {
         fullName: 'Josiel Ferreira',
-        title: 'Desenvolvedor Full Stack & Engenheiro Cloud',
+        title: 'Lead Full Stack & Cloud Solutions Engineer',
         email: 'josiel.ferreira@cvlab.ao',
         phone: '+244 928 889 900',
         location: 'Luanda, Angola',
-        summary: 'Desenvolvedor de Software especialista em React, Node.js, TypeScript e arquitetura serverless. Experiência comprovada no lançamento de produtos digitais de alta escalabilidade.'
+        summary: 'Senior Software Engineer specializing in React, TypeScript, Node.js and Cloud Infrastructure. Proven track record in shipping enterprise web applications and scalable APIs.'
       },
       experience: [
         {
@@ -137,26 +156,26 @@ Cláudia Sebastião Silva`
           company: 'CV LAB Angola',
           location: 'Luanda',
           startDate: '2022',
-          endDate: 'Presente',
+          endDate: 'Present',
           current: true,
-          description: 'Arquitetura e desenvolvimento da plataforma de criação de currículos e gestão de documentos com Next.js, React e Firestore.'
+          description: 'Designed and implemented full-stack resume automation platform with TypeScript, React, and Cloud infrastructure.'
         },
         {
           id: 'exp2',
-          position: 'Software Developer',
-          company: 'Inovação Digital Lda',
+          position: 'Software Engineer',
+          company: 'Digital Solutions Ltd',
           location: 'Luanda',
           startDate: '2019',
           endDate: '2022',
           current: false,
-          description: 'Desenvolvimento de APIs RESTful e aplicações Web com Node.js, PostgreSQL e Tailwind CSS.'
+          description: 'Developed RESTful services, automated CI/CD pipelines, and improved platform response times by 40%.'
         }
       ],
       education: [
         {
           id: 'edu1',
-          degree: 'Licenciatura em Ciências da Computação',
-          institution: 'Instituto Superior Politécnico de Tecnologias e Ciências (ISPTEC)',
+          degree: 'B.Sc. in Computer Science',
+          institution: 'Higher Polytechnic Institute of Technologies and Sciences (ISPTEC)',
           location: 'Luanda',
           startDate: '2015',
           endDate: '2019'
@@ -164,27 +183,31 @@ Cláudia Sebastião Silva`
       ],
       skills: [
         { id: 'sk1', name: 'React / Next.js / TypeScript', level: 'Especialista' },
-        { id: 'sk2', name: 'Node.js / Express / APIs', level: 'Especialista' },
-        { id: 'sk3', name: 'Firebase / Firestore / Cloud SQL', level: 'Avançado' },
-        { id: 'sk4', name: 'Docker / CI/CD / Git', level: 'Avançado' }
+        { id: 'sk2', name: 'Node.js / Express / REST APIs', level: 'Especialista' },
+        { id: 'sk3', name: 'Cloud Architecture / Docker', level: 'Avançado' },
+        { id: 'sk4', name: 'PostgreSQL / Firestore', level: 'Avançado' }
       ],
       languages: [
-        { id: 'l1', name: 'Português', level: 'Nativo' },
-        { id: 'l2', name: 'Inglês', level: 'Fluente' }
+        { id: 'l1', name: 'English', level: 'Fluent / Professional' },
+        { id: 'l2', name: 'Portuguese', level: 'Native' }
       ]
     }
   },
   {
     id: 'doc_hist_04',
     type: 'cv',
+    serviceType: 'cv_normal',
     candidateName: 'Teresa Gonçalves',
     candidateTitle: 'Especialista em Recursos Humanos & Gestão de Talentos',
     candidateEmail: 'teresa.goncalves@exemplo.ao',
     candidatePhone: '+244 945 223 344',
-    template: 't2_modern',
+    template: 't2_geometric',
     themeColor: '#047857',
     action: 'Descarregar PDF',
     price: 2000,
+    paymentMethod: 'express',
+    paymentStatus: 'paid',
+    notes: 'CV Normal em Português para Grupo Zahara',
     generatedBy: 'm26101342@gmail.com',
     createdAt: new Date(Date.now() - 3600000 * 42).toISOString(),
     resumeData: {
@@ -228,17 +251,22 @@ Cláudia Sebastião Silva`
   {
     id: 'doc_hist_05',
     type: 'cv',
+    serviceType: 'cv_europeu',
     candidateName: 'António Kiala',
     candidateTitle: 'Consultor Financeiro & Contabilista Sénior (OCPCA)',
     candidateEmail: 'antonio.kiala@exemplo.ao',
     candidatePhone: '+244 912 334 455',
-    template: 't3_corporate',
+    template: 't14_europass_classic',
     themeColor: '#0F172A',
     action: 'Descarregar PDF',
-    price: 2000,
+    price: 5000,
+    paymentMethod: 'tpa',
+    paymentStatus: 'paid',
+    notes: 'CV Europeu Europass para processos em Portugal e Europa',
     generatedBy: 'sumodemanga50@gmail.com',
     createdAt: new Date(Date.now() - 3600000 * 55).toISOString(),
     resumeData: {
+      styleConfig: { showEuropassSeal: true },
       personalInfo: {
         fullName: 'António Kiala',
         title: 'Consultor Financeiro & Contabilista Sénior (OCPCA)',
@@ -279,17 +307,22 @@ Cláudia Sebastião Silva`
   {
     id: 'doc_hist_06',
     type: 'cv',
+    serviceType: 'cv_europeu',
     candidateName: 'Dra. Marlene Baptista',
     candidateTitle: 'Médica de Clínica Geral & Emergências',
     candidateEmail: 'marlene.baptista@exemplo.ao',
     candidatePhone: '+244 923 887 766',
-    template: 't7_medical',
+    template: 't14_europass_classic',
     themeColor: '#0284C7',
     action: 'Descarregar PDF',
-    price: 2000,
+    price: 5000,
+    paymentMethod: 'express',
+    paymentStatus: 'paid',
+    notes: 'CV Europeu Europass com selo oficial para validação na Ordem dos Médicos em Portugal',
     generatedBy: 'ronalmaferreira04@icloud.com',
     createdAt: new Date(Date.now() - 3600000 * 70).toISOString(),
     resumeData: {
+      styleConfig: { showEuropassSeal: true },
       personalInfo: {
         fullName: 'Dra. Marlene Baptista',
         title: 'Médica de Clínica Geral & Emergências',
@@ -330,14 +363,18 @@ Cláudia Sebastião Silva`
   {
     id: 'doc_hist_07',
     type: 'cv',
+    serviceType: 'cv_normal',
     candidateName: 'Eng. Domingos Ndala',
     candidateTitle: 'Engenheiro Civil & Fiscal de Obras e Estruturas',
     candidateEmail: 'domingos.ndala@exemplo.ao',
     candidatePhone: '+244 931 556 677',
-    template: 't4_minimal',
+    template: 't8_geometric_blue',
     themeColor: '#D97706',
     action: 'Descarregar PDF',
     price: 2000,
+    paymentMethod: 'cash',
+    paymentStatus: 'paid',
+    notes: 'CV Profissional Normal para Omatapalo',
     generatedBy: 'm26101342@gmail.com',
     createdAt: new Date(Date.now() - 3600000 * 85).toISOString(),
     resumeData: {
@@ -381,65 +418,74 @@ Cláudia Sebastião Silva`
   {
     id: 'doc_hist_08',
     type: 'cv',
+    serviceType: 'cv_english',
     candidateName: 'Esperança Luísa',
-    candidateTitle: 'Gestora de Marketing Digital, Redes Sociais & Branding',
+    candidateTitle: 'Digital Marketing & Growth Manager',
     candidateEmail: 'esperanca.luisa@exemplo.ao',
     candidatePhone: '+244 942 990 011',
-    template: 't5_creative',
+    template: 't1_executive',
     themeColor: '#7C3AED',
     action: 'Descarregar PDF',
-    price: 2000,
+    price: 3000,
+    paymentMethod: 'express',
+    paymentStatus: 'paid',
+    notes: 'CV Internacional em Inglês para agências e marcas multinacionais',
     generatedBy: 'sumodemanga50@gmail.com',
     createdAt: new Date(Date.now() - 3600000 * 98).toISOString(),
     resumeData: {
+      language: 'en',
       personalInfo: {
         fullName: 'Esperança Luísa',
-        title: 'Gestora de Marketing Digital, Redes Sociais & Branding',
+        title: 'Digital Marketing & Growth Manager',
         email: 'esperanca.luisa@exemplo.ao',
         phone: '+244 942 990 011',
         location: 'Luanda, Angola',
-        summary: 'Especialista em estratégias de crescimento em redes sociais (Meta Ads, TikTok, LinkedIn), criação de campanhas de inbound marketing e posicionamento de marcas corporativas.'
+        summary: 'Digital Marketing Strategist with extensive experience in omnichannel campaigns (Meta Ads, Google Ads, LinkedIn), brand positioning, and high-conversion inbound funnels.'
       },
       experience: [
         {
           id: 'exp1',
-          position: 'Marketing Manager',
-          company: 'Agência Criativa Luanda',
+          position: 'Growth Marketing Manager',
+          company: 'Luanda Digital Agency',
           location: 'Luanda',
           startDate: '2021',
-          endDate: 'Presente',
+          endDate: 'Present',
           current: true,
-          description: 'Gestão de contas de clientes de grande porte, planeamento de campanhas pagas com ROI superior a 300% e liderança de equipa criativa.'
+          description: 'Managed multi-channel digital ad accounts with average ROAS over 320% and led creative content team.'
         }
       ],
       education: [
         {
           id: 'edu1',
-          degree: 'Licenciatura em Comunicação Social & Marketing',
-          institution: 'Universidade Jean Piaget de Angola',
+          degree: 'B.A. in Media Communications & Marketing',
+          institution: 'Jean Piaget University of Angola',
           location: 'Luanda',
           startDate: '2016',
           endDate: '2020'
         }
       ],
       skills: [
-        { id: 'sk1', name: 'Meta Ads / Google Ads', level: 'Especialista' },
+        { id: 'sk1', name: 'Meta Ads / Google Analytics 4', level: 'Especialista' },
         { id: 'sk2', name: 'Copywriting & Content Strategy', level: 'Especialista' },
-        { id: 'sk3', name: 'Design Gráfico / Figma / Canva', level: 'Avançado' }
+        { id: 'sk3', name: 'Figma / UI Design & Branding', level: 'Avançado' }
       ]
     }
   },
   {
     id: 'doc_hist_09',
     type: 'cv',
+    serviceType: 'cv_normal',
     candidateName: 'Carlos Eduardo',
     candidateTitle: 'Técnico de Suporte TI & Helpdesk Empresarial',
     candidateEmail: 'carlos.eduardo@exemplo.ao',
     candidatePhone: '+244 927 665 544',
-    template: 't6_technical',
+    template: 't8_geometric_blue',
     themeColor: '#0284C7',
     action: 'Descarregar PDF',
     price: 2000,
+    paymentMethod: 'express',
+    paymentStatus: 'paid',
+    notes: 'CV Profissional Normal para Sonangol',
     generatedBy: 'm26101342@gmail.com',
     createdAt: new Date(Date.now() - 3600000 * 110).toISOString(),
     resumeData: {
@@ -483,6 +529,7 @@ Cláudia Sebastião Silva`
   {
     id: 'doc_hist_10',
     type: 'cover_letter',
+    serviceType: 'cover_letter',
     candidateName: 'Dra. Helena Capanda',
     candidateTitle: 'Candidatura a Diretora de Operações & Logística',
     candidateEmail: 'helena.capanda@exemplo.ao',
@@ -490,7 +537,10 @@ Cláudia Sebastião Silva`
     template: 't1_executive',
     themeColor: '#1E40AF',
     action: 'Descarregar PDF',
-    price: 1000,
+    price: 1500,
+    paymentMethod: 'express',
+    paymentStatus: 'paid',
+    notes: 'Carta de Apresentação para Comissão Executiva',
     generatedBy: 'ronalmaferreira04@icloud.com',
     createdAt: new Date(Date.now() - 3600000 * 125).toISOString(),
     letterSubject: 'Candidatura a Diretora de Operações e Cadeia de Abastecimento',
@@ -508,14 +558,18 @@ Dra. Helena Capanda`
   {
     id: 'doc_hist_11',
     type: 'cover_letter',
+    serviceType: 'cover_letter',
     candidateName: 'Victor Manuel',
     candidateTitle: 'Candidatura a Assistente Administrativo & Secretariado',
     candidateEmail: 'victor.manuel@exemplo.ao',
     candidatePhone: '+244 929 112 233',
-    template: 't2_modern',
+    template: 't2_geometric',
     themeColor: '#1E40AF',
     action: 'Imprimir',
-    price: 1000,
+    price: 1500,
+    paymentMethod: 'express',
+    paymentStatus: 'paid',
+    notes: 'Carta de Apresentação Administrativa',
     generatedBy: 'sumodemanga50@gmail.com',
     createdAt: new Date(Date.now() - 3600000 * 140).toISOString(),
     letterSubject: 'Candidatura a Assistente Administrativo Executivo - Ref: 2026/ADM',
@@ -531,42 +585,47 @@ Victor Manuel`
   {
     id: 'doc_hist_12',
     type: 'cv',
+    serviceType: 'cv_english',
     candidateName: 'Afonso Mateus',
-    candidateTitle: 'Arquiteto de Software & Engenheiro DevOps',
+    candidateTitle: 'Cloud Architect & Senior DevOps Engineer',
     candidateEmail: 'afonso.mateus@exemplo.ao',
     candidatePhone: '+244 924 778 899',
-    template: 'custom-t8',
+    template: 't1_executive',
     themeColor: '#1E40AF',
     action: 'Descarregar PDF',
-    price: 2000,
+    price: 3000,
+    paymentMethod: 'transfer',
+    paymentStatus: 'paid',
+    notes: 'CV Internacional em Inglês para setor bancário e tech',
     generatedBy: 'm26101342@gmail.com',
     createdAt: new Date(Date.now() - 3600000 * 160).toISOString(),
     resumeData: {
+      language: 'en',
       personalInfo: {
         fullName: 'Afonso Mateus',
-        title: 'Arquiteto de Software & Engenheiro DevOps',
+        title: 'Cloud Architect & Senior DevOps Engineer',
         email: 'afonso.mateus@exemplo.ao',
         phone: '+244 924 778 899',
         location: 'Luanda, Angola',
-        summary: 'Especialista em pipelines de CI/CD, Kubernetes, infraestrutura como código (Terraform) e microsserviços em ambiente AWS e Google Cloud.'
+        summary: 'Cloud & Infrastructure Architect with 7+ years of experience in Kubernetes orchestration, Terraform automation, and secure enterprise financial cloud systems.'
       },
       experience: [
         {
           id: 'exp1',
-          position: 'DevOps Lead',
+          position: 'DevOps & Cloud Lead',
           company: 'BFA - Banco de Fomento Angola',
           location: 'Luanda',
           startDate: '2020',
-          endDate: 'Presente',
+          endDate: 'Present',
           current: true,
-          description: 'Implementação de esteiras automatizadas de deploy para internet banking com 99.99% de disponibilidade.'
+          description: 'Architected automated zero-downtime deployment pipelines for core banking services with 99.99% availability.'
         }
       ],
       education: [
         {
           id: 'edu1',
-          degree: 'Licenciatura em Engenharia de Software',
-          institution: 'Universidade Independente de Angola (UNIA)',
+          degree: 'B.Sc. in Software Engineering',
+          institution: 'Independent University of Angola (UNIA)',
           location: 'Luanda',
           startDate: '2015',
           endDate: '2019'
@@ -574,8 +633,8 @@ Victor Manuel`
       ],
       skills: [
         { id: 'sk1', name: 'Kubernetes / Docker / Helm', level: 'Especialista' },
-        { id: 'sk2', name: 'AWS Cloud / Terraform', level: 'Especialista' },
-        { id: 'sk3', name: 'GitHub Actions / GitLab CI', level: 'Avançado' }
+        { id: 'sk2', name: 'AWS & Google Cloud / Terraform', level: 'Especialista' },
+        { id: 'sk3', name: 'CI/CD Pipelines & Security', level: 'Avançado' }
       ]
     }
   }

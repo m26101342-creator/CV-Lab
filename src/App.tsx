@@ -53,13 +53,20 @@ import {
   ChevronUp,
   ArrowUpDown,
   Calendar,
+  Clock,
   Eye,
   AlignLeft,
   AlignCenter,
-  AlignRight
+  AlignRight,
+  Users,
+  FolderOpen,
+  Wallet,
+  RefreshCw,
+  Copy,
+  CheckCircle2
 } from 'lucide-react';
 import { AdSenseUnit } from './components/AdSenseUnit';
-import { ResumeData, INITIAL_RESUME_DATA, TemplateType, ResumeStyleConfig } from './types.ts';
+import { ResumeData, INITIAL_RESUME_DATA, TemplateType, ResumeStyleConfig, ServiceType, OFFICIAL_SERVICE_PRICES, ClientRegistrationData } from './types.ts';
 import { optimizeResumeText, generateCoverLetter, generateFullResume, parseResumeFromText, translateResumeToEnglish, translateLetterToEnglish, translateResumeToSpanish, translateLetterToSpanish, alterResumeInformation } from './services/geminiService.ts';
 import { pdf } from '@react-pdf/renderer';
 import { PdfDocument } from './pdf/PdfDocument';
@@ -71,7 +78,7 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@5.6.205/b
 import { 
     auth, db, useAuth, loginWithGoogle, logOut,
     collection, addDoc, onSnapshot, doc, query, where, getDocs, updateDoc, setDoc, serverTimestamp, getDoc, deleteDoc,
-    createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile, recordGeneratedDocument
+    createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile, recordGeneratedDocument, saveClientResume
 } from './lib/firebase';
 import { 
   BarChart, 
@@ -85,6 +92,8 @@ import {
   Area 
 } from 'recharts';
 import { AdminPanel } from './components/AdminPanel';
+import { ClientRegistrationModal } from './components/ClientRegistrationModal';
+import { SavedClientsModal } from './components/SavedClientsModal';
 
 // --- Helper Functions ---
 
@@ -262,16 +271,30 @@ const getSectionTitle = (data: ResumeData, key: keyof NonNullable<ResumeData['se
   return defaultTitle;
 };
 
-const ProfilePage = ({ user, isAdmin, setView, onLogout, onRequestDownload }: { 
+const ProfilePage = ({ 
+    user, 
+    isAdmin, 
+    setView, 
+    onLogout, 
+    onRequestDownload,
+    onOpenNewRegistration,
+    onOpenSavedClients,
+    onLoadClientResume
+}: { 
     user: any; 
     isAdmin: boolean; 
     setView: (v: any) => void; 
-    onLogout: () => void;
+    onLogout: () => void; 
     onRequestDownload: (data: any, type: 'resume' | 'cover_letter', templateId: TemplateType, filename: string, setLocalGenerating: (b: boolean) => void) => Promise<void>;
+    onOpenNewRegistration?: () => void;
+    onOpenSavedClients?: () => void;
+    onLoadClientResume?: (data: ResumeData, template?: TemplateType, meta?: any) => void;
 }) => {
     const [myOrders, setMyOrders] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [isGenerating, setIsGenerating] = useState<string | null>(null);
+    const [activeFilter, setActiveFilter] = useState<'all' | 'resume' | 'cover_letter' | 'approved'>('all');
+    const [copiedId, setCopiedId] = useState<string | null>(null);
 
     useEffect(() => {
         if (!user || user.email === 'anonymous') {
@@ -329,260 +352,460 @@ const ProfilePage = ({ user, isAdmin, setView, onLogout, onRequestDownload }: {
         }
     };
 
+    const handleCopyId = (id: string, e: React.MouseEvent) => {
+        e.stopPropagation();
+        navigator.clipboard.writeText(id);
+        setCopiedId(id);
+        setTimeout(() => setCopiedId(null), 2000);
+    };
+
     if (!user || user.email === 'anonymous') return (
-        <div className="p-20 text-center space-y-6 max-w-xl mx-auto bg-white rounded-3xl border border-gray-100 shadow-xl py-16 my-12">
-            <div className="w-20 h-20 bg-soft-blue text-primary-blue rounded-full flex items-center justify-center mx-auto mb-4">
-                <User size={40} />
+        <div className="p-8 sm:p-14 text-center space-y-6 max-w-xl mx-auto bg-white rounded-3xl border border-slate-200/80 shadow-xl my-8">
+            <div className="w-18 h-18 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-2 ring-8 ring-blue-50/50">
+                <User size={36} />
             </div>
-            <h2 className="text-2xl font-black text-deep-blue uppercase tracking-tight font-sans">Acesso Limitado</h2>
-            <p className="text-sm text-text-muted max-w-sm mx-auto leading-relaxed">Você está navegando temporariamente como convidado. Entre com sua conta Google ou faça login para gerir seus currículos premium.</p>
-            <div className="pt-4">
-                <Button onClick={loginWithGoogle} className="px-8 shadow-xl bg-primary-blue text-white hover:bg-primary-blue/90">Aceder com Conta Google</Button>
+            <div className="space-y-2">
+                <span className="text-[10px] font-black text-blue-600 tracking-widest uppercase bg-blue-50 px-3 py-1 rounded-full border border-blue-100">Área de Membros</span>
+                <h2 className="text-2xl font-black text-slate-900 tracking-tight">Acesso à Central CV LAB</h2>
+                <p className="text-xs sm:text-sm text-slate-500 max-w-sm mx-auto leading-relaxed">
+                    Você está navegando como convidado. Entre com a sua conta Google para gerenciar seus currículos, downloads e atendimentos comerciais.
+                </p>
+            </div>
+            <div className="pt-2">
+                <Button onClick={loginWithGoogle} className="w-full sm:w-auto px-8 shadow-xl bg-blue-600 hover:bg-blue-700 text-white font-bold h-12 rounded-xl">
+                    <User size={16} className="mr-2" /> Aceder com Conta Google
+                </Button>
             </div>
         </div>
     );
 
-    // Expand combo orders into separate items for direct beautiful card representation
+    // Expand combo orders into separate items
     const expandedItems: any[] = [];
     myOrders.forEach(o => {
         if (o.documentType === 'combo') {
-            expandedItems.push({ ...o, subType: 'resume', displayName: 'Currículo Profissional' });
-            expandedItems.push({ ...o, subType: 'cover_letter', displayName: 'Carta de Apresentação' });
+            expandedItems.push({ ...o, subType: 'resume', displayName: 'Currículo Profissional Executivo', format: 'A4 PDF • 300 DPI' });
+            expandedItems.push({ ...o, subType: 'cover_letter', displayName: 'Carta de Apresentação Formal', format: 'A4 PDF • Padrão ATS' });
         } else {
             expandedItems.push({ 
                 ...o, 
                 subType: o.documentType, 
-                displayName: o.documentType === 'cover_letter' ? 'Carta de Apresentação' : 'Currículo Profissional' 
+                displayName: o.documentType === 'cover_letter' ? 'Carta de Apresentação Formal' : 'Currículo Profissional Executivo',
+                format: 'A4 PDF • Padrão ATS'
             });
         }
     });
 
+    const filteredItems = expandedItems.filter(item => {
+        if (activeFilter === 'resume') return item.subType === 'resume';
+        if (activeFilter === 'cover_letter') return item.subType === 'cover_letter';
+        if (activeFilter === 'approved') return item.status === 'approved';
+        return true;
+    });
+
     return (
-        <div className="max-w-5xl mx-auto py-10 px-4 md:px-6 space-y-8">
+        <div className="w-full max-w-5xl mx-auto space-y-8 animate-fade-in pb-16">
             
-            {/* Header Greeting Panel (Design Style Image 1 & 2) */}
-            <div className="relative bg-gradient-to-tr from-primary-blue via-indigo-950 to-slate-900 rounded-[2.5rem] p-8 md:p-10 overflow-hidden shadow-xl border border-white/5 select-none text-white animate-fade-in animate-duration-500">
-                <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-5 pointer-events-none"></div>
-                <div className="absolute -top-32 -right-32 w-80 h-80 bg-blue-500/20 rounded-full blur-[90px] pointer-events-none"></div>
-                <div className="absolute -bottom-24 -left-24 w-64 h-64 bg-indigo-500/10 rounded-full blur-[70px] pointer-events-none"></div>
+            {/* Top Navigation & Status bar */}
+            <div className="flex flex-wrap items-center justify-between gap-4 px-1">
+                <div className="flex items-center gap-2 text-xs font-bold text-slate-500">
+                    <span className="text-slate-400">Painel Principal</span>
+                    <ChevronRight size={14} className="text-slate-300" />
+                    <span className="text-blue-600 font-black">Minha Conta & Documentos</span>
+                </div>
+                <div className="flex items-center gap-3">
+                    <button
+                        onClick={onLogout}
+                        className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-[11px] font-bold text-slate-600 hover:text-red-600 bg-white hover:bg-red-50 border border-slate-200/80 shadow-xs transition-all"
+                        title="Encerrar sessão"
+                    >
+                        <LogOut size={14} />
+                        <span>Terminar Sessão</span>
+                    </button>
+                </div>
+            </div>
+
+            {/* Executive Hero Banner */}
+            <div className="relative bg-gradient-to-br from-slate-950 via-[#0B192C] to-[#1E3E62] rounded-[2.25rem] p-6 sm:p-8 md:p-10 overflow-hidden shadow-2xl border border-slate-800 text-white">
+                {/* Background micro glow accents */}
+                <div className="absolute top-0 right-0 w-96 h-96 bg-blue-600/10 rounded-full blur-[100px] pointer-events-none"></div>
+                <div className="absolute bottom-0 left-0 w-80 h-80 bg-indigo-500/10 rounded-full blur-[90px] pointer-events-none"></div>
                 
-                <div className="flex flex-col md:flex-row items-center justify-between gap-8 relative z-10 font-sans">
-                    <div className="flex flex-col md:flex-row items-center gap-6 text-center md:text-left">
+                <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-8">
+                    
+                    {/* User Profile Info */}
+                    <div className="flex flex-col sm:flex-row items-center sm:items-start text-center sm:text-left gap-5">
                         <div className="relative">
                             <img 
-                                src={user.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.displayName || user.email || 'U')}&background=fff&color=0D8ABC`} 
-                                className="w-20 h-20 md:w-24 md:h-24 rounded-full border-4 border-white/10 shadow-2xl object-cover relative select-none" 
+                                src={user.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.displayName || user.email || 'U')}&background=0D8ABC&color=fff`} 
+                                className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl border-2 border-white/20 shadow-2xl object-cover ring-4 ring-blue-500/20" 
                                 alt="Foto"
                                 referrerPolicy="no-referrer"
                             />
-                        {isAdmin && (
-                            <div className="absolute -bottom-1 -right-1 bg-red-600 text-white text-[8px] font-black px-2.5 py-1 rounded-lg uppercase tracking-widest border border-white/10 shadow-lg font-mono">
-                                ADMIN
-                            </div>
-                        )}
-                    </div>
-                    
-                    <div className="space-y-1.5">
-                        <p className="text-[10px] font-black tracking-[0.2em] uppercase text-blue-200 font-sans">Área do Candidato Premium</p>
-                        <h2 className="text-3xl md:text-4xl font-black tracking-tight text-white">{user.displayName || 'Membro CV Lab'}</h2>
-                        <div className="flex items-center justify-center md:justify-start gap-1.5 text-xs text-white/70">
-                            <Mail size={13} className="text-blue-350" />
-                            <span className="font-medium font-sans">{user.email}</span>
+                            <span className="absolute -bottom-1 -right-1 w-4 h-4 bg-emerald-500 border-2 border-slate-900 rounded-full shadow-sm" title="Conta Online e Ativa"></span>
                         </div>
-                    </div>
-                </div>
 
-                {/* Premium Card Badge (resembles Wallet Card decoration in Image 1) */}
-                <div className="bg-white/5 backdrop-blur-md rounded-2xl p-5 border border-white/10 max-w-sm w-full md:w-auto h-full flex flex-col justify-between gap-6">
-                    <div className="flex justify-between items-start gap-12">
-                        <div className="space-y-0.5">
-                            <p className="text-[10px] font-bold text-white/50 uppercase tracking-widest font-sans">Acesso Ativo</p>
-                            <p className="text-lg font-black text-white tracking-widest font-mono">CV LAB VIP</p>
-                        </div>
-                        <div className="w-8 h-8 rounded-xl bg-white/10 flex items-center justify-center">
-                            <Award size={18} className="text-amber-400" />
+                        <div className="space-y-2">
+                            <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
+                                <span className="px-2.5 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider bg-blue-500/20 text-blue-300 border border-blue-400/30">
+                                    {isAdmin ? '👑 Administrador Master' : '⭐ Membro VIP Pro'}
+                                </span>
+                                <span className="px-2.5 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider bg-emerald-500/15 text-emerald-300 border border-emerald-400/25 flex items-center gap-1">
+                                    <CheckCircle2 size={11} /> Angola • Multicaixa Express
+                                </span>
+                            </div>
+
+                            <h1 className="text-2xl sm:text-3xl md:text-4xl font-black tracking-tight text-white">
+                                {user.displayName || 'Utilizador CV LAB'}
+                            </h1>
+
+                            <div className="flex items-center justify-center sm:justify-start gap-2 text-xs text-slate-300">
+                                <Mail size={13} className="text-blue-400 shrink-0" />
+                                <span className="font-mono">{user.email}</span>
+                            </div>
                         </div>
                     </div>
-                    <div className="space-y-1">
-                        <span className="text-[9px] uppercase font-bold tracking-widest text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-md border border-emerald-500/20">✓ Ativado para Angola</span>
-                        <p className="text-[10px] text-white/60 font-bold tracking-wide">MULTICAIXA Express habilitado</p>
+
+                    {/* Stats Matrix */}
+                    <div className="grid grid-cols-3 gap-3 bg-white/5 backdrop-blur-md rounded-2xl p-4 border border-white/10 shrink-0">
+                        <div className="text-center px-3 py-1 space-y-0.5">
+                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Documentos</p>
+                            <p className="text-2xl font-black text-white">{expandedItems.length}</p>
+                            <span className="text-[9px] text-blue-300 font-semibold block">Gerados</span>
+                        </div>
+                        <div className="text-center px-3 py-1 space-y-0.5 border-x border-white/10">
+                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Plano</p>
+                            <p className="text-lg font-black text-amber-300 tracking-tight">VIP PRO</p>
+                            <span className="text-[9px] text-emerald-300 font-bold block">✓ Vitalício</span>
+                        </div>
+                        <div className="text-center px-3 py-1 space-y-0.5">
+                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Motor IA</p>
+                            <p className="text-lg font-black text-indigo-300 tracking-tight">Gemini</p>
+                            <span className="text-[9px] text-slate-300 font-semibold block">2.5 Flash</span>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
 
-            {/* Quick Actions Bento Style Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 animate-fade-in">
+            {/* Quick Actions Bento Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 
-                {/* 1. Criar Currículo Widget Button */}
+                {/* 1. Criar Currículo */}
                 <div 
                     onClick={() => setView('editor')}
-                    className="group bg-white hover:bg-slate-50 border border-slate-100 rounded-[2rem] p-6 shadow-sm hover:shadow-md transition-all active:scale-[0.98] cursor-pointer flex items-center gap-4 text-left select-none relative overflow-hidden"
+                    className="group bg-white hover:bg-slate-50/80 border border-slate-200/90 rounded-2xl p-5 shadow-xs hover:shadow-md transition-all active:scale-[0.98] cursor-pointer flex flex-col justify-between gap-4 text-left relative overflow-hidden"
                 >
-                    <div className="w-12 h-12 rounded-2xl bg-soft-blue text-primary-blue flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
-                        <Plus size={24} />
+                    <div className="flex items-center justify-between">
+                        <div className="w-11 h-11 rounded-xl bg-blue-600 text-white flex items-center justify-center shadow-md shadow-blue-500/20 group-hover:scale-105 transition-transform">
+                            <Plus size={22} />
+                        </div>
+                        <span className="text-[10px] font-black uppercase text-blue-600 bg-blue-50 px-2 py-0.5 rounded-md border border-blue-100">
+                            Editor IA
+                        </span>
                     </div>
-                    <div className="flex-1 min-w-0">
-                        <h4 className="text-sm font-black text-deep-blue uppercase tracking-tight font-sans">Criar Currículo</h4>
-                        <p className="text-xs text-text-muted truncate">Comece seu rascunho com IA</p>
+                    <div>
+                        <h3 className="text-sm font-black text-slate-900 tracking-tight flex items-center justify-between">
+                            Criar Currículo
+                            <ChevronRight size={16} className="text-slate-300 group-hover:translate-x-1 group-hover:text-blue-600 transition-all" />
+                        </h3>
+                        <p className="text-[11px] text-slate-500 mt-1 leading-snug">
+                            Iniciar novo modelo do zero ou usar a IA para redação.
+                        </p>
                     </div>
-                    <ChevronRight size={18} className="text-gray-300 group-hover:translate-x-1 transition-transform shrink-0" />
                 </div>
 
-                {/* 2. Admin Panel Widget Button */}
+                {/* 2. Novo Atendimento Comercial */}
+                <div 
+                    onClick={() => {
+                        if (onOpenNewRegistration) onOpenNewRegistration();
+                        else setView('editor');
+                    }}
+                    className="group bg-white hover:bg-emerald-50/20 border border-slate-200/90 hover:border-emerald-200 rounded-2xl p-5 shadow-xs hover:shadow-md transition-all active:scale-[0.98] cursor-pointer flex flex-col justify-between gap-4 text-left relative overflow-hidden"
+                >
+                    <div className="flex items-center justify-between">
+                        <div className="w-11 h-11 rounded-xl bg-emerald-600 text-white flex items-center justify-center shadow-md shadow-emerald-500/20 group-hover:scale-105 transition-transform">
+                            <Users size={20} />
+                        </div>
+                        <span className="text-[10px] font-black uppercase text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-100">
+                            Comercial
+                        </span>
+                    </div>
+                    <div>
+                        <h3 className="text-sm font-black text-slate-900 tracking-tight flex items-center justify-between">
+                            Registrar Cliente
+                            <ChevronRight size={16} className="text-slate-300 group-hover:translate-x-1 group-hover:text-emerald-600 transition-all" />
+                        </h3>
+                        <p className="text-[11px] text-slate-500 mt-1 leading-snug">
+                            Novo atendimento com tabela oficial (2k, 3k ou 5k Kz).
+                        </p>
+                    </div>
+                </div>
+
+                {/* 3. Meus Clientes & CVs Salvos */}
+                <div 
+                    onClick={() => {
+                        if (onOpenSavedClients) onOpenSavedClients();
+                        else setView('editor');
+                    }}
+                    className="group bg-white hover:bg-indigo-50/20 border border-slate-200/90 hover:border-indigo-200 rounded-2xl p-5 shadow-xs hover:shadow-md transition-all active:scale-[0.98] cursor-pointer flex flex-col justify-between gap-4 text-left relative overflow-hidden"
+                >
+                    <div className="flex items-center justify-between">
+                        <div className="w-11 h-11 rounded-xl bg-indigo-600 text-white flex items-center justify-center shadow-md shadow-indigo-500/20 group-hover:scale-105 transition-transform">
+                            <FolderOpen size={20} />
+                        </div>
+                        <span className="text-[10px] font-black uppercase text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded-md border border-indigo-100">
+                            Base de Dados
+                        </span>
+                    </div>
+                    <div>
+                        <h3 className="text-sm font-black text-slate-900 tracking-tight flex items-center justify-between">
+                            Clientes Salvos
+                            <ChevronRight size={16} className="text-slate-300 group-hover:translate-x-1 group-hover:text-indigo-600 transition-all" />
+                        </h3>
+                        <p className="text-[11px] text-slate-500 mt-1 leading-snug">
+                            Consultar atendimentos, editar e baixar CVs salvos.
+                        </p>
+                    </div>
+                </div>
+
+                {/* 4. Painel Administrativo ou Dicas */}
                 {isAdmin ? (
                     <div 
                         onClick={() => setView('admin')}
-                        className="group bg-white hover:bg-amber-50/25 border border-amber-100 rounded-[2rem] p-6 shadow-sm hover:shadow-md transition-all active:scale-[0.98] cursor-pointer flex items-center gap-4 text-left select-none"
+                        className="group bg-white hover:bg-amber-50/20 border border-slate-200/90 hover:border-amber-200 rounded-2xl p-5 shadow-xs hover:shadow-md transition-all active:scale-[0.98] cursor-pointer flex flex-col justify-between gap-4 text-left relative overflow-hidden"
                     >
-                        <div className="w-12 h-12 rounded-2xl bg-amber-500/10 text-amber-600 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
-                            <Shield size={22} />
+                        <div className="flex items-center justify-between">
+                            <div className="w-11 h-11 rounded-xl bg-amber-500 text-white flex items-center justify-center shadow-md shadow-amber-500/20 group-hover:scale-105 transition-transform">
+                                <Shield size={20} />
+                            </div>
+                            <span className="text-[10px] font-black uppercase text-amber-700 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-100">
+                                Contabilidade
+                            </span>
                         </div>
-                        <div className="flex-1 min-w-0">
-                            <h4 className="text-sm font-black text-amber-950 uppercase tracking-tight font-sans">Administração</h4>
-                            <p className="text-xs text-amber-500 truncate">Vendas, preços e relatórios</p>
+                        <div>
+                            <h3 className="text-sm font-black text-slate-900 tracking-tight flex items-center justify-between">
+                                Painel de Gestão
+                                <ChevronRight size={16} className="text-slate-300 group-hover:translate-x-1 group-hover:text-amber-600 transition-all" />
+                            </h3>
+                            <p className="text-[11px] text-slate-500 mt-1 leading-snug">
+                                Vendas, relatórios financeiros e pedidos pendentes.
+                            </p>
                         </div>
-                        <ChevronRight size={18} className="text-amber-300 group-hover:translate-x-1 transition-transform shrink-0" />
                     </div>
                 ) : (
-                    <div className="bg-white border border-slate-100 rounded-[2rem] p-6 flex items-center gap-4 text-left select-none opacity-60">
-                        <div className="w-12 h-12 rounded-2xl bg-gray-50 text-gray-400 flex items-center justify-center shrink-0">
-                            <Zap size={20} />
+                    <div 
+                        onClick={() => setView('tips')}
+                        className="group bg-white hover:bg-blue-50/20 border border-slate-200/90 hover:border-blue-200 rounded-2xl p-5 shadow-xs hover:shadow-md transition-all active:scale-[0.98] cursor-pointer flex flex-col justify-between gap-4 text-left relative overflow-hidden"
+                    >
+                        <div className="flex items-center justify-between">
+                            <div className="w-11 h-11 rounded-xl bg-slate-900 text-white flex items-center justify-center shadow-md shadow-slate-900/10 group-hover:scale-105 transition-transform">
+                                <Sparkles size={20} className="text-amber-400" />
+                            </div>
+                            <span className="text-[10px] font-black uppercase text-slate-700 bg-slate-100 px-2 py-0.5 rounded-md">
+                                Dicas
+                            </span>
                         </div>
-                        <div className="flex-1 min-w-0">
-                            <h4 className="text-sm font-black text-slate-500 uppercase tracking-tight font-sans">Sincronia ATS</h4>
-                            <p className="text-xs text-slate-400 truncate">Sincronização Ativa</p>
+                        <div>
+                            <h3 className="text-sm font-black text-slate-900 tracking-tight flex items-center justify-between">
+                                Dicas de Carreira
+                                <ChevronRight size={16} className="text-slate-300 group-hover:translate-x-1 group-hover:text-blue-600 transition-all" />
+                            </h3>
+                            <p className="text-[11px] text-slate-500 mt-1 leading-snug">
+                                Recomendações dos recrutadores para aprovação rápida.
+                            </p>
                         </div>
                     </div>
                 )}
-
-                {/* 3. Encerrar Sessão Button Container */}
-                <div 
-                    onClick={onLogout}
-                    className="group bg-white hover:bg-red-50/20 border border-slate-100 rounded-[2rem] p-6 shadow-sm hover:shadow-md transition-all active:scale-[0.98] cursor-pointer flex items-center gap-4 text-left select-none relative overflow-hidden"
-                >
-                    <div className="w-12 h-12 rounded-2xl bg-slate-50 text-slate-500 group-hover:text-red-500 group-hover:bg-red-50 flex items-center justify-center shrink-0 transition-all">
-                        <LogOut size={20} />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                        <h4 className="text-sm font-black text-deep-blue uppercase tracking-tight group-hover:text-red-600 transition-colors font-sans font-sans">Terminar Sessão</h4>
-                        <p className="text-xs text-text-muted truncate">Sair com segurança</p>
-                    </div>
-                    <ChevronRight size={18} className="text-gray-300 group-hover:translate-x-1 transition-transform shrink-0" />
-                </div>
             </div>
 
-            {/* Main Documents Grid representing Image 2's "Ongoing Projects" bento items */}
-            <div className="space-y-6">
-                <div className="flex items-center justify-between">
-                    <h3 className="text-lg font-black text-deep-blue uppercase tracking-tight flex items-center gap-2 font-sans">
-                        <Briefcase size={18} className="text-primary-blue" />
-                        Seus Documentos Gerados
-                    </h3>
-                    <span className="text-[11px] font-black text-primary-blue bg-soft-blue px-3 py-1 rounded-full uppercase tracking-wider font-sans">
-                        {expandedItems.length} Documentos
-                    </span>
+            {/* Main Documents Hub */}
+            <div className="bg-white rounded-3xl border border-slate-200/90 shadow-sm p-6 sm:p-8 space-y-6">
+                
+                {/* Hub Header & Filter Bar */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100">
+                    <div>
+                        <h2 className="text-lg sm:text-xl font-black text-slate-900 tracking-tight flex items-center gap-2">
+                            <Briefcase size={20} className="text-blue-600" />
+                            Seus Documentos & Histórico
+                        </h2>
+                        <p className="text-xs text-slate-500 mt-0.5">
+                            Gerencie seus currículos e cartas de apresentação gerados
+                        </p>
+                    </div>
+
+                    {/* Filter Tabs */}
+                    <div className="flex items-center gap-1.5 p-1 bg-slate-100/80 rounded-xl self-start sm:self-auto overflow-x-auto max-w-full">
+                        <button
+                            onClick={() => setActiveFilter('all')}
+                            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap ${
+                                activeFilter === 'all' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-500 hover:text-slate-800'
+                            }`}
+                        >
+                            Todos ({expandedItems.length})
+                        </button>
+                        <button
+                            onClick={() => setActiveFilter('resume')}
+                            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap ${
+                                activeFilter === 'resume' ? 'bg-white text-blue-600 shadow-xs' : 'text-slate-500 hover:text-slate-800'
+                            }`}
+                        >
+                            Currículos
+                        </button>
+                        <button
+                            onClick={() => setActiveFilter('cover_letter')}
+                            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap ${
+                                activeFilter === 'cover_letter' ? 'bg-white text-indigo-600 shadow-xs' : 'text-slate-500 hover:text-slate-800'
+                            }`}
+                        >
+                            Cartas
+                        </button>
+                        <button
+                            onClick={() => setActiveFilter('approved')}
+                            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap ${
+                                activeFilter === 'approved' ? 'bg-white text-emerald-600 shadow-xs' : 'text-slate-500 hover:text-slate-800'
+                            }`}
+                        >
+                            Prontos
+                        </button>
+                    </div>
                 </div>
 
+                {/* Content Area */}
                 {loading ? (
-                    <div className="p-16 text-center border-2 border-dashed border-gray-100 rounded-[2.5rem] bg-white">
-                        <div className="animate-spin w-8 h-8 border-4 border-primary-blue border-t-transparent rounded-full mx-auto mb-4"></div>
-                        <p className="text-xs text-text-muted uppercase font-black tracking-widest font-sans">Sincronizando com a nuvem...</p>
+                    <div className="p-16 text-center space-y-3">
+                        <div className="animate-spin w-8 h-8 border-3 border-blue-600 border-t-transparent rounded-full mx-auto"></div>
+                        <p className="text-xs text-slate-500 font-bold uppercase tracking-wider">Carregando documentos...</p>
                     </div>
-                ) : expandedItems.length === 0 ? (
-                    <div className="p-16 text-center border border-slate-150 rounded-[2.5rem] bg-white space-y-4 max-w-lg mx-auto">
-                        <div className="w-16 h-16 bg-slate-50 rounded-2xl flex items-center justify-center mx-auto text-slate-400">
+                ) : filteredItems.length === 0 ? (
+                    <div className="py-14 px-6 text-center space-y-5 max-w-md mx-auto">
+                        <div className="w-16 h-16 bg-blue-50 text-blue-500 rounded-2xl flex items-center justify-center mx-auto ring-8 ring-blue-50/50">
                             <FileText size={32} />
                         </div>
-                        <div className="space-y-1">
-                            <h4 className="text-md font-black text-deep-blue uppercase tracking-tight font-sans">Nenhum currículo encontrado</h4>
-                            <p className="text-xs text-text-muted leading-relaxed font-sans">Você ainda não gerou ou comprou nenhum currículo premium nesta conta. Crie e descarregue um layout incrível agora!</p>
+                        <div className="space-y-1.5">
+                            <h3 className="text-base font-black text-slate-900">
+                                {activeFilter === 'all' ? 'Nenhum documento gerado ainda' : 'Nenhum item nesta categoria'}
+                            </h3>
+                            <p className="text-xs text-slate-500 leading-relaxed">
+                                Comece criando seu primeiro currículo profissional ou registre um atendimento para o seu cliente com exportação em PDF A4.
+                            </p>
                         </div>
-                        <div className="pt-2 flex justify-center">
-                            <Button onClick={() => setView('editor')} className="px-6 shadow-lg bg-primary-blue text-white hover:bg-primary-blue/90 font-black uppercase text-xs tracking-wider font-sans">
-                                <Plus size={16} /> Criar Meu Primeiro Currículo
+                        <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
+                            <Button 
+                                onClick={() => setView('editor')} 
+                                className="bg-blue-600 hover:bg-blue-700 text-white h-11 px-6 rounded-xl font-bold shadow-lg shadow-blue-500/20"
+                            >
+                                <Plus size={16} className="mr-1.5" /> Criar Meu Primeiro Currículo
                             </Button>
+                            {onOpenNewRegistration && (
+                                <button
+                                    onClick={onOpenNewRegistration}
+                                    className="px-5 h-11 rounded-xl font-bold text-xs text-slate-700 bg-slate-100 hover:bg-slate-200 transition-all"
+                                >
+                                    Novo Atendimento
+                                </button>
+                            )}
                         </div>
                     </div>
                 ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pb-12">
-                        {expandedItems.map((item, idx) => {
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {filteredItems.map((item, idx) => {
                             const isGeneratingThis = isGenerating === `${item.id}-${item.subType}`;
                             return (
                                 <div 
                                     key={`${item.id}-${item.subType}-${idx}`} 
-                                    className="bg-white border border-slate-100 rounded-[2rem] p-6 hover:shadow-xl transition-all duration-300 relative group overflow-hidden flex flex-col justify-between gap-6"
+                                    className="bg-white border border-slate-200/90 hover:border-blue-300 rounded-2xl p-5 hover:shadow-lg transition-all duration-200 flex flex-col justify-between gap-5 relative group"
                                 >
-                                    {/* Top Metadata Row */}
-                                    <div className="space-y-3.5">
-                                        <div className="flex justify-between items-center gap-4">
-                                            <span className="text-[10px] font-mono font-bold text-gray-400 uppercase tracking-widest font-sans">
-                                                ID: {item.id.slice(0, 8)}
-                                            </span>
-                                            
+                                    {/* Top Row */}
+                                    <div className="space-y-3">
+                                        <div className="flex items-center justify-between gap-2">
+                                            <div className="flex items-center gap-2">
+                                                <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
+                                                    item.subType === 'cover_letter' ? 'bg-indigo-50 text-indigo-600' : 'bg-blue-50 text-blue-600'
+                                                }`}>
+                                                    {item.subType === 'cover_letter' ? <Mail size={18} /> : <FileText size={18} />}
+                                                </div>
+                                                <div>
+                                                    <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">
+                                                        {item.format || 'A4 PDF • 300 DPI'}
+                                                    </span>
+                                                    <h4 className="font-black text-slate-900 text-sm tracking-tight group-hover:text-blue-600 transition-colors">
+                                                        {item.displayName}
+                                                    </h4>
+                                                </div>
+                                            </div>
+
                                             {/* Status Badge */}
                                             {item.status === 'approved' ? (
-                                                <span className="text-[9px] uppercase font-black tracking-widest text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-100 flex items-center gap-1 font-sans">
+                                                <span className="text-[9px] uppercase font-black tracking-wider text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-md border border-emerald-200/80 flex items-center gap-1 shrink-0">
                                                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Pronto
                                                 </span>
                                             ) : (
-                                                <span className="text-[9px] uppercase font-black tracking-widest text-amber-500 bg-amber-50 px-2.5 py-1 rounded-full border border-amber-100 flex items-center gap-1 animate-pulse font-sans">
-                                                    <span className="w-1.5 h-1.5 rounded-full bg-amber-400"></span> Pendente
+                                                <span className="text-[9px] uppercase font-black tracking-wider text-amber-700 bg-amber-50 px-2.5 py-1 rounded-md border border-amber-200/80 flex items-center gap-1 shrink-0 animate-pulse">
+                                                    <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span> Em Análise
                                                 </span>
                                             )}
                                         </div>
 
-                                        {/* Card Main Title */}
-                                        <div className="space-y-1">
-                                            <h4 className="font-black text-deep-blue text-lg tracking-tight group-hover:text-primary-blue transition-colors font-sans">
-                                                {item.displayName}
-                                            </h4>
-                                            <p className="text-[11px] text-text-muted font-bold flex items-center gap-1 font-sans">
-                                                <FileText size={12} className="text-gray-400" />
-                                                Gerado em {new Date(item.createdAt).toLocaleDateString('pt-PT')}
-                                            </p>
-                                        </div>
-
-                                        {/* Stylized Progress Bar representing completion state (Aesthetic Image 2 feature) */}
-                                        <div className="space-y-1.5 pt-2">
-                                            <div className="flex justify-between items-center text-[10px] uppercase font-black text-slate-400 font-sans">
-                                                <span>Fidelidade A4</span>
-                                                <span className={item.status === 'approved' ? 'text-emerald-500 font-bold' : 'text-amber-500 font-bold'}>
-                                                    {item.status === 'approved' ? '100% Compilado' : 'Processando GPO'}
-                                                </span>
-                                            </div>
-                                            <div className="w-full bg-slate-50 h-2 rounded-full overflow-hidden">
-                                                <div 
-                                                    className={`h-full rounded-full transition-all duration-1000 ${
-                                                        item.status === 'approved' ? 'bg-emerald-500 w-full' : 'bg-amber-400 w-3/4 animate-pulse'
-                                                    }`}
-                                                ></div>
-                                            </div>
+                                        {/* Metadata */}
+                                        <div className="flex items-center justify-between text-[11px] text-slate-400 pt-1 border-t border-slate-100">
+                                            <span className="flex items-center gap-1 text-slate-500 font-medium">
+                                                <Calendar size={12} className="text-slate-400" />
+                                                {new Date(item.createdAt).toLocaleDateString('pt-PT')}
+                                            </span>
+                                            <button 
+                                                onClick={(e) => handleCopyId(item.id, e)}
+                                                className="font-mono text-[10px] text-slate-400 hover:text-blue-600 transition-colors flex items-center gap-1"
+                                                title="Copiar código de referência"
+                                            >
+                                                {copiedId === item.id ? (
+                                                    <span className="text-emerald-600 font-bold">Copiado!</span>
+                                                ) : (
+                                                    <>
+                                                        <span>Ref: #{item.id.slice(0, 8)}</span>
+                                                        <Copy size={11} />
+                                                    </>
+                                                )}
+                                            </button>
                                         </div>
                                     </div>
 
-                                    {/* Action Footnotes: Click to Download PDF instantly! */}
-                                    <div className="pt-2">
+                                    {/* Action Buttons */}
+                                    <div className="flex items-center gap-2 pt-1">
                                         <button 
                                             disabled={isGeneratingThis}
                                             onClick={() => downloadPDF(item, item.subType)}
-                                            className={`w-full py-3 px-4 rounded-xl font-black text-[11px] uppercase tracking-wider flex items-center justify-center gap-2 transition-all cursor-pointer ${
+                                            className={`flex-1 py-2.5 px-4 rounded-xl font-bold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer ${
                                                 item.status === 'approved'
-                                                    ? 'bg-slate-900 hover:bg-black text-white shadow-md shadow-slate-900/10'
-                                                    : 'bg-amber-500 hover:bg-amber-600 text-white border border-amber-600/10 shadow-md shadow-amber-500/10 hover:-translate-y-0.5'
+                                                    ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-500/15'
+                                                    : 'bg-slate-900 hover:bg-black text-white shadow-xs'
                                             } disabled:opacity-50`}
                                         >
                                             {isGeneratingThis ? (
                                                 <>
-                                                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin font-sans"></div>
-                                                    <span>A processar...</span>
+                                                    <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                                                    <span>A Gerar PDF...</span>
                                                 </>
                                             ) : (
                                                 <>
                                                     <Download size={14} />
-                                                    <span>Descarregar PDF {item.subType === 'cover_letter' ? '(Carta)' : ''}</span>
+                                                    <span>Baixar PDF</span>
                                                 </>
                                             )}
+                                        </button>
+
+                                        <button 
+                                            onClick={() => {
+                                                if (onLoadClientResume && item.documentData) {
+                                                    const resData = item.documentData.resume || item.documentData;
+                                                    const tmpl = resData?.template || 't1_executive';
+                                                    onLoadClientResume(resData, tmpl, item);
+                                                } else {
+                                                    setView('editor');
+                                                }
+                                            }}
+                                            className="px-3.5 py-2.5 rounded-xl font-bold text-xs text-slate-700 hover:text-blue-600 bg-slate-100 hover:bg-slate-200 transition-colors"
+                                            title="Abrir e editar este documento no editor"
+                                        >
+                                            <Pencil size={14} />
                                         </button>
                                     </div>
                                 </div>
@@ -6562,7 +6785,122 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
   const [tempCertName, setTempCertName] = useState("");
   const [tempCertDate, setTempCertDate] = useState("");
   const [showPreviewModal, setShowPreviewModal] = useState(false);
+  const [showClientRegistrationModal, setShowClientRegistrationModal] = useState(false);
+  const [showSavedClientsModal, setShowSavedClientsModal] = useState(false);
+  const [currentClient, setCurrentClient] = useState<ClientRegistrationData | null>(null);
   const stepsScrollRef = useRef<HTMLDivElement>(null);
+
+  const handleOpenNewAttendance = () => {
+    setShowClientRegistrationModal(true);
+  };
+
+  const handleConfirmClientRegistration = async (regData: ClientRegistrationData) => {
+    setCurrentClient(regData);
+    if (regData.resumeData) {
+      setResumeData(regData.resumeData);
+    }
+    if (regData.template) {
+      setTemplate(regData.template);
+    }
+    
+    if (regData.serviceType === 'cover_letter') {
+      setIsCoverLetterMode(true);
+      if (regData.notes) {
+        setLetterSubject(regData.notes);
+      }
+    } else {
+      setIsCoverLetterMode(false);
+    }
+
+    // Auto-save to persistence and accounting database
+    try {
+      await saveClientResume({
+        clientName: regData.clientName,
+        clientPhone: regData.clientPhone,
+        clientEmail: regData.clientEmail,
+        serviceType: regData.serviceType,
+        price: regData.price,
+        paymentMethod: regData.paymentMethod,
+        paymentStatus: regData.paymentStatus,
+        notes: regData.notes,
+        template: regData.template,
+        themeColor: regData.themeColor,
+        resumeData: regData.resumeData || resumeData,
+        coverLetterText: generatedLetter,
+        letterSubject: letterSubject
+      });
+    } catch (e) {
+      console.warn("Auto-save client warning:", e);
+    }
+
+    setShowClientRegistrationModal(false);
+    _setView('editor');
+    setActiveStep(0);
+  };
+
+  const handleLoadClientResume = (loadedData: ResumeData, loadedTemplate?: TemplateType, meta?: any) => {
+    setResumeData(loadedData);
+    if (loadedTemplate) {
+      setTemplate(loadedTemplate);
+    }
+    if (meta) {
+      if (meta.serviceType === 'cover_letter') {
+        setIsCoverLetterMode(true);
+      } else {
+        setIsCoverLetterMode(false);
+      }
+      if (meta.coverLetterText) {
+        setGeneratedLetter(meta.coverLetterText);
+      }
+      if (meta.letterSubject) {
+        setLetterSubject(meta.letterSubject);
+      }
+      setCurrentClient({
+        clientName: meta.candidateName || meta.clientName || loadedData.personalInfo.fullName,
+        clientPhone: meta.candidatePhone || meta.clientPhone || loadedData.personalInfo.phone,
+        clientEmail: meta.candidateEmail || meta.clientEmail || loadedData.personalInfo.email,
+        serviceType: meta.serviceType || 'cv_normal',
+        price: meta.price || 2000,
+        paymentMethod: meta.paymentMethod || 'express',
+        paymentStatus: meta.paymentStatus || 'paid',
+        notes: meta.notes || '',
+        template: loadedTemplate || 't1_executive',
+        themeColor: meta.themeColor || loadedData.themeColor || '#1E40AF',
+        resumeData: loadedData
+      });
+    }
+    setShowSavedClientsModal(false);
+    _setView('editor');
+  };
+
+  const handleSaveCurrentClient = async () => {
+    const clientName = currentClient?.clientName || resumeData.personalInfo.fullName || 'Cliente CV LAB';
+    const serviceType = currentClient?.serviceType || (isCoverLetterMode ? 'cover_letter' : 'cv_normal');
+    const price = currentClient?.price || (serviceType === 'cv_europeu' ? 5000 : serviceType === 'cv_english' ? 3000 : 2000);
+
+    try {
+      await saveClientResume({
+        id: currentClient ? undefined : undefined,
+        clientName: clientName,
+        clientPhone: currentClient?.clientPhone || resumeData.personalInfo.phone,
+        clientEmail: currentClient?.clientEmail || resumeData.personalInfo.email,
+        serviceType: serviceType,
+        price: price,
+        paymentMethod: currentClient?.paymentMethod || 'express',
+        paymentStatus: currentClient?.paymentStatus || 'paid',
+        notes: currentClient?.notes || '',
+        template: template,
+        themeColor: resumeData.themeColor || '#1E40AF',
+        resumeData: resumeData,
+        coverLetterText: isCoverLetterMode ? generatedLetter : undefined,
+        letterSubject: isCoverLetterMode ? letterSubject : undefined
+      });
+      alert(`✅ CV e dados de ${clientName} salvos com sucesso no sistema!`);
+    } catch (e: any) {
+      console.error("Erro ao salvar CV:", e);
+      alert("Erro ao salvar CV: " + e.message);
+    }
+  };
 
   const scrollCategories = (direction: 'left' | 'right') => {
     if (stepsScrollRef.current) {
@@ -7755,12 +8093,17 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
 
           <div className="flex-[2] hidden lg:flex flex-col items-center gap-2">
             <Button 
-              onClick={() => setView('editor')} 
-              className="bg-primary-blue hover:bg-deep-blue text-white px-8 h-11 text-xs uppercase tracking-[0.2em] font-black shadow-lg shadow-primary-blue/20 transition-all hover:scale-105 active:scale-95"
+              onClick={handleOpenNewAttendance} 
+              className="bg-primary-blue hover:bg-deep-blue text-white px-8 h-11 text-xs uppercase tracking-[0.2em] font-black shadow-lg shadow-primary-blue/20 transition-all hover:scale-105 active:scale-95 flex items-center gap-2"
             >
-              Criar Meu Currículo
+              <Plus size={16} strokeWidth={3} />
+              <span>Criar Meu Currículo</span>
             </Button>
             <div className="flex items-center gap-6 text-[9px] font-black tracking-widest text-text-muted uppercase">
+              <button onClick={() => setShowSavedClientsModal(true)} className="text-primary-blue font-black hover:underline flex items-center gap-1">
+                <Clock size={12} />
+                <span>CVs Salvos</span>
+              </button>
               <button onClick={() => setView('tips')} className="hover:text-primary-blue transition-colors">Dicas</button>
               <button onClick={() => setView('showcase')} className="hover:text-primary-blue transition-colors">Exemplos</button>
               <button onClick={() => setView('about')} className="hover:text-primary-blue transition-colors">Sobre Nós</button>
@@ -7786,7 +8129,7 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
                   </div>
                 </button>
               ) : (
-                <button onClick={() => setView('editor')} className="text-xs font-black text-primary-blue uppercase tracking-widest px-4 py-2 hover:bg-white/50 rounded-xl transition-all border border-primary-blue/10">Criar currículo</button>
+                <button onClick={handleOpenNewAttendance} className="text-xs font-black text-primary-blue uppercase tracking-widest px-4 py-2 hover:bg-white/50 rounded-xl transition-all border border-primary-blue/10">Criar currículo</button>
               )}
           </div>
         </nav>
@@ -7856,8 +8199,15 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
                 Design premium e tecnologia validada por recrutadores.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 pt-4">
-                <Button onClick={() => setView('editor')} className="px-10 h-16 text-lg uppercase tracking-tight shadow-2xl shadow-primary-blue/30">Criar meu currículo</Button>
-                <Button variant="outline" onClick={() => setView('showcase')} className="px-10 h-16 text-lg uppercase tracking-tight border-border-main text-text-main hover:bg-bg-main">Ver Modelos</Button>
+                <Button onClick={handleOpenNewAttendance} className="px-10 h-16 text-lg uppercase tracking-tight shadow-2xl shadow-primary-blue/30 flex items-center gap-2">
+                  <Plus size={20} strokeWidth={3} />
+                  <span>Criar meu currículo</span>
+                </Button>
+                <Button variant="outline" onClick={() => setShowSavedClientsModal(true)} className="px-8 h-16 text-lg uppercase tracking-tight border-border-main text-text-main hover:bg-bg-main flex items-center gap-2">
+                  <Clock size={18} />
+                  <span>CVs Salvos</span>
+                </Button>
+                <Button variant="outline" onClick={() => setView('showcase')} className="px-8 h-16 text-lg uppercase tracking-tight border-border-main text-text-main hover:bg-bg-main">Ver Modelos</Button>
               </div>
               <div className="flex items-center gap-6 pt-4 border-t border-border-main mt-4">
                 <div className="flex -space-x-3">
@@ -8362,7 +8712,7 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
           </div>
         </nav>
         
-        <main className="flex-1 max-w-4xl mx-auto w-full px-6 py-16">
+        <main className={`flex-1 ${view === 'profile' ? 'max-w-5xl' : 'max-w-4xl'} mx-auto w-full px-4 sm:px-6 py-8 md:py-12`}>
           {(view !== 'profile' && view !== 'my-resumes') && (
             <button onClick={() => setView('landing')} className="text-primary-blue text-xs font-bold uppercase tracking-widest flex items-center gap-2 mb-8 hover:opacity-80 transition-opacity">
               <ChevronLeft size={16} /> Voltar
@@ -8371,7 +8721,18 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
 
           {view === 'my-resumes' && <MyResumesPage user={user} setView={setView} onRequestDownload={downloadHtmlDocumentAsPdf} />}
 
-          {view === 'profile' && <ProfilePage user={user} isAdmin={isAdmin} setView={setView} onLogout={logOut} onRequestDownload={downloadHtmlDocumentAsPdf} />}
+          {view === 'profile' && (
+            <ProfilePage 
+              user={user} 
+              isAdmin={isAdmin} 
+              setView={setView} 
+              onLogout={logOut} 
+              onRequestDownload={downloadHtmlDocumentAsPdf}
+              onOpenNewRegistration={() => setShowClientRegistrationModal(true)}
+              onOpenSavedClients={() => setShowSavedClientsModal(true)}
+              onLoadClientResume={handleLoadClientResume}
+            />
+          )}
 
           {view === 'tips' && (
             <div className="space-y-12">
@@ -9097,20 +9458,68 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
 
       {/* Sidebar Editor */}
       <aside className={`w-full h-full max-w-3xl mx-auto md:max-w-none md:mx-0 md:w-[380px] lg:w-[460px] xl:w-[540px] bg-white border-r border-border-main flex flex-col shadow-2xl z-30 print:hidden shrink-0 overflow-hidden ${showPreviewModal ? 'hidden' : 'flex'}`}>
-        <header className="p-4 border-b border-border-main flex items-center justify-between sticky top-0 bg-white z-40 shadow-sm">
-          <div className="flex items-center gap-3">
-             <button onClick={() => setView('landing')} className="p-2 hover:bg-bg-main rounded-xl transition-colors text-text-muted">
-               <ChevronLeft size={20} />
+        {/* Top Executive Client & Attendance Banner */}
+        <div className="bg-gradient-to-r from-blue-900 via-deep-blue to-primary-blue text-white px-4 py-2.5 flex items-center justify-between shadow-md">
+          <div className="flex items-center gap-2 overflow-hidden">
+            <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse shrink-0"></span>
+            <div className="flex flex-col truncate">
+              <span className="text-[11px] font-black uppercase tracking-wider text-blue-100 truncate">
+                {currentClient ? currentClient.clientName : (resumeData.personalInfo.fullName || 'Novo Cliente')}
+              </span>
+              <span className="text-[9px] text-blue-200 font-bold tracking-tight">
+                {currentClient ? (
+                  `${currentClient.serviceType === 'cv_europeu' ? 'CV Europeu (5.000 Kz)' : currentClient.serviceType === 'cv_english' ? 'CV em Inglês (3.000 Kz)' : currentClient.serviceType === 'cover_letter' ? 'Carta de Apresentação (2.000 Kz)' : 'CV Normal (2.000 Kz)'} • ${currentClient.paymentStatus === 'paid' ? 'Pago' : 'Pendente'}`
+                ) : (
+                  'Atendimento Ativo • Pronto p/ Salvar'
+                )}
+              </span>
+            </div>
+          </div>
+          <div className="flex items-center gap-1.5 shrink-0">
+            <button
+              type="button"
+              onClick={handleOpenNewAttendance}
+              className="px-2.5 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg text-[10px] font-black tracking-wider uppercase transition-all shadow-sm flex items-center gap-1 active:scale-95"
+              title="Registrar Novo Atendimento (Tipo & Preço)"
+            >
+              <Plus size={13} strokeWidth={3} />
+              <span>Novo</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowSavedClientsModal(true)}
+              className="px-2.5 py-1.5 bg-white/20 hover:bg-white/30 text-white rounded-lg text-[10px] font-black tracking-wider uppercase transition-all shadow-sm flex items-center gap-1 active:scale-95"
+              title="Ver Clientes e CVs Salvos (Editáveis)"
+            >
+              <Clock size={13} />
+              <span>Histórico</span>
+            </button>
+            <button
+              type="button"
+              onClick={handleSaveCurrentClient}
+              className="px-2.5 py-1.5 bg-white text-deep-blue hover:bg-blue-50 rounded-lg text-[10px] font-black tracking-wider uppercase transition-all shadow-sm flex items-center gap-1 active:scale-95"
+              title="Salvar CV do Cliente Atual"
+            >
+              <CheckCircle size={13} className="text-primary-blue" />
+              <span>Salvar</span>
+            </button>
+          </div>
+        </div>
+
+        <header className="p-3 border-b border-border-main flex items-center justify-between sticky top-0 bg-white z-40 shadow-sm">
+          <div className="flex items-center gap-2">
+             <button onClick={() => setView('landing')} className="p-1.5 hover:bg-bg-main rounded-xl transition-colors text-text-muted">
+               <ChevronLeft size={18} />
              </button>
              <img 
                src="https://i.supaimg.com/6bc04951-8cbe-4706-9f0c-a01f9ea9a6c4/f7862e8c-46f6-4d82-a9e0-b9cb52c6fc4f.png" 
                alt="CV LAB" 
-               className="h-6 w-auto object-contain hidden sm:inline"
+               className="h-5 w-auto object-contain hidden sm:inline"
                referrerPolicy="no-referrer" 
              />
           </div>
           <div className="flex items-center gap-2">
-            <div className="px-3 py-1 bg-soft-blue text-primary-blue text-[9px] font-black rounded-full hidden md:block">PASSO {activeStep + 1}/6</div>
+            <div className="px-2.5 py-0.5 bg-soft-blue text-primary-blue text-[9px] font-black rounded-full hidden md:block">PASSO {activeStep + 1}/6</div>
             
             {/* Direct Dual View Switcher */}
             <div className="flex items-center bg-gray-100 p-1 rounded-xl border border-gray-200 gap-1">
@@ -9148,7 +9557,7 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
               </button>
             </div>
 
-            <Button className="h-9 px-4 text-xs font-bold flex bg-primary-blue text-white hover:bg-[#0052cc] rounded-full shadow-md" onClick={handlePrint} icon={Printer}>Imprimir</Button>
+            <Button className="h-8 px-3 text-xs font-bold flex bg-primary-blue text-white hover:bg-[#0052cc] rounded-full shadow-md" onClick={handlePrint} icon={Printer}>Imprimir</Button>
           </div>
         </header>
 
@@ -11832,6 +12241,33 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
         </div>,
         document.body
       )}
+
+      {/* Pre-Generation & Accounting Client Registration Modal */}
+      <ClientRegistrationModal
+        isOpen={showClientRegistrationModal}
+        onClose={() => setShowClientRegistrationModal(false)}
+        onConfirmRegistration={handleConfirmClientRegistration}
+      />
+
+      {/* Saved Clients & Historical Records Modal (Editable CVs) */}
+      <SavedClientsModal
+        isOpen={showSavedClientsModal}
+        onClose={() => setShowSavedClientsModal(false)}
+        onLoadClientResume={handleLoadClientResume}
+        onOpenNewRegistration={() => {
+          setShowSavedClientsModal(false);
+          setShowClientRegistrationModal(true);
+        }}
+        onDirectDownloadPdf={(loadedData, loadedTemplate) => {
+          const tpl = loadedTemplate || template;
+          downloadHtmlDocumentAsPdf(
+            loadedData,
+            'resume',
+            tpl,
+            `${(loadedData.personalInfo?.fullName || 'Curriculo').replace(/\s+/g, '_')}_Curriculo.pdf`
+          );
+        }}
+      />
     </div>
   );
 }

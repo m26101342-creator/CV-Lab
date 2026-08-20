@@ -466,6 +466,99 @@ export const recordGeneratedDocument = async (docData: {
     return fullDoc;
 };
 
+// Save and Persist Full Editable Client CV and Accounting Entry
+export const saveClientResume = async (clientData: {
+    id?: string;
+    clientName: string;
+    clientPhone?: string;
+    clientEmail?: string;
+    serviceType: string;
+    price: number;
+    paymentMethod?: string;
+    paymentStatus?: 'paid' | 'pending';
+    notes?: string;
+    template?: string;
+    resumeData: any;
+    coverLetterText?: string;
+    letterSubject?: string;
+    themeColor?: string;
+}) => {
+    const docId = clientData.id || `client_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+    const nowIso = new Date().toISOString();
+
+    const record = {
+        id: docId,
+        candidateName: clientData.clientName || 'Cliente CV LAB',
+        candidateEmail: clientData.clientEmail || '',
+        candidatePhone: clientData.clientPhone || '',
+        candidateTitle: clientData.resumeData?.personalInfo?.title || 'Profissional',
+        type: clientData.serviceType === 'cover_letter' ? 'cover_letter' : 'cv',
+        serviceType: clientData.serviceType || 'cv_normal',
+        price: Number(clientData.price) || 2000,
+        paymentMethod: clientData.paymentMethod || 'express',
+        paymentStatus: clientData.paymentStatus || 'paid',
+        notes: clientData.notes || '',
+        template: clientData.template || clientData.resumeData?.template || 't1_executive',
+        themeColor: clientData.themeColor || clientData.resumeData?.themeColor || '#1E40AF',
+        resumeData: clientData.resumeData,
+        coverLetterText: clientData.coverLetterText,
+        letterSubject: clientData.letterSubject,
+        createdAt: nowIso,
+        updatedAt: nowIso,
+        action: 'Salvo no Sistema'
+    };
+
+    // 1. Save to localStorage for instant local access
+    try {
+        const rawLocal = localStorage.getItem('saved_client_resumes');
+        let localList: any[] = rawLocal ? JSON.parse(rawLocal) : [];
+        if (!Array.isArray(localList)) localList = [];
+        
+        const existingIdx = localList.findIndex(item => item.id === docId || (item.candidateName && item.candidateName.toLowerCase() === record.candidateName.toLowerCase()));
+        if (existingIdx >= 0) {
+            localList[existingIdx] = { ...localList[existingIdx], ...record, updatedAt: nowIso };
+        } else {
+            localList.unshift(record);
+        }
+        localStorage.setItem('saved_client_resumes', JSON.stringify(localList));
+    } catch (e) {
+        console.warn("Local storage save error:", e);
+    }
+
+    // 2. Persist to Firestore generated_documents and client_resumes
+    try {
+        if (db) {
+            await setDoc(doc(db, 'generated_documents', docId), record, { merge: true });
+            await setDoc(doc(db, 'client_resumes', docId), record, { merge: true });
+
+            // Update accounting metrics
+            const metricsRef = doc(db, 'admin_settings', 'metrics');
+            const metricsSnap = await getDoc(metricsRef);
+            if (metricsSnap && metricsSnap.exists()) {
+                const cur = metricsSnap.data();
+                const isCV = record.type === 'cv';
+                const isLetter = record.type === 'cover_letter';
+                const newCVsCount = (cur.realCVsCount || cur.totalCVsGenerated || 0) + (isCV ? 1 : 0);
+                const newLettersCount = (cur.totalLettersGenerated || 0) + (isLetter ? 1 : 0);
+                const newRevenue = (cur.realRevenue || 0) + (record.price || 2000);
+                
+                await updateDoc(metricsRef, {
+                    realCVsCount: newCVsCount,
+                    totalCVsGenerated: newCVsCount,
+                    totalLettersGenerated: newLettersCount,
+                    totalDocumentsGenerated: (cur.totalDocumentsGenerated || (newCVsCount + newLettersCount)) + 1,
+                    realRevenue: newRevenue,
+                    lastGeneratedAt: nowIso
+                });
+            }
+        }
+    } catch (errDb) {
+        console.error("Erro ao salvar cliente no Firestore:", errDb);
+    }
+
+    return record;
+};
+
 // Firestore wrappers & Mock SDK implementation
 export { auth, db, googleProvider };
 
