@@ -49,6 +49,7 @@ export interface ResumeData {
     phone: string;
     location: string;
     website: string;
+    linkedin?: string;
     title: string;
     summary: string;
     photo?: string;
@@ -117,6 +118,7 @@ export const INITIAL_RESUME_DATA: ResumeData = {
     phone: '',
     location: '',
     website: '',
+    linkedin: '',
     title: '',
     summary: '',
     photoStyle: 'circle',

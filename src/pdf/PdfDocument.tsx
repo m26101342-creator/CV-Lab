@@ -111,6 +111,20 @@ const Icons = {
       <path key="p1" d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" />
       <circle key="c1" cx="12" cy="10" r="3" />
     </Svg>
+  ),
+  Globe: () => (
+    <Svg key="globe-svg" style={{ marginRight: 4, alignSelf: 'center' }} width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle key="c1" cx="12" cy="12" r="10" />
+      <path key="p1" d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+      <path key="p2" d="M2 12h20" />
+    </Svg>
+  ),
+  Linkedin: () => (
+    <Svg key="linkedin-svg" style={{ marginRight: 4, alignSelf: 'center' }} width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path key="p1" d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z" />
+      <rect key="r1" x="2" y="9" width="4" height="12" />
+      <circle key="c1" cx="4" cy="4" r="2" />
+    </Svg>
   )
 };
 
@@ -156,9 +170,11 @@ const Template1 = ({ data }: { data: ResumeData }) => {
 
         <View style={{ marginBottom: 30 }}>
           <Text style={styles.sectionTitle}>{data.language === 'en' ? 'Contact' : 'Contacto'}</Text>
-          <View style={styles.contactRow}><Icons.Mail /><Text style={styles.contactText}>{data.personalInfo.email}</Text></View>
-          <View style={styles.contactRow}><Icons.Phone /><Text style={styles.contactText}>{data.personalInfo.phone}</Text></View>
-          <View style={styles.contactRow}><Icons.MapPin /><Text style={styles.contactText}>{data.personalInfo.location}</Text></View>
+          {data.personalInfo.email ? <View style={styles.contactRow}><Icons.Mail /><Text style={styles.contactText}>{data.personalInfo.email}</Text></View> : null}
+          {data.personalInfo.phone ? <View style={styles.contactRow}><Icons.Phone /><Text style={styles.contactText}>{data.personalInfo.phone}</Text></View> : null}
+          {data.personalInfo.location ? <View style={styles.contactRow}><Icons.MapPin /><Text style={styles.contactText}>{data.personalInfo.location}</Text></View> : null}
+          {data.personalInfo.linkedin ? <View style={styles.contactRow}><Icons.Linkedin /><Text style={styles.contactText}>{data.personalInfo.linkedin}</Text></View> : null}
+          {data.personalInfo.website ? <View style={styles.contactRow}><Icons.Globe /><Text style={styles.contactText}>{data.personalInfo.website}</Text></View> : null}
         </View>
 
         {data.skills.length > 0 && (
@@ -244,9 +260,11 @@ const Template2 = ({ data }: { data: ResumeData }) => {
       <View key="t2-body" style={styles.body}>
         <View key="left-col" style={styles.leftCol}>
           <Text style={styles.sectionTitle}>{data.language === 'en' ? 'Contact' : 'Contacto'}</Text>
-          <View key="c-mail" style={styles.contactItem}><Icons.Mail /><Text>{data.personalInfo.email}</Text></View>
-          <View key="c-phone" style={styles.contactItem}><Icons.Phone /><Text>{data.personalInfo.phone}</Text></View>
-          <View key="c-loc" style={styles.contactItem}><Icons.MapPin /><Text>{data.personalInfo.location}</Text></View>
+          {data.personalInfo.email ? <View key="c-mail" style={styles.contactItem}><Icons.Mail /><Text>{data.personalInfo.email}</Text></View> : null}
+          {data.personalInfo.phone ? <View key="c-phone" style={styles.contactItem}><Icons.Phone /><Text>{data.personalInfo.phone}</Text></View> : null}
+          {data.personalInfo.location ? <View key="c-loc" style={styles.contactItem}><Icons.MapPin /><Text>{data.personalInfo.location}</Text></View> : null}
+          {data.personalInfo.linkedin ? <View key="c-link" style={styles.contactItem}><Icons.Linkedin /><Text>{data.personalInfo.linkedin}</Text></View> : null}
+          {data.personalInfo.website ? <View key="c-web" style={styles.contactItem}><Icons.Globe /><Text>{data.personalInfo.website}</Text></View> : null}
 
           {data.skills.length > 0 && (
             <View key="skills-section" style={{ marginTop: 30 }}>
@@ -294,9 +312,11 @@ const Template3 = ({ data }: { data: ResumeData }) => {
         <Text style={styles.name}>{data.personalInfo.fullName}</Text>
         <Text style={styles.title}>{data.personalInfo.title}</Text>
         <View style={styles.contactRow}>
-          <View style={styles.contactItem}><Icons.Mail /><Text>{data.personalInfo.email}</Text></View>
-          <View style={styles.contactItem}><Icons.Phone /><Text>{data.personalInfo.phone}</Text></View>
-          <View style={styles.contactItem}><Icons.MapPin /><Text>{data.personalInfo.location}</Text></View>
+          {data.personalInfo.email ? <View style={styles.contactItem}><Icons.Mail /><Text>{data.personalInfo.email}</Text></View> : null}
+          {data.personalInfo.phone ? <View style={styles.contactItem}><Icons.Phone /><Text>{data.personalInfo.phone}</Text></View> : null}
+          {data.personalInfo.location ? <View style={styles.contactItem}><Icons.MapPin /><Text>{data.personalInfo.location}</Text></View> : null}
+          {data.personalInfo.linkedin ? <View style={styles.contactItem}><Icons.Linkedin /><Text>{data.personalInfo.linkedin}</Text></View> : null}
+          {data.personalInfo.website ? <View style={styles.contactItem}><Icons.Globe /><Text>{data.personalInfo.website}</Text></View> : null}
         </View>
       </View>
       <View style={styles.body}>
@@ -387,10 +407,11 @@ const Template4 = ({ data }: { data: ResumeData }) => {
 
         <View style={{ marginBottom: 30 }}>
           <Text style={styles.sectionTitleSidebar}>{data.language === 'en' ? 'Contact' : 'Contacto'}</Text>
-          <Text style={styles.sidebarText}>{data.personalInfo.email}</Text>
-          <Text style={styles.sidebarText}>{data.personalInfo.phone}</Text>
-          <Text style={styles.sidebarText}>{data.personalInfo.location}</Text>
-          {data.personalInfo.website && <Text style={styles.sidebarText}>{data.personalInfo.website}</Text>}
+          {data.personalInfo.email ? <Text style={styles.sidebarText}>{data.personalInfo.email}</Text> : null}
+          {data.personalInfo.phone ? <Text style={styles.sidebarText}>{data.personalInfo.phone}</Text> : null}
+          {data.personalInfo.location ? <Text style={styles.sidebarText}>{data.personalInfo.location}</Text> : null}
+          {data.personalInfo.linkedin ? <Text style={styles.sidebarText}>{data.personalInfo.linkedin}</Text> : null}
+          {data.personalInfo.website ? <Text style={styles.sidebarText}>{data.personalInfo.website}</Text> : null}
         </View>
 
         {data.education && data.education.length > 0 && (
@@ -527,10 +548,11 @@ const Template5 = ({ data }: { data: ResumeData }) => {
           
           <View>
              <Text style={styles.leftSectionTitle}>{data.language === 'en' ? 'Contact' : 'Contacto'}</Text>
-             <Text style={styles.leftText}>{data.personalInfo.phone}</Text>
-             <Text style={styles.leftText}>{data.personalInfo.email}</Text>
-             <Text style={styles.leftText}>{data.personalInfo.location}</Text>
-             {data.personalInfo.website && <Text style={styles.leftText}>{data.personalInfo.website}</Text>}
+             {data.personalInfo.phone ? <Text style={styles.leftText}>{data.personalInfo.phone}</Text> : null}
+             {data.personalInfo.email ? <Text style={styles.leftText}>{data.personalInfo.email}</Text> : null}
+             {data.personalInfo.location ? <Text style={styles.leftText}>{data.personalInfo.location}</Text> : null}
+             {data.personalInfo.linkedin ? <Text style={styles.leftText}>{data.personalInfo.linkedin}</Text> : null}
+             {data.personalInfo.website ? <Text style={styles.leftText}>{data.personalInfo.website}</Text> : null}
           </View>
           
           {data.skills && data.skills.length > 0 && (
@@ -682,6 +704,18 @@ const CoverLetter = ({ data }: { data: any }) => {
               <Text style={styles.contactText}>{info.location}</Text>
             </View>
           )}
+          {info.linkedin && (
+            <View style={styles.contactItem}>
+              <Icons.Linkedin />
+              <Text style={styles.contactText}>{info.linkedin}</Text>
+            </View>
+          )}
+          {info.website && (
+            <View style={styles.contactItem}>
+              <Icons.Globe />
+              <Text style={styles.contactText}>{info.website}</Text>
+            </View>
+          )}
         </View>
       </View>
 
@@ -749,10 +783,12 @@ const Template6 = ({ data }: { data: ResumeData }) => {
         {data.styleConfig?.showPhoto !== false && data.personalInfo.photo && <Image src={data.personalInfo.photo} style={styles.photo} />}
         <Text style={styles.name}>{data.personalInfo.fullName}</Text>
         <Text style={styles.title}>{data.personalInfo.title}</Text>
-        <View style={styles.contactRow}>
-          <Text style={styles.contactText}>{data.personalInfo.phone}</Text>
-          <Text style={styles.contactText}>•</Text>
-          <Text style={styles.contactText}>{data.personalInfo.email}</Text>
+        <View style={{ ...styles.contactRow, flexWrap: 'wrap' }}>
+          {data.personalInfo.phone ? <Text style={styles.contactText}>{data.personalInfo.phone}</Text> : null}
+          {data.personalInfo.email ? <Text style={styles.contactText}>• {data.personalInfo.email}</Text> : null}
+          {data.personalInfo.location ? <Text style={styles.contactText}>• {data.personalInfo.location}</Text> : null}
+          {data.personalInfo.linkedin ? <Text style={styles.contactText}>• {data.personalInfo.linkedin}</Text> : null}
+          {data.personalInfo.website ? <Text style={styles.contactText}>• {data.personalInfo.website}</Text> : null}
         </View>
       </View>
       
@@ -837,9 +873,11 @@ const Template7 = ({ data }: { data: ResumeData }) => {
         )}
       </View>
       <View style={styles.contactBar}>
-        <Text style={styles.contactText}>{data.personalInfo.phone}</Text>
-        <Text style={styles.contactText}>{data.personalInfo.email}</Text>
-        <Text style={styles.contactText}>{data.personalInfo.location}</Text>
+        {data.personalInfo.phone ? <Text style={styles.contactText}>{data.personalInfo.phone}</Text> : null}
+        {data.personalInfo.email ? <Text style={styles.contactText}>{data.personalInfo.email}</Text> : null}
+        {data.personalInfo.location ? <Text style={styles.contactText}>{data.personalInfo.location}</Text> : null}
+        {data.personalInfo.linkedin ? <Text style={styles.contactText}>{data.personalInfo.linkedin}</Text> : null}
+        {data.personalInfo.website ? <Text style={styles.contactText}>{data.personalInfo.website}</Text> : null}
       </View>
       <View style={styles.body}>
         <View style={styles.mainCol}>
@@ -983,6 +1021,18 @@ const Template8 = ({ data }: { data: ResumeData }) => {
               <View style={styles.contactItem}>
                 <View style={styles.contactBubble}><Icons.MapPin /></View>
                 <Text style={styles.contactText}>{data.personalInfo.location}</Text>
+              </View>
+            )}
+            {data.personalInfo.linkedin && (
+              <View style={styles.contactItem}>
+                <View style={styles.contactBubble}><Icons.Linkedin /></View>
+                <Text style={styles.contactText}>{data.personalInfo.linkedin}</Text>
+              </View>
+            )}
+            {data.personalInfo.website && (
+              <View style={styles.contactItem}>
+                <View style={styles.contactBubble}><Icons.Globe /></View>
+                <Text style={styles.contactText}>{data.personalInfo.website}</Text>
               </View>
             )}
           </View>
@@ -1152,6 +1202,18 @@ const Template9 = ({ data }: { data: ResumeData }) => {
               <View style={styles.contactItem}>
                 <Icons.MapPin />
                 <Text style={styles.contactText}>{data.personalInfo.location}</Text>
+              </View>
+            )}
+            {data.personalInfo.linkedin && (
+              <View style={styles.contactItem}>
+                <Icons.Linkedin />
+                <Text style={styles.contactText}>{data.personalInfo.linkedin}</Text>
+              </View>
+            )}
+            {data.personalInfo.website && (
+              <View style={styles.contactItem}>
+                <Icons.Globe />
+                <Text style={styles.contactText}>{data.personalInfo.website}</Text>
               </View>
             )}
           </View>
@@ -1348,6 +1410,18 @@ const Template10 = ({ data }: { data: ResumeData }) => {
               <View style={styles.contactItem}>
                 <Icons.MapPin />
                 <Text style={styles.contactText}>{data.personalInfo.location}</Text>
+              </View>
+            )}
+            {data.personalInfo.linkedin && (
+              <View style={styles.contactItem}>
+                <Icons.Linkedin />
+                <Text style={styles.contactText}>{data.personalInfo.linkedin}</Text>
+              </View>
+            )}
+            {data.personalInfo.website && (
+              <View style={styles.contactItem}>
+                <Icons.Globe />
+                <Text style={styles.contactText}>{data.personalInfo.website}</Text>
               </View>
             )}
           </View>
@@ -1591,6 +1665,18 @@ const Template11 = ({ data }: { data: ResumeData }) => {
                 <Text style={styles.contactText}>{data.personalInfo.location}</Text>
               </View>
             )}
+            {data.personalInfo.linkedin && (
+              <View style={styles.contactItem}>
+                <Icons.Linkedin />
+                <Text style={styles.contactText}>{data.personalInfo.linkedin}</Text>
+              </View>
+            )}
+            {data.personalInfo.website && (
+              <View style={styles.contactItem}>
+                <Icons.Globe />
+                <Text style={styles.contactText}>{data.personalInfo.website}</Text>
+              </View>
+            )}
           </View>
 
           {data.skills.length > 0 && (
@@ -1722,6 +1808,18 @@ const Template12 = ({ data }: { data: ResumeData }) => {
             <View style={styles.contactItem}>
               <Icons.MapPin />
               <Text style={styles.contactText}>{data.personalInfo.location}</Text>
+            </View>
+          )}
+          {data.personalInfo.linkedin && (
+            <View style={styles.contactItem}>
+              <Icons.Linkedin />
+              <Text style={styles.contactText}>{data.personalInfo.linkedin}</Text>
+            </View>
+          )}
+          {data.personalInfo.website && (
+            <View style={styles.contactItem}>
+              <Icons.Globe />
+              <Text style={styles.contactText}>{data.personalInfo.website}</Text>
             </View>
           )}
         </View>
@@ -1900,6 +1998,18 @@ const Template13 = ({ data }: { data: ResumeData }) => {
               <View style={styles.contactItem}>
                 <Icons.MapPin />
                 <Text style={styles.contactText}>{data.personalInfo.location}</Text>
+              </View>
+            )}
+            {data.personalInfo.linkedin && (
+              <View style={styles.contactItem}>
+                <Icons.Linkedin />
+                <Text style={styles.contactText}>{data.personalInfo.linkedin}</Text>
+              </View>
+            )}
+            {data.personalInfo.website && (
+              <View style={styles.contactItem}>
+                <Icons.Globe />
+                <Text style={styles.contactText}>{data.personalInfo.website}</Text>
               </View>
             )}
           </View>

@@ -24,6 +24,7 @@ import {
   Phone,
   MapPin,
   Globe,
+  Linkedin,
   X,
   ExternalLink,
   CheckCircle,
@@ -4359,6 +4360,8 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
                      {data.personalInfo.phone && <div key="phone" className="flex items-center gap-2.5 mb-4 text-gray-700 font-semibold"><Phone size={14} className="opacity-75 shrink-0" style={{ color: c.primary }} /> <span style={{ lineHeight: '1.2' }}>{data.personalInfo.phone}</span></div>}
                      {data.personalInfo.email && <div key="email" className="flex items-center gap-2.5 mb-4 text-gray-700 font-semibold"><Mail size={14} className="opacity-75 shrink-0" style={{ color: c.primary }} /> <span className="break-all" style={{ lineHeight: '1.2' }}>{data.personalInfo.email}</span></div>}
                      {data.personalInfo.location && <div key="loc" className="flex items-center gap-2.5 mb-4 text-gray-700 font-semibold"><MapPin size={14} className="opacity-75 shrink-0" style={{ color: c.primary }} /> <span style={{ lineHeight: '1.2' }}>{data.personalInfo.location}</span></div>}
+                     {data.personalInfo.linkedin && <div key="linkedin" className="flex items-center gap-2.5 mb-4 text-gray-700 font-semibold"><Linkedin size={14} className="opacity-75 shrink-0" style={{ color: c.primary }} /> <span className="break-all" style={{ lineHeight: '1.2' }}>{data.personalInfo.linkedin}</span></div>}
+                     {data.personalInfo.website && <div key="website" className="flex items-center gap-2.5 mb-4 text-gray-700 font-semibold"><Globe size={14} className="opacity-75 shrink-0" style={{ color: c.primary }} /> <span className="break-all" style={{ lineHeight: '1.2' }}>{data.personalInfo.website}</span></div>}
                   </div>
                 </div>
 
@@ -4535,12 +4538,16 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
             )}
             <h1 className="text-3xl font-black uppercase tracking-wider mb-2" style={{ color: c.primary }}>{data.personalInfo.fullName }</h1>
             <p className="text-xs font-bold text-gray-500 uppercase tracking-[0.25em]">{data.personalInfo.title }</p>
-            <div className="flex items-center gap-4 mt-4 text-[11px] font-bold text-gray-500 uppercase tracking-widest">
+            <div className="flex flex-wrap justify-center items-center gap-4 mt-4 text-[11px] font-bold text-gray-500 uppercase tracking-widest">
               {data.personalInfo.phone && <span className="flex items-center gap-1"><Phone size={11} /> {data.personalInfo.phone}</span>}
               {(data.personalInfo.phone && data.personalInfo.email) && <span>•</span>}
               {data.personalInfo.email && <span className="flex items-center gap-1"><Mail size={11} /> {data.personalInfo.email}</span>}
               {(data.personalInfo.email && data.personalInfo.location) && <span>•</span>}
               {data.personalInfo.location && <span className="flex items-center gap-1"><MapPin size={11} /> {data.personalInfo.location}</span>}
+              {(data.personalInfo.location && data.personalInfo.linkedin) && <span>•</span>}
+              {data.personalInfo.linkedin && <span className="flex items-center gap-1"><Linkedin size={11} /> {data.personalInfo.linkedin}</span>}
+              {(data.personalInfo.linkedin && data.personalInfo.website) && <span>•</span>}
+              {data.personalInfo.website && <span className="flex items-center gap-1"><Globe size={11} /> {data.personalInfo.website}</span>}
             </div>
           </div>
 
@@ -4656,6 +4663,8 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
             {data.personalInfo.phone && <span className="flex items-center gap-1"><Phone size={11} className="shrink-0" /> {data.personalInfo.phone}</span>}
             {data.personalInfo.email && <span className="flex items-center gap-1"><Mail size={11} className="shrink-0" /> {data.personalInfo.email}</span>}
             {data.personalInfo.location && <span className="flex items-center gap-1"><MapPin size={11} className="shrink-0" /> {data.personalInfo.location}</span>}
+            {data.personalInfo.linkedin && <span className="flex items-center gap-1"><Linkedin size={11} className="shrink-0" /> {data.personalInfo.linkedin}</span>}
+            {data.personalInfo.website && <span className="flex items-center gap-1"><Globe size={11} className="shrink-0" /> {data.personalInfo.website}</span>}
           </div>
 
           <div className="flex flex-row gap-8 p-10 flex-1 overflow-hidden">
@@ -4827,6 +4836,12 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
                     <div className="flex items-start gap-3 text-[10px] font-bold text-gray-700">
                       <span className="w-6 h-6 rounded-full bg-sky-400 flex items-center justify-center text-white shrink-0 shadow-sm mt-0.5"><MapPin size={11} /></span>
                       <span className="cv-contact-text break-words min-w-0">{data.personalInfo.location}</span>
+                    </div>
+                  )}
+                  {data.personalInfo.linkedin && (
+                    <div className="flex items-start gap-3 text-[10px] font-bold text-gray-700">
+                      <span className="w-6 h-6 rounded-full bg-sky-400 flex items-center justify-center text-white shrink-0 shadow-sm mt-0.5"><Linkedin size={11} /></span>
+                      <span className="cv-contact-text break-all min-w-0">{data.personalInfo.linkedin}</span>
                     </div>
                   )}
                   {data.personalInfo.website && (
@@ -5158,6 +5173,7 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
             {data.personalInfo.phone && <span className="flex items-center gap-1.5"><Phone size={11} className="shrink-0" style={{ color: c.primary }} /> {data.personalInfo.phone}</span>}
             {data.personalInfo.email && <span className="flex items-center gap-1.5"><Mail size={11} className="shrink-0" style={{ color: c.primary }} /> {data.personalInfo.email}</span>}
             {data.personalInfo.location && <span className="flex items-center gap-1.5"><MapPin size={11} className="shrink-0" style={{ color: c.primary }} /> {data.personalInfo.location}</span>}
+            {data.personalInfo.linkedin && <span className="flex items-center gap-1.5"><Linkedin size={11} className="shrink-0" style={{ color: c.primary }} /> {data.personalInfo.linkedin}</span>}
             {data.personalInfo.website && <span className="flex items-center gap-1.5"><Globe size={11} className="shrink-0" style={{ color: c.primary }} /> {data.personalInfo.website}</span>}
           </div>
 
@@ -5389,6 +5405,12 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
                     <div className="flex items-center gap-2.5 text-[10px] font-medium text-slate-200">
                       <MapPin size={12} className="shrink-0" style={{ color: c.primary }} />
                       <span>{data.personalInfo.location}</span>
+                    </div>
+                  )}
+                  {data.personalInfo.linkedin && (
+                    <div className="flex items-center gap-2.5 text-[10px] font-medium text-slate-200 break-all">
+                      <Linkedin size={12} className="shrink-0" style={{ color: c.primary }} />
+                      <span>{data.personalInfo.linkedin}</span>
                     </div>
                   )}
                   {data.personalInfo.website && (
@@ -5681,6 +5703,12 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
                       <span>{data.personalInfo.location}</span>
                     </div>
                   )}
+                  {data.personalInfo.linkedin && (
+                    <div className="flex items-center gap-2.5 text-[10px] font-bold text-zinc-300 break-all">
+                      <Linkedin size={11} className="shrink-0" style={{ color: c.primary }} />
+                      <span>{data.personalInfo.linkedin}</span>
+                    </div>
+                  )}
                   {data.personalInfo.website && (
                     <div className="flex items-center gap-2.5 text-[10px] font-bold text-zinc-300 break-all">
                       <Globe size={11} className="shrink-0" style={{ color: c.primary }} />
@@ -5780,6 +5808,7 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
               {data.personalInfo.phone && <span className="flex items-center gap-1"><Phone size={10} style={{ color: c.primary }} /> {data.personalInfo.phone}</span>}
               {data.personalInfo.email && <span className="flex items-center gap-1"><Mail size={10} style={{ color: c.primary }} /> {data.personalInfo.email}</span>}
               {data.personalInfo.location && <span className="flex items-center gap-1"><MapPin size={10} style={{ color: c.primary }} /> {data.personalInfo.location}</span>}
+              {data.personalInfo.linkedin && <span className="flex items-center gap-1"><Linkedin size={10} style={{ color: c.primary }} /> {data.personalInfo.linkedin}</span>}
               {data.personalInfo.website && <span className="flex items-center gap-1"><Globe size={10} style={{ color: c.primary }} /> {data.personalInfo.website}</span>}
             </div>
           </div>
@@ -5960,6 +5989,12 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
                     <div className="flex items-start gap-2 text-[10px] font-bold text-slate-600">
                       <MapPin size={11} className="shrink-0 mt-0.5" style={{ color: c.primary }} />
                       <span className="cv-contact-text break-words min-w-0">{data.personalInfo.location}</span>
+                    </div>
+                  )}
+                  {data.personalInfo.linkedin && (
+                    <div className="flex items-start gap-2 text-[10px] font-bold text-slate-600">
+                      <Linkedin size={11} className="shrink-0 mt-0.5" style={{ color: c.primary }} />
+                      <span className="cv-contact-text break-all min-w-0">{data.personalInfo.linkedin}</span>
                     </div>
                   )}
                   {data.personalInfo.website && (
@@ -6194,9 +6229,15 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
                   <span className="font-medium text-gray-800">{data.personalInfo.location}</span>
                 </div>
               )}
+              {data.personalInfo.linkedin && (
+                <div className="flex gap-2">
+                  <span className="font-bold text-gray-400 w-[140px] uppercase text-[10px] tracking-wide">LinkedIn:</span>
+                  <span className="font-medium text-[#003399] underline break-all">{data.personalInfo.linkedin}</span>
+                </div>
+              )}
               {data.personalInfo.website && (
                 <div className="flex gap-2">
-                  <span className="font-bold text-gray-400 w-[140px] uppercase text-[10px] tracking-wide">Website/LinkedIn:</span>
+                  <span className="font-bold text-gray-400 w-[140px] uppercase text-[10px] tracking-wide">Website:</span>
                   <span className="font-medium text-[#003399] underline break-all">{data.personalInfo.website}</span>
                 </div>
               )}
@@ -6473,6 +6514,12 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
                   <div className="flex gap-2 items-start">
                     <span className="text-gray-400 mt-0.5 shrink-0"><MapPin size={12} /></span>
                     <span className="font-medium">{data.personalInfo.location}</span>
+                  </div>
+                )}
+                {data.personalInfo.linkedin && (
+                  <div className="flex gap-2 items-start">
+                    <span className="text-gray-400 mt-0.5 shrink-0"><Linkedin size={12} /></span>
+                    <span className="break-all text-[#003399] underline font-medium">{data.personalInfo.linkedin}</span>
                   </div>
                 )}
                 {data.personalInfo.website && (
@@ -7971,6 +8018,8 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
           email: parsedData.personalInfo?.email || prev.personalInfo.email,
           phone: parsedData.personalInfo?.phone || prev.personalInfo.phone,
           location: parsedData.personalInfo?.location || prev.personalInfo.location,
+          website: parsedData.personalInfo?.website || prev.personalInfo.website,
+          linkedin: parsedData.personalInfo?.linkedin || prev.personalInfo.linkedin,
           summary: parsedData.personalInfo?.summary || prev.personalInfo.summary
         },
         experience: parsedData.experience?.length ? parsedData.experience : prev.experience,
@@ -10100,9 +10149,13 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
                   <Input label="Cargo Pretendido" value={resumeData.personalInfo.title} onChange={(v: string) => updatePersonalInfo('title', v)} placeholder="Ex: Diretor de Arte" icon={Briefcase} />
                   <div className="grid grid-cols-2 gap-4">
                     <Input label="Email" value={resumeData.personalInfo.email} onChange={(v: string) => updatePersonalInfo('email', v)} placeholder="email@exemplo.com" icon={Mail} />
-                    <Input label="WhatsApp" value={resumeData.personalInfo.phone} onChange={(v: string) => updatePersonalInfo('phone', v)} placeholder="+244 9..." icon={Phone} />
+                    <Input label="WhatsApp / Telefone" value={resumeData.personalInfo.phone} onChange={(v: string) => updatePersonalInfo('phone', v)} placeholder="+244 9..." icon={Phone} />
                   </div>
-                  <Input label="Localização" value={resumeData.personalInfo.location} onChange={(v: string) => updatePersonalInfo('location', v)} placeholder="Luanda, Angola" icon={MapPin} />
+                  <div className="grid grid-cols-2 gap-4">
+                    <Input label="Localização" value={resumeData.personalInfo.location} onChange={(v: string) => updatePersonalInfo('location', v)} placeholder="Luanda, Angola" icon={MapPin} />
+                    <Input label="LinkedIn (opcional)" value={resumeData.personalInfo.linkedin || ''} onChange={(v: string) => updatePersonalInfo('linkedin', v)} placeholder="linkedin.com/in/perfil" icon={Linkedin} />
+                  </div>
+                  <Input label="Website / Portfólio (opcional)" value={resumeData.personalInfo.website || ''} onChange={(v: string) => updatePersonalInfo('website', v)} placeholder="seuportfolio.com" icon={Globe} />
                   
                   <div className="p-6 bg-deep-blue text-white rounded-3xl space-y-4 shadow-xl border border-white/10 relative overflow-hidden">
                     <div className="absolute top-0 right-0 w-24 h-24 bg-primary-blue/20 rounded-full blur-2xl translate-x-12 -translate-y-12"></div>
