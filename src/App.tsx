@@ -63,10 +63,13 @@ import {
   Wallet,
   RefreshCw,
   Copy,
-  CheckCircle2
+  CheckCircle2,
+  Timer,
+  ShieldCheck,
+  Key
 } from 'lucide-react';
 import { AdSenseUnit } from './components/AdSenseUnit';
-import { ResumeData, INITIAL_RESUME_DATA, TemplateType, ResumeStyleConfig, ServiceType, OFFICIAL_SERVICE_PRICES, ClientRegistrationData } from './types.ts';
+import { ResumeData, INITIAL_RESUME_DATA, TemplateType, ResumeStyleConfig, ServiceType, OFFICIAL_SERVICE_PRICES, ClientRegistrationData, StaffAccessLink } from './types.ts';
 import { optimizeResumeText, generateCoverLetter, generateFullResume, parseResumeFromText, translateResumeToEnglish, translateLetterToEnglish, translateResumeToSpanish, translateLetterToSpanish, alterResumeInformation } from './services/geminiService.ts';
 import { pdf } from '@react-pdf/renderer';
 import { PdfDocument } from './pdf/PdfDocument';
@@ -78,7 +81,7 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@5.6.205/b
 import { 
     auth, db, useAuth, loginWithGoogle, logOut,
     collection, addDoc, onSnapshot, doc, query, where, getDocs, updateDoc, setDoc, serverTimestamp, getDoc, deleteDoc,
-    createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile, recordGeneratedDocument, saveClientResume
+    createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile, recordGeneratedDocument, saveClientResume, validateStaffToken
 } from './lib/firebase';
 import { 
   BarChart, 
@@ -6673,6 +6676,127 @@ export default function App() {
   const [showAuthModalAlert, setShowAuthModalAlert] = useState(false);
   const [cvPrice, setCvPrice] = useState(2000);
 
+  // Staff Session State (24h Employee Access Links)
+  const [activeStaffSession, setActiveStaffSession] = useState<{ link: StaffAccessLink; token: string } | null>(null);
+  const [staffTimeLeft, setStaffTimeLeft] = useState<number>(0);
+  const [staffModalNotice, setStaffModalNotice] = useState<{ open: boolean; title: string; message: string; type: 'success' | 'expired' | 'revoked' } | null>(null);
+
+  // Validate & Activate Staff Link on Page Load
+  useEffect(() => {
+    const initStaffLink = async () => {
+      try {
+        const params = new URLSearchParams(window.location.search);
+        const urlToken = params.get('staffToken') || params.get('token');
+        let tokenToVerify = urlToken;
+
+        if (!tokenToVerify) {
+          const stored = localStorage.getItem('cvlab_active_staff_session');
+          if (stored) {
+            const parsed = JSON.parse(stored);
+            tokenToVerify = parsed.token || parsed.id;
+          }
+        }
+
+        if (!tokenToVerify) return;
+
+        const res = await validateStaffToken(tokenToVerify);
+        if (res.valid && res.link) {
+          setActiveStaffSession({ link: res.link, token: tokenToVerify });
+          localStorage.setItem('cvlab_active_staff_session', JSON.stringify({ token: tokenToVerify, link: res.link, validatedAt: Date.now() }));
+          
+          if (urlToken) {
+            // Remove token from URL query string for clean aesthetics
+            const cleanUrl = window.location.pathname + window.location.hash;
+            window.history.replaceState({}, document.title, cleanUrl);
+
+            setStaffModalNotice({
+              open: true,
+              title: '🛡️ SESSÃO DE FUNCIONÁRIO ATIVADA',
+              message: `Bem-vindo(a)! A sua conta temporária de funcionário "${res.link.name}" está ativa. Tem acesso total para criar currículos e registar atendimentos de clientes.`,
+              type: 'success'
+            });
+          }
+          _setView('editor');
+        } else {
+          localStorage.removeItem('cvlab_active_staff_session');
+          setActiveStaffSession(null);
+
+          if (urlToken) {
+            let msg = "O link de acesso fornecido é inválido ou não existe.";
+            let type: 'expired' | 'revoked' = 'expired';
+            if (res.reason === 'revogado') {
+              msg = "Atenção: Este link de funcionário foi REVOGADO pelo Administrador do CV LAB.";
+              type = 'revoked';
+            } else if (res.reason === 'expirado') {
+              msg = "Atenção: Este link de funcionário EXPIROU (o limite de 24 horas foi atingido). Solicite um novo link ao administrador.";
+              type = 'expired';
+            }
+            setStaffModalNotice({
+              open: true,
+              title: '⚠️ ACESSO NEGADO / EXPIRADO',
+              message: msg,
+              type: type
+            });
+          }
+        }
+      } catch (e) {
+        console.warn("Staff token check warning:", e);
+      }
+    };
+
+    initStaffLink();
+  }, []);
+
+  // Staff Session Countdown Timer
+  useEffect(() => {
+    if (!activeStaffSession || !activeStaffSession.link) return;
+
+    const timer = setInterval(() => {
+      const expiry = new Date(activeStaffSession.link.expiresAt).getTime();
+      const remaining = Math.max(0, Math.floor((expiry - Date.now()) / 1000));
+      setStaffTimeLeft(remaining);
+
+      if (remaining <= 0) {
+        localStorage.removeItem('cvlab_active_staff_session');
+        setActiveStaffSession(null);
+        setStaffModalNotice({
+          open: true,
+          title: '⏳ SESSÃO EXPIRADA',
+          message: 'A sua sessão de funcionário expirou (24 horas concluídas). Solicite um novo link de acesso ao Administrador.',
+          type: 'expired'
+        });
+        _setView('landing');
+      }
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [activeStaffSession]);
+
+  const formatStaffCountdown = (secs: number) => {
+    const hours = Math.floor(secs / 3600);
+    const mins = Math.floor((secs % 3600) / 60);
+    const seconds = secs % 60;
+    return `${hours.toString().padStart(2, '0')}h ${mins.toString().padStart(2, '0')}m ${seconds.toString().padStart(2, '0')}s`;
+  };
+
+  const handleEndStaffSession = () => {
+    if (confirm("Deseja realmente encerrar a sua sessão de funcionário?")) {
+      localStorage.removeItem('cvlab_active_staff_session');
+      setActiveStaffSession(null);
+      _setView('landing');
+    }
+  };
+
+  const handleNewAttendance = () => {
+    setResumeData(INITIAL_RESUME_DATA);
+    setGeneratedLetter("");
+    localStorage.removeItem('cv_lab_data');
+    localStorage.removeItem('cv_lab_letter');
+    _setView('editor');
+    setActiveStep(0);
+    alert("✨ Formulário de currículo limpo com sucesso! Pronto para atender um novo cliente.");
+  };
+
   useEffect(() => {
     // Active cache-busting: wipe out stale or corrupted AI caches from user's localStorage
     try {
@@ -6711,7 +6835,7 @@ export default function App() {
         return;
       }
     } else if (newView === 'editor' || newView === 'profile' || newView === 'my-resumes') {
-      if (!isAuthorized) {
+      if (!isAuthorized && !activeStaffSession) {
         setShowAuthModalAlert(true);
         return;
       }
@@ -6722,7 +6846,7 @@ export default function App() {
   const handleLogoClick = () => {
     if (isAdmin) {
       setView('admin');
-    } else if (isAuthorized) {
+    } else if (isAuthorized || activeStaffSession) {
       setView('editor');
     } else {
       setShowAuthModalAlert(true);
@@ -6841,12 +6965,40 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
   };
 
   const handleLoadClientResume = (loadedData: ResumeData, loadedTemplate?: TemplateType, meta?: any) => {
-    setResumeData(loadedData);
-    if (loadedTemplate) {
-      setTemplate(loadedTemplate);
-    }
+    const sanitizedResumeData: ResumeData = {
+      ...INITIAL_RESUME_DATA,
+      ...(loadedData || {}),
+      personalInfo: {
+        ...INITIAL_RESUME_DATA.personalInfo,
+        ...(loadedData?.personalInfo || {}),
+        fullName: loadedData?.personalInfo?.fullName || meta?.candidateName || meta?.clientName || INITIAL_RESUME_DATA.personalInfo.fullName,
+        title: loadedData?.personalInfo?.title || meta?.candidateTitle || INITIAL_RESUME_DATA.personalInfo.title,
+        phone: loadedData?.personalInfo?.phone || meta?.candidatePhone || meta?.clientPhone || INITIAL_RESUME_DATA.personalInfo.phone,
+        email: loadedData?.personalInfo?.email || meta?.candidateEmail || meta?.clientEmail || INITIAL_RESUME_DATA.personalInfo.email,
+        summary: loadedData?.personalInfo?.summary || ''
+      },
+      experience: Array.isArray(loadedData?.experience) ? loadedData.experience : [],
+      education: Array.isArray(loadedData?.education) ? loadedData.education : [],
+      skills: Array.isArray(loadedData?.skills) ? loadedData.skills : [],
+      languages: Array.isArray(loadedData?.languages) ? loadedData.languages : [],
+      certifications: Array.isArray(loadedData?.certifications) ? loadedData.certifications : [],
+      interests: Array.isArray(loadedData?.interests) ? loadedData.interests : [],
+      customSections: Array.isArray(loadedData?.customSections) ? loadedData.customSections : [],
+      styleConfig: {
+        ...INITIAL_RESUME_DATA.styleConfig,
+        ...(loadedData?.styleConfig || {})
+      },
+      themeColor: loadedData?.themeColor || meta?.themeColor || '#1E40AF',
+      language: loadedData?.language || 'pt'
+    };
+
+    setResumeData(sanitizedResumeData);
+
+    const targetTemplate = loadedTemplate || meta?.template || 't1_executive';
+    setTemplate(targetTemplate as TemplateType);
+
     if (meta) {
-      if (meta.serviceType === 'cover_letter') {
+      if (meta.serviceType === 'cover_letter' || meta.type === 'cover_letter') {
         setIsCoverLetterMode(true);
       } else {
         setIsCoverLetterMode(false);
@@ -6858,21 +7010,45 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
         setLetterSubject(meta.letterSubject);
       }
       setCurrentClient({
-        clientName: meta.candidateName || meta.clientName || loadedData.personalInfo.fullName,
-        clientPhone: meta.candidatePhone || meta.clientPhone || loadedData.personalInfo.phone,
-        clientEmail: meta.candidateEmail || meta.clientEmail || loadedData.personalInfo.email,
+        id: meta.id,
+        clientName: meta.candidateName || meta.clientName || sanitizedResumeData.personalInfo.fullName,
+        clientPhone: meta.candidatePhone || meta.clientPhone || sanitizedResumeData.personalInfo.phone,
+        clientEmail: meta.candidateEmail || meta.clientEmail || sanitizedResumeData.personalInfo.email,
         serviceType: meta.serviceType || 'cv_normal',
         price: meta.price || 2000,
         paymentMethod: meta.paymentMethod || 'express',
         paymentStatus: meta.paymentStatus || 'paid',
         notes: meta.notes || '',
-        template: loadedTemplate || 't1_executive',
-        themeColor: meta.themeColor || loadedData.themeColor || '#1E40AF',
-        resumeData: loadedData
+        template: targetTemplate,
+        themeColor: meta.themeColor || sanitizedResumeData.themeColor || '#1E40AF',
+        resumeData: sanitizedResumeData
+      });
+    } else {
+      setCurrentClient({
+        clientName: sanitizedResumeData.personalInfo.fullName,
+        clientPhone: sanitizedResumeData.personalInfo.phone,
+        clientEmail: sanitizedResumeData.personalInfo.email,
+        serviceType: 'cv_normal',
+        price: 2000,
+        paymentMethod: 'express',
+        paymentStatus: 'paid',
+        notes: '',
+        template: targetTemplate,
+        themeColor: sanitizedResumeData.themeColor || '#1E40AF',
+        resumeData: sanitizedResumeData
       });
     }
+
+    try {
+      localStorage.setItem('cv_lab_data', JSON.stringify(sanitizedResumeData));
+    } catch (e) {
+      console.warn("Error saving loaded resume to local storage:", e);
+    }
+
     setShowSavedClientsModal(false);
     _setView('editor');
+    setActiveStep(0);
+    alert(`✨ Currículo de "${sanitizedResumeData.personalInfo.fullName}" carregado da base de dados! Pode continuar a editar todas as informações no editor.`);
   };
 
   const handleSaveCurrentClient = async () => {
@@ -6882,7 +7058,7 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
 
     try {
       await saveClientResume({
-        id: currentClient ? undefined : undefined,
+        id: currentClient?.id || undefined,
         clientName: clientName,
         clientPhone: currentClient?.clientPhone || resumeData.personalInfo.phone,
         clientEmail: currentClient?.clientEmail || resumeData.personalInfo.email,
@@ -6897,10 +7073,10 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
         coverLetterText: isCoverLetterMode ? generatedLetter : undefined,
         letterSubject: isCoverLetterMode ? letterSubject : undefined
       });
-      alert(`✅ CV e dados de ${clientName} salvos com sucesso no sistema!`);
+      alert(`✅ CV e todas as informações de "${clientName}" foram salvos com sucesso na base de dados!`);
     } catch (e: any) {
       console.error("Erro ao salvar CV:", e);
-      alert("Erro ao salvar CV: " + e.message);
+      alert("Erro ao salvar CV na base de dados: " + e.message);
     }
   };
 
@@ -8077,10 +8253,91 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
     alert("Todos os dados do currículo foram eliminados.");
   };
 
+  const renderStaffSessionBanner = () => {
+    if (!activeStaffSession || !activeStaffSession.link) return null;
+    const isUrgent = staffTimeLeft < 3600; // < 1 hour
+
+    return (
+      <div className={`w-full text-white px-4 py-2.5 z-[100] transition-all border-b shadow-lg flex flex-col sm:flex-row items-center justify-between gap-3 ${
+        isUrgent ? 'bg-gradient-to-r from-red-950 via-amber-950 to-red-900 border-red-500/60 animate-pulse' : 'bg-gradient-to-r from-blue-950 via-indigo-950 to-slate-900 border-blue-500/30'
+      }`}>
+        <div className="flex flex-wrap items-center gap-3">
+          <span className="bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest flex items-center gap-1.5 shadow-sm">
+            <ShieldCheck size={14} className="text-emerald-400" />
+            <span>SESSÃO DE FUNCIONÁRIO ATIVA</span>
+          </span>
+          <div className="flex items-center gap-2">
+            <User size={14} className="text-blue-300" />
+            <span className="text-sm font-black text-white">{activeStaffSession.link.name || 'Atendimento Funcionário'}</span>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-3">
+          <div className={`px-4 py-1.5 rounded-xl border text-xs font-mono font-black flex items-center gap-2 shadow-inner ${
+            isUrgent ? 'bg-red-500/20 text-red-200 border-red-400/50' : 'bg-blue-500/20 text-emerald-300 border-blue-400/40'
+          }`}>
+            <Timer size={15} className={isUrgent ? 'text-red-400 animate-spin' : 'text-emerald-400'} />
+            <span>TEMPO RESTANTE: {formatStaffCountdown(staffTimeLeft)}</span>
+          </div>
+
+          <button
+            onClick={handleNewAttendance}
+            className="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-500 active:scale-95 text-white text-xs font-black rounded-xl uppercase tracking-wider transition-all flex items-center gap-1.5 shadow-md shadow-blue-600/30"
+            title="Iniciar atendimento a novo cliente (limpar formulário)"
+          >
+            <Plus size={14} strokeWidth={3} />
+            <span>Novo Atendimento</span>
+          </button>
+
+          <button
+            onClick={handleEndStaffSession}
+            className="px-3 py-1.5 bg-white/10 hover:bg-white/20 active:scale-95 text-slate-300 hover:text-white text-xs font-bold rounded-xl transition-all flex items-center gap-1.5 border border-white/10"
+            title="Encerrar Sessão de Funcionário"
+          >
+            <LogOut size={13} />
+            <span className="hidden md:inline">Sair</span>
+          </button>
+        </div>
+      </div>
+    );
+  };
+
+  const renderStaffNoticeModal = () => {
+    if (!staffModalNotice || !staffModalNotice.open) return null;
+
+    return (
+      <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-md z-[200] flex items-center justify-center p-4">
+        <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="bg-white rounded-3xl p-6 md:p-8 max-w-md w-full shadow-2xl border border-slate-100 text-center space-y-5">
+          <div className={`w-16 h-16 rounded-2xl flex items-center justify-center mx-auto ${
+            staffModalNotice.type === 'success' ? 'bg-emerald-100 text-emerald-600' : 'bg-red-100 text-red-600'
+          }`}>
+            {staffModalNotice.type === 'success' ? <ShieldCheck size={36} /> : <AlertTriangle size={36} />}
+          </div>
+
+          <div className="space-y-2">
+            <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight">{staffModalNotice.title}</h3>
+            <p className="text-sm text-slate-600 leading-relaxed font-medium">{staffModalNotice.message}</p>
+          </div>
+
+          <button
+            onClick={() => setStaffModalNotice(null)}
+            className={`w-full py-3.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all text-white shadow-lg ${
+              staffModalNotice.type === 'success' ? 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-600/20' : 'bg-red-600 hover:bg-red-700 shadow-red-600/20'
+            }`}
+          >
+            Compreendido
+          </button>
+        </motion.div>
+      </div>
+    );
+  };
+
 
   if (view === 'landing') {
     return (
       <div className="min-h-screen hero-gradient flex flex-col">
+        {renderStaffSessionBanner()}
+        {renderStaffNoticeModal()}
         <nav className="h-24 px-6 md:px-12 flex items-center justify-between glass sticky top-0 z-50">
           <div className="flex-1">
             <div className="cursor-pointer inline-block" onClick={handleLogoClick}>
@@ -8642,10 +8899,8 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
     return (
       <AdminPanel 
         setView={setView} 
-        onLoadDocumentIntoEditor={(loadedData, loadedTpl) => {
-          setResumeData(loadedData);
-          if (loadedTpl) setTemplate(loadedTpl);
-          setView('editor');
+        onLoadDocumentIntoEditor={(loadedData, loadedTpl, meta) => {
+          handleLoadClientResume(loadedData, loadedTpl, meta);
         }}
       />
     );

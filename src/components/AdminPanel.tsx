@@ -5,7 +5,8 @@ import {
   DollarSign, Calendar, Globe, User, BarChart, CreditCard, ChevronRight, 
   MessageSquare, Plus, Trash2, Edit3, Lock, ExternalLink, Sparkles, AlertTriangle, 
   Layers, Copy, Check, LogOut, ChevronDown, Award, Mail, Phone, MapPin, Briefcase,
-  History, Sparkle, HardDriveDownload, Link as LinkIcon, Key, Timer
+  History, Sparkle, HardDriveDownload, Link as LinkIcon, Key, Timer,
+  FileSpreadsheet, TrendingUp, PieChart, BarChart2, UserCheck
 } from 'lucide-react';
 import { 
   AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer 
@@ -20,12 +21,13 @@ import { OFFICIAL_HISTORICAL_DOCUMENTS, HistoricalDocumentItem } from '../data/h
 
 interface AdminPanelProps {
   setView?: (view: any) => void;
-  onLoadDocumentIntoEditor?: (resumeData: ResumeData, template?: TemplateType) => void;
+  onLoadDocumentIntoEditor?: (resumeData: ResumeData, template?: TemplateType, meta?: any) => void;
 }
 
 export const AdminPanel: React.FC<AdminPanelProps> = ({ setView, onLoadDocumentIntoEditor }) => {
   const { isAdmin, user, authorizedEmails: authListFromHook } = useAuth();
-  const [activeTab, setActiveTab] = useState<'overview' | 'documents' | 'access' | 'staff_links' | 'orders' | 'visitors' | 'notes'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'documents' | 'access' | 'staff_links' | 'reports' | 'orders' | 'visitors' | 'notes'>('overview');
+  const [reportPeriod, setReportPeriod] = useState<'this_week' | 'last_week' | 'this_month' | 'last_month' | 'all'>('this_week');
   const [searchQuery, setSearchQuery] = useState('');
   const [docFilterType, setDocFilterType] = useState<'all' | 'cv' | 'cover_letter'>('all');
   const [viewMode, setViewMode] = useState<'grid' | 'table'>('grid');
@@ -530,6 +532,215 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ setView, onLoadDocumentI
   const paginatedDocs = filteredDocs.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
   // -------------------------------------------------------------------------
+  // REPORT DATA CALCULATIONS & EXPORT HELPERS
+  // -------------------------------------------------------------------------
+  const getFilteredDataByPeriod = () => {
+    const now = new Date();
+    let startDate = new Date();
+    let endDate = new Date();
+
+    if (reportPeriod === 'this_week') {
+      startDate.setDate(now.getDate() - 7);
+    } else if (reportPeriod === 'last_week') {
+      startDate.setDate(now.getDate() - 14);
+      endDate.setDate(now.getDate() - 7);
+    } else if (reportPeriod === 'this_month') {
+      startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+    } else if (reportPeriod === 'last_month') {
+      startDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+      endDate = new Date(now.getFullYear(), now.getMonth(), 0);
+    } else {
+      startDate = new Date(2020, 0, 1);
+    }
+
+    const filteredReportDocs = generatedDocs.filter((d: any) => {
+      if (!d.createdAt) return true;
+      const docDate = new Date(d.createdAt);
+      if (reportPeriod === 'last_week' || reportPeriod === 'last_month') {
+        return docDate >= startDate && docDate <= endDate;
+      }
+      return docDate >= startDate;
+    });
+
+    const filteredReportOrders = orders.filter((o: any) => {
+      if (!o.createdAt) return true;
+      const orderDate = new Date(o.createdAt);
+      if (reportPeriod === 'last_week' || reportPeriod === 'last_month') {
+        return orderDate >= startDate && orderDate <= endDate;
+      }
+      return orderDate >= startDate;
+    });
+
+    return { filteredReportDocs, filteredReportOrders, startDate, endDate };
+  };
+
+  const handleExportCSV = () => {
+    const { filteredReportDocs } = getFilteredDataByPeriod();
+    if (!filteredReportDocs.length) {
+      alert("Nenhum dado encontrado para o período selecionado.");
+      return;
+    }
+
+    let csvContent = "data:text/csv;charset=utf-8,";
+    csvContent += "ID,Data/Hora,Nome do Cliente,Email,Telefone,Tipo de Documento,Modelo,Emitido Por,Valor (Kz)\n";
+
+    filteredReportDocs.forEach((d: any) => {
+      const dateStr = d.createdAt ? new Date(d.createdAt).toLocaleString('pt-PT') : '—';
+      const name = (d.candidateName || '—').replace(/,/g, ' ');
+      const email = (d.candidateEmail || '—').replace(/,/g, ' ');
+      const phone = (d.candidatePhone || '—').replace(/,/g, ' ');
+      const type = d.type === 'cover_letter' ? 'Carta de Apresentacao' : 'Curriculo';
+      const template = d.template || '—';
+      const issuer = (d.generatedBy || 'Admin').replace(/,/g, ' ');
+      const price = d.price || 2000;
+
+      csvContent += `"${d.id}","${dateStr}","${name}","${email}","${phone}","${type}","${template}","${issuer}",${price}\n`;
+    });
+
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `relatorio_cvlab_${reportPeriod}_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const handlePrintReport = () => {
+    const { filteredReportDocs } = getFilteredDataByPeriod();
+    const periodLabel = reportPeriod === 'this_week' ? 'Esta Semana (Últimos 7 Dias)' :
+                        reportPeriod === 'last_week' ? 'Semana Anterior' :
+                        reportPeriod === 'this_month' ? 'Este Mês' :
+                        reportPeriod === 'last_month' ? 'Mês Anterior' : 'Histórico Completo';
+
+    const totalRevenue = filteredReportDocs.reduce((acc, d) => acc + (d.price || 2000), 0);
+    const cvCount = filteredReportDocs.filter(d => d.type === 'cv' || d.type === 'combo').length;
+    const letterCount = filteredReportDocs.filter(d => d.type === 'cover_letter').length;
+
+    const staffSummary: Record<string, { count: number; revenue: number }> = {};
+    filteredReportDocs.forEach(d => {
+      const issuer = d.generatedBy || 'Administrador / Sistema';
+      if (!staffSummary[issuer]) staffSummary[issuer] = { count: 0, revenue: 0 };
+      staffSummary[issuer].count += 1;
+      staffSummary[issuer].revenue += (d.price || 2000);
+    });
+
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) return;
+
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>CV LAB ANGOLA - RELATÓRIO DE DESEMPENHO</title>
+        <style>
+          body { font-family: Arial, sans-serif; padding: 40px; color: #0f172a; line-height: 1.5; }
+          .header { text-align: center; border-bottom: 3px solid #1e40af; padding-bottom: 20px; margin-bottom: 30px; }
+          .header h1 { margin: 0; color: #1e40af; font-size: 22px; font-weight: 900; }
+          .header p { margin: 5px 0 0 0; font-size: 11px; color: #64748b; font-weight: bold; text-transform: uppercase; }
+          .meta-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 30px; }
+          .card { background: #f8fafc; border: 1px solid #cbd5e1; padding: 15px; border-radius: 8px; text-align: center; }
+          .card h3 { margin: 0; font-size: 10px; color: #64748b; text-transform: uppercase; letter-spacing: 1px; }
+          .card .val { font-size: 18px; font-weight: 900; color: #0f172a; margin-top: 5px; }
+          table { width: 100%; border-collapse: collapse; margin-bottom: 30px; font-size: 11px; }
+          th { background: #1e40af; color: white; text-align: left; padding: 10px; font-size: 10px; text-transform: uppercase; }
+          td { padding: 9px 10px; border-bottom: 1px solid #e2e8f0; }
+          tr:nth-child(even) { background: #f8fafc; }
+          .section-title { font-size: 13px; font-weight: 900; color: #0f172a; margin-bottom: 12px; text-transform: uppercase; border-left: 4px solid #1e40af; padding-left: 10px; }
+          .footer-sig { margin-top: 60px; display: grid; grid-template-columns: 1fr 1fr; gap: 50px; text-align: center; font-size: 11px; }
+          .sig-line { border-top: 1px solid #94a3b8; margin-top: 40px; padding-top: 5px; font-weight: bold; }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <h1>CV LAB ANGOLA • RELATÓRIO OFICIAL DE DESEMPENHO</h1>
+          <p>Período: ${periodLabel} • Emitido em: ${new Date().toLocaleString('pt-PT')}</p>
+        </div>
+
+        <div class="meta-grid">
+          <div class="card">
+            <h3>Faturação Total</h3>
+            <div class="val" style="color: #047857;">${totalRevenue.toLocaleString('pt-PT')} Kz</div>
+          </div>
+          <div class="card">
+            <h3>Total Documentos</h3>
+            <div class="val">${filteredReportDocs.length}</div>
+          </div>
+          <div class="card">
+            <h3>Currículos</h3>
+            <div class="val">${cvCount}</div>
+          </div>
+          <div class="card">
+            <h3>Cartas Apresentação</h3>
+            <div class="val">${letterCount}</div>
+          </div>
+        </div>
+
+        <div class="section-title">1. DESEMPENHO POR FUNCIONÁRIO / POSTO DE ATENDIMENTO</div>
+        <table>
+          <thead>
+            <tr>
+              <th>Funcionário / Atendente</th>
+              <th>Documentos Emitidos</th>
+              <th>Faturação Gerada (Kz)</th>
+              <th>Participação (%)</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${Object.entries(staffSummary).map(([staff, data]) => `
+              <tr>
+                <td><strong>${staff}</strong></td>
+                <td>${data.count}</td>
+                <td><strong>${data.revenue.toLocaleString('pt-PT')} Kz</strong></td>
+                <td>${totalRevenue > 0 ? ((data.revenue / totalRevenue) * 100).toFixed(1) : 0}%</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+
+        <div class="section-title">2. DETALHE DOS ATENDIMENTOS E DOCUMENTOS PERÍODO</div>
+        <table>
+          <thead>
+            <tr>
+              <th>Data/Hora</th>
+              <th>Cliente / Candidato</th>
+              <th>Tipo</th>
+              <th>Atendente / Emitido Por</th>
+              <th>Valor (Kz)</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${filteredReportDocs.map(d => `
+              <tr>
+                <td>${d.createdAt ? new Date(d.createdAt).toLocaleString('pt-PT') : '—'}</td>
+                <td><strong>${d.candidateName || '—'}</strong></td>
+                <td>${d.type === 'cover_letter' ? 'Carta de Apresentação' : 'Currículo Profissional'}</td>
+                <td>${d.generatedBy || 'Admin'}</td>
+                <td><strong>${(d.price || 2000).toLocaleString('pt-PT')} Kz</strong></td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+
+        <div class="footer-sig">
+          <div>
+            <div class="sig-line">Responsável pelo Atendimento</div>
+          </div>
+          <div>
+            <div class="sig-line">Direção Geral • CV LAB Angola</div>
+          </div>
+        </div>
+
+        <script>
+          window.onload = function() { window.print(); }
+        </script>
+      </body>
+      </html>
+    `);
+    printWindow.document.close();
+  };
+
+  // -------------------------------------------------------------------------
   // RENDER - WHITE & BLUE CRISP EXECUTIVE THEME
   // -------------------------------------------------------------------------
   return (
@@ -605,6 +816,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ setView, onLoadDocumentI
             { id: 'documents', label: 'Arquivo de Documentos', icon: FileText, count: generatedDocs.length },
             { id: 'access', label: 'Contas Autorizadas', icon: ShieldCheck, count: authorizedEmails.length },
             { id: 'staff_links', label: 'Links Funcionários (24h)', icon: Key, count: staffLinks.filter(l => l.isActive && new Date(l.expiresAt).getTime() > Date.now()).length || null },
+            { id: 'reports', label: 'Relatórios Semanais & Mensais', icon: FileSpreadsheet, count: null },
             { id: 'orders', label: 'Encomendas & Pagamentos', icon: CreditCard, count: orders.filter(o => o.status === 'pending').length || null },
             { id: 'visitors', label: 'Utilizadores & Sessões', icon: Globe, count: stats.online || null },
             { id: 'notes', label: 'Anotações da Equipa', icon: MessageSquare, count: adminNotes.length || null }
@@ -1047,22 +1259,33 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ setView, onLoadDocumentI
                             <span>Ver Detalhes</span>
                           </button>
 
-                          {!isLetter && docItem.resumeData && (
-                            <button
-                              onClick={() => {
-                                if (onLoadDocumentIntoEditor) {
-                                  onLoadDocumentIntoEditor(docItem.resumeData, docItem.template);
-                                  if (setView) setView('editor');
-                                } else {
-                                  alert("Currículo carregado no editor!");
-                                }
-                              }}
-                              className="px-3 py-2.5 bg-slate-100 hover:bg-blue-600 text-slate-700 hover:text-white rounded-xl text-xs font-black transition-all border border-slate-200"
-                              title="Carregar este currículo no editor para fazer alterações"
-                            >
-                              <Edit3 size={14} />
-                            </button>
-                          )}
+                          <button
+                            onClick={() => {
+                              const dataToLoad = docItem.resumeData || {
+                                personalInfo: {
+                                  fullName: docItem.candidateName || 'Cliente CV LAB',
+                                  title: docItem.candidateTitle || 'Profissional',
+                                  phone: docItem.candidatePhone || '',
+                                  email: docItem.candidateEmail || '',
+                                  location: 'Luanda, Angola',
+                                  summary: ''
+                                },
+                                experience: [],
+                                education: [],
+                                skills: []
+                              };
+                              if (onLoadDocumentIntoEditor) {
+                                onLoadDocumentIntoEditor(dataToLoad, docItem.template, docItem);
+                                if (setView) setView('editor');
+                              } else {
+                                alert("Documento carregado no editor!");
+                              }
+                            }}
+                            className="px-3 py-2.5 bg-slate-100 hover:bg-blue-600 text-slate-700 hover:text-white rounded-xl text-xs font-black transition-all border border-slate-200"
+                            title="Carregar este documento no editor para fazer alterações"
+                          >
+                            <Edit3 size={14} />
+                          </button>
 
                           <button
                             onClick={() => handleDeleteGeneratedDoc(docItem.id)}
@@ -1126,20 +1349,31 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ setView, onLoadDocumentI
                                   >
                                     <Eye size={13} />
                                   </button>
-                                  {!isLetter && docItem.resumeData && (
-                                    <button 
-                                      onClick={() => {
-                                        if (onLoadDocumentIntoEditor) {
-                                          onLoadDocumentIntoEditor(docItem.resumeData, docItem.template);
-                                          if (setView) setView('editor');
-                                        }
-                                      }}
-                                      className="p-1.5 bg-slate-100 text-slate-700 hover:bg-blue-600 hover:text-white rounded-lg transition-all"
-                                      title="Editar"
-                                    >
-                                      <Edit3 size={13} />
-                                    </button>
-                                  )}
+                                   <button 
+                                     onClick={() => {
+                                       const dataToLoad = docItem.resumeData || {
+                                         personalInfo: {
+                                           fullName: docItem.candidateName || 'Cliente CV LAB',
+                                           title: docItem.candidateTitle || 'Profissional',
+                                           phone: docItem.candidatePhone || '',
+                                           email: docItem.candidateEmail || '',
+                                           location: 'Luanda, Angola',
+                                           summary: ''
+                                         },
+                                         experience: [],
+                                         education: [],
+                                         skills: []
+                                       };
+                                       if (onLoadDocumentIntoEditor) {
+                                         onLoadDocumentIntoEditor(dataToLoad, docItem.template, docItem);
+                                         if (setView) setView('editor');
+                                       }
+                                     }}
+                                     className="p-1.5 bg-slate-100 text-slate-700 hover:bg-blue-600 hover:text-white rounded-lg transition-all"
+                                     title="Editar"
+                                   >
+                                     <Edit3 size={13} />
+                                   </button>
                                   <button 
                                     onClick={() => handleDeleteGeneratedDoc(docItem.id)}
                                     className="p-1.5 text-slate-400 hover:text-red-600 rounded-lg transition-all"
@@ -1836,6 +2070,306 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ setView, onLoadDocumentI
           </div>
         )}
 
+        {/* ========================================================================= */}
+        {/* TAB: RELATÓRIOS SEMANAIS & MENSAIS DE DESEMPENHO E FATURAÇÃO */}
+        {/* ========================================================================= */}
+        {activeTab === 'reports' && (
+          <div className="space-y-8 animate-in fade-in duration-300">
+            
+            {/* HERO BANNER WITH PERIOD CONTROLS & PRINT/EXPORT */}
+            <div className="bg-gradient-to-r from-blue-900 via-indigo-950 to-slate-900 text-white p-6 sm:p-8 rounded-3xl border border-blue-800/50 shadow-lg relative overflow-hidden flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+              <div className="space-y-2 max-w-2xl">
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/20 border border-blue-400/30 text-blue-300 text-xs font-bold uppercase tracking-wider">
+                  <FileSpreadsheet size={14} className="text-blue-400" />
+                  <span>Relatórios Financeiros & Atendimentos</span>
+                </div>
+                <h2 className="text-2xl sm:text-3xl font-black tracking-tight">
+                  Relatórios de Desempenho & Vendas
+                </h2>
+                <p className="text-xs sm:text-sm text-slate-300 font-medium leading-relaxed">
+                  Acompanhe em tempo real a faturação gerada, o número de currículos emitidos e a produtividade por cada funcionário/posto de atendimento.
+                </p>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
+                <button
+                  onClick={handlePrintReport}
+                  className="flex-1 md:flex-none px-5 py-3 bg-blue-600 hover:bg-blue-500 active:scale-95 text-white rounded-2xl text-xs font-black uppercase tracking-wider transition-all shadow-md shadow-blue-600/30 flex items-center justify-center gap-2"
+                >
+                  <Printer size={16} />
+                  <span>Imprimir / PDF</span>
+                </button>
+
+                <button
+                  onClick={handleExportCSV}
+                  className="flex-1 md:flex-none px-5 py-3 bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white rounded-2xl text-xs font-black uppercase tracking-wider transition-all shadow-md shadow-emerald-600/30 flex items-center justify-center gap-2"
+                >
+                  <HardDriveDownload size={16} />
+                  <span>Exportar Excel (CSV)</span>
+                </button>
+              </div>
+            </div>
+
+            {/* PERIOD SELECTOR TABS */}
+            <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs flex flex-wrap items-center justify-between gap-4">
+              <div className="flex items-center gap-2">
+                <Calendar size={16} className="text-blue-600" />
+                <span className="text-xs font-black uppercase tracking-wider text-slate-700">Selecione o Período do Relatório:</span>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2">
+                {[
+                  { id: 'this_week', label: 'Esta Semana (7 Dias)' },
+                  { id: 'last_week', label: 'Semana Anterior' },
+                  { id: 'this_month', label: 'Este Mês' },
+                  { id: 'last_month', label: 'Mês Anterior' },
+                  { id: 'all', label: 'Histórico Completo' }
+                ].map(p => (
+                  <button
+                    key={p.id}
+                    onClick={() => setReportPeriod(p.id as any)}
+                    className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+                      reportPeriod === p.id 
+                        ? 'bg-blue-600 text-white font-black shadow-sm' 
+                        : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                    }`}
+                  >
+                    {p.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* REPORT SUMMARY METRICS CARDS */}
+            {(() => {
+              const { filteredReportDocs } = getFilteredDataByPeriod();
+              const periodRevenue = filteredReportDocs.reduce((acc: number, d: any) => acc + (d.price || 2000), 0);
+              const cvsCount = filteredReportDocs.filter((d: any) => d.type === 'cv' || d.type === 'combo').length;
+              const lettersCount = filteredReportDocs.filter((d: any) => d.type === 'cover_letter').length;
+
+              const activeStaffSet = new Set(filteredReportDocs.map((d: any) => d.generatedBy || 'Admin'));
+
+              return (
+                <div className="space-y-8">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+                    
+                    <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm relative overflow-hidden">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[11px] font-black uppercase text-slate-500 tracking-wider">Faturação do Período</span>
+                        <div className="w-10 h-10 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold">
+                          <DollarSign size={20} />
+                        </div>
+                      </div>
+                      <div className="mt-4">
+                        <div className="text-2xl sm:text-3xl font-black text-emerald-700 tracking-tight">
+                          {periodRevenue.toLocaleString('pt-PT')} <span className="text-sm">Kz</span>
+                        </div>
+                        <p className="text-[11px] text-slate-500 font-medium mt-1">Total de vendas registadas no período</p>
+                      </div>
+                    </div>
+
+                    <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm relative overflow-hidden">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[11px] font-black uppercase text-slate-500 tracking-wider">Total de Documentos</span>
+                        <div className="w-10 h-10 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold">
+                          <FileText size={20} />
+                        </div>
+                      </div>
+                      <div className="mt-4">
+                        <div className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
+                          {filteredReportDocs.length} <span className="text-sm text-slate-500">docs</span>
+                        </div>
+                        <p className="text-[11px] text-slate-500 font-medium mt-1">{cvsCount} Currículos • {lettersCount} Cartas</p>
+                      </div>
+                    </div>
+
+                    <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm relative overflow-hidden">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[11px] font-black uppercase text-slate-500 tracking-wider">Atendentes Ativos</span>
+                        <div className="w-10 h-10 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold">
+                          <UserCheck size={20} />
+                        </div>
+                      </div>
+                      <div className="mt-4">
+                        <div className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
+                          {activeStaffSet.size} <span className="text-sm text-slate-500">atendentes</span>
+                        </div>
+                        <p className="text-[11px] text-slate-500 font-medium mt-1">Contas e links com vendas registadas</p>
+                      </div>
+                    </div>
+
+                    <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm relative overflow-hidden">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[11px] font-black uppercase text-slate-500 tracking-wider">Ticket Médio / Doc</span>
+                        <div className="w-10 h-10 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center font-bold">
+                          <TrendingUp size={20} />
+                        </div>
+                      </div>
+                      <div className="mt-4">
+                        <div className="text-2xl sm:text-3xl font-black text-amber-700 tracking-tight">
+                          {filteredReportDocs.length > 0 ? Math.round(periodRevenue / filteredReportDocs.length).toLocaleString('pt-PT') : 2000} <span className="text-sm">Kz</span>
+                        </div>
+                        <p className="text-[11px] text-slate-500 font-medium mt-1">Valor médio por atendimento</p>
+                      </div>
+                    </div>
+
+                  </div>
+
+                  {/* SECTION 1: PERFORMANCE BY STAFF / ATTENDANCE LINK */}
+                  <div className="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-sm space-y-6">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold border border-blue-100">
+                          <Users size={20} />
+                        </div>
+                        <div>
+                          <h3 className="text-lg font-black text-slate-900 tracking-tight">Produtividade por Funcionário / Posto de Atendimento</h3>
+                          <p className="text-xs text-slate-500">Ranking de vendas e documentos gerados por cada operador</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-left border-collapse">
+                        <thead>
+                          <tr className="border-b border-slate-200 text-[10px] font-black uppercase tracking-wider text-slate-500 bg-slate-50/50">
+                            <th className="py-3 px-4">Funcionário / Atendente</th>
+                            <th className="py-3 px-4">Documentos Gerados</th>
+                            <th className="py-3 px-4">Faturação Total (Kz)</th>
+                            <th className="py-3 px-4">Participação (%)</th>
+                            <th className="py-3 px-4">Status Acesso</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100 text-xs font-medium">
+                          {(() => {
+                            const staffMap: Record<string, { count: number; revenue: number }> = {};
+                            filteredReportDocs.forEach((d: any) => {
+                              const issuer = d.generatedBy || 'Administrador / Sistema';
+                              if (!staffMap[issuer]) staffMap[issuer] = { count: 0, revenue: 0 };
+                              staffMap[issuer].count += 1;
+                              staffMap[issuer].revenue += (d.price || 2000);
+                            });
+
+                            const staffEntries = Object.entries(staffMap).sort((a, b) => b[1].revenue - a[1].revenue);
+
+                            if (staffEntries.length === 0) {
+                              return (
+                                <tr>
+                                  <td colSpan={5} className="py-8 text-center text-slate-400 italic">
+                                    Nenhuma atividade de funcionário registada neste período.
+                                  </td>
+                                </tr>
+                              );
+                            }
+
+                            return staffEntries.map(([staffName, data], idx) => {
+                              const share = periodRevenue > 0 ? ((data.revenue / periodRevenue) * 100).toFixed(1) : '0';
+                              return (
+                                <tr key={idx} className="hover:bg-slate-50/80 transition-colors">
+                                  <td className="py-3.5 px-4 font-bold text-slate-900 flex items-center gap-2">
+                                    <div className="w-7 h-7 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-black text-[10px]">
+                                      {staffName.charAt(0).toUpperCase()}
+                                    </div>
+                                    <span>{staffName}</span>
+                                  </td>
+                                  <td className="py-3.5 px-4 font-bold text-slate-800">
+                                    {data.count} <span className="text-[10px] text-slate-500 font-normal">documentos</span>
+                                  </td>
+                                  <td className="py-3.5 px-4 font-black text-emerald-700">
+                                    {data.revenue.toLocaleString('pt-PT')} Kz
+                                  </td>
+                                  <td className="py-3.5 px-4">
+                                    <div className="flex items-center gap-2">
+                                      <div className="w-16 bg-slate-100 h-2 rounded-full overflow-hidden">
+                                        <div className="bg-blue-600 h-full rounded-full" style={{ width: `${Math.min(100, Number(share))}%` }}></div>
+                                      </div>
+                                      <span className="text-[11px] font-bold text-slate-600">{share}%</span>
+                                    </div>
+                                  </td>
+                                  <td className="py-3.5 px-4">
+                                    <span className="px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                      Ativo / Registado
+                                    </span>
+                                  </td>
+                                </tr>
+                              );
+                            });
+                          })()}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+
+                  {/* SECTION 2: DETAILED RECORD LIST */}
+                  <div className="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-sm space-y-6">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold border border-indigo-100">
+                          <BarChart2 size={20} />
+                        </div>
+                        <div>
+                          <h3 className="text-lg font-black text-slate-900 tracking-tight">Histórico Itemizado dos Atendimentos</h3>
+                          <p className="text-xs text-slate-500">Lista completa de documentos e vendas efetuadas no período ({filteredReportDocs.length} registos)</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-left border-collapse">
+                        <thead>
+                          <tr className="border-b border-slate-200 text-[10px] font-black uppercase tracking-wider text-slate-500 bg-slate-50/50">
+                            <th className="py-3 px-4">Data / Hora</th>
+                            <th className="py-3 px-4">Cliente / Candidato</th>
+                            <th className="py-3 px-4">Tipo de Serviço</th>
+                            <th className="py-3 px-4">Atendente / Operador</th>
+                            <th className="py-3 px-4">Valor (Kz)</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100 text-xs font-medium">
+                          {filteredReportDocs.length === 0 ? (
+                            <tr>
+                              <td colSpan={5} className="py-8 text-center text-slate-400 italic">
+                                Nenhum atendimento registado para o período selecionado.
+                              </td>
+                            </tr>
+                          ) : (
+                            filteredReportDocs.slice(0, 50).map((docItem: any, idx: number) => (
+                              <tr key={idx} className="hover:bg-slate-50/80 transition-colors">
+                                <td className="py-3 px-4 text-slate-600 font-mono text-[11px]">
+                                  {docItem.createdAt ? new Date(docItem.createdAt).toLocaleString('pt-PT') : '—'}
+                                </td>
+                                <td className="py-3 px-4 font-bold text-slate-900">
+                                  {docItem.candidateName || '—'}
+                                  {docItem.candidatePhone && <span className="block text-[10px] text-slate-400 font-normal">{docItem.candidatePhone}</span>}
+                                </td>
+                                <td className="py-3 px-4">
+                                  <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                                    docItem.type === 'cover_letter' ? 'bg-indigo-50 text-indigo-700' : 'bg-blue-50 text-blue-700'
+                                  }`}>
+                                    {docItem.type === 'cover_letter' ? 'Carta de Apresentação' : 'Currículo Profissional'}
+                                  </span>
+                                </td>
+                                <td className="py-3 px-4 text-slate-700 font-medium">
+                                  {docItem.generatedBy || 'Admin'}
+                                </td>
+                                <td className="py-3 px-4 font-black text-emerald-700">
+                                  {(docItem.price || 2000).toLocaleString('pt-PT')} Kz
+                                </td>
+                              </tr>
+                            ))
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+
+                </div>
+              );
+            })()}
+
+          </div>
+        )}
+
       </main>
 
       {/* DOCUMENT FULL PREVIEW MODAL - CRISP WHITE & BLUE */}
@@ -1943,21 +2477,32 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ setView, onLoadDocumentI
                 Fechar
               </button>
 
-              {selectedDocPreview.resumeData && (
-                <button
-                  onClick={() => {
-                    if (onLoadDocumentIntoEditor) {
-                      onLoadDocumentIntoEditor(selectedDocPreview.resumeData, selectedDocPreview.template);
-                      setSelectedDocPreview(null);
-                      if (setView) setView('editor');
-                    }
-                  }}
-                  className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-black uppercase rounded-xl shadow-md shadow-blue-600/20 flex items-center gap-1.5"
-                >
-                  <Edit3 size={15} />
-                  <span>Carregar no Editor</span>
-                </button>
-              )}
+              <button
+                onClick={() => {
+                  const dataToLoad = selectedDocPreview.resumeData || {
+                    personalInfo: {
+                      fullName: selectedDocPreview.candidateName || 'Cliente CV LAB',
+                      title: selectedDocPreview.candidateTitle || 'Profissional',
+                      phone: selectedDocPreview.candidatePhone || '',
+                      email: selectedDocPreview.candidateEmail || '',
+                      location: 'Luanda, Angola',
+                      summary: ''
+                    },
+                    experience: [],
+                    education: [],
+                    skills: []
+                  };
+                  if (onLoadDocumentIntoEditor) {
+                    onLoadDocumentIntoEditor(dataToLoad, selectedDocPreview.template, selectedDocPreview);
+                    setSelectedDocPreview(null);
+                    if (setView) setView('editor');
+                  }
+                }}
+                className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-black uppercase rounded-xl shadow-md shadow-blue-600/20 flex items-center gap-1.5"
+              >
+                <Edit3 size={15} />
+                <span>Carregar no Editor</span>
+              </button>
             </div>
 
           </div>

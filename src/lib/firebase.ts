@@ -413,7 +413,7 @@ export const useAuth = () => {
 
 // Automatic Archiver and Counter
 export const recordGeneratedDocument = async (docData: {
-    type: 'cv' | 'cover_letter' | 'combo';
+    type?: 'cv' | 'cover_letter' | 'combo' | string;
     candidateName: string;
     candidateTitle?: string;
     candidateEmail?: string;
@@ -426,18 +426,46 @@ export const recordGeneratedDocument = async (docData: {
     generatedBy?: string;
     action?: string;
     price?: number;
+    serviceType?: string;
 }) => {
+    const docId = `doc_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+    const nowIso = new Date().toISOString();
+
     const fullDoc = {
         ...docData,
-        candidateName: docData.candidateName || 'Sem Nome',
-        candidateEmail: docData.candidateEmail || 'sem-email@cvlab.ao',
-        createdAt: new Date().toISOString(),
-        id: `doc_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`
+        id: docId,
+        candidateName: docData.candidateName || docData.resumeData?.personalInfo?.fullName || 'Sem Nome',
+        candidateEmail: docData.candidateEmail || docData.resumeData?.personalInfo?.email || 'sem-email@cvlab.ao',
+        candidatePhone: docData.candidatePhone || docData.resumeData?.personalInfo?.phone || '',
+        candidateTitle: docData.candidateTitle || docData.resumeData?.personalInfo?.title || 'Profissional',
+        type: docData.type || 'cv',
+        serviceType: docData.serviceType || (docData.type === 'cover_letter' ? 'cover_letter' : 'cv_normal'),
+        price: docData.price || 2000,
+        template: docData.template || docData.resumeData?.template || 't1_executive',
+        themeColor: docData.themeColor || docData.resumeData?.themeColor || '#1E40AF',
+        resumeData: docData.resumeData || null,
+        coverLetterText: docData.coverLetterText || null,
+        letterSubject: docData.letterSubject || null,
+        createdAt: nowIso,
+        updatedAt: nowIso,
+        action: docData.action || 'Gerado no Sistema'
     };
+
+    // 1. Local backup
+    try {
+        const rawLocal = localStorage.getItem('saved_client_resumes');
+        let localList: any[] = rawLocal ? JSON.parse(rawLocal) : [];
+        if (!Array.isArray(localList)) localList = [];
+        localList.unshift(fullDoc);
+        localStorage.setItem('saved_client_resumes', JSON.stringify(localList));
+    } catch (e) {
+        console.warn("Local storage save error:", e);
+    }
 
     try {
         if (db) {
-            await addDoc(collection(db, 'generated_documents'), fullDoc);
+            await setDoc(doc(db, 'generated_documents', docId), fullDoc, { merge: true });
+            await setDoc(doc(db, 'client_resumes', docId), fullDoc, { merge: true });
             
             // Auto update metrics in real-time
             const metricsRef = doc(db, 'admin_settings', 'metrics');
@@ -457,7 +485,7 @@ export const recordGeneratedDocument = async (docData: {
                     totalLettersGenerated: newLettersCount,
                     totalDocumentsGenerated: (cur.totalDocumentsGenerated || (newCVsCount + newLettersCount)) + 1,
                     realRevenue: newRevenue,
-                    lastGeneratedAt: new Date().toISOString()
+                    lastGeneratedAt: nowIso
                 });
             } else {
                 await setDoc(metricsRef, {
@@ -468,7 +496,7 @@ export const recordGeneratedDocument = async (docData: {
                     realRevenue: 20000,
                     meetingLink: 'https://meet.google.com/abc-defg-hij',
                     cvPrice: 2000,
-                    lastGeneratedAt: new Date().toISOString()
+                    lastGeneratedAt: nowIso
                 });
             }
         }
