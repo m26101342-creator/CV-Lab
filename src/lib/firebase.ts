@@ -15,20 +15,32 @@ import {
 } from 'firebase/firestore';
 import { useState, useEffect } from 'react';
 import { OFFICIAL_HISTORICAL_DOCUMENTS } from '../data/historicalDocuments';
+import { StaffAccessLink } from '../types';
 
-// Recommended: Use environment variables for production/GitHub deployments
-const configs = (import.meta as any).glob('../../firebase-applet-config.json', { eager: true });
-const configKey = Object.keys(configs)[0];
-const localConfig: any = configKey ? (configs[configKey] as any).default : {};
+// Recommended: Use environment variables for production/GitHub deployments or loaded config
+const configs = (import.meta as any).glob('/**/firebase-applet-config.json', { eager: true });
+const configsRel = (import.meta as any).glob('/firebase-applet-config.json', { eager: true });
+const configKey = Object.keys(configs)[0] || Object.keys(configsRel)[0];
+const localConfig: any = configKey ? ((configs[configKey] || configsRel[configKey]) as any).default || (configs[configKey] || configsRel[configKey]) : {};
+
+const hardcodedAppletConfig = {
+    apiKey: "AIzaSyCKPeNOpnM-vFq62UDVYqWNiaCtw-p3PeM",
+    authDomain: "gen-lang-client-0327616587.firebaseapp.com",
+    projectId: "gen-lang-client-0327616587",
+    storageBucket: "gen-lang-client-0327616587.firebasestorage.app",
+    messagingSenderId: "960055325094",
+    appId: "1:960055325094:web:a37c71d8ca91c79f1c5f67",
+    firestoreDatabaseId: "ai-studio-cvlab-7d5aa2da-bf15-47f1-a6a4-db530492ac34"
+};
 
 const firebaseConfig = {
-    apiKey: (import.meta as any).env.VITE_FIREBASE_API_KEY || localConfig.apiKey,
-    authDomain: (import.meta as any).env.VITE_FIREBASE_AUTH_DOMAIN || localConfig.authDomain,
-    projectId: (import.meta as any).env.VITE_FIREBASE_PROJECT_ID || localConfig.projectId,
-    storageBucket: (import.meta as any).env.VITE_FIREBASE_STORAGE_BUCKET || localConfig.storageBucket,
-    messagingSenderId: (import.meta as any).env.VITE_FIREBASE_MESSAGING_SENDER_ID || localConfig.messagingSenderId,
-    appId: (import.meta as any).env.VITE_FIREBASE_APP_ID || localConfig.appId,
-    firestoreDatabaseId: (import.meta as any).env.VITE_FIREBASE_DATABASE_ID || localConfig.firestoreDatabaseId
+    apiKey: (import.meta as any).env?.VITE_FIREBASE_API_KEY || localConfig.apiKey || hardcodedAppletConfig.apiKey,
+    authDomain: (import.meta as any).env?.VITE_FIREBASE_AUTH_DOMAIN || localConfig.authDomain || hardcodedAppletConfig.authDomain,
+    projectId: (import.meta as any).env?.VITE_FIREBASE_PROJECT_ID || localConfig.projectId || hardcodedAppletConfig.projectId,
+    storageBucket: (import.meta as any).env?.VITE_FIREBASE_STORAGE_BUCKET || localConfig.storageBucket || hardcodedAppletConfig.storageBucket,
+    messagingSenderId: (import.meta as any).env?.VITE_FIREBASE_MESSAGING_SENDER_ID || localConfig.messagingSenderId || hardcodedAppletConfig.messagingSenderId,
+    appId: (import.meta as any).env?.VITE_FIREBASE_APP_ID || localConfig.appId || hardcodedAppletConfig.appId,
+    firestoreDatabaseId: (import.meta as any).env?.VITE_FIREBASE_DATABASE_ID || localConfig.firestoreDatabaseId || hardcodedAppletConfig.firestoreDatabaseId
 };
 
 let app: any = null;
@@ -557,6 +569,202 @@ export const saveClientResume = async (clientData: {
     }
 
     return record;
+};
+
+// -------------------------------------------------------------------------
+// STAFF ACCESS LINKS MANAGER (24H / REVOCABLE LINKS FOR EMPLOYEES)
+// -------------------------------------------------------------------------
+export const createStaffAccessLink = async (
+    name: string = 'Atendimento Funcionário',
+    durationHours: number = 24,
+    createdBy: string = 'Admin'
+): Promise<StaffAccessLink> => {
+    const randomSeed = Math.random().toString(36).substring(2, 10);
+    const token = `stf_${randomSeed}_${Date.now().toString(36)}`;
+    const nowMs = Date.now();
+    const expiresMs = nowMs + Math.max(1, durationHours) * 3600 * 1000;
+    
+    const newLink: StaffAccessLink = {
+        id: token,
+        token: token,
+        name: name.trim() || 'Link de Atendimento',
+        createdAt: new Date(nowMs).toISOString(),
+        expiresAt: new Date(expiresMs).toISOString(),
+        durationHours: durationHours,
+        isActive: true,
+        createdBy: createdBy,
+        accessCount: 0,
+        lastUsedAt: null
+    };
+
+    try {
+        if (db) {
+            await setDoc(doc(db, 'staff_access_links', token), newLink, { merge: true });
+        }
+    } catch (err) {
+        console.error("Erro ao guardar link de funcionário no Firestore:", err);
+    }
+
+    // Save to local storage cache
+    try {
+        const rawLocal = localStorage.getItem('cvlab_staff_access_links');
+        let localList: StaffAccessLink[] = rawLocal ? JSON.parse(rawLocal) : [];
+        if (!Array.isArray(localList)) localList = [];
+        localList.unshift(newLink);
+        localStorage.setItem('cvlab_staff_access_links', JSON.stringify(localList));
+    } catch (e) {
+        console.warn("LocalStorage error on staff link save:", e);
+    }
+
+    return newLink;
+};
+
+export const revokeStaffAccessLink = async (linkId: string): Promise<void> => {
+    try {
+        if (db) {
+            await updateDoc(doc(db, 'staff_access_links', linkId), {
+                isActive: false,
+                revokedAt: new Date().toISOString()
+            });
+        }
+    } catch (err) {
+        console.error("Erro ao revogar link no Firestore:", err);
+    }
+
+    try {
+        const rawLocal = localStorage.getItem('cvlab_staff_access_links');
+        if (rawLocal) {
+            let localList: StaffAccessLink[] = JSON.parse(rawLocal);
+            if (Array.isArray(localList)) {
+                localList = localList.map(item => item.id === linkId || item.token === linkId ? { ...item, isActive: false } : item);
+                localStorage.setItem('cvlab_staff_access_links', JSON.stringify(localList));
+            }
+        }
+    } catch (e) {
+        console.warn("LocalStorage error on staff link revoke:", e);
+    }
+};
+
+export const extendStaffAccessLink = async (linkId: string, additionalHours: number = 24): Promise<void> => {
+    const newExpiresAt = new Date(Date.now() + Math.max(1, additionalHours) * 3600 * 1000).toISOString();
+    try {
+        if (db) {
+            await updateDoc(doc(db, 'staff_access_links', linkId), {
+                isActive: true,
+                expiresAt: newExpiresAt,
+                durationHours: additionalHours
+            });
+        }
+    } catch (err) {
+        console.error("Erro ao renovar link no Firestore:", err);
+    }
+
+    try {
+        const rawLocal = localStorage.getItem('cvlab_staff_access_links');
+        if (rawLocal) {
+            let localList: StaffAccessLink[] = JSON.parse(rawLocal);
+            if (Array.isArray(localList)) {
+                localList = localList.map(item => item.id === linkId || item.token === linkId ? { ...item, isActive: true, expiresAt: newExpiresAt } : item);
+                localStorage.setItem('cvlab_staff_access_links', JSON.stringify(localList));
+            }
+        }
+    } catch (e) {
+        console.warn("LocalStorage error on staff link extend:", e);
+    }
+};
+
+export const deleteStaffAccessLink = async (linkId: string): Promise<void> => {
+    try {
+        if (db) {
+            await deleteDoc(doc(db, 'staff_access_links', linkId));
+        }
+    } catch (err) {
+        console.error("Erro ao eliminar link no Firestore:", err);
+    }
+
+    try {
+        const rawLocal = localStorage.getItem('cvlab_staff_access_links');
+        if (rawLocal) {
+            let localList: StaffAccessLink[] = JSON.parse(rawLocal);
+            if (Array.isArray(localList)) {
+                localList = localList.filter(item => item.id !== linkId && item.token !== linkId);
+                localStorage.setItem('cvlab_staff_access_links', JSON.stringify(localList));
+            }
+        }
+    } catch (e) {
+        console.warn("LocalStorage error on staff link delete:", e);
+    }
+};
+
+export const validateStaffToken = async (token: string): Promise<{ valid: boolean; link?: StaffAccessLink; reason?: string }> => {
+    if (!token || typeof token !== 'string') {
+        return { valid: false, reason: 'token_invalid' };
+    }
+
+    let link: StaffAccessLink | null = null;
+
+    // Check Firestore
+    try {
+        if (db) {
+            const linkSnap = await getDoc(doc(db, 'staff_access_links', token));
+            if (linkSnap && linkSnap.exists()) {
+                link = { id: linkSnap.id, ...linkSnap.data() } as StaffAccessLink;
+            }
+        }
+    } catch (e) {
+        console.warn("Error fetching staff link from db:", e);
+    }
+
+    // Fallback to local storage if not found in db
+    if (!link) {
+        try {
+            const rawLocal = localStorage.getItem('cvlab_staff_access_links');
+            if (rawLocal) {
+                const list: StaffAccessLink[] = JSON.parse(rawLocal);
+                if (Array.isArray(list)) {
+                    link = list.find(item => item.token === token || item.id === token) || null;
+                }
+            }
+        } catch (e) {
+            console.warn("Error reading local staff links:", e);
+        }
+    }
+
+    if (!link) {
+        return { valid: false, reason: 'não_encontrado' };
+    }
+
+    if (!link.isActive) {
+        return { valid: false, link, reason: 'revogado' };
+    }
+
+    const now = Date.now();
+    const expiry = new Date(link.expiresAt).getTime();
+    if (isNaN(expiry) || expiry <= now) {
+        return { valid: false, link, reason: 'expirado' };
+    }
+
+    // Increment access count & update last used
+    const nowIso = new Date().toISOString();
+    try {
+        if (db) {
+            await updateDoc(doc(db, 'staff_access_links', link.id || token), {
+                accessCount: (link.accessCount || 0) + 1,
+                lastUsedAt: nowIso
+            });
+        }
+    } catch (e) {
+        // silent fallback
+    }
+
+    return {
+        valid: true,
+        link: {
+            ...link,
+            accessCount: (link.accessCount || 0) + 1,
+            lastUsedAt: nowIso
+        }
+    };
 };
 
 // Firestore wrappers & Mock SDK implementation

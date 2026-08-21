@@ -249,3 +249,16 @@ export interface ClientRegistrationData {
   coverLetterText?: string;
   letterSubject?: string;
 }
+
+export interface StaffAccessLink {
+  id: string;
+  token: string;
+  name: string;
+  createdAt: string;
+  expiresAt: string;
+  durationHours: number;
+  isActive: boolean;
+  createdBy: string;
+  accessCount?: number;
+  lastUsedAt?: string | null;
+}

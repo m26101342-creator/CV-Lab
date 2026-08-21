@@ -6698,6 +6698,8 @@ export default function App() {
           setCvPrice(Number(data.cvPrice));
         }
       }
+    }, (err) => {
+      console.warn("Metrics snapshot notice:", err);
     });
     return () => unsub();
   }, []);

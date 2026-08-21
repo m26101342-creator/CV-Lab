@@ -5,16 +5,17 @@ import {
   DollarSign, Calendar, Globe, User, BarChart, CreditCard, ChevronRight, 
   MessageSquare, Plus, Trash2, Edit3, Lock, ExternalLink, Sparkles, AlertTriangle, 
   Layers, Copy, Check, LogOut, ChevronDown, Award, Mail, Phone, MapPin, Briefcase,
-  History, Sparkle, HardDriveDownload
+  History, Sparkle, HardDriveDownload, Link as LinkIcon, Key, Timer
 } from 'lucide-react';
 import { 
   AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer 
 } from 'recharts';
 import { 
   db, auth, collection, doc, query, onSnapshot, getDocs, setDoc, 
-  updateDoc, deleteDoc, addDoc, useAuth, DEFAULT_AUTHORIZED_EMAILS 
+  updateDoc, deleteDoc, addDoc, useAuth, DEFAULT_AUTHORIZED_EMAILS,
+  createStaffAccessLink, revokeStaffAccessLink, extendStaffAccessLink, deleteStaffAccessLink
 } from '../lib/firebase';
-import { ResumeData, TemplateType } from '../types';
+import { ResumeData, TemplateType, StaffAccessLink } from '../types';
 import { OFFICIAL_HISTORICAL_DOCUMENTS, HistoricalDocumentItem } from '../data/historicalDocuments';
 
 interface AdminPanelProps {
@@ -24,10 +25,19 @@ interface AdminPanelProps {
 
 export const AdminPanel: React.FC<AdminPanelProps> = ({ setView, onLoadDocumentIntoEditor }) => {
   const { isAdmin, user, authorizedEmails: authListFromHook } = useAuth();
-  const [activeTab, setActiveTab] = useState<'overview' | 'documents' | 'access' | 'orders' | 'visitors' | 'notes'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'documents' | 'access' | 'staff_links' | 'orders' | 'visitors' | 'notes'>('overview');
   const [searchQuery, setSearchQuery] = useState('');
   const [docFilterType, setDocFilterType] = useState<'all' | 'cv' | 'cover_letter'>('all');
   const [viewMode, setViewMode] = useState<'grid' | 'table'>('grid');
+  
+  // Staff Access Links State
+  const [staffLinks, setStaffLinks] = useState<StaffAccessLink[]>([]);
+  const [staffNameInput, setStaffNameInput] = useState('');
+  const [staffHoursInput, setStaffHoursInput] = useState<number>(24);
+  const [isGeneratingLink, setIsGeneratingLink] = useState(false);
+  const [newlyCreatedLink, setNewlyCreatedLink] = useState<StaffAccessLink | null>(null);
+  const [copiedToken, setCopiedToken] = useState<string | null>(null);
+  const [staffFilter, setStaffFilter] = useState<'all' | 'active' | 'expired'>('all');
   
   // Real metrics from Firestore / DB
   const [metrics, setMetrics] = useState({
@@ -196,6 +206,8 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ setView, onLoadDocumentI
         setEditCvPrice(String(price));
         setEditMeetingLink(meet);
       }
+    }, (err) => {
+      console.warn("Metrics snapshot warning:", err);
     });
 
     // 2. Generated Documents Archive Listener
@@ -246,6 +258,8 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ setView, onLoadDocumentI
           ]);
         }
       }
+    }, (err) => {
+      console.warn("Generated docs snapshot warning:", err);
     });
 
     // 3. Authorized Emails Listener
@@ -262,6 +276,37 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ setView, onLoadDocumentI
           updatedAt: new Date().toISOString()
         });
       }
+    }, (err) => {
+      console.warn("Access control snapshot warning:", err);
+    });
+
+    // 3.1 Staff Access Links Listener (24h links for employees)
+    const staffQuery = query(collection(db, 'staff_access_links'));
+    const unsubStaff = onSnapshot(staffQuery, (snap: any) => {
+      if (snap && snap.docs) {
+        let fetched: StaffAccessLink[] = snap.docs.map((d: any) => ({ id: d.id, ...d.data() }));
+        
+        // Also merge local storage cache if available
+        try {
+          const rawLocal = localStorage.getItem('cvlab_staff_access_links');
+          if (rawLocal) {
+            const localList: StaffAccessLink[] = JSON.parse(rawLocal);
+            if (Array.isArray(localList)) {
+              const existingIds = new Set(fetched.map(item => item.id || item.token));
+              localList.forEach(item => {
+                if (!existingIds.has(item.id) && !existingIds.has(item.token)) {
+                  fetched.push(item);
+                }
+              });
+            }
+          }
+        } catch (e) {}
+
+        fetched.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
+        setStaffLinks(fetched);
+      }
+    }, (err) => {
+      console.warn("Staff links snapshot warning:", err);
     });
 
     // 4. Orders Listener
@@ -272,6 +317,8 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ setView, onLoadDocumentI
         fetched.sort((a: any, b: any) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
         setOrders(fetched);
       }
+    }, (err) => {
+      console.warn("Orders snapshot warning:", err);
     });
 
     // 5. Online Presence & Stats
@@ -286,6 +333,8 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ setView, onLoadDocumentI
         setOnlineUsers(active);
         setStats(s => ({ ...s, online: active.length }));
       }
+    }, (err) => {
+      console.warn("Presence snapshot warning:", err);
     });
 
     // 6. Notes Listener
@@ -296,6 +345,8 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ setView, onLoadDocumentI
         fetched.sort((a: any, b: any) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
         setAdminNotes(fetched);
       }
+    }, (err) => {
+      console.warn("Notes snapshot warning:", err);
     });
 
     // Run auto-sync once on mount to guarantee that all historical items are in database
@@ -553,6 +604,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ setView, onLoadDocumentI
             { id: 'overview', label: 'Visão Geral & Métricas', icon: BarChart, count: null },
             { id: 'documents', label: 'Arquivo de Documentos', icon: FileText, count: generatedDocs.length },
             { id: 'access', label: 'Contas Autorizadas', icon: ShieldCheck, count: authorizedEmails.length },
+            { id: 'staff_links', label: 'Links Funcionários (24h)', icon: Key, count: staffLinks.filter(l => l.isActive && new Date(l.expiresAt).getTime() > Date.now()).length || null },
             { id: 'orders', label: 'Encomendas & Pagamentos', icon: CreditCard, count: orders.filter(o => o.status === 'pending').length || null },
             { id: 'visitors', label: 'Utilizadores & Sessões', icon: Globe, count: stats.online || null },
             { id: 'notes', label: 'Anotações da Equipa', icon: MessageSquare, count: adminNotes.length || null }
@@ -1262,6 +1314,322 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ setView, onLoadDocumentI
                     </div>
                   );
                 })}
+              </div>
+            </div>
+
+          </div>
+        )}
+
+        {/* ========================================================================= */}
+        {/* TAB 3.5: LINKS TEMPORÁRIOS DE ACESSO PARA FUNCIONÁRIOS (24H) */}
+        {/* ========================================================================= */}
+        {activeTab === 'staff_links' && (
+          <div className="space-y-8 animate-in fade-in duration-300">
+            
+            {/* HERO EXPLANATION BANNER */}
+            <div className="bg-gradient-to-r from-blue-900 via-slate-900 to-indigo-950 text-white p-7 rounded-3xl border border-blue-800/50 shadow-lg relative overflow-hidden">
+              <div className="absolute top-0 right-0 p-8 opacity-10 pointer-events-none">
+                <Key size={180} />
+              </div>
+
+              <div className="relative z-10 max-w-3xl space-y-3">
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/20 border border-blue-400/30 text-blue-300 text-xs font-bold uppercase tracking-wider">
+                  <ShieldCheck size={14} className="text-blue-400" />
+                  <span>Acesso Temporário Sem Palavra-passe</span>
+                </div>
+                
+                <h2 className="text-2xl sm:text-3xl font-black tracking-tight">
+                  Links de Acesso para Funcionários (24 Horas)
+                </h2>
+                
+                <p className="text-sm text-slate-300 font-medium leading-relaxed">
+                  Crie e partilhe links temporários para atendentes e funcionários. O funcionário clica no link e obtém acesso instantâneo para criar currículos e registar atendimentos sem necessidade de login. O link **expira automaticamente em 24h**, e você pode **revogar o acesso a qualquer segundo**!
+                </p>
+              </div>
+            </div>
+
+            {/* GENERATE NEW LINK CARD */}
+            <div className="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-sm space-y-6">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold border border-blue-100">
+                  <Plus size={20} />
+                </div>
+                <div>
+                  <h3 className="text-lg font-black text-slate-900 tracking-tight">Gerar Novo Link de Acesso</h3>
+                  <p className="text-xs text-slate-500">Defina o nome do funcionário/posto e o tempo de validade do link</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div className="sm:col-span-2 space-y-1.5">
+                  <label className="text-xs font-bold text-slate-700 uppercase tracking-wider">Nome do Funcionário ou Posto de Atendimento</label>
+                  <input
+                    type="text"
+                    value={staffNameInput}
+                    onChange={(e) => setStaffNameInput(e.target.value)}
+                    placeholder="Ex: Atendimento Recepção - João"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600 focus:bg-white transition-all font-medium"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-slate-700 uppercase tracking-wider">Duração do Acesso</label>
+                  <select
+                    value={staffHoursInput}
+                    onChange={(e) => setStaffHoursInput(Number(e.target.value))}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600 focus:bg-white transition-all font-bold text-slate-800"
+                  >
+                    <option value={1}>1 Hora</option>
+                    <option value={6}>6 Horas</option>
+                    <option value={12}>12 Horas</option>
+                    <option value={24}>24 Horas (Padrão)</option>
+                    <option value={48}>48 Horas (2 Dias)</option>
+                    <option value={72}>72 Horas (3 Dias)</option>
+                  </select>
+                </div>
+              </div>
+
+              <button
+                onClick={async () => {
+                  setIsGeneratingLink(true);
+                  try {
+                    const created = await createStaffAccessLink(
+                      staffNameInput || 'Atendimento Funcionário',
+                      staffHoursInput,
+                      user?.email || 'Admin'
+                    );
+                    setNewlyCreatedLink(created);
+                    setStaffNameInput('');
+                  } catch (e) {
+                    console.error("Erro ao criar link:", e);
+                  } finally {
+                    setIsGeneratingLink(false);
+                  }
+                }}
+                disabled={isGeneratingLink}
+                className="w-full sm:w-auto px-6 py-3.5 bg-blue-600 hover:bg-blue-700 active:scale-95 text-white font-black text-xs uppercase tracking-wider rounded-2xl transition-all shadow-md shadow-blue-600/20 flex items-center justify-center gap-2"
+              >
+                {isGeneratingLink ? (
+                  <RefreshCw size={16} className="animate-spin" />
+                ) : (
+                  <Key size={16} />
+                )}
+                <span>Gerar Link de {staffHoursInput} Horas</span>
+              </button>
+
+              {/* NEWLY CREATED LINK DISPLAY BOX */}
+              {newlyCreatedLink && (
+                <div className="bg-emerald-50/80 border-2 border-emerald-300 rounded-3xl p-6 space-y-4 animate-in fade-in zoom-in duration-300">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-black text-emerald-800 uppercase tracking-wider flex items-center gap-1.5">
+                      <CheckCircle2 size={16} className="text-emerald-600" />
+                      Link Criado com Sucesso! (Válido por {newlyCreatedLink.durationHours}h)
+                    </span>
+                    <button
+                      onClick={() => setNewlyCreatedLink(null)}
+                      className="text-xs text-emerald-700 hover:text-emerald-900 font-bold underline"
+                    >
+                      Fechar
+                    </button>
+                  </div>
+
+                  <div className="bg-white p-4 rounded-2xl border border-emerald-200 flex items-center justify-between gap-3 overflow-hidden">
+                    <code className="text-xs font-mono font-bold text-slate-800 truncate select-all">
+                      {`${window.location.origin}${window.location.pathname}?staffToken=${newlyCreatedLink.token}`}
+                    </code>
+                    <button
+                      onClick={() => {
+                        const url = `${window.location.origin}${window.location.pathname}?staffToken=${newlyCreatedLink.token}`;
+                        navigator.clipboard.writeText(url);
+                        setCopiedToken(newlyCreatedLink.token);
+                        setTimeout(() => setCopiedToken(null), 3000);
+                      }}
+                      className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-black transition-all flex items-center gap-1.5 shrink-0"
+                    >
+                      {copiedToken === newlyCreatedLink.token ? <Check size={14} /> : <Copy size={14} />}
+                      <span>{copiedToken === newlyCreatedLink.token ? 'Copiado!' : 'Copiar Link'}</span>
+                    </button>
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-3">
+                    <a
+                      href={`https://wa.me/?text=${encodeURIComponent(`Olá! Aqui está o seu link de acesso temporário para o CV LAB (válido por ${newlyCreatedLink.durationHours}h):\n\n${window.location.origin}${window.location.pathname}?staffToken=${newlyCreatedLink.token}`)}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="px-4 py-2 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl text-xs font-bold flex items-center gap-2 transition-all shadow-sm"
+                    >
+                      <ExternalLink size={14} />
+                      <span>Partilhar no WhatsApp</span>
+                    </a>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* LINKS LIST TABLE & FILTERS */}
+            <div className="space-y-4">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <h3 className="text-lg font-black text-slate-900 tracking-tight flex items-center gap-2">
+                  <Key size={20} className="text-blue-600" />
+                  <span>Histórico de Links de Funcionários ({staffLinks.length})</span>
+                </h3>
+
+                <div className="flex items-center gap-2 bg-slate-100 p-1.5 rounded-2xl border border-slate-200">
+                  <button
+                    onClick={() => setStaffFilter('all')}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold uppercase transition-all ${
+                      staffFilter === 'all' ? 'bg-blue-600 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'
+                    }`}
+                  >
+                    Todos ({staffLinks.length})
+                  </button>
+                  <button
+                    onClick={() => setStaffFilter('active')}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold uppercase transition-all ${
+                      staffFilter === 'active' ? 'bg-emerald-600 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'
+                    }`}
+                  >
+                    Ativos ({staffLinks.filter(l => l.isActive && new Date(l.expiresAt).getTime() > Date.now()).length})
+                  </button>
+                  <button
+                    onClick={() => setStaffFilter('expired')}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold uppercase transition-all ${
+                      staffFilter === 'expired' ? 'bg-slate-700 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'
+                    }`}
+                  >
+                    Expirados / Revogados ({staffLinks.filter(l => !l.isActive || new Date(l.expiresAt).getTime() <= Date.now()).length})
+                  </button>
+                </div>
+              </div>
+
+              {/* LIST CARDS */}
+              <div className="space-y-4">
+                {staffLinks
+                  .filter(link => {
+                    const now = Date.now();
+                    const isLive = link.isActive && new Date(link.expiresAt).getTime() > now;
+                    if (staffFilter === 'active') return isLive;
+                    if (staffFilter === 'expired') return !isLive;
+                    return true;
+                  })
+                  .map(link => {
+                    const now = Date.now();
+                    const expiresTime = new Date(link.expiresAt).getTime();
+                    const isExpired = isNaN(expiresTime) || expiresTime <= now;
+                    const isLive = link.isActive && !isExpired;
+
+                    // Remaining time formatted
+                    let timeRemainingStr = '';
+                    if (isLive) {
+                      const diffMs = expiresTime - now;
+                      const hoursLeft = Math.floor(diffMs / (3600 * 1000));
+                      const minsLeft = Math.floor((diffMs % (3600 * 1000)) / (60 * 1000));
+                      timeRemainingStr = `${hoursLeft}h ${minsLeft}m restantes`;
+                    }
+
+                    const fullUrl = `${window.location.origin}${window.location.pathname}?staffToken=${link.token}`;
+
+                    return (
+                      <div
+                        key={link.id || link.token}
+                        className={`bg-white p-6 rounded-3xl border transition-all shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-5 ${
+                          isLive ? 'border-blue-200 hover:border-blue-300' : 'border-slate-200 opacity-75 bg-slate-50/50'
+                        }`}
+                      >
+                        <div className="space-y-2 max-w-2xl flex-1">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span className="text-base font-black text-slate-900">{link.name || 'Funcionário'}</span>
+                            
+                            {isLive ? (
+                              <span className="bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full flex items-center gap-1">
+                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                                Ativo ({timeRemainingStr})
+                              </span>
+                            ) : !link.isActive ? (
+                              <span className="bg-red-50 text-red-700 border border-red-200 text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full">
+                                Revogado pelo Admin
+                              </span>
+                            ) : (
+                              <span className="bg-slate-100 text-slate-600 border border-slate-200 text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full">
+                                Expirado (24h concluídas)
+                              </span>
+                            )}
+                          </div>
+
+                          <div className="flex items-center gap-2 bg-slate-100/80 p-2 rounded-xl border border-slate-200 text-xs max-w-xl">
+                            <code className="text-slate-700 font-mono text-[11px] truncate flex-1">{fullUrl}</code>
+                            <button
+                              onClick={() => {
+                                navigator.clipboard.writeText(fullUrl);
+                                setCopiedToken(link.token);
+                                setTimeout(() => setCopiedToken(null), 3000);
+                              }}
+                              className="px-2.5 py-1 bg-white hover:bg-slate-200 text-slate-700 font-bold rounded-lg text-[11px] border border-slate-300 flex items-center gap-1 transition-all"
+                            >
+                              {copiedToken === link.token ? <Check size={12} className="text-emerald-600" /> : <Copy size={12} />}
+                              <span>{copiedToken === link.token ? 'Copiado!' : 'Copiar'}</span>
+                            </button>
+                          </div>
+
+                          <div className="flex flex-wrap items-center gap-4 text-xs text-slate-500 pt-1">
+                            <span>Criado em: <strong className="text-slate-700">{new Date(link.createdAt).toLocaleString('pt-PT')}</strong></span>
+                            <span>Validade até: <strong className="text-slate-700">{new Date(link.expiresAt).toLocaleString('pt-PT')}</strong></span>
+                            <span>Acessos registados: <strong className="text-blue-600 font-black">{link.accessCount || 0}</strong></span>
+                          </div>
+                        </div>
+
+                        {/* ACTIONS BUTTONS */}
+                        <div className="flex flex-wrap items-center gap-2 shrink-0">
+                          {isLive ? (
+                            <button
+                              onClick={async () => {
+                                if (confirm(`Deseja revogar o acesso de "${link.name}" imediatamente?`)) {
+                                  await revokeStaffAccessLink(link.id || link.token);
+                                }
+                              }}
+                              className="px-4 py-2 bg-red-50 hover:bg-red-600 text-red-700 hover:text-white rounded-xl text-xs font-black uppercase tracking-wider transition-all border border-red-200 flex items-center gap-1.5"
+                              title="Cancelar/Expirar este link imediatamente"
+                            >
+                              <XCircle size={14} />
+                              <span>Revogar Agora</span>
+                            </button>
+                          ) : (
+                            <button
+                              onClick={async () => {
+                                await extendStaffAccessLink(link.id || link.token, 24);
+                                alert("Link ativado e renovado por mais 24 horas!");
+                              }}
+                              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-black uppercase tracking-wider transition-all shadow-xs flex items-center gap-1.5"
+                              title="Reativar e renovar validade por +24 horas"
+                            >
+                              <RefreshCw size={14} />
+                              <span>Renovar (+24h)</span>
+                            </button>
+                          )}
+
+                          <button
+                            onClick={async () => {
+                              if (confirm(`Eliminar registo do link "${link.name}"?`)) {
+                                await deleteStaffAccessLink(link.id || link.token);
+                              }
+                            }}
+                            className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all"
+                            title="Eliminar este registo do histórico"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+
+                {staffLinks.length === 0 && (
+                  <div className="bg-white border border-slate-200 rounded-3xl p-12 text-center text-slate-500 shadow-sm space-y-3">
+                    <Key size={32} className="mx-auto text-slate-300" />
+                    <p className="font-bold text-slate-700">Nenhum link de funcionário criado até ao momento.</p>
+                    <p className="text-xs text-slate-400">Utilize o formulário acima para gerar o primeiro link de 24h.</p>
+                  </div>
+                )}
               </div>
             </div>
 

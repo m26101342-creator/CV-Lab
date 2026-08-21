@@ -3,133 +3,78 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     
-    // Global Safety Net
-    match /{document=**} {
-      allow read, write: if false;
-    }
-
-    // Primitives
     function incoming() { return request.resource.data; }
     function existing() { return resource.data; }
     function isSignedIn() { return request.auth != null; }
+    function isHardcodedAdmin() {
+      return isSignedIn() && (
+        request.auth.token.email == 'm26101342@gmail.com' ||
+        request.auth.token.email == 'ronalmaferreira04@icloud.com' ||
+        request.auth.token.email == 'sumodemanga50@gmail.com' ||
+        request.auth.token.email == 'suportecvlab@gmail.com'
+      );
+    }
     function isAdmin() { 
-      return isSignedIn() && 
-             (
-              request.auth.token.email == 'suportecvlab@gmail.com' ||
-              request.auth.token.email == 'm26101342@gmail.com' ||
-              (request.auth.token.email_verified == true && 
-               exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
-               get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin')
-             ); 
-    }
-    function isValidId(id) { return id is string && id.size() > 0 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$'); }
-
-    // User Entity Validator
-    function isValidUser(data) {
-      return data.keys().hasAll(['email', 'role']) 
-          && data.email is string && data.email.size() > 5 && data.email.size() <= 100
-          && data.role in ['user', 'admin']
-          && (!('name' in data.keys()) || (data.name is string && data.name.size() <= 100))
-          && (!('createdAt' in data.keys()) || data.createdAt is string);
-    }
-
-    // Order Entity Validator
-    function isValidOrder(data) {
-      return data.keys().hasAll(['ownerId', 'status', 'documentType', 'createdAt'])
-          && data.ownerId is string && data.ownerId.size() > 0 && data.ownerId.size() <= 128
-          && data.status in ['pending', 'approved', 'rejected']
-          && data.documentType in ['resume', 'cover_letter', 'combo']
-          && data.createdAt is string && data.createdAt.size() <= 100
-          && (!('contactEmail' in data.keys()) || (data.contactEmail is string && data.contactEmail.size() <= 100))
-          && (!('documentData' in data.keys()) || data.documentData is map)
-          && (!('updatedAt' in data.keys()) || data.updatedAt is string);
-    }
-
-    // Mail Entity Validator
-    function isValidMail(data) {
-      return data.keys().hasAll(['to', 'message'])
-          && data.to is list && data.to.size() == 1 && data.to[0] == 'suportecvlab@gmail.com'
-          && data.message is map;
-    }
-
-    // Presence Entity Validator
-    function isValidPresence(data) {
-      return data.keys().hasAll(['userId', 'lastSeen'])
-          && data.userId is string && data.userId.size() > 0 && data.userId.size() <= 128
-          && data.lastSeen is string
-          && (!('email' in data.keys()) || data.email is string)
-          && (!('isAnonymous' in data.keys()) || data.isAnonymous is bool)
-          && (!('view' in data.keys()) || data.view is string);
-    }
-
-    // Visitor Entity Validator
-    function isValidVisitor(data) {
-      return data.keys().hasAll(['visitorId', 'firstSeen'])
-          && data.visitorId is string && data.visitorId.size() > 0 && data.visitorId.size() <= 128
-          && data.firstSeen is string;
+      return isSignedIn() && (
+        isHardcodedAdmin() ||
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
+         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin')
+      ); 
     }
 
     match /users/{userId} {
-      // Identity Poisoning Guard
-      allow get: if isValidId(userId) && (isAdmin() || (isSignedIn() && request.auth.uid == userId));
-      allow list: if isAdmin();
-      
-      allow create: if isValidId(userId) 
-                    && isSignedIn() 
-                    && request.auth.uid == userId
-                    && isValidUser(incoming())
-                    && (incoming().role == 'user' || request.auth.token.email == 'suportecvlab@gmail.com' || request.auth.token.email == 'm26101342@gmail.com'); // Prevent self-admin assigning unless specific email
-                    
-      allow update: if isValidId(userId)
-                    && isSignedIn()
-                    && isValidUser(incoming())
-                    && (
-                      isAdmin() ||
-                      (request.auth.uid == userId && !incoming().diff(existing()).affectedKeys().hasAny(['role']))
-                    );
+      allow read, list: if true;
+      allow create, update: if true;
+      allow delete: if isAdmin();
     }
 
     match /orders/{orderId} {
-      allow get: if isValidId(orderId) && (isAdmin() || (isSignedIn() && existing().ownerId == request.auth.uid));
-      allow list: if isAdmin() || (isSignedIn() && existing().ownerId == request.auth.uid);
-      
-      allow create: if isValidId(orderId)
-                    && isSignedIn()
-                    && isValidOrder(incoming())
-                    && incoming().ownerId == request.auth.uid
-                    && incoming().status == 'pending'; // New orders must be pending
-                    
-      allow update: if isValidId(orderId)
-                    && isSignedIn()
-                    && (isAdmin() || (isValidOrder(incoming()) && incoming().ownerId == existing().ownerId));
-                    
-      allow delete: if isValidId(orderId) && isAdmin();
+      allow read, list: if true;
+      allow create, update: if true;
+      allow delete: if isAdmin();
+    }
+
+    match /generated_documents/{docId} {
+      allow read, list: if true;
+      allow create, update: if true;
+      allow delete: if isAdmin();
+    }
+
+    match /client_resumes/{docId} {
+      allow read, list: if true;
+      allow create, update: if true;
+      allow delete: if isAdmin();
+    }
+
+    match /staff_access_links/{linkId} {
+      allow read, list: if true;
+      allow create, update, delete: if true;
+    }
+
+    match /admin_settings/{settingId} {
+      allow read, list: if true;
+      allow write, create, update: if true;
+    }
+
+    match /admin_notes/{noteId} {
+      allow read, list: if true;
+      allow write, create, update, delete: if true;
     }
 
     match /mail/{mailId} {
-      allow get, list: if isAdmin();
-      
-      allow create: if isValidId(mailId)
-                    && (isAdmin() || (isSignedIn() && isValidMail(incoming())));
+      allow read, list: if true;
+      allow create, update: if true;
+      allow delete: if isAdmin();
     }
 
     match /presence/{userId} {
-      allow get: if isAdmin() || (isSignedIn() && request.auth.uid == userId);
-      allow list: if isAdmin();
-      allow create, update: if isValidId(userId)
-                            && incoming().userId == userId
-                            && (
-                              (isSignedIn() && request.auth.uid == userId) ||
-                              (userId.matches('^visitor_[a-z0-9]+$'))
-                            )
-                            && isValidPresence(incoming());
-      allow delete: if isValidId(userId) && (isAdmin() || (isSignedIn() && request.auth.uid == userId));
+      allow read, list: if true;
+      allow create, update, delete: if true;
     }
 
     match /visitors/{visitorId} {
-      allow get: if isAdmin() || (isSignedIn() && request.auth.uid == visitorId);
-      allow list: if isAdmin();
-      allow create: if isValidId(visitorId) && isValidVisitor(incoming());
+      allow read, list: if true;
+      allow create, update, delete: if true;
     }
   }
 }

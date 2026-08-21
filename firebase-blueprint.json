@@ -2,12 +2,13 @@
   "entities": {
     "User": {
       "title": "User",
-      "description": "User profile with role management",
+      "description": "User profile with role management and authorization status",
       "type": "object",
       "properties": {
         "email": { "type": "string" },
         "name": { "type": "string" },
         "role": { "type": "string", "enum": ["user", "admin"] },
+        "isAuthorized": { "type": "boolean" },
         "createdAt": { "type": "string" }
       },
       "required": ["email", "role"]
@@ -20,12 +21,70 @@
         "ownerId": { "type": "string" },
         "contactEmail": { "type": "string" },
         "status": { "type": "string", "enum": ["pending", "approved", "rejected"] },
-        "documentType": { "type": "string", "enum": ["resume", "cover_letter"] },
+        "documentType": { "type": "string", "enum": ["resume", "cover_letter", "combo"] },
         "documentData": { "type": "object" },
         "createdAt": { "type": "string" },
         "updatedAt": { "type": "string" }
       },
       "required": ["ownerId", "status", "documentType", "createdAt"]
+    },
+    "GeneratedDocument": {
+      "title": "GeneratedDocument",
+      "description": "Archived generated CV or cover letter record for statistics and recovery",
+      "type": "object",
+      "properties": {
+        "candidateName": { "type": "string" },
+        "candidateEmail": { "type": "string" },
+        "type": { "type": "string" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["candidateName", "type", "createdAt"]
+    },
+    "ClientResume": {
+      "title": "ClientResume",
+      "description": "Client resume and accounting record stored in database",
+      "type": "object",
+      "properties": {
+        "candidateName": { "type": "string" },
+        "serviceType": { "type": "string" },
+        "price": { "type": "number" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["candidateName", "serviceType", "price", "createdAt"]
+    },
+    "StaffAccessLink": {
+      "title": "StaffAccessLink",
+      "description": "Temporary 24h revocable access link for employees",
+      "type": "object",
+      "properties": {
+        "token": { "type": "string" },
+        "name": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "expiresAt": { "type": "string" },
+        "durationHours": { "type": "number" },
+        "isActive": { "type": "boolean" },
+        "createdBy": { "type": "string" }
+      },
+      "required": ["token", "createdAt", "expiresAt", "isActive"]
+    },
+    "AdminSetting": {
+      "title": "AdminSetting",
+      "description": "System settings such as metrics and access control list",
+      "type": "object",
+      "properties": {
+        "updatedAt": { "type": "string" }
+      }
+    },
+    "AdminNote": {
+      "title": "AdminNote",
+      "description": "Internal notes and announcements in admin dashboard",
+      "type": "object",
+      "properties": {
+        "text": { "type": "string" },
+        "category": { "type": "string" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["text", "createdAt"]
     },
     "Mail": {
       "title": "Mail",
@@ -70,6 +129,26 @@
     "/orders/{orderId}": {
       "schema": { "$ref": "#/entities/Order" },
       "description": "User orders for PDF downloads"
+    },
+    "/generated_documents/{docId}": {
+      "schema": { "$ref": "#/entities/GeneratedDocument" },
+      "description": "All generated CV and letter archive records"
+    },
+    "/client_resumes/{docId}": {
+      "schema": { "$ref": "#/entities/ClientResume" },
+      "description": "Client resumes and accounting entries"
+    },
+    "/staff_access_links/{linkId}": {
+      "schema": { "$ref": "#/entities/StaffAccessLink" },
+      "description": "Temporary 24h revocable employee access links"
+    },
+    "/admin_settings/{settingId}": {
+      "schema": { "$ref": "#/entities/AdminSetting" },
+      "description": "Global administration metrics, pricing, and access control"
+    },
+    "/admin_notes/{noteId}": {
+      "schema": { "$ref": "#/entities/AdminNote" },
+      "description": "Admin notes and notifications"
     },
     "/mail/{mailId}": {
       "schema": { "$ref": "#/entities/Mail" },
