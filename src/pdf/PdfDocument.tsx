@@ -19,23 +19,37 @@ const getSectionTitle = (data: ResumeData, key: keyof NonNullable<ResumeData['se
   return defaultTitle;
 };
 
+const getSectionCol = (data: ResumeData, key: string, def: 'left' | 'right') => {
+  return data.styleConfig?.sectionPositions?.[key] || def;
+};
+
 const RenderCustomSections = ({ 
   customSections, 
+  data,
+  column,
+  defaultCol = 'right',
   headingStyle, 
   itemTitleStyle = { fontSize: 9.5, fontWeight: 'bold', color: '#1F2937', marginBottom: 2 }, 
   itemDescStyle = { fontSize: 8.5, color: '#4B5563', marginTop: 3, lineHeight: 1.35 },
   cardStyle = null
 }: { 
   customSections?: any[], 
+  data?: ResumeData,
+  column?: 'left' | 'right',
+  defaultCol?: 'left' | 'right',
   headingStyle: any, 
   itemTitleStyle?: any, 
   itemDescStyle?: any,
   cardStyle?: any
 }) => {
   if (!customSections || customSections.length === 0) return null;
+  const filtered = (data && column)
+    ? customSections.filter(cs => getSectionCol(data, 'custom_' + cs.id, defaultCol) === column)
+    : customSections;
+  if (filtered.length === 0) return null;
   return (
     <>
-      {customSections.map((cs, idx) => {
+      {filtered.map((cs, idx) => {
         const content = (
           <View key={cs.id || `cs-${idx}`} style={{ marginBottom: 15, marginTop: 10 }}>
             <Text style={headingStyle}>{cs.title}</Text>
@@ -539,7 +553,7 @@ const Template5 = ({ data }: { data: ResumeData }) => {
 
       <View style={styles.body}>
         <View style={styles.leftColumn}>
-          {data.personalInfo.summary && (
+          {getSectionCol(data, 'summary', 'right') === 'left' && data.personalInfo.summary && (
             <View>
               <Text style={[styles.leftSectionTitle, { marginTop: 0 }]}>{data.language === 'en' ? 'Profile' : 'Perfil'}</Text>
               <Text style={styles.leftText}>{data.personalInfo.summary.replace(/\*/g, '')}</Text>
@@ -555,7 +569,7 @@ const Template5 = ({ data }: { data: ResumeData }) => {
              {data.personalInfo.website ? <Text style={styles.leftText}>{data.personalInfo.website}</Text> : null}
           </View>
           
-          {data.skills && data.skills.length > 0 && (
+          {getSectionCol(data, 'skills', 'left') === 'left' && data.skills && data.skills.length > 0 && (
             <View>
               <Text style={styles.leftSectionTitle}>{getSectionTitle(data, 'skills', 'Habilidades')}</Text>
               <View style={{ gap: 6 }}>
@@ -565,8 +579,34 @@ const Template5 = ({ data }: { data: ResumeData }) => {
               </View>
             </View>
           )}
+
+          {getSectionCol(data, 'education', 'left') === 'left' && data.education && data.education.length > 0 && (
+            <View>
+              <Text style={styles.leftSectionTitle}>{getSectionTitle(data, 'education', 'Educação')}</Text>
+              {data.education.map((e, idx) => (
+                <View key={e.id || `edu-${idx}`} style={{ marginBottom: 10 }}>
+                   <Text style={[styles.leftText, { fontWeight: 'bold', color: '#FFFFFF' }]}>{e.institution}</Text>
+                   <Text style={styles.leftText}>{e.degree} - {e.field}</Text>
+                   <Text style={[styles.leftText, { fontSize: 8, opacity: 0.7 }]}>{e.startDate} • {e.endDate}</Text>
+                </View>
+              ))}
+            </View>
+          )}
+
+          {getSectionCol(data, 'experience', 'right') === 'left' && data.experience && data.experience.length > 0 && (
+            <View>
+              <Text style={styles.leftSectionTitle}>{getSectionTitle(data, 'experience', 'Experiência')}</Text>
+              {data.experience.map((ex, idx) => (
+                <View key={ex.id || `exp-${idx}`} style={{ marginBottom: 10 }}>
+                  <Text style={[styles.leftText, { fontWeight: 'bold', color: '#FFFFFF' }]}>{ex.position}</Text>
+                  <Text style={styles.leftText}>{ex.company}</Text>
+                  <Text style={[styles.leftText, { fontSize: 8, opacity: 0.7 }]}>{ex.startDate} • {ex.endDate}</Text>
+                </View>
+              ))}
+            </View>
+          )}
           
-          {data.languages && data.languages.length > 0 && (
+          {getSectionCol(data, 'languages', 'left') === 'left' && data.languages && data.languages.length > 0 && (
             <View>
               <Text style={styles.leftSectionTitle}>{getSectionTitle(data, 'languages', 'Idiomas')}</Text>
               <View style={{ gap: 6 }}>
@@ -577,7 +617,7 @@ const Template5 = ({ data }: { data: ResumeData }) => {
             </View>
           )}
 
-          {data.certifications && data.certifications.length > 0 && (
+          {getSectionCol(data, 'certifications', 'left') === 'left' && data.certifications && data.certifications.length > 0 && (
             <View>
               <Text style={styles.leftSectionTitle}>{getSectionTitle(data, 'certifications', 'Certificações')}</Text>
               <View style={{ gap: 6 }}>
@@ -591,7 +631,7 @@ const Template5 = ({ data }: { data: ResumeData }) => {
             </View>
           )}
 
-          {data.interests && data.interests.length > 0 && (
+          {getSectionCol(data, 'interests', 'left') === 'left' && data.interests && data.interests.length > 0 && (
             <View>
               <Text style={styles.leftSectionTitle}>{getSectionTitle(data, 'interests', 'Interesses')}</Text>
               <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 4 }}>
@@ -601,10 +641,19 @@ const Template5 = ({ data }: { data: ResumeData }) => {
               </View>
             </View>
           )}
+
+          <RenderCustomSections customSections={data.customSections} data={data} column="left" defaultCol="right" headingStyle={styles.leftSectionTitle} itemTitleStyle={{ fontSize: 9.5, fontWeight: 'bold', color: '#FFFFFF', marginBottom: 2 }} itemDescStyle={{ fontSize: 8.5, color: 'rgba(255,255,255,0.8)', marginTop: 3, lineHeight: 1.35 }} />
         </View>
 
         <View style={styles.rightColumn}>
-          {data.experience && data.experience.length > 0 && (
+          {getSectionCol(data, 'summary', 'right') === 'right' && data.personalInfo.summary && (
+            <View>
+              <Text style={[styles.rightSectionTitle, { marginTop: 0 }]}>{data.language === 'en' ? 'Profile' : 'Perfil'}</Text>
+              <Text style={{ fontSize: 9, color: '#4B5563', lineHeight: 1.5, marginBottom: 15 }}>{data.personalInfo.summary.replace(/\*/g, '')}</Text>
+            </View>
+          )}
+
+          {getSectionCol(data, 'experience', 'right') === 'right' && data.experience && data.experience.length > 0 && (
             <View>
               <Text style={[styles.rightSectionTitle, { marginTop: 0 }]}>{getSectionTitle(data, 'experience', 'Experiência')}</Text>
               {data.experience.map((ex, idx) => (
@@ -620,7 +669,7 @@ const Template5 = ({ data }: { data: ResumeData }) => {
             </View>
           )}
           
-          {data.education && data.education.length > 0 && (
+          {getSectionCol(data, 'education', 'left') === 'right' && data.education && data.education.length > 0 && (
             <View>
               <Text style={styles.rightSectionTitle}>{getSectionTitle(data, 'education', 'Educação')}</Text>
               {data.education.map((e, idx) => (
@@ -634,7 +683,55 @@ const Template5 = ({ data }: { data: ResumeData }) => {
               ))}
             </View>
           )}
-          <RenderCustomSections customSections={data.customSections} headingStyle={styles.rightSectionTitle} />
+
+          {getSectionCol(data, 'skills', 'left') === 'right' && data.skills && data.skills.length > 0 && (
+            <View>
+              <Text style={styles.rightSectionTitle}>{getSectionTitle(data, 'skills', 'Habilidades')}</Text>
+              <View style={{ gap: 6, marginBottom: 15 }}>
+                {data.skills.filter(s => s?.name).map((s, idx) => (
+                  <Text key={s.id || `skill-${idx}`} style={{ fontSize: 9.5, color: '#374151' }}>• {s.name.trim()}</Text>
+                ))}
+              </View>
+            </View>
+          )}
+
+          {getSectionCol(data, 'languages', 'left') === 'right' && data.languages && data.languages.length > 0 && (
+            <View>
+              <Text style={styles.rightSectionTitle}>{getSectionTitle(data, 'languages', 'Idiomas')}</Text>
+              <View style={{ gap: 6, marginBottom: 15 }}>
+                {data.languages.filter(s => s?.name).map((s, idx) => (
+                  <Text key={s.id || `lang-${idx}`} style={{ fontSize: 9.5, color: '#374151' }}>• {s.name.trim()} - {s.level}</Text>
+                ))}
+              </View>
+            </View>
+          )}
+
+          {getSectionCol(data, 'certifications', 'left') === 'right' && data.certifications && data.certifications.length > 0 && (
+            <View>
+              <Text style={styles.rightSectionTitle}>{getSectionTitle(data, 'certifications', 'Certificações')}</Text>
+              <View style={{ gap: 6, marginBottom: 15 }}>
+                {data.certifications.filter(s => s?.name).map((s, idx) => (
+                  <View key={s.id || `cert-${idx}`} style={{ marginBottom: 4 }}>
+                    <Text style={{ fontSize: 9.5, fontWeight: 'bold', color: '#1F2937' }}>• {s.name.trim()}</Text>
+                    {s.date && <Text style={{ fontSize: 8.5, color: '#6B7280' }}>{s.date}</Text>}
+                  </View>
+                ))}
+              </View>
+            </View>
+          )}
+
+          {getSectionCol(data, 'interests', 'left') === 'right' && data.interests && data.interests.length > 0 && (
+            <View>
+              <Text style={styles.rightSectionTitle}>{getSectionTitle(data, 'interests', 'Interesses')}</Text>
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 4, marginBottom: 15 }}>
+                {data.interests.map((interest, idx) => (
+                  <Text key={idx} style={{ fontSize: 8.5, backgroundColor: '#F3F4F6', color: '#374151', padding: '2 6', borderRadius: 4, marginRight: 4, marginBottom: 4 }}>{interest}</Text>
+                ))}
+              </View>
+            </View>
+          )}
+
+          <RenderCustomSections customSections={data.customSections} data={data} column="right" defaultCol="right" headingStyle={styles.rightSectionTitle} />
         </View>
       </View>
     </View>
@@ -1242,6 +1339,8 @@ const Template9 = ({ data }: { data: ResumeData }) => {
               ))}
             </View>
           )}
+
+          <RenderCustomSections customSections={data.customSections} data={data} column="left" defaultCol="right" headingStyle={styles.sidebarTitle} />
         </View>
 
         <View style={styles.rightCol}>
@@ -1294,7 +1393,7 @@ const Template9 = ({ data }: { data: ResumeData }) => {
               </View>
             </View>
           )}
-          <RenderCustomSections customSections={data.customSections} headingStyle={styles.sectionTitle} />
+          <RenderCustomSections customSections={data.customSections} data={data} column="right" defaultCol="right" headingStyle={styles.sectionTitle} />
         </View>
       </View>
     </View>
@@ -1468,6 +1567,8 @@ const Template10 = ({ data }: { data: ResumeData }) => {
               ))}
             </View>
           )}
+
+          <RenderCustomSections customSections={data.customSections} data={data} column="left" defaultCol="right" headingStyle={styles.sidebarTitle} />
         </View>
 
         <View style={styles.rightCol}>
@@ -1521,7 +1622,7 @@ const Template10 = ({ data }: { data: ResumeData }) => {
               </View>
             </View>
           )}
-          <RenderCustomSections customSections={data.customSections} headingStyle={styles.sectionTitle} />
+          <RenderCustomSections customSections={data.customSections} data={data} column="right" defaultCol="right" headingStyle={styles.sectionTitle} />
         </View>
       </View>
       <View style={styles.footerLine} />
@@ -1856,6 +1957,8 @@ const Template12 = ({ data }: { data: ResumeData }) => {
               ))}
             </View>
           )}
+
+          <RenderCustomSections customSections={data.customSections} data={data} column="left" defaultCol="right" headingStyle={styles.sectionTitle} />
         </View>
 
         <View style={styles.rightCol}>
@@ -1903,7 +2006,7 @@ const Template12 = ({ data }: { data: ResumeData }) => {
               </View>
             </View>
           )}
-          <RenderCustomSections customSections={data.customSections} headingStyle={styles.sectionTitle} />
+          <RenderCustomSections customSections={data.customSections} data={data} column="right" defaultCol="right" headingStyle={styles.sectionTitle} />
         </View>
       </View>
 
@@ -2048,6 +2151,8 @@ const Template13 = ({ data }: { data: ResumeData }) => {
               ))}
             </View>
           )}
+
+          <RenderCustomSections customSections={data.customSections} data={data} column="left" defaultCol="right" headingStyle={styles.sectionHeader} cardStyle={styles.card} />
         </View>
 
         <View style={styles.mainContent}>
@@ -2102,7 +2207,7 @@ const Template13 = ({ data }: { data: ResumeData }) => {
               </View>
             </View>
           )}
-          <RenderCustomSections customSections={data.customSections} headingStyle={styles.sectionHeader} cardStyle={styles.card} />
+          <RenderCustomSections customSections={data.customSections} data={data} column="right" defaultCol="right" headingStyle={styles.sectionHeader} cardStyle={styles.card} />
         </View>
       </View>
 

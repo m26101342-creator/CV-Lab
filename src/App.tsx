@@ -2091,6 +2091,10 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
     }
   };
 
+  const getSectionCol = (key: string, def: 'left' | 'right') => {
+    return data.styleConfig?.sectionPositions?.[key] || def;
+  };
+
   const wasDraggingRef = React.useRef(false);
 
   const touchStateRef = React.useRef<{
@@ -4308,17 +4312,21 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
                     {cs.items.map((item, idxx) => (
                       <div key={item.id || `csi-${idxx}`}>
                          <h4 className="text-[15px] font-bold mb-1" style={{ color: '#1f2937' }}>{item.name}</h4>
-                         {item.description && <p className="text-[13px] leading-[1.7] text-left font-serif mt-1" style={{ color: '#4b5563' }}>{renderText(item.description)}</p>}
+                         {item.description && <p className="text-[13px] leading-relaxed" style={{ color: '#4b5563' }}>{renderText(item.description)}</p>}
                       </div>
                     ))}
-                  </div>
-               </div>
-             ))}
-          </div>
-        </div>
-      )}
+                 </div>
+              </div>
+            ))}
+         </div>
+       </div>
+     )}
 
-      {theme.layout === 'custom-t5' && (
+     {theme.layout === 'custom-t5' && (() => {
+        const getSectionCol = (key: string, def: 'left' | 'right') => {
+          return data.styleConfig?.sectionPositions?.[key] || def;
+        };
+        return (
         <div className="flex w-full min-h-[1122px] h-auto bg-[#FAFAFA] text-left font-sans overflow-visible relative">
            <div className="w-[34%] flex flex-col relative z-20 pt-16" style={{ backgroundColor: c.soft || '#F3F4F6' }}>
              {/* Decorative header shape - simplified for PDF consistency */}
@@ -4365,7 +4373,18 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
                   </div>
                 </div>
 
-                {data.skills.length > 0 && (
+                {/* Summary (if left) */}
+                {getSectionCol('summary', 'right') === 'left' && data.personalInfo.summary && (
+                  <div className="w-full mb-10">
+                    <div className="mb-6 border-b-2 pb-2" style={{ borderColor: `${c.primary}40` }}>
+                       <EditableTitle as="h3" className="text-[12px] font-black uppercase tracking-[0.2em]" style={{ color: c.primary }} defaultText="Perfil Profissional" text={getSectionTitle(data, 'summary', 'Perfil Profissional')} onSave={onChange ? (v) => handleTitleChange('summary', v) : undefined} />
+                    </div>
+                    <p className="text-[13px] leading-[1.8] text-left text-gray-600 font-medium">{renderText(data.personalInfo.summary)}</p>
+                  </div>
+                )}
+
+                {/* Skills (if left) */}
+                {getSectionCol('skills', 'left') === 'left' && data.skills.length > 0 && (
                   <div className="w-full mb-10">
                     <div className="mb-6 border-b-2 pb-2" style={{ borderColor: `${c.primary}40` }}>
                        <EditableTitle as="h3" className="text-[12px] font-black uppercase tracking-[0.2em]"  style={{ color: c.primary }} defaultText="Habilidades" text={getSectionTitle(data, 'skills', 'Habilidades')} onSave={onChange ? (v) => handleTitleChange('skills', v) : undefined} />
@@ -4381,7 +4400,8 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
                   </div>
                 )}
 
-                {data.education.length > 0 && (
+                {/* Education (if left) */}
+                {getSectionCol('education', 'left') === 'left' && data.education.length > 0 && (
                   <div className="w-full mb-10">
                     <div className="mb-6 border-b-2 pb-2" style={{ borderColor: `${c.primary}40` }}>
                        <EditableTitle as="h3" className="text-[12px] font-black uppercase tracking-[0.2em]"  style={{ color: c.primary }} defaultText="Formação" text={getSectionTitle(data, 'education', 'Formação')} onSave={onChange ? (v) => handleTitleChange('education', v) : undefined} />
@@ -4398,8 +4418,27 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
                   </div>
                 )}
 
-                {/* Languages Section */}
-                {data.languages && data.languages.length > 0 && (
+                {/* Experience (if left) */}
+                {getSectionCol('experience', 'right') === 'left' && data.experience.length > 0 && (
+                  <div className="w-full mb-10">
+                    <div className="mb-6 border-b-2 pb-2" style={{ borderColor: `${c.primary}40` }}>
+                       <EditableTitle as="h3" className="text-[12px] font-black uppercase tracking-[0.2em]" style={{ color: c.primary }} defaultText="Experiência Profissional" text={getSectionTitle(data, 'experience', 'Experiência Profissional')} onSave={onChange ? (v) => handleTitleChange('experience', v) : undefined} />
+                    </div>
+                    <div className="flex flex-col gap-6" style={{ color: '#374151' }}>
+                       {data.experience.map((ex, idx) => (
+                         <div key={ex.id || `exp-${idx}`}>
+                            <div className="font-black mb-1 text-[13px] leading-tight" style={{ color: c.primary }}>{ex.position}</div>
+                            <div className="font-bold text-[12px] text-gray-700">{ex.company}</div>
+                            <div className="text-[11px] font-bold opacity-60 mt-0.5 uppercase tracking-wider">{ex.startDate} - {ex.current ? (data.language === 'en' ? 'Present' : 'Presente') : ex.endDate}</div>
+                            <p className="text-[12px] leading-relaxed text-gray-600 font-medium mt-2">{renderText(ex.description)}</p>
+                         </div>
+                       ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Languages Section (if left) */}
+                {getSectionCol('languages', 'left') === 'left' && data.languages && data.languages.length > 0 && (
                   <div className="w-full mb-10">
                     <div className="mb-6 border-b-2 pb-2" style={{ borderColor: `${c.primary}40` }}>
                        <EditableTitle as="h3" className="text-[12px] font-black uppercase tracking-[0.2em]"  style={{ color: c.primary }} defaultText="Idiomas" text={getSectionTitle(data, 'languages', 'Idiomas')} onSave={onChange ? (v) => handleTitleChange('languages', v) : undefined} />
@@ -4418,8 +4457,8 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
                   </div>
                 )}
 
-                {/* Certifications Section */}
-                {data.certifications && data.certifications.length > 0 && (
+                {/* Certifications Section (if left) */}
+                {getSectionCol('certifications', 'left') === 'left' && data.certifications && data.certifications.length > 0 && (
                   <div className="w-full mb-10">
                     <div className="mb-6 border-b-2 pb-2" style={{ borderColor: `${c.primary}40` }}>
                        <EditableTitle as="h3" className="text-[12px] font-black uppercase tracking-[0.2em]"  style={{ color: c.primary }} defaultText="Certificações" text={getSectionTitle(data, 'certifications', 'Certificações')} onSave={onChange ? (v) => handleTitleChange('certifications', v) : undefined} />
@@ -4435,8 +4474,8 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
                   </div>
                 )}
 
-                {/* Interests Section */}
-                {data.interests && data.interests.length > 0 && (
+                {/* Interests Section (if left) */}
+                {getSectionCol('interests', 'left') === 'left' && data.interests && data.interests.length > 0 && (
                   <div className="w-full mb-10">
                     <div className="mb-6 border-b-2 pb-2" style={{ borderColor: `${c.primary}40` }}>
                        <EditableTitle as="h3" className="text-[12px] font-black uppercase tracking-[0.2em]"  style={{ color: c.primary }} defaultText="Interesses" text={getSectionTitle(data, 'interests', 'Interesses')} onSave={onChange ? (v) => handleTitleChange('interests', v) : undefined} />
@@ -4450,6 +4489,26 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
                     </div>
                   </div>
                 )}
+
+                {/* Custom Sections (if left) */}
+                {data.customSections?.map((cs, idx) => {
+                  if (getSectionCol('custom_' + cs.id, 'right') !== 'left') return null;
+                  return (
+                    <div key={cs.id || `cs-${idx}`} className="w-full mb-10">
+                       <div className="mb-6 border-b-2 pb-2" style={{ borderColor: `${c.primary}40` }}>
+                          <EditableTitle as="h3" className="text-[12px] font-black uppercase tracking-[0.2em]" style={{ color: c.primary }} defaultText={cs.title} text={cs.title} onSave={onChange ? (v) => handleCustomSectionTitleChange(cs.id, v) : undefined} />
+                       </div>
+                       <div className="flex flex-col gap-4">
+                         {cs.items.map((item, idxx) => (
+                           <div key={item.id || `csi-${idxx}`} style={{ color: '#374151' }}>
+                              <div className="font-bold text-[13px] leading-tight text-gray-800">{item.name}</div>
+                              {item.description && <p className="text-[12px] leading-relaxed text-gray-600 font-medium mt-1">{renderText(item.description)}</p>}
+                           </div>
+                         ))}
+                       </div>
+                    </div>
+                  );
+                })}
              </div>
            </div>
 
@@ -4462,7 +4521,8 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
                  <p className="text-[16px] uppercase tracking-[0.3em] font-black mt-6" style={{ color: c.primary }}>{data.personalInfo.title}</p>
               </div>
 
-              {data.personalInfo.summary && (
+              {/* Summary (if right) */}
+              {getSectionCol('summary', 'right') === 'right' && data.personalInfo.summary && (
                 <div className="relative">
                    <div className="absolute -left-6 top-0 w-1.5 h-full rounded-r-lg" style={{ backgroundColor: c.primary }}></div>
                    <h2 className="text-[18px] font-black uppercase tracking-[0.15em] mb-4" style={{ color: '#111827' }}>Perfil Profissional</h2>
@@ -4470,7 +4530,8 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
                 </div>
               )}
 
-              {data.experience.length > 0 && (
+              {/* Experience (if right) */}
+              {getSectionCol('experience', 'right') === 'right' && data.experience.length > 0 && (
                 <div>
                    <EditableTitle as="h2" className="text-[18px] font-black uppercase tracking-[0.15em] mb-6 border-b pb-4" style={{ color: '#111827', borderColor: '#F3F4F6' }} defaultText="Experiência Profissional" text={getSectionTitle(data, 'experience', 'Experiência Profissional')} onSave={onChange ? (v) => handleTitleChange('experience', v) : undefined} />
                    <div className="flex flex-col gap-8">
@@ -4496,30 +4557,120 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
                 </div>
               )}
 
-              {data.customSections?.map((cs, idx) => (
-                <div key={cs.id || `cs-${idx}`}>
-                   <h2 className="text-[18px] font-black uppercase tracking-[0.15em] mb-6 border-b pb-4" style={{ color: '#111827', borderColor: '#F3F4F6' }}>{cs.title}</h2>
-                   <div className="flex flex-col gap-8">
-                     {cs.items.map((item, idxx) => (
-                       <div key={item.id || `csi-${idxx}`} className="flex gap-4">
-                          {data.styleConfig?.showTimeline !== false && <div className="flex flex-col items-center pt-2">
-<div className="w-2.5 h-2.5 rounded-full border-2 bg-white" style={{ borderColor: c.primary }}></div>
-<div className="w-0.5 flex-1 bg-gray-50 my-1"></div>
-</div>}
-                          <div className="flex-1">
-                            <div className="flex justify-between items-baseline mb-1">
-                               <h4 className="text-[17px] font-black text-gray-900 tracking-tight">{item.name}</h4>
-                            </div>
-                            {item.description && <p className="text-[13px] leading-[1.8] text-left text-gray-600 font-medium pl-4 border-l-2 mt-2" style={{borderColor: `${c.primary}20`}}>{renderText(item.description)}</p>}
-                          </div>
-                       </div>
-                     ))}
+              {/* Education (if right) */}
+              {getSectionCol('education', 'left') === 'right' && data.education.length > 0 && (
+                <div>
+                   <EditableTitle as="h2" className="text-[18px] font-black uppercase tracking-[0.15em] mb-6 border-b pb-4" style={{ color: '#111827', borderColor: '#F3F4F6' }} defaultText="Formação" text={getSectionTitle(data, 'education', 'Formação')} onSave={onChange ? (v) => handleTitleChange('education', v) : undefined} />
+                   <div className="flex flex-col gap-6">
+                      {data.education.map((e, idx) => (
+                        <div key={e.id || `edu-${idx}`} className="flex gap-4">
+                           <div className="flex flex-col items-center pt-2">
+                              <div className="w-2.5 h-2.5 rounded-full border-2" style={{ borderColor: c.primary }}></div>
+                              <div className="w-0.5 flex-1 bg-gray-50 my-1"></div>
+                           </div>
+                           <div className="flex-1">
+                             <div className="flex justify-between items-baseline mb-1">
+                                <h4 className="text-[17px] font-black text-gray-900 tracking-tight">{e.degree}</h4>
+                                <span className="text-[11px] font-bold px-3 py-1 bg-gray-100 rounded-lg text-gray-500">{e.startDate} - {e.endDate}</span>
+                             </div>
+                             <div className="text-[14px] font-bold mb-2 flex items-center gap-2" style={{ color: c.primary }}>
+                                {e.institution}
+                             </div>
+                           </div>
+                        </div>
+                      ))}
                    </div>
                 </div>
-              ))}
+              )}
+
+              {/* Skills (if right) */}
+              {getSectionCol('skills', 'left') === 'right' && data.skills.length > 0 && (
+                <div>
+                   <EditableTitle as="h2" className="text-[18px] font-black uppercase tracking-[0.15em] mb-6 border-b pb-4" style={{ color: '#111827', borderColor: '#F3F4F6' }} defaultText="Habilidades" text={getSectionTitle(data, 'skills', 'Habilidades')} onSave={onChange ? (v) => handleTitleChange('skills', v) : undefined} />
+                   <div className="grid grid-cols-2 gap-4">
+                      {data.skills.map((s, idx) => (
+                        <div key={s.id || `skill-${idx}`} className="font-semibold text-[13px] flex items-center gap-2" style={{ color: '#374151' }}>
+                           <div className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{backgroundColor: c.primary}}></div>
+                           {s.name}
+                        </div>
+                      ))}
+                   </div>
+                </div>
+              )}
+
+              {/* Languages (if right) */}
+              {getSectionCol('languages', 'left') === 'right' && data.languages && data.languages.length > 0 && (
+                <div>
+                   <EditableTitle as="h2" className="text-[18px] font-black uppercase tracking-[0.15em] mb-6 border-b pb-4" style={{ color: '#111827', borderColor: '#F3F4F6' }} defaultText="Idiomas" text={getSectionTitle(data, 'languages', 'Idiomas')} onSave={onChange ? (v) => handleTitleChange('languages', v) : undefined} />
+                   <div className="grid grid-cols-2 gap-4">
+                      {data.languages.map((l, idx) => (
+                        <div key={l.id || `lang-${idx}`} className="font-semibold text-[13px] flex justify-between items-center" style={{ color: '#374151' }}>
+                           <span>{l.name}</span>
+                           <span className="text-[10px] uppercase font-black tracking-wider opacity-60">{l.level}</span>
+                        </div>
+                      ))}
+                   </div>
+                </div>
+              )}
+
+              {/* Certifications (if right) */}
+              {getSectionCol('certifications', 'left') === 'right' && data.certifications && data.certifications.length > 0 && (
+                <div>
+                   <EditableTitle as="h2" className="text-[18px] font-black uppercase tracking-[0.15em] mb-6 border-b pb-4" style={{ color: '#111827', borderColor: '#F3F4F6' }} defaultText="Certificações" text={getSectionTitle(data, 'certifications', 'Certificações')} onSave={onChange ? (v) => handleTitleChange('certifications', v) : undefined} />
+                   <div className="grid grid-cols-2 gap-4">
+                      {data.certifications.map((cert, idx) => (
+                        <div key={cert.id || `cert-${idx}`} style={{ color: '#374151' }}>
+                           <div className="font-bold text-[13px] leading-tight text-gray-800">{cert.name}</div>
+                           {cert.date && <div className="text-[11px] font-bold opacity-60 mt-0.5 uppercase tracking-wider">{cert.date}</div>}
+                        </div>
+                      ))}
+                   </div>
+                </div>
+              )}
+
+              {/* Interests (if right) */}
+              {getSectionCol('interests', 'left') === 'right' && data.interests && data.interests.length > 0 && (
+                <div>
+                   <EditableTitle as="h2" className="text-[18px] font-black uppercase tracking-[0.15em] mb-6 border-b pb-4" style={{ color: '#111827', borderColor: '#F3F4F6' }} defaultText="Interesses" text={getSectionTitle(data, 'interests', 'Interesses')} onSave={onChange ? (v) => handleTitleChange('interests', v) : undefined} />
+                   <div className="flex flex-wrap gap-1.5">
+                      {data.interests.map((interest, idx) => (
+                        <span key={idx} className="px-2.5 py-1 bg-white border border-gray-200/80 rounded-full text-[10px] font-bold text-gray-600 shadow-sm">
+                          {interest}
+                        </span>
+                      ))}
+                   </div>
+                </div>
+              )}
+
+              {/* Custom Sections (if right) */}
+              {data.customSections?.map((cs, idx) => {
+                if (getSectionCol('custom_' + cs.id, 'right') !== 'right') return null;
+                return (
+                  <div key={cs.id || `cs-${idx}`}>
+                     <h2 className="text-[18px] font-black uppercase tracking-[0.15em] mb-6 border-b pb-4" style={{ color: '#111827', borderColor: '#F3F4F6' }}>{cs.title}</h2>
+                     <div className="flex flex-col gap-8">
+                       {cs.items.map((item, idxx) => (
+                         <div key={item.id || `csi-${idxx}`} className="flex gap-4">
+                            {data.styleConfig?.showTimeline !== false && <div className="flex flex-col items-center pt-2">
+  <div className="w-2.5 h-2.5 rounded-full border-2 bg-white" style={{ borderColor: c.primary }}></div>
+  <div className="w-0.5 flex-1 bg-gray-50 my-1"></div>
+  </div>}
+                            <div className="flex-1">
+                               <div className="flex justify-between items-baseline mb-1">
+                                  <h4 className="text-[17px] font-black text-gray-900 tracking-tight">{item.name}</h4>
+                               </div>
+                               {item.description && <p className="text-[13px] leading-[1.8] text-left text-gray-600 font-medium pl-4 border-l-2 mt-2" style={{borderColor: `${c.primary}20`}}>{renderText(item.description)}</p>}
+                            </div>
+                         </div>
+                       ))}
+                     </div>
+                  </div>
+                );
+              })}
            </div>
         </div>
-      )}
+        );
+      })()}
 
       {theme.layout === 'custom-t6' && (
         <div className="flex flex-col w-full min-h-[1122px] h-auto bg-[#fcfcfc] p-12 font-sans overflow-visible text-left relative" style={{ border: `16px solid ${c.primary}` }}>
@@ -5217,27 +5368,30 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
                 </div>
               )}
 
-              {/* CUSTOM SECTIONS */}
-              {data.customSections?.map((cs, idx) => (
-                <div key={cs.id || `cs-${idx}`} className="space-y-4">
-                  <div className="flex items-center gap-2">
-                    <span className="w-1.5 h-4 rounded-full" style={{ backgroundColor: c.primary }}></span>
-                    <EditableTitle as="h3" className="text-sm font-extrabold uppercase tracking-wider text-gray-900"  defaultText={cs.title} text={cs.title} onSave={onChange ? (v) => handleCustomSectionTitleChange(cs.id, v) : undefined} />
-                  </div>
-                  <div className="space-y-6">
-                    {cs.items.map((item, idxx) => (
-                      <div key={item.id || `csi-${idxx}`} className={`space-y-1.5 relative ${data.styleConfig?.showTimeline !== false ? 'pl-4 border-l border-gray-100' : ''}`}>
-                        {/* Dot indicator */}
-                        {data.styleConfig?.showTimeline !== false && <div className="absolute -left-[5px] top-1.5 w-2.5 h-2.5 rounded-full border-2 border-white" style={{ backgroundColor: c.primary }}></div>}
-                        <div className="flex justify-between items-baseline">
-                          <h4 className="text-xs font-bold text-gray-900 leading-tight">{item.name}</h4>
+              {/* CUSTOM SECTIONS (if left) */}
+              {data.customSections?.map((cs, idx) => {
+                if (getSectionCol('custom_' + cs.id, 'left') !== 'left') return null;
+                return (
+                  <div key={cs.id || `cs-${idx}`} className="space-y-4">
+                    <div className="flex items-center gap-2">
+                      <span className="w-1.5 h-4 rounded-full" style={{ backgroundColor: c.primary }}></span>
+                      <EditableTitle as="h3" className="text-sm font-extrabold uppercase tracking-wider text-gray-900"  defaultText={cs.title} text={cs.title} onSave={onChange ? (v) => handleCustomSectionTitleChange(cs.id, v) : undefined} />
+                    </div>
+                    <div className="space-y-6">
+                      {cs.items.map((item, idxx) => (
+                        <div key={item.id || `csi-${idxx}`} className={`space-y-1.5 relative ${data.styleConfig?.showTimeline !== false ? 'pl-4 border-l border-gray-100' : ''}`}>
+                          {/* Dot indicator */}
+                          {data.styleConfig?.showTimeline !== false && <div className="absolute -left-[5px] top-1.5 w-2.5 h-2.5 rounded-full border-2 border-white" style={{ backgroundColor: c.primary }}></div>}
+                          <div className="flex justify-between items-baseline">
+                            <h4 className="text-xs font-bold text-gray-900 leading-tight">{item.name}</h4>
+                          </div>
+                          {item.description && <p className="text-[11px] leading-relaxed text-gray-500 mt-1 whitespace-pre-line">{renderText(item.description)}</p>}
                         </div>
-                        {item.description && <p className="text-[11px] leading-relaxed text-gray-500 mt-1 whitespace-pre-line">{renderText(item.description)}</p>}
-                      </div>
-                    ))}
+                      ))}
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
 
             {/* Right Column (37% width) */}
@@ -5334,6 +5488,30 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
                   </div>
                 </div>
               )}
+
+              {/* CUSTOM SECTIONS (if right) */}
+              {data.customSections?.map((cs, idx) => {
+                if (getSectionCol('custom_' + cs.id, 'left') !== 'right') return null;
+                return (
+                  <div key={cs.id || `cs-${idx}`} className="space-y-4">
+                    <div className="flex items-center gap-2">
+                      <span className="w-1.5 h-4 rounded-full" style={{ backgroundColor: c.primary }}></span>
+                      <EditableTitle as="h3" className="text-sm font-extrabold uppercase tracking-wider text-gray-900" defaultText={cs.title} text={cs.title} onSave={onChange ? (v) => handleCustomSectionTitleChange(cs.id, v) : undefined} />
+                    </div>
+                    <div className="space-y-6">
+                      {cs.items.map((item, idxx) => (
+                        <div key={item.id || `csi-${idxx}`} className={`space-y-1.5 relative ${data.styleConfig?.showTimeline !== false ? 'pl-4 border-l border-gray-100' : ''}`}>
+                          {data.styleConfig?.showTimeline !== false && <div className="absolute -left-[5px] top-1.5 w-2.5 h-2.5 rounded-full border-2 border-white" style={{ backgroundColor: c.primary }}></div>}
+                          <div className="flex justify-between items-baseline">
+                            <h4 className="text-xs font-bold text-gray-900 leading-tight">{item.name}</h4>
+                          </div>
+                          {item.description && <p className="text-[11px] leading-relaxed text-gray-500 mt-1 whitespace-pre-line">{renderText(item.description)}</p>}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </div>
         </div>
@@ -5473,6 +5651,26 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
                   </div>
                 </div>
               )}
+
+              {/* CUSTOM SECTIONS (if left) */}
+              {data.customSections?.map((cs, idx) => {
+                if (getSectionCol('custom_' + cs.id, 'right') !== 'left') return null;
+                return (
+                  <div key={cs.id || `cs-${idx}`} className="space-y-4">
+                    <span className="text-[11px] font-black uppercase tracking-[0.2em] px-2.5 py-1 bg-white/10 rounded-md inline-block">
+                      {cs.title}
+                    </span>
+                    <div className="space-y-3.5 pl-1">
+                      {cs.items.map((item, idxx) => (
+                        <div key={item.id || `csi-${idxx}`} className="space-y-1">
+                          <h4 className="text-xs font-bold text-slate-200 leading-tight">{item.name}</h4>
+                          {item.description && <p className="text-[10px] text-slate-300 leading-relaxed whitespace-pre-line">{renderText(item.description)}</p>}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
 
             {/* Right Column (65% width) */}
@@ -5521,25 +5719,28 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
                 </div>
               )}
 
-              {/* CUSTOM SECTIONS */}
-              {data.customSections?.map((cs, idx) => (
-                <div key={cs.id || `cs-${idx}`} className="space-y-4">
-                  <div className="flex items-center gap-2 pb-1.5 border-b border-gray-100">
-                    <span className="w-2.5 h-2.5 shrink-0" style={{ backgroundColor: c.primary }}></span>
-                    <EditableTitle as="h3" className="text-sm font-extrabold uppercase tracking-[0.25em] text-slate-800"  defaultText={cs.title} text={cs.title} onSave={onChange ? (v) => handleCustomSectionTitleChange(cs.id, v) : undefined} />
-                  </div>
-                  <div className="space-y-5">
-                    {cs.items.map((item, idxx) => (
-                      <div key={item.id || `csi-${idxx}`} className={`space-y-1.5 ${data.styleConfig?.showTimeline !== false ? 'pl-3 border-l-2' : ''}`} style={data.styleConfig?.showTimeline !== false ? { borderLeftColor: c.primary } : {}}>
-                        <div className="flex justify-between items-baseline gap-2">
-                          <h4 className="text-xs font-bold text-slate-900 leading-tight">{item.name}</h4>
+              {/* CUSTOM SECTIONS (if right) */}
+              {data.customSections?.map((cs, idx) => {
+                if (getSectionCol('custom_' + cs.id, 'right') !== 'right') return null;
+                return (
+                  <div key={cs.id || `cs-${idx}`} className="space-y-4">
+                    <div className="flex items-center gap-2 pb-1.5 border-b border-gray-100">
+                      <span className="w-2.5 h-2.5 shrink-0" style={{ backgroundColor: c.primary }}></span>
+                      <EditableTitle as="h3" className="text-sm font-extrabold uppercase tracking-[0.25em] text-slate-800"  defaultText={cs.title} text={cs.title} onSave={onChange ? (v) => handleCustomSectionTitleChange(cs.id, v) : undefined} />
+                    </div>
+                    <div className="space-y-5">
+                      {cs.items.map((item, idxx) => (
+                        <div key={item.id || `csi-${idxx}`} className={`space-y-1.5 ${data.styleConfig?.showTimeline !== false ? 'pl-3 border-l-2' : ''}`} style={data.styleConfig?.showTimeline !== false ? { borderLeftColor: c.primary } : {}}>
+                          <div className="flex justify-between items-baseline gap-2">
+                            <h4 className="text-xs font-bold text-slate-900 leading-tight">{item.name}</h4>
+                          </div>
+                          {item.description && <p className="text-[11px] leading-relaxed text-gray-500 whitespace-pre-line pt-0.5">{renderText(item.description)}</p>}
                         </div>
-                        {item.description && <p className="text-[11px] leading-relaxed text-gray-500 whitespace-pre-line pt-0.5">{renderText(item.description)}</p>}
-                      </div>
-                    ))}
+                      ))}
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
 
               {/* Certifications & Awards */}
               {data.certifications && data.certifications.length > 0 && (
@@ -5855,6 +6056,24 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
                   </div>
                 </div>
               )}
+
+              {/* CUSTOM SECTIONS (if left) */}
+              {data.customSections?.map((cs, idx) => {
+                if (getSectionCol('custom_' + cs.id, 'right') !== 'left') return null;
+                return (
+                  <div key={cs.id || `cs-${idx}`} className="space-y-3 pt-2">
+                    <EditableTitle as="h3" className="text-xs font-black uppercase tracking-widest font-sans border-b pb-1 text-slate-800" style={{ borderColor: c.primary }} defaultText={cs.title} text={cs.title} onSave={onChange ? (v) => handleCustomSectionTitleChange(cs.id, v) : undefined} />
+                    <div className="space-y-3">
+                      {cs.items.map((item, idxx) => (
+                        <div key={item.id || `csi-${idxx}`} className="space-y-1">
+                          <h4 className="text-xs font-bold text-slate-800 font-serif">{item.name}</h4>
+                          {item.description && <p className="text-[10px] text-slate-600 font-sans leading-relaxed whitespace-pre-line">{renderText(item.description)}</p>}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
 
             {/* Right Column (Experience & Education) */}
@@ -5896,22 +6115,25 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
                 </div>
               )}
 
-              {/* CUSTOM SECTIONS */}
-              {data.customSections?.map((cs, idx) => (
-                <div key={cs.id || `cs-${idx}`} className="space-y-4">
-                  <EditableTitle as="h3" className="text-xs font-black uppercase tracking-widest font-sans border-b pb-1 text-slate-800" style={{ borderColor: c.primary }} defaultText={cs.title} text={cs.title} onSave={onChange ? (v) => handleCustomSectionTitleChange(cs.id, v) : undefined} />
-                  <div className="space-y-6">
-                    {cs.items.map((item, idxx) => (
-                      <div key={item.id || `csi-${idxx}`} className="space-y-1.5">
-                        <div className="flex justify-between items-baseline">
-                          <h4 className="text-xs font-extrabold text-slate-950 font-serif">{item.name}</h4>
+              {/* CUSTOM SECTIONS (if right) */}
+              {data.customSections?.map((cs, idx) => {
+                if (getSectionCol('custom_' + cs.id, 'right') !== 'right') return null;
+                return (
+                  <div key={cs.id || `cs-${idx}`} className="space-y-4">
+                    <EditableTitle as="h3" className="text-xs font-black uppercase tracking-widest font-sans border-b pb-1 text-slate-800" style={{ borderColor: c.primary }} defaultText={cs.title} text={cs.title} onSave={onChange ? (v) => handleCustomSectionTitleChange(cs.id, v) : undefined} />
+                    <div className="space-y-6">
+                      {cs.items.map((item, idxx) => (
+                        <div key={item.id || `csi-${idxx}`} className="space-y-1.5">
+                          <div className="flex justify-between items-baseline">
+                            <h4 className="text-xs font-extrabold text-slate-950 font-serif">{item.name}</h4>
+                          </div>
+                          {item.description && <p className="text-[11px] leading-relaxed text-slate-600 whitespace-pre-line font-medium pt-0.5">{renderText(item.description)}</p>}
                         </div>
-                        {item.description && <p className="text-[11px] leading-relaxed text-slate-600 whitespace-pre-line font-medium pt-0.5">{renderText(item.description)}</p>}
-                      </div>
-                    ))}
+                      ))}
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
 
               {/* Certifications & Awards */}
               {data.certifications && data.certifications.length > 0 && (
@@ -6559,6 +6781,24 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
                 </div>
               </div>
             )}
+
+            {/* CUSTOM SECTIONS (if left sidebar) */}
+            {data.customSections?.map((cs, idx) => {
+              if (getSectionCol('custom_' + cs.id, 'right') !== 'left') return null;
+              return (
+                <div key={cs.id || `cs-${idx}`} className="space-y-3">
+                  <EditableTitle as="h3" className="text-xs font-black text-[#003399] uppercase tracking-widest border-b border-gray-300 pb-1" defaultText={cs.title} text={cs.title} onSave={onChange ? (v) => handleCustomSectionTitleChange(cs.id, v) : undefined} />
+                  <div className="space-y-2.5">
+                    {cs.items.map((item, idxx) => (
+                      <div key={item.id || `csi-${idxx}`} className="flex flex-col text-xs">
+                        <span className="font-bold text-gray-800">{item.name}</span>
+                        {item.description && <span className="text-[10px] text-gray-600 leading-relaxed mt-0.5 whitespace-pre-wrap">{item.description}</span>}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
           </div>
 
           {/* Right Column (Content) */}
@@ -6670,20 +6910,23 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
               </div>
             )}
 
-            {/* Custom Sections */}
-            {data.customSections?.map((cs, idx) => (
-              <div key={cs.id || `cs-${idx}`} className="space-y-3">
-                <EditableTitle as="h3" className="text-xs font-black text-[#003399] uppercase tracking-widest border-b-2 border-gray-100 pb-1"  defaultText={cs.title} text={cs.title} onSave={onChange ? (v) => handleCustomSectionTitleChange(cs.id, v) : undefined} />
-                <div className="space-y-4">
-                  {cs.items.map((item, idxx) => (
-                    <div key={item.id || `csi-${idxx}`} className="flex flex-col text-xs pb-3 border-b border-gray-100 last:border-0 last:pb-0">
-                      <span className="font-bold text-gray-900">{item.name}</span>
-                      {item.description && <span className="text-gray-600 text-[11.5px] leading-relaxed mt-1 whitespace-pre-wrap text-justify">{item.description}</span>}
-                    </div>
-                  ))}
+            {/* Custom Sections (if right column) */}
+            {data.customSections?.map((cs, idx) => {
+              if (getSectionCol('custom_' + cs.id, 'right') !== 'right') return null;
+              return (
+                <div key={cs.id || `cs-${idx}`} className="space-y-3">
+                  <EditableTitle as="h3" className="text-xs font-black text-[#003399] uppercase tracking-widest border-b-2 border-gray-100 pb-1"  defaultText={cs.title} text={cs.title} onSave={onChange ? (v) => handleCustomSectionTitleChange(cs.id, v) : undefined} />
+                  <div className="space-y-4">
+                    {cs.items.map((item, idxx) => (
+                      <div key={item.id || `csi-${idxx}`} className="flex flex-col text-xs pb-3 border-b border-gray-100 last:border-0 last:pb-0">
+                        <span className="font-bold text-gray-900">{item.name}</span>
+                        {item.description && <span className="text-gray-600 text-[11.5px] leading-relaxed mt-1 whitespace-pre-wrap text-justify">{item.description}</span>}
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       )}
