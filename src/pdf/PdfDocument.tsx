@@ -788,11 +788,18 @@ const CoverLetter = ({ data }: { data: any }) => {
   const info = data.personalInfo || {};
   const formattedDate = (info.location ? info.location.split(',')[0] + ', ' : '') + new Date().toLocaleDateString(isEn ? 'en-US' : 'pt-BR', { day: '2-digit', month: 'long', year: 'numeric' });
 
+  const companyInfo = data.companyInfo || {};
+  const dateText = companyInfo.letterDate || formattedDate;
+  const salutationText = companyInfo.salutation || (isEn ? 'Dear Hiring Manager,' : 'Exmos. Senhores,');
+  const closingText = companyInfo.closing || (isEn ? 'Sincerely,' : 'Atenciosamente,');
+  const recipientPrefix = companyInfo.recipientPrefix || 'À';
+
   return (
     <View style={styles.container}>
+      {/* Header */}
       <View style={styles.header}>
         <Text style={styles.name}>{info.fullName || 'Seu Nome'}</Text>
-        <Text style={styles.title}>{info.title || (isEn ? 'Your Position' : 'Seu Cargo')}</Text>
+        {info.title && <Text style={styles.title}>{info.title}</Text>}
         <View style={styles.contactRow}>
           {info.email && (
             <View style={styles.contactItem}>
@@ -812,54 +819,65 @@ const CoverLetter = ({ data }: { data: any }) => {
               <Text style={styles.contactText}>{info.location}</Text>
             </View>
           )}
-          {info.linkedin && (
-            <View style={styles.contactItem}>
-              <Icons.Linkedin />
-              <Text style={styles.contactText}>{info.linkedin}</Text>
-            </View>
-          )}
-          {info.website && (
-            <View style={styles.contactItem}>
-              <Icons.Globe />
-              <Text style={styles.contactText}>{info.website}</Text>
-            </View>
-          )}
         </View>
       </View>
 
-      {showSubject ? (
+      {/* Recipient Block */}
+      {(companyInfo.companyName || companyInfo.recipientName || companyInfo.companyPhone || companyInfo.companyEmail) && (
+        <View style={{ marginBottom: 15, padding: 10, backgroundColor: '#F8FAFC', borderLeft: `3pt solid ${cTheme}`, borderRadius: 4 }}>
+          <Text style={{ fontSize: 9, fontWeight: 700, color: '#64748B', textTransform: 'uppercase', marginBottom: 2 }}>
+            {recipientPrefix}
+          </Text>
+          {companyInfo.recipientName && (
+            <Text style={{ fontSize: 11, fontWeight: 700, color: '#1E293B', marginBottom: 2 }}>{companyInfo.recipientName}</Text>
+          )}
+          {companyInfo.companyName && (
+            <Text style={{ fontSize: 12, fontWeight: 900, color: cTheme, marginBottom: 2 }}>{companyInfo.companyName}</Text>
+          )}
+          <View style={{ flexDirection: 'row', gap: 10, marginTop: 2 }}>
+            {companyInfo.companyPhone && <Text style={{ fontSize: 8.5, color: '#64748B' }}>Tel: {companyInfo.companyPhone}</Text>}
+            {companyInfo.companyEmail && <Text style={{ fontSize: 8.5, color: '#64748B' }}>Email: {companyInfo.companyEmail}</Text>}
+          </View>
+        </View>
+      )}
+
+      {/* Date Row */}
+      <View style={{ alignItems: 'flex-end', marginBottom: 15 }}>
+        <Text style={{ fontSize: 10, color: '#6B7280', fontWeight: 600 }}>{dateText}</Text>
+      </View>
+
+      {/* Subject Line */}
+      {showSubject && (
         isBlock ? (
-          <View style={{ marginBottom: 20 }}>
-            <View style={styles.dateRow}>
-              <Text>{isEn ? 'COVER LETTER' : 'CARTA DE APRESENTAÇÃO'}</Text>
-              <Text>{formattedDate}</Text>
-            </View>
+          <View style={{ marginBottom: 15 }}>
             <View style={styles.subjectBox}>
               {showPrefix && <Text style={styles.subjectPrefix}>{isEn ? 'Subject:' : 'Assunto:'}</Text>}
               <Text style={styles.subjectText}>{subjectText}</Text>
             </View>
           </View>
         ) : (
-          <View style={styles.dateRow}>
-            <Text style={[styles.subjectText, { fontSize: 10, maxWidth: '70%' }]}>
-              {showPrefix ? `${isEn ? 'Assunto: ' : 'Assunto: '}` : ''}{subjectText}
+          <View style={{ marginBottom: 15 }}>
+            <Text style={[styles.subjectText, { fontSize: 11 }]}>
+              {showPrefix ? `${isEn ? 'Subject: ' : 'Assunto: '}` : ''}{subjectText}
             </Text>
-            <Text>{formattedDate}</Text>
           </View>
         )
-      ) : (
-        <View style={[styles.dateRow, { justifyContent: 'flex-end' }]}>
-          <Text>{formattedDate}</Text>
-        </View>
       )}
 
+      {/* Salutation */}
+      <View style={{ marginBottom: 10 }}>
+        <Text style={{ fontSize: 11, fontWeight: 700, color: '#111827' }}>{salutationText}</Text>
+      </View>
+
+      {/* Body Content */}
       <Text style={styles.content}>
         {data.content ? data.content.replace(/\*/g, '') : ''}
       </Text>
 
-      <View style={styles.footer}>
-        <Text style={{ fontSize: 10, color: '#9CA3AF', textTransform: 'uppercase', marginBottom: 5 }}>{data.language === 'en' ? 'Sincerely,' : 'Atentamente,'}</Text>
-        <Text style={styles.signature}>{info.fullName || 'Seu Nome'}</Text>
+      {/* Closing & Signature */}
+      <View style={{ marginTop: 35, alignItems: 'flex-start' }}>
+        <Text style={{ fontSize: 11, color: '#374151', marginBottom: 6 }}>{closingText}</Text>
+        <Text style={{ fontSize: 14, fontWeight: 900, color: cTheme }}>{info.fullName || 'Seu Nome'}</Text>
       </View>
     </View>
   );

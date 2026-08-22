@@ -173,6 +173,22 @@
   flex: 1 1 0% !important;
 }
 
+/* Custom class to ensure the preview panel is always shown side-by-side on screens >= 640px */
+.preview-main-panel {
+  display: none !important;
+}
+
+@media (min-width: 640px) {
+  .preview-main-panel {
+    display: flex !important;
+  }
+}
+
+/* On mobile, if preview modal is explicitly active, override display to flex */
+.preview-main-panel.modal-active {
+  display: flex !important;
+}
+
 /* Ensure images maintain aspect ratio */
 img {
   max-width: none !important;

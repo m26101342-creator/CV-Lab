@@ -473,7 +473,7 @@ export async function exportCoverLetterToWord(options: {
       new Paragraph({
         children: [
           new TextRun({
-            text: 'PARA / DESTINATÁRIO:',
+            text: (companyInfo.recipientPrefix || 'À').toUpperCase() + ':',
             bold: true,
             size: 18,
             color: '888888',
@@ -559,8 +559,29 @@ export async function exportCoverLetterToWord(options: {
       })
     );
 
-    children.push(new Paragraph({ spacing: { after: 200 } }));
+    children.push(new Paragraph({ spacing: { after: 150 } }));
   }
+
+  // --- DATE LINE ---
+  const dateStr = companyInfo.letterDate || (
+    (personalInfo.location ? personalInfo.location.split(',')[0] + ', ' : '') + 
+    new Date().toLocaleDateString(language === 'en' ? 'en-US' : 'pt-PT', { day: '2-digit', month: 'long', year: 'numeric' })
+  );
+
+  children.push(
+    new Paragraph({
+      alignment: AlignmentType.RIGHT,
+      children: [
+        new TextRun({
+          text: dateStr,
+          size: 21,
+          color: '555555',
+          font: 'Calibri'
+        })
+      ],
+      spacing: { after: 200 }
+    })
+  );
 
   // --- SUBJECT LINE ---
   if (subject) {
@@ -586,12 +607,29 @@ export async function exportCoverLetterToWord(options: {
           bottom: { style: BorderStyle.SINGLE, size: 6, color: 'CCCCCC' }
         },
         spacing: {
-          before: 150,
-          after: 250
+          before: 100,
+          after: 200
         }
       })
     );
   }
+
+  // --- SALUTATION ---
+  const salutationStr = companyInfo.salutation || (language === 'en' ? 'Dear Hiring Manager,' : 'Exmos. Senhores,');
+  children.push(
+    new Paragraph({
+      children: [
+        new TextRun({
+          text: salutationStr,
+          bold: true,
+          size: 22,
+          color: '111111',
+          font: 'Calibri'
+        })
+      ],
+      spacing: { before: 150, after: 200 }
+    })
+  );
 
   // --- LETTER BODY ---
   const paragraphs = content.split('\n\n').filter(Boolean);
@@ -611,18 +649,19 @@ export async function exportCoverLetterToWord(options: {
   });
 
   // --- SIGN OFF ---
+  const closingStr = companyInfo.closing || (language === 'en' ? 'Sincerely,' : 'Atenciosamente,');
   children.push(
     new Paragraph({
       children: [
         new TextRun({
-          text: 'Com os melhores cumprimentos,',
+          text: closingStr,
           size: 22,
           font: 'Calibri'
         })
       ],
       spacing: {
-        before: 300,
-        after: 150
+        before: 250,
+        after: 100
       }
     })
   );

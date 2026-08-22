@@ -7824,15 +7824,14 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
   // Unified auto-fit calculation for preview document
   const handleAutoFit = () => {
     setIsAutoFit(true);
-    const width = window.innerWidth;
-    const isDesktop = width >= 1024;
-    let availableWidth = width - 24;
-
-    if (isDesktop && !showPreviewModal) {
-      const sidebarWidth = width >= 1280 ? 540 : (width >= 1024 ? 460 : 380);
-      availableWidth = width - sidebarWidth - 48;
+    const mainElem = document.querySelector('main');
+    let availableWidth = 0;
+    if (mainElem && mainElem.clientWidth > 100) {
+      availableWidth = mainElem.clientWidth - 40;
     } else {
-      availableWidth = width - 24;
+      const width = window.innerWidth;
+      const sidebarWidth = width >= 1280 ? 520 : (width >= 1024 ? 460 : (width >= 768 ? 380 : (width >= 640 ? 350 : 0)));
+      availableWidth = width - sidebarWidth - 40;
     }
 
     const optScale = availableWidth / 794;
@@ -7843,8 +7842,12 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
   useEffect(() => {
     if (!isAutoFit) return;
     handleAutoFit();
+    const timer = setTimeout(handleAutoFit, 150);
     window.addEventListener('resize', handleAutoFit);
-    return () => window.removeEventListener('resize', handleAutoFit);
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener('resize', handleAutoFit);
+    };
   }, [view, showPreviewModal, isAutoFit]);
 
   // Monitor and measure the actual height of the rendered content (Resume or Cover Letter)
@@ -9844,7 +9847,7 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
   const c = { ...currentTheme.colors, primary: resumeData.themeColor || currentTheme.colors.primary };
 
   return (
-    <div className="h-[100dvh] h-screen w-full overflow-hidden bg-bg-main flex flex-col md:flex-row justify-start print:bg-white print:h-auto print:overflow-visible">
+    <div className="h-[100dvh] h-screen w-full max-w-full overflow-x-hidden overflow-y-hidden bg-bg-main flex flex-col sm:flex-row justify-start print:bg-white print:h-auto print:overflow-visible">
       
       {/* Payment Modal Overlay */}
       <AnimatePresence>
@@ -10136,7 +10139,7 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
       </AnimatePresence>
 
       {/* Sidebar Editor */}
-      <aside className={`w-full h-full max-w-3xl mx-auto md:max-w-none md:mx-0 md:w-[380px] lg:w-[460px] xl:w-[540px] bg-white border-r border-border-main flex flex-col shadow-2xl z-30 print:hidden shrink-0 overflow-hidden ${showPreviewModal ? 'hidden' : 'flex'}`}>
+      <aside className={`w-full h-full max-w-full sm:w-[350px] md:w-[380px] lg:w-[460px] xl:w-[520px] bg-white border-r border-border-main flex flex-col shadow-2xl z-30 print:hidden shrink-0 overflow-x-hidden ${showPreviewModal ? 'hidden' : 'flex'}`}>
         {/* Top Executive Client & Attendance Banner */}
         <div className="bg-gradient-to-r from-blue-900 via-deep-blue to-primary-blue text-white px-4 py-2.5 flex items-center justify-between shadow-md">
           <div className="flex items-center gap-2 overflow-hidden">
@@ -10185,23 +10188,26 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
           </div>
         </div>
 
-        <header className="p-3 border-b border-border-main flex items-center justify-between sticky top-0 bg-white z-40 shadow-sm">
-          <div className="flex items-center gap-2">
-             <button onClick={() => setView('landing')} className="p-1.5 hover:bg-bg-main rounded-xl transition-colors text-text-muted">
-               <ChevronLeft size={18} />
-             </button>
-             <img 
-               src="https://i.supaimg.com/6bc04951-8cbe-4706-9f0c-a01f9ea9a6c4/f7862e8c-46f6-4d82-a9e0-b9cb52c6fc4f.png" 
-               alt="CV LAB" 
-               className="h-5 w-auto object-contain hidden sm:inline"
-               referrerPolicy="no-referrer" 
-             />
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="px-2.5 py-0.5 bg-soft-blue text-primary-blue text-[9px] font-black rounded-full hidden md:block">PASSO {activeStep + 1}/6</div>
-            
+        <header className="p-2.5 sm:p-3 border-b border-border-main flex flex-col gap-2 sticky top-0 bg-white z-40 shadow-xs max-w-full overflow-hidden">
+          {/* Top Row: Navigation & Document Switcher */}
+          <div className="flex items-center justify-between gap-2 w-full">
+            <div className="flex items-center gap-1.5 shrink-0">
+               <button onClick={() => setView('landing')} className="p-1 hover:bg-bg-main rounded-xl transition-colors text-text-muted" title="Voltar à Vitrina">
+                 <ChevronLeft size={18} />
+               </button>
+               <img 
+                 src="https://i.supaimg.com/6bc04951-8cbe-4706-9f0c-a01f9ea9a6c4/f7862e8c-46f6-4d82-a9e0-b9cb52c6fc4f.png" 
+                 alt="CV LAB" 
+                 className="h-5 w-auto object-contain hidden xs:inline"
+                 referrerPolicy="no-referrer" 
+               />
+               <div className="px-2 py-0.5 bg-soft-blue text-primary-blue text-[9px] font-black rounded-full shrink-0">
+                 PASSO {activeStep + 1}/6
+               </div>
+            </div>
+
             {/* Direct Dual View Switcher */}
-            <div className="flex items-center bg-gray-100 p-1 rounded-xl border border-gray-200 gap-1">
+            <div className="flex items-center bg-gray-100 p-0.5 rounded-xl border border-gray-200 gap-0.5 shrink-0">
               <button
                 type="button"
                 onClick={() => { 
@@ -10212,11 +10218,11 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
                   const m = document.querySelector('main'); 
                   if (m) m.scrollTop = 0; 
                 }} 
-                className={`px-2.5 py-1 text-[11px] font-black rounded-lg transition-all flex items-center gap-1.5 ${!isCoverLetterMode ? 'bg-primary-blue text-white shadow-sm' : 'text-gray-600 hover:text-gray-900'}`}
+                className={`px-2 py-1 text-[10px] font-black rounded-lg transition-all flex items-center gap-1 ${!isCoverLetterMode ? 'bg-primary-blue text-white shadow-xs' : 'text-gray-600 hover:text-gray-900'}`}
                 title="Pré-visualizar Currículo"
               >
-                <FileText size={13} />
-                <span className="hidden sm:inline">Currículo</span>
+                <FileText size={12} />
+                <span>CV</span>
               </button>
               <button
                 type="button"
@@ -10228,31 +10234,48 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
                   const m = document.querySelector('main'); 
                   if (m) m.scrollTop = 0; 
                 }} 
-                className={`px-2.5 py-1 text-[11px] font-black rounded-lg transition-all flex items-center gap-1.5 ${isCoverLetterMode ? 'bg-primary-blue text-white shadow-sm' : 'text-gray-600 hover:text-gray-900'}`}
+                className={`px-2 py-1 text-[10px] font-black rounded-lg transition-all flex items-center gap-1 ${isCoverLetterMode ? 'bg-primary-blue text-white shadow-xs' : 'text-gray-600 hover:text-gray-900'}`}
                 title="Pré-visualizar Carta de Apresentação"
               >
-                <Mail size={13} />
-                <span className="hidden sm:inline">Carta</span>
+                <Mail size={12} />
+                <span>Carta</span>
               </button>
             </div>
+          </div>
 
+          {/* Bottom Row: Quick Export & Watermark Actions Toolbar */}
+          <div className="flex items-center justify-between gap-1.5 pt-1.5 border-t border-gray-100 w-full overflow-x-auto no-scrollbar">
             {/* Botão de Marca D'água para Clientes */}
             <button
               type="button"
               onClick={() => setShowWatermarkModal(true)}
-              className={`h-8 px-3 text-xs font-black flex items-center gap-1.5 rounded-full transition-all border shadow-xs cursor-pointer ${
+              className={`h-7 px-2 text-[10px] font-black flex items-center gap-1 rounded-lg transition-all border shrink-0 cursor-pointer ${
                 resumeData.styleConfig?.watermarkEnabled 
-                  ? 'bg-amber-500 hover:bg-amber-600 text-white border-amber-600 ring-2 ring-amber-400/40 shadow-amber-500/20' 
-                  : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-100 hover:text-amber-600'
+                  ? 'bg-amber-500 hover:bg-amber-600 text-white border-amber-600 ring-1 ring-amber-400/40' 
+                  : 'bg-gray-50 text-slate-700 border-slate-200 hover:bg-slate-100'
               }`}
               title="Configurar ou alternar marca d'água de prévia para envio ao cliente"
             >
-              <Stamp size={14} className={resumeData.styleConfig?.watermarkEnabled ? 'animate-bounce' : ''} />
-              <span>{resumeData.styleConfig?.watermarkEnabled ? 'Marca D\'água: ON' : 'Marca D\'água'}</span>
+              <Stamp size={12} className={resumeData.styleConfig?.watermarkEnabled ? 'animate-bounce' : ''} />
+              <span>{resumeData.styleConfig?.watermarkEnabled ? "Marca D'água: ON" : "Marca D'água"}</span>
             </button>
 
-            <Button className="h-8 px-3 text-xs font-bold flex bg-emerald-600 text-white hover:bg-emerald-700 rounded-full shadow-md" onClick={handleDownloadWord} icon={FileText}>Word (.docx)</Button>
-            <Button className="h-8 px-3 text-xs font-bold flex bg-primary-blue text-white hover:bg-[#0052cc] rounded-full shadow-md" onClick={handlePrint} icon={Printer}>Imprimir / PDF</Button>
+            <div className="flex items-center gap-1.5 shrink-0">
+              <Button 
+                className="h-7 px-2.5 text-[10px] font-bold flex bg-emerald-600 text-white hover:bg-emerald-700 rounded-lg shadow-xs py-0" 
+                onClick={handleDownloadWord} 
+                icon={FileText}
+              >
+                Word (.docx)
+              </Button>
+              <Button 
+                className="h-7 px-2.5 text-[10px] font-bold flex bg-primary-blue text-white hover:bg-[#0052cc] rounded-lg shadow-xs py-0" 
+                onClick={handlePrint} 
+                icon={Printer}
+              >
+                Imprimir / PDF
+              </Button>
+            </div>
           </div>
         </header>
 
@@ -12151,7 +12174,7 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
             setPreviewScale(s => Number(Math.min(2.5, Math.max(0.18, s + (e.deltaY < 0 ? 0.05 : -0.05))).toFixed(2)));
           }
         }}
-        className={`flex-1 h-full w-full bg-[#1a2332] p-3 sm:p-8 overflow-y-auto overflow-x-auto ${showPreviewModal ? 'flex' : 'hidden md:flex'} flex-col items-center justify-start relative select-none scrollbar-hide touch-pan-y print:p-0 print:bg-white print:overflow-visible print:block print:w-full print:h-auto`}
+        className={`preview-main-panel ${showPreviewModal ? 'modal-active' : ''} flex-1 h-full w-full bg-[#1a2332] p-3 sm:p-8 overflow-y-auto overflow-x-auto flex-col items-center justify-start relative select-none scrollbar-hide touch-pan-y print:p-0 print:bg-white print:overflow-visible print:block print:w-full print:h-auto`}
       >
          <div className="flex flex-col items-center gap-4 sm:gap-6 my-0 py-2 sm:py-4 max-w-full w-full print:gap-0 print:m-0 print:p-0 print:w-full print:block">
             
