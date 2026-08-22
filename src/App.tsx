@@ -68,13 +68,15 @@ import {
   Timer,
   ShieldCheck,
   Key,
-  Stamp
+  Stamp,
+  Building
 } from 'lucide-react';
 import { AdSenseUnit } from './components/AdSenseUnit';
 import { WatermarkOverlay } from './components/WatermarkOverlay';
 import { WatermarkControlModal } from './components/WatermarkControlModal';
 import { ResumeData, INITIAL_RESUME_DATA, TemplateType, ResumeStyleConfig, ServiceType, OFFICIAL_SERVICE_PRICES, ClientRegistrationData, StaffAccessLink } from './types.ts';
 import { optimizeResumeText, generateCoverLetter, generateFullResume, parseResumeFromText, translateResumeToEnglish, translateLetterToEnglish, translateResumeToSpanish, translateLetterToSpanish, alterResumeInformation } from './services/geminiService.ts';
+import { exportResumeToWord, exportCoverLetterToWord } from './services/wordExportService.ts';
 import { pdf } from '@react-pdf/renderer';
 import { PdfDocument } from './pdf/PdfDocument';
 import * as pdfjsLib from 'pdfjs-dist';
@@ -844,7 +846,8 @@ const CoverLetterRenderer = React.memo(({
   subject, 
   onChangeSubject,
   subjectStyle,
-  onChangeSubjectStyle
+  onChangeSubjectStyle,
+  companyInfo
 }: { 
   content: string; 
   personalInfo: any; 
@@ -855,6 +858,12 @@ const CoverLetterRenderer = React.memo(({
   onChangeSubject?: (subject: string) => void;
   subjectStyle?: CoverLetterSubjectStyle;
   onChangeSubjectStyle?: (style: CoverLetterSubjectStyle) => void;
+  companyInfo?: {
+    companyName?: string;
+    recipientName?: string;
+    companyPhone?: string;
+    companyEmail?: string;
+  };
 }) => {
   const c = { primary: themeColor || '#1B2A4A' };
   const info = personalInfo || {};
@@ -940,16 +949,40 @@ const CoverLetterRenderer = React.memo(({
         }}
       >
          {/* Minimalist Professional Header */}
-         <div className="flex justify-between items-start pb-6 mb-6">
-           <div className="space-y-1.5 max-w-[80%]">
-             <h1 className="text-[32px] font-black tracking-tight leading-none" style={{ color: c.primary }}>
-               {info.fullName }
+         <div className="flex justify-between items-start pb-5 mb-5 border-b border-gray-100">
+           <div className="space-y-1 max-w-[70%]">
+             <h1 className="text-[28px] font-black tracking-tight leading-none" style={{ color: c.primary }}>
+               {info.fullName}
              </h1>
-             <p className="text-gray-500 font-medium tracking-[0.1em] text-[11px] uppercase">
+             <p className="text-gray-500 font-bold tracking-[0.08em] text-[11px] uppercase">
                {info.title || (isEn ? 'Your Position' : 'Seu Cargo')}
              </p>
            </div>
+           <div className="text-right text-[11px] text-gray-500 space-y-0.5 font-medium shrink-0">
+             {info.email && <div>{info.email}</div>}
+             {info.phone && <div>{info.phone}</div>}
+             {info.location && <div>{info.location}</div>}
+           </div>
          </div>
+
+         {/* Target Company / Recipient Box */}
+         {(companyInfo?.companyName || companyInfo?.recipientName || companyInfo?.companyPhone || companyInfo?.companyEmail) && (
+           <div className="mb-6 p-4 rounded-2xl bg-slate-50/90 border border-slate-200/80 text-[12px] space-y-1 text-gray-800">
+             <span className="text-[10px] font-black uppercase text-gray-400 tracking-wider block">
+               {isEn ? 'Recipient / Target Company:' : 'Destinatário / Empresa:'}
+             </span>
+             {companyInfo.recipientName && (
+               <div className="font-extrabold text-gray-900 text-[13px]">{companyInfo.recipientName}</div>
+             )}
+             {companyInfo.companyName && (
+               <div className="font-extrabold text-[13px]" style={{ color: c.primary }}>{companyInfo.companyName}</div>
+             )}
+             <div className="flex flex-wrap gap-x-4 gap-y-0.5 text-gray-500 text-[11px] pt-1">
+               {companyInfo.companyPhone && <span>Tel: {companyInfo.companyPhone}</span>}
+               {companyInfo.companyEmail && <span>Email: {companyInfo.companyEmail}</span>}
+             </div>
+           </div>
+         )}
 
          {/* Inline Quick Subject Formatting Bar (Visible in Editor) */}
          {onChangeSubjectStyle && (
@@ -4327,51 +4360,57 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
                   <div className="w-12 h-1.5 bg-gray-200 mb-6 rounded-full"></div>
                   <div className="flex flex-col gap-6">
                     {cs.items.map((item, idxx) => (
-                      <div key={item.id || `csi-${idxx}`}>
-                         <h4 className="text-[15px] font-bold mb-1" style={{ color: '#1f2937' }}>{item.name}</h4>
-                         {item.description && <p className="text-[13px] leading-relaxed" style={{ color: '#4b5563' }}>{renderText(item.description)}</p>}
-                      </div>
+                       <div key={item.id || `csi-${idxx}`}>
+                          <h4 className="text-[15px] font-bold mb-1" style={{ color: '#1f2937' }}>{item.name}</h4>
+                          {item.description && <p className="text-[13px] leading-relaxed" style={{ color: '#4b5563' }}>{renderText(item.description)}</p>}
+                       </div>
                     ))}
-                 </div>
-              </div>
-            ))}
-         </div>
-       </div>
-     )}
+                  </div>
+               </div>
+             ))}
+          </div>
+        </div>
+      )}
 
      {theme.layout === 'custom-t5' && (() => {
         const getSectionCol = (key: string, def: 'left' | 'right') => {
           return data.styleConfig?.sectionPositions?.[key] || def;
         };
+        const fullNameStr = data.personalInfo?.fullName || '';
+        const nameParts = fullNameStr.trim().split(' ');
+        const firstName = nameParts[0] || '';
+        const restName = nameParts.slice(1).join(' ');
+        const photoSizeVal = data.personalInfo?.photoSize || 110;
+
         return (
         <div className="flex w-full min-h-[1122px] h-auto bg-[#FAFAFA] text-left font-sans overflow-visible relative">
            <div className="w-[34%] flex flex-col relative z-20 pt-16" style={{ backgroundColor: c.soft || '#F3F4F6' }}>
-             {/* Decorative header shape - simplified for PDF consistency */}
+             {/* Decorative header shape */}
              <div className="absolute top-0 left-0 right-0 h-48 bg-white" style={{ borderRadius: '0 0 100px 100px', boxShadow: '0 10px 30px rgba(0,0,0,0.02)' }}></div>
              
-             <div className="relative z-30 w-full flex flex-col items-center px-10">
+             <div className="relative z-30 w-full flex flex-col items-center px-8">
                {data.styleConfig?.showPhoto !== false && (
-                <div className="mb-12 shadow-[0_20px_40px_-15px_rgba(0,0,0,0.15)] bg-white overflow-hidden" 
+                <div className="mb-10 shadow-[0_20px_40px_-15px_rgba(0,0,0,0.15)] bg-white overflow-hidden shrink-0" 
                      style={{ 
-                       width: `${data.personalInfo.photoSize || 160}px`,
-                       height: `${data.personalInfo.photoSize || 160}px`,
-                       borderRadius: data.personalInfo.photoStyle === 'circle' ? '50%' : '24px',
-                       border: '5px solid white'
+                       width: `${photoSizeVal}px`,
+                       height: `${photoSizeVal}px`,
+                       borderRadius: data.personalInfo?.photoStyle === 'circle' ? '50%' : '24px',
+                       border: '4px solid white'
                      }}>
-                {data.personalInfo.photo ? (
+                {data.personalInfo?.photo ? (
                   <img src={data.personalInfo.photo} referrerPolicy="no-referrer" alt="Profile" className="w-full h-full object-cover object-top" />
                 ) : (
                   <div 
                     className="w-full h-full font-black bg-gray-100 text-gray-400" 
                     style={{ 
-                      fontSize: `${(data.personalInfo.photoSize || 160) * 0.4}px`,
-                      lineHeight: `${data.personalInfo.photoSize || 160}px`,
+                      fontSize: `${photoSizeVal * 0.4}px`,
+                      lineHeight: `${photoSizeVal}px`,
                       textAlign: 'center',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center'
                     }}>
-                    {data.personalInfo.fullName.charAt(0)}
+                    {firstName.charAt(0) || 'C'}
                   </div>
                 )}
                 </div>
@@ -4382,16 +4421,16 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
                      <h3 className="text-[12px] font-black uppercase tracking-[0.2em]" style={{ color: c.primary }}>{data.language === 'en' ? 'Contact' : 'Contacto'}</h3>
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', fontSize: '13px', width: '100%', fontWeight: '500', color: '#374151' }}>
-                     {data.personalInfo.phone && <div key="phone" className="flex items-center gap-2.5 mb-4 text-gray-700 font-semibold"><Phone size={14} className="opacity-75 shrink-0" style={{ color: c.primary }} /> <span style={{ lineHeight: '1.2' }}>{data.personalInfo.phone}</span></div>}
-                     {data.personalInfo.email && <div key="email" className="flex items-center gap-2.5 mb-4 text-gray-700 font-semibold"><Mail size={14} className="opacity-75 shrink-0" style={{ color: c.primary }} /> <span className="break-all" style={{ lineHeight: '1.2' }}>{data.personalInfo.email}</span></div>}
-                     {data.personalInfo.location && <div key="loc" className="flex items-center gap-2.5 mb-4 text-gray-700 font-semibold"><MapPin size={14} className="opacity-75 shrink-0" style={{ color: c.primary }} /> <span style={{ lineHeight: '1.2' }}>{data.personalInfo.location}</span></div>}
-                     {data.personalInfo.linkedin && <div key="linkedin" className="flex items-center gap-2.5 mb-4 text-gray-700 font-semibold"><Linkedin size={14} className="opacity-75 shrink-0" style={{ color: c.primary }} /> <span className="break-all" style={{ lineHeight: '1.2' }}>{data.personalInfo.linkedin}</span></div>}
-                     {data.personalInfo.website && <div key="website" className="flex items-center gap-2.5 mb-4 text-gray-700 font-semibold"><Globe size={14} className="opacity-75 shrink-0" style={{ color: c.primary }} /> <span className="break-all" style={{ lineHeight: '1.2' }}>{data.personalInfo.website}</span></div>}
+                     {data.personalInfo?.phone && <div key="phone" className="flex items-center gap-2.5 mb-4 text-gray-700 font-semibold"><Phone size={14} className="opacity-75 shrink-0" style={{ color: c.primary }} /> <span style={{ lineHeight: '1.2' }}>{data.personalInfo.phone}</span></div>}
+                     {data.personalInfo?.email && <div key="email" className="flex items-center gap-2.5 mb-4 text-gray-700 font-semibold"><Mail size={14} className="opacity-75 shrink-0" style={{ color: c.primary }} /> <span className="break-all" style={{ lineHeight: '1.2' }}>{data.personalInfo.email}</span></div>}
+                     {data.personalInfo?.location && <div key="loc" className="flex items-center gap-2.5 mb-4 text-gray-700 font-semibold"><MapPin size={14} className="opacity-75 shrink-0" style={{ color: c.primary }} /> <span style={{ lineHeight: '1.2' }}>{data.personalInfo.location}</span></div>}
+                     {data.personalInfo?.linkedin && <div key="linkedin" className="flex items-center gap-2.5 mb-4 text-gray-700 font-semibold"><Linkedin size={14} className="opacity-75 shrink-0" style={{ color: c.primary }} /> <span className="break-all" style={{ lineHeight: '1.2' }}>{data.personalInfo.linkedin}</span></div>}
+                     {data.personalInfo?.website && <div key="website" className="flex items-center gap-2.5 mb-4 text-gray-700 font-semibold"><Globe size={14} className="opacity-75 shrink-0" style={{ color: c.primary }} /> <span className="break-all" style={{ lineHeight: '1.2' }}>{data.personalInfo.website}</span></div>}
                   </div>
                 </div>
 
                 {/* Summary (if left) */}
-                {getSectionCol('summary', 'right') === 'left' && data.personalInfo.summary && (
+                {getSectionCol('summary', 'right') === 'left' && data.personalInfo?.summary && (
                   <div className="w-full mb-10">
                     <div className="mb-6 border-b-2 pb-2" style={{ borderColor: `${c.primary}40` }}>
                        <EditableTitle as="h3" className="text-[12px] font-black uppercase tracking-[0.2em]" style={{ color: c.primary }} defaultText="Perfil Profissional" text={getSectionTitle(data, 'summary', 'Perfil Profissional')} onSave={onChange ? (v) => handleTitleChange('summary', v) : undefined} />
@@ -4401,10 +4440,10 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
                 )}
 
                 {/* Skills (if left) */}
-                {getSectionCol('skills', 'left') === 'left' && data.skills.length > 0 && (
+                {getSectionCol('skills', 'left') === 'left' && data.skills && data.skills.length > 0 && (
                   <div className="w-full mb-10">
                     <div className="mb-6 border-b-2 pb-2" style={{ borderColor: `${c.primary}40` }}>
-                       <EditableTitle as="h3" className="text-[12px] font-black uppercase tracking-[0.2em]"  style={{ color: c.primary }} defaultText="Habilidades" text={getSectionTitle(data, 'skills', 'Habilidades')} onSave={onChange ? (v) => handleTitleChange('skills', v) : undefined} />
+                       <EditableTitle as="h3" className="text-[12px] font-black uppercase tracking-[0.2em]" style={{ color: c.primary }} defaultText="Habilidades" text={getSectionTitle(data, 'skills', 'Habilidades')} onSave={onChange ? (v) => handleTitleChange('skills', v) : undefined} />
                     </div>
                     <div className="flex flex-col gap-3">
                        {data.skills.map((s, idx) => (
@@ -4418,10 +4457,10 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
                 )}
 
                 {/* Education (if left) */}
-                {getSectionCol('education', 'left') === 'left' && data.education.length > 0 && (
+                {getSectionCol('education', 'left') === 'left' && data.education && data.education.length > 0 && (
                   <div className="w-full mb-10">
                     <div className="mb-6 border-b-2 pb-2" style={{ borderColor: `${c.primary}40` }}>
-                       <EditableTitle as="h3" className="text-[12px] font-black uppercase tracking-[0.2em]"  style={{ color: c.primary }} defaultText="Formação" text={getSectionTitle(data, 'education', 'Formação')} onSave={onChange ? (v) => handleTitleChange('education', v) : undefined} />
+                       <EditableTitle as="h3" className="text-[12px] font-black uppercase tracking-[0.2em]" style={{ color: c.primary }} defaultText="Formação" text={getSectionTitle(data, 'education', 'Formação')} onSave={onChange ? (v) => handleTitleChange('education', v) : undefined} />
                     </div>
                     <div className="flex flex-col gap-6" style={{ color: '#374151' }}>
                        {data.education.map((e, idx) => (
@@ -4436,7 +4475,7 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
                 )}
 
                 {/* Experience (if left) */}
-                {getSectionCol('experience', 'right') === 'left' && data.experience.length > 0 && (
+                {getSectionCol('experience', 'right') === 'left' && data.experience && data.experience.length > 0 && (
                   <div className="w-full mb-10">
                     <div className="mb-6 border-b-2 pb-2" style={{ borderColor: `${c.primary}40` }}>
                        <EditableTitle as="h3" className="text-[12px] font-black uppercase tracking-[0.2em]" style={{ color: c.primary }} defaultText="Experiência Profissional" text={getSectionTitle(data, 'experience', 'Experiência Profissional')} onSave={onChange ? (v) => handleTitleChange('experience', v) : undefined} />
@@ -4458,7 +4497,7 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
                 {getSectionCol('languages', 'left') === 'left' && data.languages && data.languages.length > 0 && (
                   <div className="w-full mb-10">
                     <div className="mb-6 border-b-2 pb-2" style={{ borderColor: `${c.primary}40` }}>
-                       <EditableTitle as="h3" className="text-[12px] font-black uppercase tracking-[0.2em]"  style={{ color: c.primary }} defaultText="Idiomas" text={getSectionTitle(data, 'languages', 'Idiomas')} onSave={onChange ? (v) => handleTitleChange('languages', v) : undefined} />
+                       <EditableTitle as="h3" className="text-[12px] font-black uppercase tracking-[0.2em]" style={{ color: c.primary }} defaultText="Idiomas" text={getSectionTitle(data, 'languages', 'Idiomas')} onSave={onChange ? (v) => handleTitleChange('languages', v) : undefined} />
                     </div>
                     <div className="flex flex-col gap-3">
                        {data.languages.map((l, idx) => (
@@ -4478,7 +4517,7 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
                 {getSectionCol('certifications', 'left') === 'left' && data.certifications && data.certifications.length > 0 && (
                   <div className="w-full mb-10">
                     <div className="mb-6 border-b-2 pb-2" style={{ borderColor: `${c.primary}40` }}>
-                       <EditableTitle as="h3" className="text-[12px] font-black uppercase tracking-[0.2em]"  style={{ color: c.primary }} defaultText="Certificações" text={getSectionTitle(data, 'certifications', 'Certificações')} onSave={onChange ? (v) => handleTitleChange('certifications', v) : undefined} />
+                       <EditableTitle as="h3" className="text-[12px] font-black uppercase tracking-[0.2em]" style={{ color: c.primary }} defaultText="Certificações" text={getSectionTitle(data, 'certifications', 'Certificações')} onSave={onChange ? (v) => handleTitleChange('certifications', v) : undefined} />
                     </div>
                     <div className="flex flex-col gap-4">
                        {data.certifications.map((cert, idx) => (
@@ -4495,7 +4534,7 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
                 {getSectionCol('interests', 'left') === 'left' && data.interests && data.interests.length > 0 && (
                   <div className="w-full mb-10">
                     <div className="mb-6 border-b-2 pb-2" style={{ borderColor: `${c.primary}40` }}>
-                       <EditableTitle as="h3" className="text-[12px] font-black uppercase tracking-[0.2em]"  style={{ color: c.primary }} defaultText="Interesses" text={getSectionTitle(data, 'interests', 'Interesses')} onSave={onChange ? (v) => handleTitleChange('interests', v) : undefined} />
+                       <EditableTitle as="h3" className="text-[12px] font-black uppercase tracking-[0.2em]" style={{ color: c.primary }} defaultText="Interesses" text={getSectionTitle(data, 'interests', 'Interesses')} onSave={onChange ? (v) => handleTitleChange('interests', v) : undefined} />
                     </div>
                     <div className="flex flex-wrap gap-1.5">
                        {data.interests.map((interest, idx) => (
@@ -4516,12 +4555,12 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
                           <EditableTitle as="h3" className="text-[12px] font-black uppercase tracking-[0.2em]" style={{ color: c.primary }} defaultText={cs.title} text={cs.title} onSave={onChange ? (v) => handleCustomSectionTitleChange(cs.id, v) : undefined} />
                        </div>
                        <div className="flex flex-col gap-4">
-                         {cs.items.map((item, idxx) => (
-                           <div key={item.id || `csi-${idxx}`} style={{ color: '#374151' }}>
-                              <div className="font-bold text-[13px] leading-tight text-gray-800">{item.name}</div>
-                              {item.description && <p className="text-[12px] leading-relaxed text-gray-600 font-medium mt-1">{renderText(item.description)}</p>}
-                           </div>
-                         ))}
+                          {cs.items.map((item, idxx) => (
+                            <div key={item.id || `csi-${idxx}`} style={{ color: '#374151' }}>
+                               <div className="font-bold text-[13px] leading-tight text-gray-800">{item.name}</div>
+                               {item.description && <p className="text-[12px] leading-relaxed text-gray-600 font-medium mt-1">{renderText(item.description)}</p>}
+                            </div>
+                          ))}
                        </div>
                     </div>
                   );
@@ -4529,26 +4568,26 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
              </div>
            </div>
 
-           <div className="w-[66%] py-20 px-14 flex flex-col gap-12 bg-white relative z-10">
+           <div className="w-[66%] py-16 px-12 flex flex-col gap-10 bg-white relative z-10">
               <div>
-                 <h1 className="text-[48px] uppercase font-black leading-[1] tracking-tighter" style={{ color: c.primary }}>
-                   {data.personalInfo.fullName.split(' ')[0]} <br/>
-                   <span className="font-light tracking-normal text-gray-800">{data.personalInfo.fullName.split(' ').slice(1).join(' ')}</span>
+                 <h1 className="text-[42px] uppercase font-black leading-[1] tracking-tighter" style={{ color: c.primary }}>
+                   {firstName || 'SEU NOME'} <br/>
+                   {restName ? <span className="font-light tracking-normal text-gray-800">{restName}</span> : null}
                  </h1>
-                 <p className="text-[16px] uppercase tracking-[0.3em] font-black mt-6" style={{ color: c.primary }}>{data.personalInfo.title}</p>
+                 {data.personalInfo?.title && <p className="text-[15px] uppercase tracking-[0.25em] font-black mt-4" style={{ color: c.primary }}>{data.personalInfo.title}</p>}
               </div>
 
               {/* Summary (if right) */}
-              {getSectionCol('summary', 'right') === 'right' && data.personalInfo.summary && (
+              {getSectionCol('summary', 'right') === 'right' && data.personalInfo?.summary && (
                 <div className="relative">
                    <div className="absolute -left-6 top-0 w-1.5 h-full rounded-r-lg" style={{ backgroundColor: c.primary }}></div>
-                   <h2 className="text-[18px] font-black uppercase tracking-[0.15em] mb-4" style={{ color: '#111827' }}>Perfil Profissional</h2>
+                   <EditableTitle as="h2" className="text-[18px] font-black uppercase tracking-[0.15em] mb-4" style={{ color: '#111827' }} defaultText="Perfil Profissional" text={getSectionTitle(data, 'summary', 'Perfil Profissional')} onSave={onChange ? (v) => handleTitleChange('summary', v) : undefined} />
                    <p className="text-[13px] leading-[1.8] text-left text-gray-600 font-medium">{renderText(data.personalInfo.summary)}</p>
                 </div>
               )}
 
               {/* Experience (if right) */}
-              {getSectionCol('experience', 'right') === 'right' && data.experience.length > 0 && (
+              {getSectionCol('experience', 'right') === 'right' && data.experience && data.experience.length > 0 && (
                 <div>
                    <EditableTitle as="h2" className="text-[18px] font-black uppercase tracking-[0.15em] mb-6 border-b pb-4" style={{ color: '#111827', borderColor: '#F3F4F6' }} defaultText="Experiência Profissional" text={getSectionTitle(data, 'experience', 'Experiência Profissional')} onSave={onChange ? (v) => handleTitleChange('experience', v) : undefined} />
                    <div className="flex flex-col gap-8">
@@ -4575,7 +4614,7 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
               )}
 
               {/* Education (if right) */}
-              {getSectionCol('education', 'left') === 'right' && data.education.length > 0 && (
+              {getSectionCol('education', 'left') === 'right' && data.education && data.education.length > 0 && (
                 <div>
                    <EditableTitle as="h2" className="text-[18px] font-black uppercase tracking-[0.15em] mb-6 border-b pb-4" style={{ color: '#111827', borderColor: '#F3F4F6' }} defaultText="Formação" text={getSectionTitle(data, 'education', 'Formação')} onSave={onChange ? (v) => handleTitleChange('education', v) : undefined} />
                    <div className="flex flex-col gap-6">
@@ -4601,7 +4640,7 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
               )}
 
               {/* Skills (if right) */}
-              {getSectionCol('skills', 'left') === 'right' && data.skills.length > 0 && (
+              {getSectionCol('skills', 'left') === 'right' && data.skills && data.skills.length > 0 && (
                 <div>
                    <EditableTitle as="h2" className="text-[18px] font-black uppercase tracking-[0.15em] mb-6 border-b pb-4" style={{ color: '#111827', borderColor: '#F3F4F6' }} defaultText="Habilidades" text={getSectionTitle(data, 'skills', 'Habilidades')} onSave={onChange ? (v) => handleTitleChange('skills', v) : undefined} />
                    <div className="grid grid-cols-2 gap-4">
@@ -4664,7 +4703,7 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
                 if (getSectionCol('custom_' + cs.id, 'right') !== 'right') return null;
                 return (
                   <div key={cs.id || `cs-${idx}`}>
-                     <h2 className="text-[18px] font-black uppercase tracking-[0.15em] mb-6 border-b pb-4" style={{ color: '#111827', borderColor: '#F3F4F6' }}>{cs.title}</h2>
+                     <EditableTitle as="h2" className="text-[18px] font-black uppercase tracking-[0.15em] mb-6 border-b pb-4" style={{ color: '#111827', borderColor: '#F3F4F6' }} defaultText={cs.title} text={cs.title} onSave={onChange ? (v) => handleCustomSectionTitleChange(cs.id, v) : undefined} />
                      <div className="flex flex-col gap-8">
                        {cs.items.map((item, idxx) => (
                          <div key={item.id || `csi-${idxx}`} className="flex gap-4">
@@ -7212,6 +7251,10 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
       showPrefix: true
     };
   });
+  const [letterCompanyName, setLetterCompanyName] = useState(() => localStorage.getItem('cv_lab_letter_company_name') || '');
+  const [letterRecipientName, setLetterRecipientName] = useState(() => localStorage.getItem('cv_lab_letter_recipient_name') || '');
+  const [letterCompanyPhone, setLetterCompanyPhone] = useState(() => localStorage.getItem('cv_lab_letter_company_phone') || '');
+  const [letterCompanyEmail, setLetterCompanyEmail] = useState(() => localStorage.getItem('cv_lab_letter_company_email') || '');
   const [tempSkill, setTempSkill] = useState("");
   const [tempLanguage, setTempLanguage] = useState("");
   const [tempLanguageLevel, setTempLanguageLevel] = useState("Fluente");
@@ -7459,6 +7502,13 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
     }, 500);
     return () => clearTimeout(timer);
   }, [letterSubjectStyle]);
+
+  useEffect(() => {
+    localStorage.setItem('cv_lab_letter_company_name', letterCompanyName);
+    localStorage.setItem('cv_lab_letter_recipient_name', letterRecipientName);
+    localStorage.setItem('cv_lab_letter_company_phone', letterCompanyPhone);
+    localStorage.setItem('cv_lab_letter_company_email', letterCompanyEmail);
+  }, [letterCompanyName, letterRecipientName, letterCompanyPhone, letterCompanyEmail]);
   const [previewScale, setPreviewScale] = useState(0.85);
   const [showAlignGuides, setShowAlignGuides] = useState(false);
   const [activeVisualTab, setActiveVisualTab] = useState<'sizes' | 'reorder' | 'alignment'>('sizes');
@@ -8096,7 +8146,20 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
       : `${resumeData.personalInfo.fullName.replace(/\s+/g, '_')}_Curriculo.pdf`;
 
     const data = isCoverLetterMode 
-      ? { content: generatedLetter, personalInfo: resumeData.personalInfo, themeColor: resumeData.themeColor, language: resumeData.language, subject: letterSubject, subjectStyle: letterSubjectStyle } 
+      ? { 
+          content: generatedLetter, 
+          personalInfo: resumeData.personalInfo, 
+          themeColor: resumeData.themeColor, 
+          language: resumeData.language, 
+          subject: letterSubject, 
+          subjectStyle: letterSubjectStyle,
+          companyInfo: {
+            companyName: letterCompanyName,
+            recipientName: letterRecipientName,
+            companyPhone: letterCompanyPhone,
+            companyEmail: letterCompanyEmail
+          }
+        } 
       : resumeData;
 
     try {
@@ -8148,6 +8211,49 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
     }
 
     window.print();
+  };
+
+  const handleDownloadWord = async () => {
+    try {
+      setLoading(true);
+      recordGeneratedDocument({
+        type: isCoverLetterMode ? 'cover_letter' : 'cv',
+        candidateName: resumeData?.personalInfo?.fullName || 'Candidato CV Lab',
+        candidateTitle: isCoverLetterMode ? letterSubject : (resumeData?.personalInfo?.title || 'Profissional'),
+        candidateEmail: resumeData?.personalInfo?.email || user?.email || '',
+        candidatePhone: resumeData?.personalInfo?.phone || '',
+        template: template,
+        themeColor: resumeData?.themeColor || '#1E40AF',
+        resumeData: resumeData,
+        coverLetterText: isCoverLetterMode ? generatedLetter : undefined,
+        letterSubject: isCoverLetterMode ? letterSubject : undefined,
+        generatedBy: user?.email || 'm26101342@gmail.com',
+        action: 'Descarregar Word (.docx)',
+        price: cvPrice || 2000
+      });
+
+      if (isCoverLetterMode) {
+        await exportCoverLetterToWord({
+          content: generatedLetter,
+          personalInfo: resumeData.personalInfo,
+          subject: letterSubject,
+          companyInfo: {
+            companyName: letterCompanyName,
+            recipientName: letterRecipientName,
+            companyPhone: letterCompanyPhone,
+            companyEmail: letterCompanyEmail
+          },
+          themeColor: resumeData.themeColor
+        });
+      } else {
+        await exportResumeToWord(resumeData);
+      }
+    } catch (err: any) {
+      console.error("Word Export error:", err);
+      alert("Erro ao exportar documento para Word (.docx): " + (err.message || err));
+    } finally {
+      setLoading(false);
+    }
   };
 
   const createOrder = async () => {
@@ -8401,7 +8507,13 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
   const handleCreateCoverLetter = async () => {
     setLoading(true);
     const subjectToUse = letterSubject || resumeData.personalInfo.title || "Vaga de Emprego";
-    const content = await generateCoverLetter(resumeData, subjectToUse);
+    const companyInfo = {
+      companyName: letterCompanyName,
+      recipientName: letterRecipientName,
+      companyPhone: letterCompanyPhone,
+      companyEmail: letterCompanyEmail
+    };
+    const content = await generateCoverLetter(resumeData, subjectToUse, companyInfo);
     setGeneratedLetter(content);
     setIsCoverLetterMode(true);
     setLoading(false);
@@ -10139,7 +10251,8 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
               <span>{resumeData.styleConfig?.watermarkEnabled ? 'Marca D\'água: ON' : 'Marca D\'água'}</span>
             </button>
 
-            <Button className="h-8 px-3 text-xs font-bold flex bg-primary-blue text-white hover:bg-[#0052cc] rounded-full shadow-md" onClick={handlePrint} icon={Printer}>Imprimir</Button>
+            <Button className="h-8 px-3 text-xs font-bold flex bg-emerald-600 text-white hover:bg-emerald-700 rounded-full shadow-md" onClick={handleDownloadWord} icon={FileText}>Word (.docx)</Button>
+            <Button className="h-8 px-3 text-xs font-bold flex bg-primary-blue text-white hover:bg-[#0052cc] rounded-full shadow-md" onClick={handlePrint} icon={Printer}>Imprimir / PDF</Button>
           </div>
         </header>
 
@@ -11760,6 +11873,53 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
                              </p>
                           </div>
 
+                          {/* Target Company / Recipient Information */}
+                          <div className="space-y-3 pt-3 border-t border-gray-100">
+                             <label className="text-xs font-black text-deep-blue uppercase tracking-wider block flex items-center gap-2">
+                               <Building size={16} className="text-primary-blue" />
+                               Empresa / Destinatário (Opcional)
+                             </label>
+                             <div className="grid grid-cols-2 gap-3">
+                               <div className="space-y-1">
+                                 <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider block">Nome da Empresa</span>
+                                 <Input 
+                                   value={letterCompanyName}
+                                   onChange={(v: string) => setLetterCompanyName(v)}
+                                   placeholder="Ex: Tech Solutions Lda"
+                                 />
+                               </div>
+                               <div className="space-y-1">
+                                 <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider block">Recrutador / Cargo</span>
+                                 <Input 
+                                   value={letterRecipientName}
+                                   onChange={(v: string) => setLetterRecipientName(v)}
+                                   placeholder="Ex: Dr. António Costa ou RH"
+                                 />
+                               </div>
+                             </div>
+                             <div className="grid grid-cols-2 gap-3">
+                               <div className="space-y-1">
+                                 <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider block">Telefone</span>
+                                 <Input 
+                                   value={letterCompanyPhone}
+                                   onChange={(v: string) => setLetterCompanyPhone(v)}
+                                   placeholder="Ex: +351 210 000 000"
+                                 />
+                               </div>
+                               <div className="space-y-1">
+                                 <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider block">Email</span>
+                                 <Input 
+                                   value={letterCompanyEmail}
+                                   onChange={(v: string) => setLetterCompanyEmail(v)}
+                                   placeholder="Ex: recrutamento@empresa.com"
+                                 />
+                               </div>
+                             </div>
+                             <p className="text-[11px] text-text-muted font-medium leading-relaxed">
+                               Estes dados serão incluídos formalmente no cabeçalho e utilizados pela IA para personalizar o texto.
+                             </p>
+                          </div>
+
                           {/* Formatting & Layout Controls for Cover Letter Subject */}
                           <div className="pt-3 border-t border-gray-100 space-y-3 bg-gray-50/80 p-3.5 rounded-2xl">
                             <div className="flex items-center justify-between">
@@ -12503,6 +12663,12 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
                          onChangeSubject={setLetterSubject}
                          subjectStyle={letterSubjectStyle}
                          onChangeSubjectStyle={setLetterSubjectStyle}
+                         companyInfo={{
+                           companyName: letterCompanyName,
+                           recipientName: letterRecipientName,
+                           companyPhone: letterCompanyPhone,
+                           companyEmail: letterCompanyEmail
+                         }}
                        />
                     </motion.div>
                   ) : (
@@ -12733,6 +12899,12 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
                       onChangeSubject={setLetterSubject}
                       subjectStyle={letterSubjectStyle}
                       onChangeSubjectStyle={setLetterSubjectStyle}
+                      companyInfo={{
+                        companyName: letterCompanyName,
+                        recipientName: letterRecipientName,
+                        companyPhone: letterCompanyPhone,
+                        companyEmail: letterCompanyEmail
+                      }}
                     />
                   ) : (
                     <ResumeRenderer data={resumeData} templateId={template} showGuides={false} onChange={setResumeData} />
@@ -12866,6 +13038,12 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
               language={tempDownloadData.data.language}
               subject={tempDownloadData.data.subject || letterSubject}
               subjectStyle={tempDownloadData.data.subjectStyle || letterSubjectStyle}
+              companyInfo={tempDownloadData.data.companyInfo || {
+                companyName: letterCompanyName,
+                recipientName: letterRecipientName,
+                companyPhone: letterCompanyPhone,
+                companyEmail: letterCompanyEmail
+              }}
             />
           )}
         </div>,

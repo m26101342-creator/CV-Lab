@@ -599,6 +599,38 @@ export const saveClientResume = async (clientData: {
     return record;
 };
 
+export const updateDocumentPaymentStatus = async (docId: string, paymentStatus: 'paid' | 'pending') => {
+    const nowIso = new Date().toISOString();
+    // 1. Update LocalStorage
+    try {
+        const rawLocal = localStorage.getItem('saved_client_resumes');
+        if (rawLocal) {
+            let localList: any[] = JSON.parse(rawLocal);
+            if (Array.isArray(localList)) {
+                localList = localList.map(item => {
+                    if (item.id === docId) {
+                        return { ...item, paymentStatus, updatedAt: nowIso };
+                    }
+                    return item;
+                });
+                localStorage.setItem('saved_client_resumes', JSON.stringify(localList));
+            }
+        }
+    } catch (e) {
+        console.warn("LocalStorage update payment status error:", e);
+    }
+
+    // 2. Update Firestore
+    try {
+        if (db) {
+            await setDoc(doc(db, 'generated_documents', docId), { paymentStatus, updatedAt: nowIso }, { merge: true });
+            await setDoc(doc(db, 'client_resumes', docId), { paymentStatus, updatedAt: nowIso }, { merge: true });
+        }
+    } catch (errDb) {
+        console.error("Erro ao atualizar estado de pagamento no Firestore:", errDb);
+    }
+};
+
 // -------------------------------------------------------------------------
 // STAFF ACCESS LINKS MANAGER (24H / REVOCABLE LINKS FOR EMPLOYEES)
 // -------------------------------------------------------------------------

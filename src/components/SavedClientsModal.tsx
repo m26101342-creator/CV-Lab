@@ -6,7 +6,7 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { ResumeData, TemplateType, ServiceType, OFFICIAL_SERVICE_PRICES } from '../types';
-import { db, collection, getDocs, doc, deleteDoc, query, onSnapshot } from '../lib/firebase';
+import { db, collection, getDocs, doc, deleteDoc, query, onSnapshot, updateDocumentPaymentStatus } from '../lib/firebase';
 import { OFFICIAL_HISTORICAL_DOCUMENTS } from '../data/historicalDocuments';
 
 interface SavedClientsModalProps {
@@ -27,8 +27,16 @@ export const SavedClientsModal: React.FC<SavedClientsModalProps> = ({
   const [clientsList, setClientsList] = useState<any[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [serviceFilter, setServiceFilter] = useState<'all' | 'cv_normal' | 'cv_english' | 'cv_europeu' | 'cover_letter'>('all');
+  const [paymentFilter, setPaymentFilter] = useState<'all' | 'paid' | 'pending'>('all');
   const [loading, setLoading] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+
+  // Toggle payment status helper
+  const handleTogglePaymentStatus = async (clientId: string, currentStatus: string) => {
+    const newStatus: 'paid' | 'pending' = (currentStatus === 'pending') ? 'paid' : 'pending';
+    await updateDocumentPaymentStatus(clientId, newStatus);
+    setClientsList(prev => prev.map(c => c.id === clientId ? { ...c, paymentStatus: newStatus } : c));
+  };
 
   // Load clients and documents from database and storage
   const fetchAllSavedClients = async () => {
@@ -177,6 +185,22 @@ export const SavedClientsModal: React.FC<SavedClientsModalProps> = ({
     );
   };
 
+  const getPaymentBadge = (item: any) => {
+    const isPending = item.paymentStatus === 'pending';
+    if (isPending) {
+      return (
+        <span className="px-2.5 py-1 rounded-lg text-[11px] font-black bg-amber-100 text-amber-900 border border-amber-300 flex items-center gap-1 animate-pulse">
+          <Clock size={12} /> Pagamento Pendente
+        </span>
+      );
+    }
+    return (
+      <span className="px-2.5 py-1 rounded-lg text-[11px] font-black bg-emerald-100 text-emerald-900 border border-emerald-300 flex items-center gap-1">
+        <CheckCircle size={12} /> Pago
+      </span>
+    );
+  };
+
   // Filter clients
   const filteredClients = clientsList.filter(item => {
     const name = item.candidateName || item.clientName || item.personalInfo?.fullName || '';
@@ -189,6 +213,11 @@ export const SavedClientsModal: React.FC<SavedClientsModalProps> = ({
                           phone.toLowerCase().includes(query);
 
     if (!matchesSearch) return false;
+
+    // Payment Filter
+    const isPending = item.paymentStatus === 'pending';
+    if (paymentFilter === 'paid' && isPending) return false;
+    if (paymentFilter === 'pending' && !isPending) return false;
 
     if (serviceFilter === 'all') return true;
     if (serviceFilter === 'cv_europeu') {
@@ -267,6 +296,34 @@ export const SavedClientsModal: React.FC<SavedClientsModalProps> = ({
 
             {/* Filter Pills */}
             <div className="flex items-center gap-1.5 overflow-x-auto w-full md:w-auto pb-1 md:pb-0">
+              {/* Payment Filter */}
+              <div className="flex items-center bg-slate-200/80 p-0.5 rounded-xl mr-2 shrink-0">
+                <button
+                  onClick={() => setPaymentFilter('all')}
+                  className={`px-2.5 py-1 rounded-lg text-[11px] font-black transition-all ${
+                    paymentFilter === 'all' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  Todos ({clientsList.length})
+                </button>
+                <button
+                  onClick={() => setPaymentFilter('paid')}
+                  className={`px-2.5 py-1 rounded-lg text-[11px] font-black transition-all ${
+                    paymentFilter === 'paid' ? 'bg-emerald-600 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  Pagos
+                </button>
+                <button
+                  onClick={() => setPaymentFilter('pending')}
+                  className={`px-2.5 py-1 rounded-lg text-[11px] font-black transition-all ${
+                    paymentFilter === 'pending' ? 'bg-amber-500 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  Pendentes
+                </button>
+              </div>
+
               <button
                 onClick={() => setServiceFilter('all')}
                 className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
@@ -275,7 +332,7 @@ export const SavedClientsModal: React.FC<SavedClientsModalProps> = ({
                     : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
                 }`}
               >
-                Todos ({clientsList.length})
+                Serviços
               </button>
               <button
                 onClick={() => setServiceFilter('cv_normal')}
@@ -285,7 +342,7 @@ export const SavedClientsModal: React.FC<SavedClientsModalProps> = ({
                     : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
                 }`}
               >
-                Normal (2.000 Kz)
+                Normal
               </button>
               <button
                 onClick={() => setServiceFilter('cv_english')}
@@ -295,7 +352,7 @@ export const SavedClientsModal: React.FC<SavedClientsModalProps> = ({
                     : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
                 }`}
               >
-                Inglês (3.000 Kz)
+                Inglês
               </button>
               <button
                 onClick={() => setServiceFilter('cv_europeu')}
@@ -305,7 +362,7 @@ export const SavedClientsModal: React.FC<SavedClientsModalProps> = ({
                     : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
                 }`}
               >
-                Europeu (5.000 Kz)
+                Europeu
               </button>
               <button
                 onClick={() => setServiceFilter('cover_letter')}
@@ -386,6 +443,7 @@ export const SavedClientsModal: React.FC<SavedClientsModalProps> = ({
                         <div className="flex items-center gap-2 flex-wrap">
                           <h3 className="text-sm font-bold text-slate-900 truncate">{name}</h3>
                           {getServiceBadge(client)}
+                          {getPaymentBadge(client)}
                         </div>
 
                         <p className="text-xs font-semibold text-blue-800 truncate">{title}</p>
@@ -409,7 +467,30 @@ export const SavedClientsModal: React.FC<SavedClientsModalProps> = ({
                     </div>
 
                     {/* Action Buttons */}
-                    <div className="flex items-center gap-2 w-full md:w-auto pt-2 md:pt-0 border-t md:border-t-0 border-slate-100 justify-end">
+                    <div className="flex items-center gap-2 w-full md:w-auto pt-2 md:pt-0 border-t md:border-t-0 border-slate-100 justify-end flex-wrap">
+                      {/* Alternar Pago / Pendente */}
+                      <button
+                        onClick={() => handleTogglePaymentStatus(client.id, client.paymentStatus || 'paid')}
+                        className={`px-3 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-xs cursor-pointer ${
+                          client.paymentStatus === 'pending'
+                            ? 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-600/20'
+                            : 'bg-slate-100 hover:bg-amber-100 text-slate-700 hover:text-amber-900 border border-slate-200'
+                        }`}
+                        title={client.paymentStatus === 'pending' ? "Marcar pagamento como PAGO" : "Alterar estado para PENDENTE"}
+                      >
+                        {client.paymentStatus === 'pending' ? (
+                          <>
+                            <CheckCircle size={13} />
+                            <span>Marcar Pago</span>
+                          </>
+                        ) : (
+                          <>
+                            <Clock size={13} />
+                            <span className="hidden sm:inline">Marcar Pendente</span>
+                          </>
+                        )}
+                      </button>
+
                       {/* 1. Botão Principal: EDITAR NO EDITOR */}
                       <button
                         onClick={() => {

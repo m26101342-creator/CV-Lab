@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  Users, FileText, CheckCircle2, Clock, XCircle, Search, Filter, RefreshCw, 
+  Users, FileText, CheckCircle2, CheckCircle2 as CheckCircle, Clock, XCircle, Search, Filter, RefreshCw, 
   Eye, Download, Printer, ArrowLeft, ArrowRight, Shield, ShieldCheck, ShieldAlert, 
   DollarSign, Calendar, Globe, User, BarChart, CreditCard, ChevronRight, 
   MessageSquare, Plus, Trash2, Edit3, Lock, ExternalLink, Sparkles, AlertTriangle, 
@@ -14,7 +14,8 @@ import {
 import { 
   db, auth, collection, doc, query, onSnapshot, getDocs, setDoc, 
   updateDoc, deleteDoc, addDoc, useAuth, DEFAULT_AUTHORIZED_EMAILS,
-  createStaffAccessLink, revokeStaffAccessLink, extendStaffAccessLink, deleteStaffAccessLink
+  createStaffAccessLink, revokeStaffAccessLink, extendStaffAccessLink, deleteStaffAccessLink,
+  updateDocumentPaymentStatus
 } from '../lib/firebase';
 import { ResumeData, TemplateType, StaffAccessLink } from '../types';
 import { OFFICIAL_HISTORICAL_DOCUMENTS, HistoricalDocumentItem } from '../data/historicalDocuments';
@@ -28,6 +29,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ setView, onLoadDocumentI
   const { isAdmin, user, authorizedEmails: authListFromHook } = useAuth();
   const [activeTab, setActiveTab] = useState<'overview' | 'documents' | 'access' | 'staff_links' | 'reports' | 'orders' | 'visitors' | 'notes'>('overview');
   const [reportPeriod, setReportPeriod] = useState<'this_week' | 'last_week' | 'this_month' | 'last_month' | 'all'>('this_week');
+  const [accountingPaymentFilter, setAccountingPaymentFilter] = useState<'all' | 'paid' | 'pending'>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [docFilterType, setDocFilterType] = useState<'all' | 'cv' | 'cover_letter'>('all');
   const [viewMode, setViewMode] = useState<'grid' | 'table'>('grid');
@@ -534,6 +536,11 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ setView, onLoadDocumentI
   // -------------------------------------------------------------------------
   // REPORT DATA CALCULATIONS & EXPORT HELPERS
   // -------------------------------------------------------------------------
+  const handleUpdatePaymentStatusInAdmin = async (docId: string, newStatus: 'paid' | 'pending') => {
+    await updateDocumentPaymentStatus(docId, newStatus);
+    setGeneratedDocs(prev => prev.map(d => d.id === docId ? { ...d, paymentStatus: newStatus } : d));
+  };
+
   const getFilteredDataByPeriod = () => {
     const now = new Date();
     let startDate = new Date();
@@ -556,10 +563,18 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ setView, onLoadDocumentI
     const filteredReportDocs = generatedDocs.filter((d: any) => {
       if (!d.createdAt) return true;
       const docDate = new Date(d.createdAt);
+      let matchesPeriod = docDate >= startDate;
       if (reportPeriod === 'last_week' || reportPeriod === 'last_month') {
-        return docDate >= startDate && docDate <= endDate;
+        matchesPeriod = docDate >= startDate && docDate <= endDate;
       }
-      return docDate >= startDate;
+      if (!matchesPeriod) return false;
+
+      // Accounting payment filter
+      const isPending = d.paymentStatus === 'pending';
+      if (accountingPaymentFilter === 'paid' && isPending) return false;
+      if (accountingPaymentFilter === 'pending' && !isPending) return false;
+
+      return true;
     });
 
     const filteredReportOrders = orders.filter((o: any) => {
@@ -582,7 +597,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ setView, onLoadDocumentI
     }
 
     let csvContent = "data:text/csv;charset=utf-8,";
-    csvContent += "ID,Data/Hora,Nome do Cliente,Email,Telefone,Tipo de Documento,Modelo,Emitido Por,Valor (Kz)\n";
+    csvContent += "ID,Data/Hora,Nome do Cliente,Email,Telefone,Tipo de Documento,Modelo,Emitido Por,Valor (Kz),Estado Pagamento\n";
 
     filteredReportDocs.forEach((d: any) => {
       const dateStr = d.createdAt ? new Date(d.createdAt).toLocaleString('pt-PT') : '—';
@@ -593,14 +608,15 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ setView, onLoadDocumentI
       const template = d.template || '—';
       const issuer = (d.generatedBy || 'Admin').replace(/,/g, ' ');
       const price = d.price || 2000;
+      const paymentStatusStr = d.paymentStatus === 'pending' ? 'PENDENTE' : 'PAGO';
 
-      csvContent += `"${d.id}","${dateStr}","${name}","${email}","${phone}","${type}","${template}","${issuer}",${price}\n`;
+      csvContent += `"${d.id}","${dateStr}","${name}","${email}","${phone}","${type}","${template}","${issuer}",${price},"${paymentStatusStr}"\n`;
     });
 
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
     link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `relatorio_cvlab_${reportPeriod}_${new Date().toISOString().split('T')[0]}.csv`);
+    link.setAttribute("download", `relatorio_contabilidade_cvlab_${reportPeriod}_${new Date().toISOString().split('T')[0]}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -613,7 +629,13 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ setView, onLoadDocumentI
                         reportPeriod === 'this_month' ? 'Este Mês' :
                         reportPeriod === 'last_month' ? 'Mês Anterior' : 'Histórico Completo';
 
-    const totalRevenue = filteredReportDocs.reduce((acc, d) => acc + (d.price || 2000), 0);
+    const paidDocs = filteredReportDocs.filter(d => d.paymentStatus !== 'pending');
+    const pendingDocs = filteredReportDocs.filter(d => d.paymentStatus === 'pending');
+
+    const totalPaidRevenue = paidDocs.reduce((acc, d) => acc + (d.price || 2000), 0);
+    const totalPendingRevenue = pendingDocs.reduce((acc, d) => acc + (d.price || 2000), 0);
+    const totalGrossRevenue = totalPaidRevenue + totalPendingRevenue;
+
     const cvCount = filteredReportDocs.filter(d => d.type === 'cv' || d.type === 'combo').length;
     const letterCount = filteredReportDocs.filter(d => d.type === 'cover_letter').length;
 
@@ -632,7 +654,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ setView, onLoadDocumentI
       <!DOCTYPE html>
       <html>
       <head>
-        <title>CV LAB ANGOLA - RELATÓRIO DE DESEMPENHO</title>
+        <title>CV LAB ANGOLA - RELATÓRIO DE CONTABILIDADE</title>
         <style>
           body { font-family: Arial, sans-serif; padding: 40px; color: #0f172a; line-height: 1.5; }
           .header { text-align: center; border-bottom: 3px solid #1e40af; padding-bottom: 20px; margin-bottom: 30px; }
@@ -646,33 +668,37 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ setView, onLoadDocumentI
           th { background: #1e40af; color: white; text-align: left; padding: 10px; font-size: 10px; text-transform: uppercase; }
           td { padding: 9px 10px; border-bottom: 1px solid #e2e8f0; }
           tr:nth-child(even) { background: #f8fafc; }
+          .badge-paid { background: #d1fae5; color: #065f46; font-weight: bold; padding: 2px 6px; border-radius: 4px; font-size: 9px; }
+          .badge-pending { background: #fef3c7; color: #92400e; font-weight: bold; padding: 2px 6px; border-radius: 4px; font-size: 9px; }
           .section-title { font-size: 13px; font-weight: 900; color: #0f172a; margin-bottom: 12px; text-transform: uppercase; border-left: 4px solid #1e40af; padding-left: 10px; }
-          .footer-sig { margin-top: 60px; display: grid; grid-template-columns: 1fr 1fr; gap: 50px; text-align: center; font-size: 11px; }
-          .sig-line { border-top: 1px solid #94a3b8; margin-top: 40px; padding-top: 5px; font-weight: bold; }
         </style>
       </head>
       <body>
         <div class="header">
-          <h1>CV LAB ANGOLA • RELATÓRIO OFICIAL DE DESEMPENHO</h1>
+          <h1>CV LAB ANGOLA • RELATÓRIO FINANCEIRO & CONTABILIDADE</h1>
           <p>Período: ${periodLabel} • Emitido em: ${new Date().toLocaleString('pt-PT')}</p>
         </div>
 
         <div class="meta-grid">
           <div class="card">
-            <h3>Faturação Total</h3>
-            <div class="val" style="color: #047857;">${totalRevenue.toLocaleString('pt-PT')} Kz</div>
+            <h3>Faturação Recebida (Pagos)</h3>
+            <div class="val" style="color: #047857;">${totalPaidRevenue.toLocaleString('pt-PT')} Kz</div>
+            <div style="font-size: 10px; color: #64748b;">${paidDocs.length} atendimentos pagos</div>
+          </div>
+          <div class="card">
+            <h3>Valor Pendente (A Receber)</h3>
+            <div class="val" style="color: #d97706;">${totalPendingRevenue.toLocaleString('pt-PT')} Kz</div>
+            <div style="font-size: 10px; color: #64748b;">${pendingDocs.length} atendimentos pendentes</div>
+          </div>
+          <div class="card">
+            <h3>Faturação Total Bruta</h3>
+            <div class="val" style="color: #1e40af;">${totalGrossRevenue.toLocaleString('pt-PT')} Kz</div>
+            <div style="font-size: 10px; color: #64748b;">Geral acumulado</div>
           </div>
           <div class="card">
             <h3>Total Documentos</h3>
             <div class="val">${filteredReportDocs.length}</div>
-          </div>
-          <div class="card">
-            <h3>Currículos</h3>
-            <div class="val">${cvCount}</div>
-          </div>
-          <div class="card">
-            <h3>Cartas Apresentação</h3>
-            <div class="val">${letterCount}</div>
+            <div style="font-size: 10px; color: #64748b;">${cvCount} CVs • ${letterCount} Cartas</div>
           </div>
         </div>
 
@@ -692,7 +718,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ setView, onLoadDocumentI
                 <td><strong>${staff}</strong></td>
                 <td>${data.count}</td>
                 <td><strong>${data.revenue.toLocaleString('pt-PT')} Kz</strong></td>
-                <td>${totalRevenue > 0 ? ((data.revenue / totalRevenue) * 100).toFixed(1) : 0}%</td>
+                <td>${totalGrossRevenue > 0 ? ((data.revenue / totalGrossRevenue) * 100).toFixed(1) : 0}%</td>
               </tr>
             `).join('')}
           </tbody>
@@ -2110,40 +2136,77 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ setView, onLoadDocumentI
               </div>
             </div>
 
-            {/* PERIOD SELECTOR TABS */}
-            <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs flex flex-wrap items-center justify-between gap-4">
+            {/* PERIOD SELECTOR TABS & PAYMENT FILTER */}
+            <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
               <div className="flex items-center gap-2">
                 <Calendar size={16} className="text-blue-600" />
                 <span className="text-xs font-black uppercase tracking-wider text-slate-700">Selecione o Período do Relatório:</span>
               </div>
 
-              <div className="flex flex-wrap items-center gap-2">
-                {[
-                  { id: 'this_week', label: 'Esta Semana (7 Dias)' },
-                  { id: 'last_week', label: 'Semana Anterior' },
-                  { id: 'this_month', label: 'Este Mês' },
-                  { id: 'last_month', label: 'Mês Anterior' },
-                  { id: 'all', label: 'Histórico Completo' }
-                ].map(p => (
+              <div className="flex flex-wrap items-center gap-3">
+                <div className="flex flex-wrap items-center gap-1.5">
+                  {[
+                    { id: 'this_week', label: 'Esta Semana (7 Dias)' },
+                    { id: 'last_week', label: 'Semana Anterior' },
+                    { id: 'this_month', label: 'Este Mês' },
+                    { id: 'last_month', label: 'Mês Anterior' },
+                    { id: 'all', label: 'Histórico Completo' }
+                  ].map(p => (
+                    <button
+                      key={p.id}
+                      onClick={() => setReportPeriod(p.id as any)}
+                      className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all ${
+                        reportPeriod === p.id 
+                          ? 'bg-blue-600 text-white font-black shadow-sm' 
+                          : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                      }`}
+                    >
+                      {p.label}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Filter Payment Status */}
+                <div className="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200 shrink-0">
                   <button
-                    key={p.id}
-                    onClick={() => setReportPeriod(p.id as any)}
-                    className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
-                      reportPeriod === p.id 
-                        ? 'bg-blue-600 text-white font-black shadow-sm' 
-                        : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                    onClick={() => setAccountingPaymentFilter('all')}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                      accountingPaymentFilter === 'all' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-600 hover:text-slate-900'
                     }`}
                   >
-                    {p.label}
+                    Todos
                   </button>
-                ))}
+                  <button
+                    onClick={() => setAccountingPaymentFilter('paid')}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                      accountingPaymentFilter === 'paid' ? 'bg-emerald-600 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'
+                    }`}
+                  >
+                    Pagos
+                  </button>
+                  <button
+                    onClick={() => setAccountingPaymentFilter('pending')}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                      accountingPaymentFilter === 'pending' ? 'bg-amber-500 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'
+                    }`}
+                  >
+                    Pendentes
+                  </button>
+                </div>
               </div>
             </div>
 
             {/* REPORT SUMMARY METRICS CARDS */}
             {(() => {
               const { filteredReportDocs } = getFilteredDataByPeriod();
-              const periodRevenue = filteredReportDocs.reduce((acc: number, d: any) => acc + (d.price || 2000), 0);
+              
+              const paidDocs = filteredReportDocs.filter((d: any) => d.paymentStatus !== 'pending');
+              const pendingDocs = filteredReportDocs.filter((d: any) => d.paymentStatus === 'pending');
+
+              const paidRevenue = paidDocs.reduce((acc: number, d: any) => acc + (d.price || 2000), 0);
+              const pendingRevenue = pendingDocs.reduce((acc: number, d: any) => acc + (d.price || 2000), 0);
+              const totalGrossRevenue = paidRevenue + pendingRevenue;
+
               const cvsCount = filteredReportDocs.filter((d: any) => d.type === 'cv' || d.type === 'combo').length;
               const lettersCount = filteredReportDocs.filter((d: any) => d.type === 'cover_letter').length;
 
@@ -2153,21 +2216,39 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ setView, onLoadDocumentI
                 <div className="space-y-8">
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
                     
-                    <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm relative overflow-hidden">
+                    {/* Card 1: Faturação Recebida */}
+                    <div className="bg-white p-6 rounded-3xl border border-emerald-200/80 shadow-sm relative overflow-hidden bg-gradient-to-br from-white to-emerald-50/30">
                       <div className="flex items-center justify-between">
-                        <span className="text-[11px] font-black uppercase text-slate-500 tracking-wider">Faturação do Período</span>
-                        <div className="w-10 h-10 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold">
+                        <span className="text-[11px] font-black uppercase text-emerald-800 tracking-wider">Faturação Recebida (Pagos)</span>
+                        <div className="w-10 h-10 rounded-2xl bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold border border-emerald-200">
                           <DollarSign size={20} />
                         </div>
                       </div>
                       <div className="mt-4">
                         <div className="text-2xl sm:text-3xl font-black text-emerald-700 tracking-tight">
-                          {periodRevenue.toLocaleString('pt-PT')} <span className="text-sm">Kz</span>
+                          {paidRevenue.toLocaleString('pt-PT')} <span className="text-sm">Kz</span>
                         </div>
-                        <p className="text-[11px] text-slate-500 font-medium mt-1">Total de vendas registadas no período</p>
+                        <p className="text-[11px] text-emerald-800 font-medium mt-1">{paidDocs.length} atendimentos liquidados</p>
                       </div>
                     </div>
 
+                    {/* Card 2: Valor Pendente */}
+                    <div className="bg-white p-6 rounded-3xl border border-amber-200/80 shadow-sm relative overflow-hidden bg-gradient-to-br from-white to-amber-50/30">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[11px] font-black uppercase text-amber-800 tracking-wider">Valor Pendente (A Receber)</span>
+                        <div className="w-10 h-10 rounded-2xl bg-amber-100 text-amber-700 flex items-center justify-center font-bold border border-amber-200">
+                          <Clock size={20} />
+                        </div>
+                      </div>
+                      <div className="mt-4">
+                        <div className="text-2xl sm:text-3xl font-black text-amber-700 tracking-tight">
+                          {pendingRevenue.toLocaleString('pt-PT')} <span className="text-sm">Kz</span>
+                        </div>
+                        <p className="text-[11px] text-amber-800 font-medium mt-1">{pendingDocs.length} atendimentos pendentes</p>
+                      </div>
+                    </div>
+
+                    {/* Card 3: Total Documentos */}
                     <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm relative overflow-hidden">
                       <div className="flex items-center justify-between">
                         <span className="text-[11px] font-black uppercase text-slate-500 tracking-wider">Total de Documentos</span>
@@ -2183,33 +2264,19 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ setView, onLoadDocumentI
                       </div>
                     </div>
 
-                    <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm relative overflow-hidden">
+                    {/* Card 4: Faturação Total Bruta */}
+                    <div className="bg-white p-6 rounded-3xl border border-indigo-200/80 shadow-sm relative overflow-hidden">
                       <div className="flex items-center justify-between">
-                        <span className="text-[11px] font-black uppercase text-slate-500 tracking-wider">Atendentes Ativos</span>
-                        <div className="w-10 h-10 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold">
-                          <UserCheck size={20} />
-                        </div>
-                      </div>
-                      <div className="mt-4">
-                        <div className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
-                          {activeStaffSet.size} <span className="text-sm text-slate-500">atendentes</span>
-                        </div>
-                        <p className="text-[11px] text-slate-500 font-medium mt-1">Contas e links com vendas registadas</p>
-                      </div>
-                    </div>
-
-                    <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm relative overflow-hidden">
-                      <div className="flex items-center justify-between">
-                        <span className="text-[11px] font-black uppercase text-slate-500 tracking-wider">Ticket Médio / Doc</span>
-                        <div className="w-10 h-10 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center font-bold">
+                        <span className="text-[11px] font-black uppercase text-indigo-900 tracking-wider">Total Bruto Projetado</span>
+                        <div className="w-10 h-10 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold border border-indigo-100">
                           <TrendingUp size={20} />
                         </div>
                       </div>
                       <div className="mt-4">
-                        <div className="text-2xl sm:text-3xl font-black text-amber-700 tracking-tight">
-                          {filteredReportDocs.length > 0 ? Math.round(periodRevenue / filteredReportDocs.length).toLocaleString('pt-PT') : 2000} <span className="text-sm">Kz</span>
+                        <div className="text-2xl sm:text-3xl font-black text-indigo-950 tracking-tight">
+                          {totalGrossRevenue.toLocaleString('pt-PT')} <span className="text-sm">Kz</span>
                         </div>
-                        <p className="text-[11px] text-slate-500 font-medium mt-1">Valor médio por atendimento</p>
+                        <p className="text-[11px] text-slate-500 font-medium mt-1">Global acumulado (Pagos + Pendentes)</p>
                       </div>
                     </div>
 
@@ -2263,7 +2330,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ setView, onLoadDocumentI
                             }
 
                             return staffEntries.map(([staffName, data], idx) => {
-                              const share = periodRevenue > 0 ? ((data.revenue / periodRevenue) * 100).toFixed(1) : '0';
+                              const share = totalGrossRevenue > 0 ? ((data.revenue / totalGrossRevenue) * 100).toFixed(1) : '0';
                               return (
                                 <tr key={idx} className="hover:bg-slate-50/80 transition-colors">
                                   <td className="py-3.5 px-4 font-bold text-slate-900 flex items-center gap-2">
@@ -2323,40 +2390,79 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ setView, onLoadDocumentI
                             <th className="py-3 px-4">Tipo de Serviço</th>
                             <th className="py-3 px-4">Atendente / Operador</th>
                             <th className="py-3 px-4">Valor (Kz)</th>
+                            <th className="py-3 px-4">Estado Pagamento</th>
+                            <th className="py-3 px-4 text-right">Ação / Alterar</th>
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100 text-xs font-medium">
                           {filteredReportDocs.length === 0 ? (
                             <tr>
-                              <td colSpan={5} className="py-8 text-center text-slate-400 italic">
-                                Nenhum atendimento registado para o período selecionado.
+                              <td colSpan={7} className="py-8 text-center text-slate-400 italic">
+                                Nenhum atendimento registado para o período ou estado selecionado.
                               </td>
                             </tr>
                           ) : (
-                            filteredReportDocs.slice(0, 50).map((docItem: any, idx: number) => (
-                              <tr key={idx} className="hover:bg-slate-50/80 transition-colors">
-                                <td className="py-3 px-4 text-slate-600 font-mono text-[11px]">
-                                  {docItem.createdAt ? new Date(docItem.createdAt).toLocaleString('pt-PT') : '—'}
-                                </td>
-                                <td className="py-3 px-4 font-bold text-slate-900">
-                                  {docItem.candidateName || '—'}
-                                  {docItem.candidatePhone && <span className="block text-[10px] text-slate-400 font-normal">{docItem.candidatePhone}</span>}
-                                </td>
-                                <td className="py-3 px-4">
-                                  <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                                    docItem.type === 'cover_letter' ? 'bg-indigo-50 text-indigo-700' : 'bg-blue-50 text-blue-700'
-                                  }`}>
-                                    {docItem.type === 'cover_letter' ? 'Carta de Apresentação' : 'Currículo Profissional'}
-                                  </span>
-                                </td>
-                                <td className="py-3 px-4 text-slate-700 font-medium">
-                                  {docItem.generatedBy || 'Admin'}
-                                </td>
-                                <td className="py-3 px-4 font-black text-emerald-700">
-                                  {(docItem.price || 2000).toLocaleString('pt-PT')} Kz
-                                </td>
-                              </tr>
-                            ))
+                            filteredReportDocs.slice(0, 50).map((docItem: any, idx: number) => {
+                              const isPending = docItem.paymentStatus === 'pending';
+                              return (
+                                <tr key={idx} className="hover:bg-slate-50/80 transition-colors">
+                                  <td className="py-3 px-4 text-slate-600 font-mono text-[11px]">
+                                    {docItem.createdAt ? new Date(docItem.createdAt).toLocaleString('pt-PT') : '—'}
+                                  </td>
+                                  <td className="py-3 px-4 font-bold text-slate-900">
+                                    {docItem.candidateName || '—'}
+                                    {docItem.candidatePhone && <span className="block text-[10px] text-slate-400 font-normal">{docItem.candidatePhone}</span>}
+                                  </td>
+                                  <td className="py-3 px-4">
+                                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                                      docItem.type === 'cover_letter' ? 'bg-indigo-50 text-indigo-700' : 'bg-blue-50 text-blue-700'
+                                    }`}>
+                                      {docItem.type === 'cover_letter' ? 'Carta de Apresentação' : 'Currículo Profissional'}
+                                    </span>
+                                  </td>
+                                  <td className="py-3 px-4 text-slate-700 font-medium">
+                                    {docItem.generatedBy || 'Admin'}
+                                  </td>
+                                  <td className="py-3 px-4 font-black text-slate-900">
+                                    {(docItem.price || 2000).toLocaleString('pt-PT')} Kz
+                                  </td>
+                                  <td className="py-3 px-4">
+                                    {isPending ? (
+                                      <span className="px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-amber-100 text-amber-900 border border-amber-300 flex items-center gap-1 w-fit animate-pulse">
+                                        <Clock size={11} /> Pendente
+                                      </span>
+                                    ) : (
+                                      <span className="px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-100 text-emerald-900 border border-emerald-300 flex items-center gap-1 w-fit">
+                                        <CheckCircle size={11} /> Pago
+                                      </span>
+                                    )}
+                                  </td>
+                                  <td className="py-3 px-4 text-right">
+                                    <button
+                                      onClick={() => handleUpdatePaymentStatusInAdmin(docItem.id, isPending ? 'paid' : 'pending')}
+                                      className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ml-auto cursor-pointer ${
+                                        isPending
+                                          ? 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs'
+                                          : 'bg-slate-100 hover:bg-amber-100 text-slate-700 hover:text-amber-900 border border-slate-200'
+                                      }`}
+                                      title={isPending ? "Marcar atendimento como PAGO" : "Alterar estado para PENDENTE"}
+                                    >
+                                      {isPending ? (
+                                        <>
+                                          <CheckCircle size={12} />
+                                          <span>Marcar Pago</span>
+                                        </>
+                                      ) : (
+                                        <>
+                                          <Clock size={12} />
+                                          <span>Marcar Pendente</span>
+                                        </>
+                                      )}
+                                    </button>
+                                  </td>
+                                </tr>
+                              );
+                            })
                           )}
                         </tbody>
                       </table>

@@ -440,38 +440,69 @@ export async function optimizeResumeText(text: string, type: 'summary' | 'experi
   }
 }
 
-export async function generateCoverLetter(resumeData: any, jobTitle: string): Promise<string> {
-  const cacheKey = `${jobTitle}_${JSON.stringify(resumeData?.personalInfo || {})}_${resumeData?.experience?.length || 0}`;
+export async function generateCoverLetter(
+  resumeData: any, 
+  jobTitle: string,
+  companyInfo?: {
+    companyName?: string;
+    recipientName?: string;
+    companyPhone?: string;
+    companyEmail?: string;
+  }
+): Promise<string> {
+  const cacheKey = `${jobTitle}_${JSON.stringify(companyInfo || {})}_${JSON.stringify(resumeData?.personalInfo || {})}_${resumeData?.experience?.length || 0}`;
   const cachedVal = getLocalCache("coverletter", cacheKey);
   if (cachedVal) return cachedVal;
 
   const pInfo = resumeData?.personalInfo || {};
   const experiences = Array.isArray(resumeData?.experience) ? resumeData.experience : [];
+  const education = Array.isArray(resumeData?.education) ? resumeData.education : [];
+  const skills = Array.isArray(resumeData?.skills) ? resumeData.skills : [];
+  const certifications = Array.isArray(resumeData?.certifications) ? resumeData.certifications : [];
+
+  const compName = companyInfo?.companyName || "";
+  const recipient = companyInfo?.recipientName || "";
 
   const prompt = `
-    Escreva uma carta de apresentação personalizada para o cargo: "${jobTitle || pInfo.title || 'Oportunidade Profissional'}".
-    BASE DE DADOS DO CANDIDATO:
-    - Nome: ${pInfo.fullName || "Candidato"}
-    - Título: ${pInfo.title || "Profissional qualificado"}
-    - Resumo: ${pInfo.summary || ""}
-    - Experiências: ${JSON.stringify(experiences.map((e: any) => ({ cargo: e.position, empresa: e.company })))}
-    
-    ESTILO: Profissional, confiante, moderno e único.
-    DURAÇÃO: Máximo 3 parágrafos curtos.
-    
-    REGRAS:
-    1. Retorne APENAS a carta em PORTUGUÊS.
-    2. Sem markdown. Sem asteriscos.
-    3. Não use placeholders como "[Seu Telefone]". Use os dados fornecidos ou ignore se faltar.
+    Escreva uma carta de apresentação altamente profissional e persuasiva baseada no currículo do candidato e direcionada para a empresa/vaga informada.
+
+    DADOS DA EMPRESA E VAGA:
+    - Cargo/Vaga Pretendida: "${jobTitle || pInfo.title || 'Oportunidade Profissional'}"
+    - Nome da Empresa: "${compName || 'Empresa Recrutadora'}"
+    - Destinatário/Recrutador: "${recipient || 'Direção de Recursos Humanos'}"
+    - Telefone da Empresa: "${companyInfo?.companyPhone || ''}"
+    - Email da Empresa: "${companyInfo?.companyEmail || ''}"
+
+    DADOS COMPLETOS DO CURRÍCULO DO CANDIDATO:
+    - Nome Completo: ${pInfo.fullName || "Candidato"}
+    - Título Profissional: ${pInfo.title || "Profissional qualificado"}
+    - Resumo Profissional: ${pInfo.summary || ""}
+    - Experiências Profissionais: ${JSON.stringify(experiences.map((e: any) => ({ cargo: e.position, empresa: e.company, detalhes: e.description })))}
+    - Formação Académica: ${JSON.stringify(education.map((e: any) => ({ grau: e.degree, instituicao: e.institution })))}
+    - Competências Principais: ${skills.map((s: any) => typeof s === 'string' ? s : s.name).join(', ')}
+    - Formações e Cursos: ${certifications.map((c: any) => c.name).join(', ')}
+
+    ESTILO E ESTRUTURA:
+    - Tom formal, confiante, cortês e corporativo.
+    - DURAÇÃO: 3 a 4 parágrafos bem articulados.
+    - CONTEÚDO:
+      * Parágrafo 1: Apresentação inicial entusiasta direcionada à empresa "${compName || 'vossa organização'}" para a vaga "${jobTitle}".
+      * Parágrafo 2 e 3: Demonstre como o perfil do candidato (suas experiências específicas, competências técnicas e conquistas no currículo) agrega valor direto aos objetivos da empresa.
+      * Parágrafo final: Agradecimento formal, colocação à disposição para entrevista presencial ou remota.
+
+    REGRAS RÍGIDAS:
+    1. Retorne APENAS o corpo da carta em PORTUGUÊS.
+    2. Sem markdown (sem asteriscos, sem #).
+    3. NÃO inclua cabeçalhos com o seu próprio endereço ou placeholders tipo "[Seu Telefone]". Use estritamente o conteúdo do texto.
   `;
 
   try {
     const rawText = await generateContentDirect([{ role: 'user', parts: [{ text: prompt }] }], false, 0.8);
-    const result = rawText.trim();
+    const result = rawText.trim().replace(/\*/g, '');
     setLocalCache("coverletter", cacheKey, result);
     return result;
   } catch (error) {
-    return "Ocorreu um erro ao gerar a sua carta. Verifique a consola técnica.";
+    return "Ocorreu um erro ao gerar a sua carta. Verifique a sua ligação ou chave API.";
   }
 }
 
