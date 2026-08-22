@@ -40,6 +40,10 @@ export interface ResumeStyleConfig {
   europassSealOffsetY?: number;
   europassSealStyle?: 'standard' | 'white' | 'badge' | 'minimal';
   europassSealBgProtection?: boolean;
+  watermarkEnabled?: boolean;
+  watermarkText?: string;
+  watermarkColor?: string;
+  watermarkOpacity?: number;
 }
 
 export interface ResumeData {

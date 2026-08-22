@@ -67,9 +67,12 @@ import {
   CheckCircle2,
   Timer,
   ShieldCheck,
-  Key
+  Key,
+  Stamp
 } from 'lucide-react';
 import { AdSenseUnit } from './components/AdSenseUnit';
+import { WatermarkOverlay } from './components/WatermarkOverlay';
+import { WatermarkControlModal } from './components/WatermarkControlModal';
 import { ResumeData, INITIAL_RESUME_DATA, TemplateType, ResumeStyleConfig, ServiceType, OFFICIAL_SERVICE_PRICES, ClientRegistrationData, StaffAccessLink } from './types.ts';
 import { optimizeResumeText, generateCoverLetter, generateFullResume, parseResumeFromText, translateResumeToEnglish, translateLetterToEnglish, translateResumeToSpanish, translateLetterToSpanish, alterResumeInformation } from './services/geminiService.ts';
 import { pdf } from '@react-pdf/renderer';
@@ -918,6 +921,12 @@ const CoverLetterRenderer = React.memo(({
         color: '#1f2937'
       }}
     >
+      <WatermarkOverlay 
+        enabled={info?.styleConfig?.watermarkEnabled || (subjectStyle as any)?.watermarkEnabled}
+        text={info?.styleConfig?.watermarkText || (subjectStyle as any)?.watermarkText}
+        color={info?.styleConfig?.watermarkColor || (subjectStyle as any)?.watermarkColor}
+        opacity={info?.styleConfig?.watermarkOpacity || (subjectStyle as any)?.watermarkOpacity}
+      />
       <div 
         className="relative overflow-visible flex flex-col font-sans text-left"
         style={{ 
@@ -3137,6 +3146,14 @@ const ResumeRenderer = React.memo(({ data, templateId, showGuides, onChange }: {
     >
       {/* Universal Europass Seal Overlay */}
       <EuropassSealOverlay data={data} templateId={templateId} onChange={onChange} />
+
+      {/* Universal Watermark Overlay */}
+      <WatermarkOverlay 
+        enabled={data?.styleConfig?.watermarkEnabled}
+        text={data?.styleConfig?.watermarkText}
+        color={data?.styleConfig?.watermarkColor}
+        opacity={data?.styleConfig?.watermarkOpacity}
+      />
 
       {/* Absolute Overlays for Interactive Selection & Control */}
       {onChange && hoveredElement && (!selectedElement || selectedElement.id !== hoveredElement.id) && (
@@ -7203,6 +7220,7 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
   const [showPreviewModal, setShowPreviewModal] = useState(false);
   const [showClientRegistrationModal, setShowClientRegistrationModal] = useState(false);
   const [showSavedClientsModal, setShowSavedClientsModal] = useState(false);
+  const [showWatermarkModal, setShowWatermarkModal] = useState(false);
   const [currentClient, setCurrentClient] = useState<ClientRegistrationData | null>(null);
   const stepsScrollRef = useRef<HTMLDivElement>(null);
 
@@ -10106,6 +10124,21 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
               </button>
             </div>
 
+            {/* Botão de Marca D'água para Clientes */}
+            <button
+              type="button"
+              onClick={() => setShowWatermarkModal(true)}
+              className={`h-8 px-3 text-xs font-black flex items-center gap-1.5 rounded-full transition-all border shadow-xs cursor-pointer ${
+                resumeData.styleConfig?.watermarkEnabled 
+                  ? 'bg-amber-500 hover:bg-amber-600 text-white border-amber-600 ring-2 ring-amber-400/40 shadow-amber-500/20' 
+                  : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-100 hover:text-amber-600'
+              }`}
+              title="Configurar ou alternar marca d'água de prévia para envio ao cliente"
+            >
+              <Stamp size={14} className={resumeData.styleConfig?.watermarkEnabled ? 'animate-bounce' : ''} />
+              <span>{resumeData.styleConfig?.watermarkEnabled ? 'Marca D\'água: ON' : 'Marca D\'água'}</span>
+            </button>
+
             <Button className="h-8 px-3 text-xs font-bold flex bg-primary-blue text-white hover:bg-[#0052cc] rounded-full shadow-md" onClick={handlePrint} icon={Printer}>Imprimir</Button>
           </div>
         </header>
@@ -11653,6 +11686,36 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
                       </Button>
                    </div>
 
+                   {/* Watermark Configuration for Client Previews */}
+                   <div className="p-6 bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200/80 rounded-3xl space-y-4 shadow-sm text-left relative overflow-hidden">
+                      <div className="flex items-center justify-between flex-wrap gap-3">
+                        <div className="flex items-center gap-3">
+                          <div className={`w-10 h-10 rounded-2xl flex items-center justify-center font-bold text-sm ${
+                            resumeData.styleConfig?.watermarkEnabled ? 'bg-amber-500 text-white shadow-md' : 'bg-slate-200 text-slate-600'
+                          }`}>
+                            <Stamp size={20} />
+                          </div>
+                          <div>
+                            <span className="block text-xs font-black text-amber-950 uppercase tracking-wider">Marca D'água de Prévia para Cliente</span>
+                            <span className="block text-[11px] text-amber-800/80 font-medium">
+                              {resumeData.styleConfig?.watermarkEnabled 
+                                ? `Ativa: "${resumeData.styleConfig?.watermarkText || 'PRÉVIA DO CLIENTE • CV LAB'}"`
+                                : 'Desativada — Documento será gerado limpo para a entrega final'}
+                            </span>
+                          </div>
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={() => setShowWatermarkModal(true)}
+                          className="px-4 py-2.5 text-xs font-black rounded-2xl bg-amber-500 hover:bg-amber-600 text-white shadow-md shadow-amber-500/20 transition-all flex items-center gap-2 cursor-pointer"
+                        >
+                          <Stamp size={15} />
+                          <span>{resumeData.styleConfig?.watermarkEnabled ? 'Configurar / Alterar' : 'Ativar Marca D\'água'}</span>
+                        </button>
+                      </div>
+                   </div>
+
                    <div className="p-6 bg-white border border-gray-200 rounded-3xl space-y-5 shadow-sm text-left relative overflow-hidden">
                       {/* Subject Visibility Toggle Switch */}
                       <div className="flex items-center justify-between p-3.5 bg-slate-50 border border-slate-200/80 rounded-2xl">
@@ -12601,6 +12664,20 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
               </div>
 
               <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setShowWatermarkModal(true)}
+                  className={`h-9 px-3.5 text-xs font-black rounded-xl transition-all flex items-center gap-1.5 border shadow-sm ${
+                    resumeData.styleConfig?.watermarkEnabled 
+                      ? 'bg-amber-500 hover:bg-amber-600 text-white border-amber-600 ring-2 ring-amber-400/40 shadow-amber-500/20' 
+                      : 'bg-white/10 hover:bg-white/20 text-white border-white/20'
+                  }`}
+                  title="Configurar ou alternar marca d'água de prévia para envio ao cliente"
+                >
+                  <Stamp size={15} className={resumeData.styleConfig?.watermarkEnabled ? 'animate-bounce' : ''} />
+                  <span className="hidden sm:inline">{resumeData.styleConfig?.watermarkEnabled ? 'Marca D\'água: ON' : 'Marca D\'água'}</span>
+                </button>
+
                 <Button 
                   onClick={handlePrint} 
                   className="h-9 px-4 text-xs font-bold bg-white text-slate-900 hover:bg-slate-200 rounded-xl shadow-md" 
@@ -12819,6 +12896,19 @@ Agradeço desde já a atenção demonstrada em analisar o meu currículo em anex
             tpl,
             `${(loadedData.personalInfo?.fullName || 'Curriculo').replace(/\s+/g, '_')}_Curriculo.pdf`
           );
+        }}
+      />
+
+      {/* Watermark Control Modal */}
+      <WatermarkControlModal
+        isOpen={showWatermarkModal}
+        onClose={() => setShowWatermarkModal(false)}
+        styleConfig={resumeData.styleConfig}
+        onChangeStyleConfig={(newConfig) => {
+          setResumeData(prev => ({
+            ...prev,
+            styleConfig: newConfig
+          }));
         }}
       />
     </div>

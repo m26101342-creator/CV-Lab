@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { 
   X, Search, Filter, Edit3, Download, Printer, Copy, Trash2, 
   User, Plus, CheckCircle, Clock, Calendar, DollarSign, Globe, 
-  Award, FileText, Mail, Sparkles, RefreshCw, ChevronRight, ExternalLink
+  Award, FileText, Mail, Sparkles, RefreshCw, ChevronRight, ExternalLink, Stamp
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { ResumeData, TemplateType, ServiceType, OFFICIAL_SERVICE_PRICES } from '../types';
@@ -425,13 +425,34 @@ export const SavedClientsModal: React.FC<SavedClientsModalProps> = ({
 
                       {/* 2. Descarregar PDF direto se disponível */}
                       {onDirectDownloadPdf && (
-                        <button
-                          onClick={() => onDirectDownloadPdf(fullResume, client.template)}
-                          className="p-2 rounded-xl bg-slate-100 hover:bg-blue-50 text-slate-700 hover:text-blue-700 transition-colors"
-                          title="Descarregar PDF deste currículo"
-                        >
-                          <Download size={15} />
-                        </button>
+                        <>
+                          <button
+                            onClick={() => {
+                              const previewResume = {
+                                ...fullResume,
+                                styleConfig: {
+                                  ...(fullResume.styleConfig || {}),
+                                  watermarkEnabled: true,
+                                  watermarkText: 'PRÉVIA DO CLIENTE • CV LAB'
+                                }
+                              };
+                              onDirectDownloadPdf(previewResume, client.template);
+                            }}
+                            className="px-2.5 py-2 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-800 transition-colors flex items-center gap-1 text-xs font-black border border-amber-300/80 shadow-xs"
+                            title="Descarregar PDF de Prévia com Marca D'água para mandar ao cliente"
+                          >
+                            <Stamp size={13} />
+                            <span className="hidden sm:inline">Prévia</span>
+                          </button>
+
+                          <button
+                            onClick={() => onDirectDownloadPdf(fullResume, client.template)}
+                            className="p-2 rounded-xl bg-slate-100 hover:bg-blue-50 text-slate-700 hover:text-blue-700 transition-colors"
+                            title="Descarregar PDF Final Limpo"
+                          >
+                            <Download size={15} />
+                          </button>
+                        </>
                       )}
 
                       {/* 3. Eliminar */}

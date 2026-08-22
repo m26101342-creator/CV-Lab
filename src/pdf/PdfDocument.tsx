@@ -498,241 +498,252 @@ const Template4 = ({ data }: { data: ResumeData }) => {
 };
 
 const Template5 = ({ data }: { data: ResumeData }) => {
-  const cTheme = data.themeColor || '#1B2E4B';
+  const cTheme = data.themeColor || '#4A4C53';
+  const cSoft = '#F3F4F6';
+  const isEn = data.language === 'en';
+
   const styles = StyleSheet.create({
-    container: { height: '100%', backgroundColor: '#FFFFFF', padding: 30 },
-    header: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 20 },
-    headerLeft: { width: '55%', paddingTop: 20 },
-    name: { fontSize: 38, fontWeight: 900, color: cTheme, lineHeight: 1.1, textTransform: 'uppercase' },
-    title: { fontSize: 16, fontWeight: 700, color: '#4B5563', marginTop: 8 },
+    container: { flexDirection: 'row', width: '100%', minHeight: '100%', backgroundColor: '#FFFFFF' },
     
-    headerRight: { width: '40%', alignItems: 'flex-end' },
-    photoWrapper: { width: 150, height: 180, overflow: 'hidden', borderBottomLeftRadius: 75, borderBottomRightRadius: 75, borderTopLeftRadius: 75, borderTopRightRadius: 75, backgroundColor: '#E2E8F0' },
+    leftColumn: { width: '34%', backgroundColor: cSoft, padding: 18, paddingTop: 25 },
+    photoWrapper: { width: 90, height: 90, borderRadius: 45, overflow: 'hidden', alignSelf: 'center', marginBottom: 15, borderWidth: 3, borderColor: '#FFFFFF', backgroundColor: '#E2E8F0' },
     photo: { width: '100%', height: '100%', objectFit: 'cover' },
     
-    body: { flexDirection: 'row', height: '100%', flex: 1 },
+    leftSectionHeader: { fontSize: 9.5, fontWeight: 900, textTransform: 'uppercase', color: cTheme, letterSpacing: 1, marginBottom: 8, paddingBottom: 3, borderBottomWidth: 1.5, borderBottomColor: cTheme + '40' },
+    leftText: { fontSize: 8.5, color: '#374151', lineHeight: 1.4, marginBottom: 4 },
+    leftBox: { marginBottom: 14 },
     
-    leftColumn: { width: '40%', backgroundColor: cTheme, borderTopRightRadius: 60, padding: 30, color: '#FFFFFF' },
-    leftSectionTitle: { fontSize: 16, fontWeight: 900, color: '#FFFFFF', marginBottom: 15, marginTop: 25 },
-    leftText: { fontSize: 9, color: 'rgba(255,255,255,0.8)', lineHeight: 1.6, marginBottom: 8 },
+    rightColumn: { width: '66%', padding: 22, paddingLeft: 25 },
+    nameFirst: { fontSize: 26, fontWeight: 900, color: cTheme, textTransform: 'uppercase', lineHeight: 1.1 },
+    nameRest: { fontSize: 26, fontWeight: 300, color: '#1F2937', textTransform: 'uppercase', lineHeight: 1.1 },
+    title: { fontSize: 10, fontWeight: 900, color: cTheme, textTransform: 'uppercase', letterSpacing: 2, marginTop: 4, marginBottom: 18 },
     
-    rightColumn: { width: '60%', padding: '30 0 0 30' },
-    rightSectionTitle: { fontSize: 18, fontWeight: 900, color: cTheme, marginBottom: 15, paddingBottom: 5, borderBottomWidth: 1, borderBottomColor: '#E5E7EB', marginTop: 10 },
+    rightSectionTitle: { fontSize: 11, fontWeight: 900, color: '#111827', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 10, paddingBottom: 4, borderBottomWidth: 1, borderBottomColor: '#F3F4F6' },
+    rightText: { fontSize: 8.5, color: '#4B5563', lineHeight: 1.5 },
     
-    expBox: { marginBottom: 20 },
-    expTitle: { fontSize: 11, fontWeight: 900, color: '#111827' },
-    expCompanyRow: { flexDirection: 'row', justifyContent: 'space-between', marginVertical: 3 },
-    expCompany: { fontSize: 10, fontWeight: 700, color: cTheme },
-    expDate: { fontSize: 9, fontWeight: 700, color: '#6B7280' },
-    expDesc: { fontSize: 9, color: '#4B5563', lineHeight: 1.5, marginTop: 4 },
+    expBox: { marginBottom: 12 },
+    expTitle: { fontSize: 10, fontWeight: 900, color: '#111827' },
+    expCompanyRow: { flexDirection: 'row', justifyContent: 'space-between', marginVertical: 2 },
+    expCompany: { fontSize: 9, fontWeight: 700, color: cTheme },
+    expDate: { fontSize: 8, fontWeight: 700, color: '#6B7280' },
+    expDesc: { fontSize: 8.5, color: '#4B5563', lineHeight: 1.4, marginTop: 3, paddingLeft: 6, borderLeftWidth: 1.5, borderLeftColor: cTheme + '30' },
     
-    eduBox: { marginBottom: 15 },
-    eduTitle: { fontSize: 11, fontWeight: 900, color: '#111827' },
-    eduDegree: { fontSize: 10, color: '#4B5563', marginTop: 2 },
-    eduDate: { fontSize: 9, color: '#6B7280', marginTop: 2, fontWeight: 700 },
-    
-    skillCircleText: { fontSize: 8, color: '#FFFFFF' }
+    eduBox: { marginBottom: 10 },
+    eduTitle: { fontSize: 10, fontWeight: 900, color: '#111827' },
+    eduDegree: { fontSize: 8.5, color: '#4B5563', marginTop: 1 },
   });
+
+  const firstName = data.personalInfo.fullName.split(' ')[0] || '';
+  const restName = data.personalInfo.fullName.split(' ').slice(1).join(' ') || '';
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <View style={styles.headerLeft}>
-          <Text style={styles.name}>{data.personalInfo.fullName.split(' ')[0]}</Text>
-          <Text style={styles.name}>{data.personalInfo.fullName.split(' ').slice(1).join(' ')}</Text>
-          <Text style={styles.title}>{data.personalInfo.title}</Text>
+      {/* Left Column (34%) */}
+      <View style={styles.leftColumn}>
+        {data.styleConfig?.showPhoto !== false && data.personalInfo.photo && (
+          <View style={styles.photoWrapper}>
+            <Image src={data.personalInfo.photo} style={styles.photo} />
+          </View>
+        )}
+
+        {/* Contact */}
+        <View style={styles.leftBox}>
+          <Text style={styles.leftSectionHeader}>{isEn ? 'Contact' : 'Contacto'}</Text>
+          {data.personalInfo.phone ? <Text style={styles.leftText}>{data.personalInfo.phone}</Text> : null}
+          {data.personalInfo.email ? <Text style={styles.leftText}>{data.personalInfo.email}</Text> : null}
+          {data.personalInfo.location ? <Text style={styles.leftText}>{data.personalInfo.location}</Text> : null}
+          {data.personalInfo.linkedin ? <Text style={styles.leftText}>{data.personalInfo.linkedin}</Text> : null}
+          {data.personalInfo.website ? <Text style={styles.leftText}>{data.personalInfo.website}</Text> : null}
         </View>
-        <View style={styles.headerRight}>
-          {data.styleConfig?.showPhoto !== false && data.personalInfo.photo && (
-            <View style={styles.photoWrapper}>
-              <Image src={data.personalInfo.photo} style={styles.photo} />
+
+        {/* Summary (if left) */}
+        {getSectionCol(data, 'summary', 'right') === 'left' && data.personalInfo.summary && (
+          <View style={styles.leftBox}>
+            <Text style={styles.leftSectionHeader}>{getSectionTitle(data, 'summary', isEn ? 'Profile' : 'Perfil Profissional')}</Text>
+            <Text style={styles.leftText}>{data.personalInfo.summary.replace(/\*/g, '')}</Text>
+          </View>
+        )}
+
+        {/* Skills (if left) */}
+        {getSectionCol(data, 'skills', 'left') === 'left' && data.skills && data.skills.length > 0 && (
+          <View style={styles.leftBox}>
+            <Text style={styles.leftSectionHeader}>{getSectionTitle(data, 'skills', 'Habilidades')}</Text>
+            {data.skills.filter(s => s?.name).map((s, idx) => (
+              <Text key={s.id || `skill-${idx}`} style={styles.leftText}>• {s.name.trim()}</Text>
+            ))}
+          </View>
+        )}
+
+        {/* Education (if left) */}
+        {getSectionCol(data, 'education', 'left') === 'left' && data.education && data.education.length > 0 && (
+          <View style={styles.leftBox}>
+            <Text style={styles.leftSectionHeader}>{getSectionTitle(data, 'education', 'Formação')}</Text>
+            {data.education.map((e, idx) => (
+              <View key={e.id || `edu-${idx}`} style={{ marginBottom: 6 }}>
+                <Text style={[styles.leftText, { fontWeight: 'bold', color: cTheme }]}>{e.institution}</Text>
+                <Text style={styles.leftText}>{e.degree}</Text>
+                <Text style={[styles.leftText, { fontSize: 7.5, color: '#6B7280' }]}>{e.startDate} - {e.endDate}</Text>
+              </View>
+            ))}
+          </View>
+        )}
+
+        {/* Experience (if left) */}
+        {getSectionCol(data, 'experience', 'right') === 'left' && data.experience && data.experience.length > 0 && (
+          <View style={styles.leftBox}>
+            <Text style={styles.leftSectionHeader}>{getSectionTitle(data, 'experience', 'Experiência')}</Text>
+            {data.experience.map((ex, idx) => (
+              <View key={ex.id || `exp-${idx}`} style={{ marginBottom: 6 }}>
+                <Text style={[styles.leftText, { fontWeight: 'bold', color: cTheme }]}>{ex.position}</Text>
+                <Text style={styles.leftText}>{ex.company}</Text>
+                <Text style={[styles.leftText, { fontSize: 7.5, color: '#6B7280' }]}>{ex.startDate} - {ex.current ? (isEn ? 'Present' : 'Presente') : ex.endDate}</Text>
+              </View>
+            ))}
+          </View>
+        )}
+
+        {/* Languages (if left) */}
+        {getSectionCol(data, 'languages', 'left') === 'left' && data.languages && data.languages.length > 0 && (
+          <View style={styles.leftBox}>
+            <Text style={styles.leftSectionHeader}>{getSectionTitle(data, 'languages', 'Idiomas')}</Text>
+            {data.languages.filter(s => s?.name).map((s, idx) => (
+              <Text key={s.id || `lang-${idx}`} style={styles.leftText}>• {s.name.trim()} - {s.level}</Text>
+            ))}
+          </View>
+        )}
+
+        {/* Certifications (if left) */}
+        {getSectionCol(data, 'certifications', 'left') === 'left' && data.certifications && data.certifications.length > 0 && (
+          <View style={styles.leftBox}>
+            <Text style={styles.leftSectionHeader}>{getSectionTitle(data, 'certifications', 'Certificações')}</Text>
+            {data.certifications.filter(s => s?.name).map((s, idx) => (
+              <View key={s.id || `cert-${idx}`} style={{ marginBottom: 4 }}>
+                <Text style={[styles.leftText, { fontWeight: 'bold' }]}>{s.name.trim()}</Text>
+                {s.date && <Text style={[styles.leftText, { fontSize: 7.5, color: '#6B7280' }]}>{s.date}</Text>}
+              </View>
+            ))}
+          </View>
+        )}
+
+        {/* Interests (if left) */}
+        {getSectionCol(data, 'interests', 'left') === 'left' && data.interests && data.interests.length > 0 && (
+          <View style={styles.leftBox}>
+            <Text style={styles.leftSectionHeader}>{getSectionTitle(data, 'interests', 'Interesses')}</Text>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 3 }}>
+              {data.interests.map((interest, idx) => (
+                <Text key={idx} style={[styles.leftText, { backgroundColor: '#FFFFFF', padding: '2 5', borderRadius: 3, marginRight: 3, marginBottom: 3 }]}>{interest}</Text>
+              ))}
             </View>
-          )}
-        </View>
+          </View>
+        )}
+
+        {/* Custom Sections (if left) */}
+        <RenderCustomSections customSections={data.customSections} data={data} column="left" defaultCol="right" headingStyle={styles.leftSectionHeader} itemTitleStyle={{ fontSize: 9, fontWeight: 'bold', color: '#1F2937', marginBottom: 2 }} itemDescStyle={{ fontSize: 8, color: '#4B5563', marginTop: 2, lineHeight: 1.35 }} />
       </View>
 
-      <View style={styles.body}>
-        <View style={styles.leftColumn}>
-          {getSectionCol(data, 'summary', 'right') === 'left' && data.personalInfo.summary && (
-            <View>
-              <Text style={[styles.leftSectionTitle, { marginTop: 0 }]}>{data.language === 'en' ? 'Profile' : 'Perfil'}</Text>
-              <Text style={styles.leftText}>{data.personalInfo.summary.replace(/\*/g, '')}</Text>
-            </View>
-          )}
-          
-          <View>
-             <Text style={styles.leftSectionTitle}>{data.language === 'en' ? 'Contact' : 'Contacto'}</Text>
-             {data.personalInfo.phone ? <Text style={styles.leftText}>{data.personalInfo.phone}</Text> : null}
-             {data.personalInfo.email ? <Text style={styles.leftText}>{data.personalInfo.email}</Text> : null}
-             {data.personalInfo.location ? <Text style={styles.leftText}>{data.personalInfo.location}</Text> : null}
-             {data.personalInfo.linkedin ? <Text style={styles.leftText}>{data.personalInfo.linkedin}</Text> : null}
-             {data.personalInfo.website ? <Text style={styles.leftText}>{data.personalInfo.website}</Text> : null}
+      {/* Right Column (66%) */}
+      <View style={styles.rightColumn}>
+        {/* Name and Title */}
+        <View style={{ marginBottom: 15 }}>
+          <Text style={styles.nameFirst}>{firstName}</Text>
+          {restName ? <Text style={styles.nameRest}>{restName}</Text> : null}
+          <Text style={styles.title}>{data.personalInfo.title}</Text>
+        </View>
+
+        {/* Summary (if right) */}
+        {getSectionCol(data, 'summary', 'right') === 'right' && data.personalInfo.summary && (
+          <View style={{ marginBottom: 15 }}>
+            <Text style={styles.rightSectionTitle}>{getSectionTitle(data, 'summary', isEn ? 'Profile' : 'Perfil Profissional')}</Text>
+            <Text style={styles.rightText}>{data.personalInfo.summary.replace(/\*/g, '')}</Text>
           </View>
-          
-          {getSectionCol(data, 'skills', 'left') === 'left' && data.skills && data.skills.length > 0 && (
-            <View>
-              <Text style={styles.leftSectionTitle}>{getSectionTitle(data, 'skills', 'Habilidades')}</Text>
-              <View style={{ gap: 6 }}>
-                {data.skills.filter(s => s?.name).map((s, idx) => (
-                  <Text key={s.id || `skill-${idx}`} style={styles.leftText}>• {s.name.trim()}</Text>
-                ))}
-              </View>
-            </View>
-          )}
+        )}
 
-          {getSectionCol(data, 'education', 'left') === 'left' && data.education && data.education.length > 0 && (
-            <View>
-              <Text style={styles.leftSectionTitle}>{getSectionTitle(data, 'education', 'Educação')}</Text>
-              {data.education.map((e, idx) => (
-                <View key={e.id || `edu-${idx}`} style={{ marginBottom: 10 }}>
-                   <Text style={[styles.leftText, { fontWeight: 'bold', color: '#FFFFFF' }]}>{e.institution}</Text>
-                   <Text style={styles.leftText}>{e.degree} - {e.field}</Text>
-                   <Text style={[styles.leftText, { fontSize: 8, opacity: 0.7 }]}>{e.startDate} • {e.endDate}</Text>
+        {/* Experience (if right) */}
+        {getSectionCol(data, 'experience', 'right') === 'right' && data.experience && data.experience.length > 0 && (
+          <View style={{ marginBottom: 15 }}>
+            <Text style={styles.rightSectionTitle}>{getSectionTitle(data, 'experience', 'Experiência Profissional')}</Text>
+            {data.experience.map((ex, idx) => (
+              <View key={ex.id || `exp-${idx}`} style={styles.expBox}>
+                <Text style={styles.expTitle}>{ex.position}</Text>
+                <View style={styles.expCompanyRow}>
+                  <Text style={styles.expCompany}>{ex.company}</Text>
+                  <Text style={styles.expDate}>{ex.startDate} - {ex.current ? (isEn ? 'Present' : 'Presente') : ex.endDate}</Text>
+                </View>
+                {ex.description ? <Text style={styles.expDesc}>{ex.description.replace(/\*/g, '')}</Text> : null}
+              </View>
+            ))}
+          </View>
+        )}
+
+        {/* Education (if right) */}
+        {getSectionCol(data, 'education', 'left') === 'right' && data.education && data.education.length > 0 && (
+          <View style={{ marginBottom: 15 }}>
+            <Text style={styles.rightSectionTitle}>{getSectionTitle(data, 'education', 'Formação')}</Text>
+            {data.education.map((e, idx) => (
+              <View key={e.id || `edu-${idx}`} style={styles.eduBox}>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                  <Text style={styles.eduTitle}>{e.degree}</Text>
+                  <Text style={styles.expDate}>{e.startDate} - {e.endDate}</Text>
+                </View>
+                <Text style={[styles.expCompany, { marginTop: 2 }]}>{e.institution}</Text>
+              </View>
+            ))}
+          </View>
+        )}
+
+        {/* Skills (if right) */}
+        {getSectionCol(data, 'skills', 'left') === 'right' && data.skills && data.skills.length > 0 && (
+          <View style={{ marginBottom: 15 }}>
+            <Text style={styles.rightSectionTitle}>{getSectionTitle(data, 'skills', 'Habilidades')}</Text>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
+              {data.skills.filter(s => s?.name).map((s, idx) => (
+                <Text key={s.id || `skill-${idx}`} style={{ fontSize: 8.5, color: '#374151', width: '45%' }}>• {s.name.trim()}</Text>
+              ))}
+            </View>
+          </View>
+        )}
+
+        {/* Languages (if right) */}
+        {getSectionCol(data, 'languages', 'left') === 'right' && data.languages && data.languages.length > 0 && (
+          <View style={{ marginBottom: 15 }}>
+            <Text style={styles.rightSectionTitle}>{getSectionTitle(data, 'languages', 'Idiomas')}</Text>
+            <View style={{ gap: 4 }}>
+              {data.languages.filter(s => s?.name).map((s, idx) => (
+                <Text key={s.id || `lang-${idx}`} style={{ fontSize: 8.5, color: '#374151' }}>• {s.name.trim()} - {s.level}</Text>
+              ))}
+            </View>
+          </View>
+        )}
+
+        {/* Certifications (if right) */}
+        {getSectionCol(data, 'certifications', 'left') === 'right' && data.certifications && data.certifications.length > 0 && (
+          <View style={{ marginBottom: 15 }}>
+            <Text style={styles.rightSectionTitle}>{getSectionTitle(data, 'certifications', 'Certificações')}</Text>
+            <View style={{ gap: 4 }}>
+              {data.certifications.filter(s => s?.name).map((s, idx) => (
+                <View key={s.id || `cert-${idx}`} style={{ marginBottom: 2 }}>
+                  <Text style={{ fontSize: 8.5, fontWeight: 'bold', color: '#1F2937' }}>• {s.name.trim()}</Text>
+                  {s.date && <Text style={{ fontSize: 7.5, color: '#6B7280' }}>{s.date}</Text>}
                 </View>
               ))}
             </View>
-          )}
+          </View>
+        )}
 
-          {getSectionCol(data, 'experience', 'right') === 'left' && data.experience && data.experience.length > 0 && (
-            <View>
-              <Text style={styles.leftSectionTitle}>{getSectionTitle(data, 'experience', 'Experiência')}</Text>
-              {data.experience.map((ex, idx) => (
-                <View key={ex.id || `exp-${idx}`} style={{ marginBottom: 10 }}>
-                  <Text style={[styles.leftText, { fontWeight: 'bold', color: '#FFFFFF' }]}>{ex.position}</Text>
-                  <Text style={styles.leftText}>{ex.company}</Text>
-                  <Text style={[styles.leftText, { fontSize: 8, opacity: 0.7 }]}>{ex.startDate} • {ex.endDate}</Text>
-                </View>
+        {/* Interests (if right) */}
+        {getSectionCol(data, 'interests', 'left') === 'right' && data.interests && data.interests.length > 0 && (
+          <View style={{ marginBottom: 15 }}>
+            <Text style={styles.rightSectionTitle}>{getSectionTitle(data, 'interests', 'Interesses')}</Text>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 4 }}>
+              {data.interests.map((interest, idx) => (
+                <Text key={idx} style={{ fontSize: 8, backgroundColor: '#F3F4F6', color: '#374151', padding: '2 5', borderRadius: 3, marginRight: 3, marginBottom: 3 }}>{interest}</Text>
               ))}
             </View>
-          )}
-          
-          {getSectionCol(data, 'languages', 'left') === 'left' && data.languages && data.languages.length > 0 && (
-            <View>
-              <Text style={styles.leftSectionTitle}>{getSectionTitle(data, 'languages', 'Idiomas')}</Text>
-              <View style={{ gap: 6 }}>
-                {data.languages.filter(s => s?.name).map((s, idx) => (
-                  <Text key={s.id || `lang-${idx}`} style={styles.leftText}>• {s.name.trim()} - {s.level}</Text>
-                ))}
-              </View>
-            </View>
-          )}
+          </View>
+        )}
 
-          {getSectionCol(data, 'certifications', 'left') === 'left' && data.certifications && data.certifications.length > 0 && (
-            <View>
-              <Text style={styles.leftSectionTitle}>{getSectionTitle(data, 'certifications', 'Certificações')}</Text>
-              <View style={{ gap: 6 }}>
-                {data.certifications.filter(s => s?.name).map((s, idx) => (
-                  <View key={s.id || `cert-${idx}`} style={{ marginBottom: 4 }}>
-                    <Text style={[styles.leftText, { fontWeight: 'bold', color: '#FFFFFF', marginBottom: 2 }]}>• {s.name.trim()}</Text>
-                    {s.date && <Text style={[styles.leftText, { fontSize: 8, opacity: 0.7, paddingLeft: 8 }]}>{s.date}</Text>}
-                  </View>
-                ))}
-              </View>
-            </View>
-          )}
-
-          {getSectionCol(data, 'interests', 'left') === 'left' && data.interests && data.interests.length > 0 && (
-            <View>
-              <Text style={styles.leftSectionTitle}>{getSectionTitle(data, 'interests', 'Interesses')}</Text>
-              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 4 }}>
-                {data.interests.map((interest, idx) => (
-                  <Text key={idx} style={[styles.leftText, { backgroundColor: 'rgba(255,255,255,0.15)', padding: '2 6', borderRadius: 4, marginRight: 4, marginBottom: 4 }]}>{interest}</Text>
-                ))}
-              </View>
-            </View>
-          )}
-
-          <RenderCustomSections customSections={data.customSections} data={data} column="left" defaultCol="right" headingStyle={styles.leftSectionTitle} itemTitleStyle={{ fontSize: 9.5, fontWeight: 'bold', color: '#FFFFFF', marginBottom: 2 }} itemDescStyle={{ fontSize: 8.5, color: 'rgba(255,255,255,0.8)', marginTop: 3, lineHeight: 1.35 }} />
-        </View>
-
-        <View style={styles.rightColumn}>
-          {getSectionCol(data, 'summary', 'right') === 'right' && data.personalInfo.summary && (
-            <View>
-              <Text style={[styles.rightSectionTitle, { marginTop: 0 }]}>{data.language === 'en' ? 'Profile' : 'Perfil'}</Text>
-              <Text style={{ fontSize: 9, color: '#4B5563', lineHeight: 1.5, marginBottom: 15 }}>{data.personalInfo.summary.replace(/\*/g, '')}</Text>
-            </View>
-          )}
-
-          {getSectionCol(data, 'experience', 'right') === 'right' && data.experience && data.experience.length > 0 && (
-            <View>
-              <Text style={[styles.rightSectionTitle, { marginTop: 0 }]}>{getSectionTitle(data, 'experience', 'Experiência')}</Text>
-              {data.experience.map((ex, idx) => (
-                <View key={ex.id || `exp-${idx}`} style={[styles.expBox, data.styleConfig?.showTimeline === false && { borderLeft: 'none', paddingLeft: 0 }]}>
-                  <Text style={styles.expTitle}>{ex.position}</Text>
-                  <View style={styles.expCompanyRow}>
-                    <Text style={styles.expCompany}>{ex.company}</Text>
-                    <Text style={styles.expDate}>{ex.startDate} • {ex.endDate}</Text>
-                  </View>
-                  <Text style={styles.expDesc}>{ex.description.replace(/\*/g, '')}</Text>
-                </View>
-              ))}
-            </View>
-          )}
-          
-          {getSectionCol(data, 'education', 'left') === 'right' && data.education && data.education.length > 0 && (
-            <View>
-              <Text style={styles.rightSectionTitle}>{getSectionTitle(data, 'education', 'Educação')}</Text>
-              {data.education.map((e, idx) => (
-                <View key={e.id || `edu-${idx}`} style={styles.eduBox}>
-                   <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                     <Text style={styles.eduTitle}>{e.institution}</Text>
-                     <Text style={styles.expDate}>{e.startDate} • {e.endDate}</Text>
-                   </View>
-                   <Text style={styles.eduDegree}>{e.degree} - {e.field}</Text>
-                </View>
-              ))}
-            </View>
-          )}
-
-          {getSectionCol(data, 'skills', 'left') === 'right' && data.skills && data.skills.length > 0 && (
-            <View>
-              <Text style={styles.rightSectionTitle}>{getSectionTitle(data, 'skills', 'Habilidades')}</Text>
-              <View style={{ gap: 6, marginBottom: 15 }}>
-                {data.skills.filter(s => s?.name).map((s, idx) => (
-                  <Text key={s.id || `skill-${idx}`} style={{ fontSize: 9.5, color: '#374151' }}>• {s.name.trim()}</Text>
-                ))}
-              </View>
-            </View>
-          )}
-
-          {getSectionCol(data, 'languages', 'left') === 'right' && data.languages && data.languages.length > 0 && (
-            <View>
-              <Text style={styles.rightSectionTitle}>{getSectionTitle(data, 'languages', 'Idiomas')}</Text>
-              <View style={{ gap: 6, marginBottom: 15 }}>
-                {data.languages.filter(s => s?.name).map((s, idx) => (
-                  <Text key={s.id || `lang-${idx}`} style={{ fontSize: 9.5, color: '#374151' }}>• {s.name.trim()} - {s.level}</Text>
-                ))}
-              </View>
-            </View>
-          )}
-
-          {getSectionCol(data, 'certifications', 'left') === 'right' && data.certifications && data.certifications.length > 0 && (
-            <View>
-              <Text style={styles.rightSectionTitle}>{getSectionTitle(data, 'certifications', 'Certificações')}</Text>
-              <View style={{ gap: 6, marginBottom: 15 }}>
-                {data.certifications.filter(s => s?.name).map((s, idx) => (
-                  <View key={s.id || `cert-${idx}`} style={{ marginBottom: 4 }}>
-                    <Text style={{ fontSize: 9.5, fontWeight: 'bold', color: '#1F2937' }}>• {s.name.trim()}</Text>
-                    {s.date && <Text style={{ fontSize: 8.5, color: '#6B7280' }}>{s.date}</Text>}
-                  </View>
-                ))}
-              </View>
-            </View>
-          )}
-
-          {getSectionCol(data, 'interests', 'left') === 'right' && data.interests && data.interests.length > 0 && (
-            <View>
-              <Text style={styles.rightSectionTitle}>{getSectionTitle(data, 'interests', 'Interesses')}</Text>
-              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 4, marginBottom: 15 }}>
-                {data.interests.map((interest, idx) => (
-                  <Text key={idx} style={{ fontSize: 8.5, backgroundColor: '#F3F4F6', color: '#374151', padding: '2 6', borderRadius: 4, marginRight: 4, marginBottom: 4 }}>{interest}</Text>
-                ))}
-              </View>
-            </View>
-          )}
-
-          <RenderCustomSections customSections={data.customSections} data={data} column="right" defaultCol="right" headingStyle={styles.rightSectionTitle} />
-        </View>
+        {/* Custom Sections (if right) */}
+        <RenderCustomSections customSections={data.customSections} data={data} column="right" defaultCol="right" headingStyle={styles.rightSectionTitle} />
       </View>
     </View>
   );
